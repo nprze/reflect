@@ -1,0 +1,46 @@
+cmake_minimum_required(VERSION 3.16)
+
+# General configuration
+if(NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE Debug)
+endif()
+
+set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/build/lib CACHE PATH "Where to place compiled static libraries.")
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/build/lib CACHE PATH "Where to place compiled shared libraries.")
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/build/bin CACHE PATH "Where to place compiled executables.")
+set(BUILD_DIR "${CMAKE_CURRENT_SOURCE_DIR}/build")
+
+# Project name
+project(reflect)
+set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT reflect)
+add_executable(reflect src/reflect_main.cpp)
+
+# Source setup
+file(GLOB_RECURSE REFLECT_SOURCE 
+    "src/*.h"
+    "src/*.cpp"
+)
+target_sources(reflect PRIVATE ${REFLECT_SOURCE})
+target_include_directories(reflect PUBLIC 
+    ${CMAKE_CURRENT_SOURCE_DIR}/src
+)
+
+set_target_properties(reflect PROPERTIES
+    CXX_STANDARD 20
+    CXX_STANDARD_REQUIRED YES
+)
+if(MSVC)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /RTC1 /MDd")
+endif() 
+
+include(reflect_settings.cmake)
+
+if (${VLD_ENABLE} STREQUAL "y")
+target_link_libraries(reflect PUBLIC "${VLD_PATH}/lib/Win64/vld.lib")
+target_include_directories(reflect PUBLIC "${VLD_PATH}/include")
+target_compile_definitions(reflect PUBLIC "VLD_ENABLED")
+endif()
+
+
+set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT reflect)

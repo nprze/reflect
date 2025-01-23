@@ -1,0 +1,60 @@
+# Build files
+build/
+*.sln
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
+*.ninja
+
+# CMake files
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+CTestTestfile.cmake
+
+# Logs and temporary files
+*.log
+*.tmp
+*.swp
+
+# Visual Studio specific
+.vscode/
+.vs/
+ipch/
+*.obj
+*.pch
+*.idb
+*.pdb
+*.tlog
+*.lastbuildstate
+*.suo
+*.user
+*.unsuccessfulbuild
+*.opensdf
+*.sdf
+
+# Backup files
+*.bak
+*.old
+*.orig
+
+# Executables and libraries
+*.exe
+*.dll
+*.lib
+*.so
+*.a
+*.o
+*.recipe
+*.ilk
+
+# Archive files
+*.zip
+*.tar
+*.gz
+*.7z
+*.rar
+
+# Reflect specific
+build/
+!deps/

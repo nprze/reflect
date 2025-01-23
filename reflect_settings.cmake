@@ -1,0 +1,2 @@
+set(VLD_ENABLE "y") # y or n, enable or diable visual leak detector
+set(VLD_PATH "C:/Program Files (x86)/Visual Leak Detector") # path to where visual leak detector is installed. Leave empty if VLD is disabled.
