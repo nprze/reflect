@@ -24,6 +24,7 @@ file(GLOB_RECURSE REFLECT_SOURCE
 target_sources(reflect PRIVATE ${REFLECT_SOURCE})
 target_include_directories(reflect PUBLIC 
     ${CMAKE_CURRENT_SOURCE_DIR}/src
+    ${CMAKE_CURRENT_SOURCE_DIR}/deps
 )
 
 set_target_properties(reflect PROPERTIES
@@ -39,7 +40,11 @@ include(reflect_settings.cmake)
 if (${VLD_ENABLE} STREQUAL "y")
 target_link_libraries(reflect PUBLIC "${VLD_PATH}/lib/Win64/vld.lib")
 target_include_directories(reflect PUBLIC "${VLD_PATH}/include")
-target_compile_definitions(reflect PUBLIC "VLD_ENABLED")
+target_compile_definitions(reflect PUBLIC "VLD_ENABLE")
+endif()
+if (${NVTX_ENABLE} STREQUAL "y")
+target_compile_definitions(reflect PUBLIC "NVTX_ENABLE")
+include(reflect_util_scripts/reflect_nvtx_category_helper.cmake)
 endif()
 
 

@@ -3,7 +3,11 @@
 ## running reflect
 
 make sure you have cmake installed (min. ver.3.16).\
-make sure you have vulkan SDK installed with glm headers.\
+make sure you have vulkan SDK installed with glm headers.
 
-- modify reflect_settings.cmake to suit your needs!\
+- modify reflect_settings.cmake to suit your needs!
 - run 'cmake .' in folder
+
+## reflect usage
+
+DO NOT INCLUDE SPACE IN ANY OF THE NAME OF ANY CREATED FILE/FOLDER. REFLECT MIGHT BREAK.\
