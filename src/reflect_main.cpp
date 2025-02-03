@@ -2,15 +2,11 @@
 #include <vld.h>
 #endif // VLD_ENABLE
 #include <iostream>
-#include "utils/profiling_label.h"
+#include "platform_p/windows/windows_window.h"
+using namespace rfct;
 int main() {
-	RFCT_PROFILE_FUNCTION();
-	// test vld and nvtx
-	int* leak = new int[10];
-	for (int l = 0; l < 10;l++) {
-		leak[l] = l;
-	}
-	int a;
-	std::cin >> a;
-	return a;
+	windowsWindow window(100,100, "reflect");
+	window.show();
+	while (window.pollEvents());
+	return 0;
 }
