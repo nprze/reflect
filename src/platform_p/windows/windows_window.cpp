@@ -2,6 +2,7 @@
 
 rfct::windowsWindow::windowsWindow(int width, int height, const char* title)
 {
+    RFCT_LOGGER_INIT();
 	create(width, height, title);
 	inputLayer = std::make_unique<windowsInputLayer>();
 }
@@ -52,6 +53,16 @@ bool rfct::windowsWindow::pollEvents()
         DispatchMessage(&msg);
     }
     return true;
+}
+
+vk::SurfaceKHR rfct::windowsWindow::createSurface(vk::Instance instance)
+{
+    
+    vk::Win32SurfaceCreateInfoKHR createInfo{};
+    createInfo.hinstance = hInstance;
+    createInfo.hwnd = hwnd;
+
+    return instance.createWin32SurfaceKHR(createInfo);
 }
 
 LRESULT CALLBACK rfct::windowsWindow::WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {

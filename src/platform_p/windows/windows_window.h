@@ -6,6 +6,7 @@
 namespace rfct {
     class windowsWindow : public windowAbstact {
     public:
+        windowsWindow() = delete;
         windowsWindow(int width, int height, const char* title);
         ~windowsWindow() { destroy(); };
         void create(int width, int height, const char* title) override;
@@ -13,14 +14,13 @@ namespace rfct {
         void show() override;
         void hide() override;
         bool pollEvents() override;
+        vk::SurfaceKHR createSurface(vk::Instance instance) override;
 
         inputLayer* getInputLayer() override { return inputLayer.get(); }
         HWND GetHandle() const { return hwnd; }
         HINSTANCE GetInstance() const { return hInstance; }
-
     private:
         static LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
-
         unique<windowsInputLayer> inputLayer;
         HWND hwnd = nullptr;
         HINSTANCE hInstance = nullptr;

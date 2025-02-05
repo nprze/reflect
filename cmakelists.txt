@@ -47,6 +47,9 @@ if (${NVTX_ENABLE} STREQUAL "y")
 target_compile_definitions(reflect PUBLIC "NVTX_ENABLE")
 include(reflect_util_scripts/reflect_nvtx_category_helper.cmake)
 endif()
+if (${VULKAN_DEBUG_UTILS_ENABLE} STREQUAL "n")
+target_compile_definitions(reflect PUBLIC "RFCT_VULKAN_DEBUG_OFF")
+endif()
 
 # Dependencies setup
 # vulkan
@@ -78,5 +81,9 @@ if(MSVC)
     target_compile_options(reflect PRIVATE /utf-8)
 endif()
 target_precompile_headers(reflect PRIVATE "src/utils/pch.h")
+
+if(WIN32)
+    target_compile_definitions(reflect PUBLIC "VK_USE_PLATFORM_WIN32_KHR")
+endif()
 
 set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT reflect)

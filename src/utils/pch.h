@@ -5,3 +5,5 @@
 #include "other.h"
 #include "vulkan/vulkan.hpp"
 #include <vector>
+#include <array>
+#include <stdint.h>

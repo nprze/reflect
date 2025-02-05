@@ -2,11 +2,9 @@
 #include <vld.h>
 #endif // VLD_ENABLE
 #include <iostream>
-#include "platform_p/windows/windows_window.h"
+#include "renderer_p/renderer.h"
 using namespace rfct;
 int main() {
-	windowsWindow window(100,100, "reflect");
-	window.show();
-	while (window.pollEvents());
+	renderer::ren.run();
 	return 0;
 }
