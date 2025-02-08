@@ -63,3 +63,4 @@ build/
 !deps/
 src/utils/reflect_directories.h
 reflect.dir
+*.exp
