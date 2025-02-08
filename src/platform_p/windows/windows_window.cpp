@@ -21,6 +21,7 @@ void rfct::windowsWindow::create(int width, int height, const char* title) {
         "reflectWindow", title,
         WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT,
         width, height, nullptr, nullptr, hInstance, nullptr);
+    extent = vk::Extent2D( width, height );
 	RFCT_TRACE("Window ({},{}) created successfully", width, height);
 }
 

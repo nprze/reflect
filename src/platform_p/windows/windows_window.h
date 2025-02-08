@@ -14,12 +14,14 @@ namespace rfct {
         void show() override;
         void hide() override;
         bool pollEvents() override;
+        inline vk::Extent2D getExtent()  override { return extent; };
         vk::SurfaceKHR createSurface(vk::Instance instance) override;
 
         inputLayer* getInputLayer() override { return inputLayer.get(); }
         HWND GetHandle() const { return hwnd; }
         HINSTANCE GetInstance() const { return hInstance; }
     private:
+        vk::Extent2D extent;
         static LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
         unique<windowsInputLayer> inputLayer;
         HWND hwnd = nullptr;

@@ -7,3 +7,5 @@
 #include <vector>
 #include <array>
 #include <stdint.h>
+
+#define RFCT_FRAMES_IN_FLIGHT 3

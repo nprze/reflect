@@ -75,6 +75,10 @@ else()
     link_directories(${Vulkan_LIBRARY_DIRS})
     target_link_libraries(reflect PUBLIC Vulkan::Vulkan)
 endif()
+# onetbb
+add_subdirectory(deps/oneTBB)
+target_include_directories(reflect PUBLIC deps/oneTBB/include)
+target_link_libraries(reflect PUBLIC tbb)
 
 # precompiled headers
 if(MSVC)

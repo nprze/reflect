@@ -56,7 +56,6 @@ std::string queueFlagsToString(vk::QueueFlags queueFlags) {
     return oss.str();
 }
 
-
 std::array<uint32_t, 3> rfct::selectQueueFamilies(vk::PhysicalDevice physicalDevice) {
     std::vector<vk::QueueFamilyProperties> queueFamilies = physicalDevice.getQueueFamilyProperties();
 
@@ -94,65 +93,33 @@ std::array<uint32_t, 3> rfct::selectQueueFamilies(vk::PhysicalDevice physicalDev
 }
 
 rfct::vulkanQueueManager::vulkanQueueManager(vk::Device device, vk::PhysicalDevice physicalDevice)
-    : m_device(device), m_running(true) {
+    : m_device(device) {
     auto queueFamilies = selectQueueFamilies(physicalDevice);
+
+    m_graphicsQueueFamilyIndex = queueFamilies[0];
+    m_computeQueueFamilyIndex = queueFamilies[1];
+    m_transferQueueFamilyIndex = queueFamilies[2];
 
     m_graphicsQueue = m_device.getQueue(queueFamilies[0], 0);
     m_computeQueue = m_device.getQueue(queueFamilies[1], 0);
     m_transferQueue = m_device.getQueue(queueFamilies[2], 0);
-
-    m_graphicsThread = std::thread(&vulkanQueueManager::queueWorker, this, m_graphicsQueue, std::ref(m_graphicsTasks), std::ref(m_graphicsMutex), std::ref(m_graphicsCondition), std::ref(m_running));
-    m_computeThread = std::thread(&vulkanQueueManager::queueWorker, this, m_computeQueue, std::ref(m_computeTasks), std::ref(m_computeMutex), std::ref(m_computeCondition), std::ref(m_running));
-    m_transferThread = std::thread(&vulkanQueueManager::queueWorker, this, m_transferQueue, std::ref(m_transferTasks), std::ref(m_transferMutex), std::ref(m_transferCondition), std::ref(m_running));
 }
 
 rfct::vulkanQueueManager::~vulkanQueueManager() {
-    stop();
+    // No threads to stop, so nothing to do here.
 }
 
 void rfct::vulkanQueueManager::submitGraphics(const vk::SubmitInfo& submitInfo, vk::Fence fence) {
-    std::lock_guard<std::mutex> lock(m_graphicsMutex);
-    m_graphicsTasks.emplace(submitInfo, fence);
-    m_graphicsCondition.notify_one();
+    // Directly submit to the graphics queue
+    m_graphicsQueue.submit(submitInfo, fence);
 }
 
 void rfct::vulkanQueueManager::submitCompute(const vk::SubmitInfo& submitInfo, vk::Fence fence) {
-    std::lock_guard<std::mutex> lock(m_computeMutex);
-    m_computeTasks.emplace(submitInfo, fence);
-    m_computeCondition.notify_one();
+    // Directly submit to the compute queue
+    m_computeQueue.submit(submitInfo, fence);
 }
 
 void rfct::vulkanQueueManager::submitTransfer(const vk::SubmitInfo& submitInfo, vk::Fence fence) {
-    std::lock_guard<std::mutex> lock(m_transferMutex);
-    m_transferTasks.emplace(submitInfo, fence);
-    m_transferCondition.notify_one();
-}
-
-void rfct::vulkanQueueManager::queueWorker(vk::Queue queue, std::queue<std::pair<vk::SubmitInfo, vk::Fence>>& taskQueue, std::mutex& queueMutex, std::condition_variable& condition, bool& running) {
-    while (running) {
-        std::unique_lock<std::mutex> lock(queueMutex);
-        condition.wait(lock, [&] { return !taskQueue.empty() || !running; });
-
-        while (!taskQueue.empty()) {
-			RFCT_PROFILE_SCOPE("Queue submission");
-            auto [submitInfo, fence] = taskQueue.front();
-            taskQueue.pop();
-            lock.unlock();
-
-            queue.submit(submitInfo, fence);
-
-            lock.lock();
-        }
-    }
-}
-
-void rfct::vulkanQueueManager::stop() {
-    m_running = false;
-    m_graphicsCondition.notify_all();
-    m_computeCondition.notify_all();
-    m_transferCondition.notify_all();
-
-    if (m_graphicsThread.joinable()) m_graphicsThread.join();
-    if (m_computeThread.joinable()) m_computeThread.join();
-    if (m_transferThread.joinable()) m_transferThread.join();
+    // Directly submit to the transfer queue
+    m_transferQueue.submit(submitInfo, fence);
 }
