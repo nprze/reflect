@@ -12,3 +12,4 @@ make sure you have vulkan SDK installed with glm headers.
 
 - DO NOT INCLUDE SPACE IN THE NAMES OF ANY CREATED FILE/FOLDER. REFLECT MIGHT BREAK.
 - leave app by closing the window, not by closing the terminal. Closing the app by closing the terminal results in memory leaks.
+- in order to run reflect from nvidia nsystems, you have to set VULKAN_DEBUG_UTILS_ENABLE to "n" in setting (and rebuild).

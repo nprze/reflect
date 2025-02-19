@@ -59,7 +59,7 @@ rfct::vulkanInstance::vulkanInstance()
                 RFCT_CRITICAL("VulkanInstanceExtension {} not avaible", ext);
             }
         }
-
+        
         std::vector<const char*> validationLayers = {
 #ifndef RFCT_VULKAN_DEBUG_OFF
             "VK_LAYER_KHRONOS_validation"
@@ -82,20 +82,20 @@ rfct::vulkanInstance::vulkanInstance()
 #endif // !RFCT_VULKAN_DEBUG_OFF
             }
         }
-
+        
         vk::InstanceCreateInfo createInfo(
             {},
-            &appInfo,
-            validationLayers.size(),
-            validationLayers.data(),
+            &appInfo,0,nullptr,
+            //validationLayers.size(),
+            //validationLayers.data(),
             extensionNames.size(),
             extensionNames.data()
         );
 
         m_instance = vk::createInstanceUnique(createInfo);
+#ifndef RFCT_VULKAN_DEBUG_OFF
         m_dynamicLoader = vk::DispatchLoaderDynamic(*m_instance, vkGetInstanceProcAddr);
 
-#ifndef RFCT_VULKAN_DEBUG_OFF
 
         vk::DebugUtilsMessengerCreateInfoEXT debugCreateInfo(
             {},
@@ -103,8 +103,10 @@ rfct::vulkanInstance::vulkanInstance()
             vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral | vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation | vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance,
             reinterpret_cast<PFN_vkDebugUtilsMessengerCallbackEXT>(debugCallback)
         );
+
+
         m_debugMessenger = m_instance.get().createDebugUtilsMessengerEXTUnique(debugCreateInfo, nullptr, m_dynamicLoader);
-#endif // !RFCT_VULKAN_DEBUG_OF
+#endif // !RFCT_VULKAN_DEBUG_OFF
 
         m_surface = vk::UniqueSurfaceKHR(renderer::ren.getWindow().createSurface(m_instance.get()), m_instance.get());
 

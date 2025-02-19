@@ -4,11 +4,12 @@
 #include <set>
 
 namespace rfct {
-	 const std::array<const char*, 4> vulkanDevice::deviceRequiredExtensions = {
-			   VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME,
-			   VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,
-			   VK_KHR_SWAPCHAIN_EXTENSION_NAME,
-			   VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME
+	 const std::array<const char*, 5> vulkanDevice::deviceRequiredExtensions = {
+		VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME,
+		VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,
+		VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+		VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME, 
+		VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME
 	};
 	uint32_t rateDevice(vk::PhysicalDevice device) {
 		std::array<uint32_t, 3> queueFamilies = selectQueueFamilies(device);

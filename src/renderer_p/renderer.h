@@ -4,6 +4,7 @@
 #include "device\vulkan_device.h"
 #include "renderer_p\rasterizer_pipeline\vulkan_rasterizer_pipeline.h"
 #include "renderer_p\frame\frame_resource_manager.h"
+#include "renderer_p\ray_tracing\ray_tracer.h"
 namespace rfct {
 	class renderer {
 	public:
@@ -17,13 +18,15 @@ namespace rfct {
 		inline vulkanRasterizerPipeline& getRasterizerPipeline() { return m_rasterizerPipeline; }
 		renderer();
 		~renderer() { m_device.getDevice().waitIdle(); };
-		void run();
-		void draw();
+		void showWindow();
+		void render();
+		void setObjectName(void* objectHandle, const std::string& name, vk::ObjectType objectType);
 	private:
 		windowsWindow m_window;
 		vulkanInstance m_instance;
 		vulkanDevice m_device;
 		vulkanRasterizerPipeline m_rasterizerPipeline;
 		framesInFlight m_framesInFlight;
+		rayTracer m_rayTracer;
 	};
 }

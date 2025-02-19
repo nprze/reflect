@@ -29,9 +29,10 @@ void rfct::vulkanSwapChain::createSwapChain()
 #ifdef WIN32
     for (vk::PresentModeKHR mode : presentModes) {
         if (mode == vk::PresentModeKHR::eMailbox)  chosenPresentMode = vk::PresentModeKHR::eMailbox;
+
     }
 #endif // WIN32
-
+    RFCT_TRACE("Choosen swap chain present mode: {0}", chosenPresentMode == vk::PresentModeKHR::eMailbox? "Mailbox": "Fifo");
     m_swapChainExtent = capabilities.currentExtent;
     vk::SwapchainCreateInfoKHR swapChainCreateInfo = {};
     swapChainCreateInfo.surface = m_surface;
@@ -82,6 +83,7 @@ void rfct::vulkanSwapChain::createFrameBuffers()
 		frameBufferCreateInfo.height = m_swapChainExtent.height;
 		frameBufferCreateInfo.layers = 1;
 		m_frameBuffers[i] = m_device.createFramebufferUnique(frameBufferCreateInfo);
+        renderer::ren.setObjectName(m_frameBuffers[i].get(), "swapchain framebuffer", vk::ObjectType::eFramebuffer);
 	}
 }
 

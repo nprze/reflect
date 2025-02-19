@@ -5,7 +5,7 @@ namespace rfct {
 	vk::PhysicalDevice chooseBestPhysicalDevice();
 	class vulkanDevice {
 	public:
-		static const std::array<const char*, 4> deviceRequiredExtensions;
+		static const std::array<const char*, 5> deviceRequiredExtensions;
 	public:
 		vk::Device getDevice() { return m_device.get(); }
 		vulkanSwapChain& getSwapChain() { return m_swapChain; }
