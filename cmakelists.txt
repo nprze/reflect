@@ -79,6 +79,12 @@ endif()
 add_subdirectory(deps/oneTBB)
 target_include_directories(reflect PUBLIC deps/oneTBB/include)
 target_link_libraries(reflect PUBLIC tbb)
+# glfw
+add_subdirectory(deps/glfw)
+target_include_directories(reflect PUBLIC deps/glfw/include)
+target_link_libraries(reflect PUBLIC glfw)
+
+
 
 # precompiled headers
 if(MSVC)

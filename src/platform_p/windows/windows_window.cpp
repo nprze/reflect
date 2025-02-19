@@ -1,77 +1,49 @@
+
 #include "windows_window.h"
+#include <stdexcept>
 
-rfct::windowsWindow::windowsWindow(int width, int height, const char* title)
-{
-    RFCT_LOGGER_INIT();
-	create(width, height, title);
-	inputLayer = std::make_unique<windowsInputLayer>();
+rfct::GlfwWindow::GlfwWindow(int width, int height, const char* title) {
+    if (!glfwInit()) {
+        throw std::runtime_error("Failed to initialize GLFW");
+    }
+    create(width, height, title);
+    inputLayer = std::make_unique<windowsInputLayer>();
 }
 
-void rfct::windowsWindow::create(int width, int height, const char* title) {
-
-    WNDCLASS wc = {};
-    wc.lpfnWndProc = WindowProc;
-    wc.hInstance = GetModuleHandle(nullptr);
-    wc.lpszClassName = "reflectWindow";
-    RegisterClass(&wc);
-
-    hInstance = GetModuleHandle(nullptr);
-
-    hwnd = CreateWindow(
-        "reflectWindow", title,
-        WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT,
-        width, height, nullptr, nullptr, hInstance, nullptr);
-    extent = vk::Extent2D( width, height );
-	RFCT_TRACE("Window ({},{}) created successfully", width, height);
+void rfct::GlfwWindow::create(int width, int height, const char* title) {
+    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+    window = glfwCreateWindow(width, height, title, nullptr, nullptr);
+    if (!window) {
+        throw std::runtime_error("Failed to create GLFW window");
+    }
+    extent = vk::Extent2D(width, height);
 }
 
-void rfct::windowsWindow::destroy()
-{
-    if (hwnd) {
-        DestroyWindow(hwnd);
-        hwnd = nullptr;
+void rfct::GlfwWindow::destroy() {
+    if (window) {
+        glfwDestroyWindow(window);
+        glfwTerminate();
+        window = nullptr;
     }
 }
 
-void rfct::windowsWindow::show()
-{
-    ShowWindow(hwnd, SW_SHOW);
+void rfct::GlfwWindow::show() {
+    glfwShowWindow(window);
 }
 
-void rfct::windowsWindow::hide()
-{
-    ShowWindow(hwnd, SW_HIDE);
+void rfct::GlfwWindow::hide() {
+    glfwHideWindow(window);
 }
 
-bool rfct::windowsWindow::pollEvents()
-{
-    MSG msg;
-    while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE)) {
-        if (msg.message == WM_QUIT) {
-            return false;
-        }
-        TranslateMessage(&msg);
-        DispatchMessage(&msg);
+bool rfct::GlfwWindow::pollEvents() {
+    glfwPollEvents();
+    return !glfwWindowShouldClose(window);
+}
+
+vk::SurfaceKHR rfct::GlfwWindow::createSurface(vk::Instance instance) {
+    VkSurfaceKHR surface;
+    if (glfwCreateWindowSurface(instance, window, nullptr, &surface) != VK_SUCCESS) {
+        throw std::runtime_error("Failed to create Vulkan surface");
     }
-    return true;
-}
-
-vk::SurfaceKHR rfct::windowsWindow::createSurface(vk::Instance instance)
-{
-    
-    vk::Win32SurfaceCreateInfoKHR createInfo{};
-    createInfo.hinstance = hInstance;
-    createInfo.hwnd = hwnd;
-
-    return instance.createWin32SurfaceKHR(createInfo);
-}
-
-LRESULT CALLBACK rfct::windowsWindow::WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
-    switch (uMsg) {
-    case WM_DESTROY:
-        PostQuitMessage(0);
-        return 0;
-    default:
-        return DefWindowProc(hwnd, uMsg, wParam, lParam);
-    }
+    return vk::SurfaceKHR(surface);
 }

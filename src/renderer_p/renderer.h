@@ -13,7 +13,7 @@ namespace rfct {
 		inline vk::Device getDevice() { return m_device.getDevice(); }
 		inline vulkanDevice& getDeviceWrapper() { return m_device; }
 		inline vk::Instance getInstance() { return m_instance.getInstance(); }
-		inline windowsWindow& getWindow() { return m_window; }
+		inline GlfwWindow& getWindow() { return m_window; }
 		inline vulkanInstance& getInstanceWrapper() { return m_instance; }
 		inline vulkanRasterizerPipeline& getRasterizerPipeline() { return m_rasterizerPipeline; }
 		renderer();
@@ -22,7 +22,7 @@ namespace rfct {
 		void render();
 		void setObjectName(void* objectHandle, const std::string& name, vk::ObjectType objectType);
 	private:
-		windowsWindow m_window;
+		GlfwWindow m_window;
 		vulkanInstance m_instance;
 		vulkanDevice m_device;
 		vulkanRasterizerPipeline m_rasterizerPipeline;
