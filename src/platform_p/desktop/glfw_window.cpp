@@ -15,6 +15,7 @@ rfct::GlfwWindow::GlfwWindow(int width, int height, const char* title) {
 
 void rfct::GlfwWindow::create(int width, int height, const char* title) {
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+    glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
     window = glfwCreateWindow(width, height, title, nullptr, nullptr);
     if (!window) {
         RFCT_CRITICAL("Failed to create GLFW window");

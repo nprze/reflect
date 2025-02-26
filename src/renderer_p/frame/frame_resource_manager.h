@@ -10,7 +10,6 @@ namespace rfct {
 		~framesInFlight();
 		frameData& getNextFrame();
 	private:
-		VmaAllocator m_allocator;
 		uint32_t m_nextFrame;
 		std::vector<unique<frameData>> m_frames;
 	};

@@ -5,7 +5,15 @@
 #include "renderer_p\rasterizer_pipeline\vulkan_rasterizer_pipeline.h"
 #include "renderer_p\frame\frame_resource_manager.h"
 #include "renderer_p\ray_tracing\ray_tracer.h"
+#include "renderer_p\rasterizer_pipeline\vertex.h"
+#include "renderer_p\buffer\vulkan_vertex_buffer.h"
 namespace rfct {
+	struct allocator
+	{
+		VmaAllocator m_allocator;
+		allocator();
+		~allocator();
+	};
 	class renderer {
 	public:
 		static renderer ren;
@@ -16,17 +24,22 @@ namespace rfct {
 		inline GlfwWindow& getWindow() { return m_window; }
 		inline vulkanInstance& getInstanceWrapper() { return m_instance; }
 		inline vulkanRasterizerPipeline& getRasterizerPipeline() { return m_rasterizerPipeline; }
+		inline VmaAllocator& getAllocator() { return m_allocator.m_allocator; }
+		inline vulkanVertexBuffer& getVertexBuffer() { return m_vertexBuffer; }
 		renderer();
-		~renderer() { m_device.getDevice().waitIdle(); };
+		~renderer();
 		void showWindow();
 		void render();
 		void setObjectName(void* objectHandle, const std::string& name, vk::ObjectType objectType);
+	private:
 	private:
 		GlfwWindow m_window;
 		vulkanInstance m_instance;
 		vulkanDevice m_device;
 		vulkanRasterizerPipeline m_rasterizerPipeline;
+		allocator m_allocator;
 		framesInFlight m_framesInFlight;
 		rayTracer m_rayTracer;
+		vulkanVertexBuffer m_vertexBuffer;
 	};
 }

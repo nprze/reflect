@@ -1,7 +1,8 @@
 #include "vulkan_rasterizer_pipeline.h"
 #include "renderer_p\renderer.h"
+#include "vertex.h"
 
-rfct::vulkanRasterizerPipeline::vulkanRasterizerPipeline() : m_vertexShader("./src/renderer_p/shader/shaders/triangle/tri_vert.spv"), m_fragShader("./src/renderer_p/shader/shaders/triangle/tri_frag.spv")
+rfct::vulkanRasterizerPipeline::vulkanRasterizerPipeline() : m_vertexShader("./src/renderer_p/shader/shaders/cube/cube_vert.spv"), m_fragShader("./src/renderer_p/shader/shaders/cube/cube_frag.spv")
 {
     createRenderPass();
 	createPipeline();
@@ -27,7 +28,14 @@ void rfct::vulkanRasterizerPipeline::createPipeline()
     std::vector<vk::PipelineShaderStageCreateInfo> shaderStages = { vertShaderStageInfo, fragShaderStageInfo };
 
     // Input
+    auto bindingDescription = Vertex::getBindingDescription();
+    auto attributeDescriptions = Vertex::getAttributeDescriptions();
+
     vk::PipelineVertexInputStateCreateInfo vertexInputInfo = {};
+	vertexInputInfo.vertexBindingDescriptionCount = 1;
+	vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());;
+	vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
+	vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
 
     vk::PipelineInputAssemblyStateCreateInfo inputAssembly = {};
     inputAssembly.topology = vk::PrimitiveTopology::eTriangleList;
@@ -179,6 +187,10 @@ void rfct::vulkanRasterizerPipeline::recordAndSubmitCommandBuffer(frameData& fra
     commandBuffer.beginRenderPass(renderPassInfo, vk::SubpassContents::eInline);
 
     commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, m_graphicsPipeline.get());
+
+    vk::Buffer vertexBuffers[] = { renderer::ren.getVertexBuffer().getBuffer() };
+    vk::DeviceSize offsets[] = { 0 };
+	commandBuffer.bindVertexBuffers(0, 1, vertexBuffers, offsets);
 
     vk::Viewport viewport = {};
     viewport.x = 0.0f;

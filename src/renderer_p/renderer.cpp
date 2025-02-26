@@ -1,11 +1,25 @@
 #include "renderer.h"
 #include <stdint.h>
 rfct::renderer rfct::renderer::ren;
+
+
 rfct::renderer::renderer()
-	: m_window(968, 422, "reflect"), m_instance(), m_device(), m_rasterizerPipeline(), m_framesInFlight(), m_rayTracer()
+	:  m_window(968, 422, "reflect"), m_instance(), m_device(), m_rasterizerPipeline(), m_allocator(), m_framesInFlight(), m_rayTracer(), m_vertexBuffer(sizeof(Vertex) * 3)
 {
+
+    std::vector<Vertex> vertices = {
+        {{0.0f, -0.5f, 0.f}, {1.0f, 0.0f, 0.0f}},
+        {{0.5f, 0.5f, 0.f}, {0.0f, 1.0f, 0.0f}},
+        {{-0.5f, 0.5f, 0.f}, {0.0f, 0.0f, 1.0f}}
+    };
+	m_vertexBuffer.copyData(vertices);
+
     m_device.getSwapChain().createFrameBuffers();
 }
+
+rfct::renderer::~renderer() {
+    m_device.getDevice().waitIdle(); 
+};
 
 void rfct::renderer::showWindow()
 {
@@ -14,7 +28,7 @@ void rfct::renderer::showWindow()
 
 void rfct::renderer::render()
 {
-    RFCT_PROFILE_FUNCTION();
+    RFCT_PROFILE_FUNCTION(); 
 	frameData& frame = m_framesInFlight.getNextFrame();
     {
         RFCT_PROFILE_SCOPE("fences wait and reset");
@@ -33,7 +47,7 @@ void rfct::renderer::render()
         RFCT_MARK("acquired frame");
     }
 
-    m_device.getDevice().resetFences(1, &frame.m_inRenderFence.get());
+    RFCT_VULKAN_CHECK(m_device.getDevice().resetFences(1, &frame.m_inRenderFence.get()));
 	m_rasterizerPipeline.recordAndSubmitCommandBuffer(frame, m_device.getSwapChain().getFrameBuffer(imageIndex), imageIndex);
 
     RFCT_VULKAN_CHECK(m_device.getDevice().waitForFences(1, &frame.m_inRenderFence.get(), VK_TRUE, UINT64_MAX));
@@ -70,4 +84,19 @@ void rfct::renderer::setObjectName(void* objectHandle, const std::string& name, 
 
 #endif // RFCT_VULKAN_DEBUG_OFF
 
+}
+
+rfct::allocator::allocator()
+{
+    VmaAllocatorCreateInfo allocatorCreateInfo = {};
+    allocatorCreateInfo.physicalDevice = rfct::renderer::ren.getDeviceWrapper().getPhysicalDevice();
+    allocatorCreateInfo.device = rfct::renderer::ren.getDevice();
+    allocatorCreateInfo.instance = rfct::renderer::ren.getInstance();
+    allocatorCreateInfo.vulkanApiVersion = VK_API_VERSION_1_3;
+    vmaCreateAllocator(&allocatorCreateInfo, &m_allocator);
+}
+
+rfct::allocator::~allocator()
+{
+	vmaDestroyAllocator(m_allocator);
 }
