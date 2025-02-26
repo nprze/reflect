@@ -1,5 +1,5 @@
 #pragma once
-#include "platform_p\windows\windows_window.h"
+#include "platform_p\desktop\glfw_window.h"
 #include "device\vulkan_instance.h"
 #include "device\vulkan_device.h"
 #include "renderer_p\rasterizer_pipeline\vulkan_rasterizer_pipeline.h"

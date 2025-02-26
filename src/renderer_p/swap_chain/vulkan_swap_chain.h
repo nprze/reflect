@@ -7,6 +7,7 @@ namespace rfct {
 		vulkanSwapChain(vk::Device device, vk::SurfaceKHR surface, vk::PhysicalDevice physicalDevice, vk::Extent2D windowExtent);
 		~vulkanSwapChain();
 		void createSwapChain();
+		void recreateSwapChain();
 		void createImageViews();
 		void createFrameBuffers();
 		uint32_t acquireNextImage(const vk::Semaphore& semaphore, vk::Fence fence);
@@ -15,6 +16,7 @@ namespace rfct {
 		vk::Image getImage(uint32_t index) { return m_swapChainImage[index]; }
 		vk::Framebuffer getFrameBuffer(uint32_t index) { return m_frameBuffers[index].get(); }
 		vk::Extent2D getExtent() { return m_swapChainExtent; }
+		bool framebufferResized = false;
 	private:
 		vk::Device m_device;
 		vk::SurfaceKHR m_surface;

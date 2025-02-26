@@ -36,6 +36,10 @@ void rfct::vulkanSwapChain::createSwapChain()
     m_swapChainExtent = capabilities.currentExtent;
     vk::SwapchainCreateInfoKHR swapChainCreateInfo = {};
     swapChainCreateInfo.surface = m_surface;
+    if (m_swapChain.get()!=nullptr)
+    {
+        swapChainCreateInfo.oldSwapchain = m_swapChain.get();
+    }
     swapChainCreateInfo.minImageCount = RFCT_FRAMES_IN_FLIGHT + 1;
     swapChainCreateInfo.imageFormat = chosenSurfaceFormat.format;
     swapChainCreateInfo.imageColorSpace = chosenSurfaceFormat.colorSpace;
@@ -48,6 +52,14 @@ void rfct::vulkanSwapChain::createSwapChain()
     swapChainCreateInfo.clipped = VK_TRUE;
 
     m_swapChain = m_device.createSwapchainKHRUnique(swapChainCreateInfo);
+}
+
+void rfct::vulkanSwapChain::recreateSwapChain()
+{
+	m_device.waitIdle();
+	createSwapChain();
+	createImageViews();
+	createFrameBuffers();
 }
 
 void rfct::vulkanSwapChain::createImageViews()
@@ -89,10 +101,26 @@ void rfct::vulkanSwapChain::createFrameBuffers()
 
 uint32_t rfct::vulkanSwapChain::acquireNextImage(const vk::Semaphore& semaphore, vk::Fence fence)
 {
-    auto result = m_device.acquireNextImageKHR(m_swapChain.get(), UINT64_MAX, semaphore, fence);
+    vk::ResultValue<uint32_t> result = vk::ResultValue<uint32_t>(vk::Result::eSuccess, 0);
+    if (framebufferResized)
+    {
+        recreateSwapChain();
+        framebufferResized = false;
+    }
+    try
+    {
+        result = m_device.acquireNextImageKHR(m_swapChain.get(), UINT64_MAX, semaphore, fence);
+
+    }
+    catch (const vk::OutOfDateKHRError&)
+    {
+        recreateSwapChain();
+        return -1;
+
+    }
 
     if (result.result != vk::Result::eSuccess && result.result != vk::Result::eSuboptimalKHR) {
-        throw std::runtime_error("Failed to acquire swap chain image!");
+        RFCT_CRITICAL("Failed to acquire swap chain image!");
     }
 
     return result.value;

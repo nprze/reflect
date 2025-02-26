@@ -4,7 +4,6 @@
 #include <vulkan/vulkan.hpp>
 #include <memory>
 #include "platform_p/window.h"
-#include "platform_p/windows/windows_input_layer.h"
 
 namespace rfct {
     class GlfwWindow : public windowAbstact {
@@ -21,11 +20,9 @@ namespace rfct {
         inline vk::Extent2D getExtent() override { return extent; }
         vk::SurfaceKHR createSurface(vk::Instance instance) override;
 
-        inputLayer* getInputLayer() override { return inputLayer.get(); }
         GLFWwindow* GetHandle() const { return window; }
     private:
         vk::Extent2D extent;
-        std::unique_ptr<windowsInputLayer> inputLayer;
         GLFWwindow* window = nullptr;
     };
 }

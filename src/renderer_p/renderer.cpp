@@ -19,15 +19,21 @@ void rfct::renderer::render()
     {
         RFCT_PROFILE_SCOPE("fences wait and reset");
         RFCT_VULKAN_CHECK(m_device.getDevice().waitForFences(1, &frame.m_inRenderFence.get(), VK_TRUE, 0));
-        m_device.getDevice().resetFences(1, &frame.m_inRenderFence.get());
     }
 
     uint32_t imageIndex;
     {
         RFCT_PROFILE_SCOPE("get sawpchain image");
         imageIndex = m_device.getSwapChain().acquireNextImage(frame.getImageAvailableSemaphore(), VK_NULL_HANDLE);
+
+        if (imageIndex == -1)
+        {
+            return;
+        }
         RFCT_MARK("acquired frame");
     }
+
+    m_device.getDevice().resetFences(1, &frame.m_inRenderFence.get());
 	m_rasterizerPipeline.recordAndSubmitCommandBuffer(frame, m_device.getSwapChain().getFrameBuffer(imageIndex), imageIndex);
 
     RFCT_VULKAN_CHECK(m_device.getDevice().waitForFences(1, &frame.m_inRenderFence.get(), VK_TRUE, UINT64_MAX));
