@@ -13,16 +13,33 @@ set(BUILD_DIR "${CMAKE_CURRENT_SOURCE_DIR}/build")
 
 # Project name
 project(reflect)
-set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT reflect)
-add_executable(reflect src/reflect_main.cpp)
+# For Android platform
+if(ANDROID)
+    add_library(reflect SHARED src/reflect_main.cpp)
+    target_link_libraries(my_project PRIVATE android log)
+    set(CMAKE_SYSTEM_NAME Android)
+    set(CMAKE_SYSTEM_VERSION 21)    
+    set(CMAKE_ANDROID_ARCH_ABI arm64-v8a)
+    set(CMAKE_ANDROID_NDK ${ANDROID_NDK})
+    set(CMAKE_ANDROID_STL_TYPE c++_static)
 
+    set(VULKAN_INCLUDE_DIRS ${ANDROID_NDK}/sources/angle/include)
+    set(VULKAN_LIBRARIES ${ANDROID_NDK}/sources/angle/lib)
+    find_package(Vulkan REQUIRED)
+
+    set(ANDROID_LIBS android log)
+else()
+    add_executable(reflect src/reflect_main.cpp)
+    set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT reflect)
+endif()
 set_target_properties(reflect PROPERTIES
     CXX_STANDARD 20
     CXX_STANDARD_REQUIRED YES
 )
+
 if(MSVC)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /RTC1 /MDd")
-endif() 
+endif()
 
 # Source setup
 file(GLOB_RECURSE REFLECT_SOURCE 
@@ -35,24 +52,24 @@ target_include_directories(reflect PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/deps
 )
 
-
 # Settings specific configurations
 include(reflect_settings.cmake)
+
 if (${VLD_ENABLE} STREQUAL "y")
-target_link_libraries(reflect PUBLIC "${VLD_PATH}/lib/Win64/vld.lib")
-target_include_directories(reflect PUBLIC "${VLD_PATH}/include")
-target_compile_definitions(reflect PUBLIC "VLD_ENABLE")
+    target_link_libraries(reflect PUBLIC "${VLD_PATH}/lib/Win64/vld.lib")
+    target_include_directories(reflect PUBLIC "${VLD_PATH}/include")
+    target_compile_definitions(reflect PUBLIC "VLD_ENABLE")
 endif()
 if (${NVTX_ENABLE} STREQUAL "y")
-target_compile_definitions(reflect PUBLIC "NVTX_ENABLE")
-include(reflect_util_scripts/reflect_nvtx_category_helper.cmake)
+    target_compile_definitions(reflect PUBLIC "NVTX_ENABLE")
+    include(reflect_util_scripts/reflect_nvtx_category_helper.cmake)
 endif()
 if (${VULKAN_DEBUG_UTILS_ENABLE} STREQUAL "n")
-target_compile_definitions(reflect PUBLIC "RFCT_VULKAN_DEBUG_OFF")
+    target_compile_definitions(reflect PUBLIC "RFCT_VULKAN_DEBUG_OFF")
 endif()
 
 # Dependencies setup
-# vulkan
+# Vulkan
 find_package(Vulkan QUIET)
 
 if (NOT Vulkan_FOUND)
@@ -69,22 +86,16 @@ if (NOT Vulkan_FOUND)
         message(FATAL_ERROR "Vulkan SDK not found! Please install Vulkan SDK or set the VULKAN_SDK environment variables.")
     endif()
 else()
-    message(STATUS "Vulkan found: ${Vulkan_INCLUDE_DIR}")
-
+    message(STATUS "Vulkan found: ${Vulkan_INCLUDE_DIRS}")
     include_directories(${Vulkan_INCLUDE_DIRS})
     link_directories(${Vulkan_LIBRARY_DIRS})
     target_link_libraries(reflect PUBLIC Vulkan::Vulkan)
 endif()
-# onetbb
-add_subdirectory(deps/oneTBB)
-target_include_directories(reflect PUBLIC deps/oneTBB/include)
-target_link_libraries(reflect PUBLIC tbb)
+
 # glfw
 add_subdirectory(deps/glfw)
 target_include_directories(reflect PUBLIC deps/glfw/include)
 target_link_libraries(reflect PUBLIC glfw)
-
-
 
 # precompiled headers
 if(MSVC)
@@ -94,6 +105,8 @@ target_precompile_headers(reflect PRIVATE "src/utils/pch.h")
 
 if(WIN32)
     target_compile_definitions(reflect PUBLIC "VK_USE_PLATFORM_WIN32_KHR")
+elseif(ANDROID)
+    target_compile_definitions(reflect PUBLIC "VK_USE_PLATFORM_ANDROID_KHR")
 endif()
 
 set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT reflect)

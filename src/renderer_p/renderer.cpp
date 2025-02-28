@@ -1,10 +1,19 @@
 #include "renderer.h"
 #include <stdint.h>
+#include "platform_p\mobile\android_window.h"
 rfct::renderer rfct::renderer::ren;
+namespace rfct {
+	unique<windowAbstact> createWindow() {
+#ifdef WIN32
+        return std::make_unique<GlfwWindow>(968, 422, "reflect");
+#endif // WIN32
+        return std::make_unique<AndroidWindow>(968, 422, "reflect");
 
+	}
 
+}
 rfct::renderer::renderer()
-	:  m_window(968, 422, "reflect"), m_instance(), m_device(), m_rasterizerPipeline(), m_allocator(), m_framesInFlight(), m_rayTracer(), m_vertexBuffer(sizeof(Vertex) * 3)
+	:  m_window(createWindow()), m_instance(), m_device(), m_rasterizerPipeline(), m_allocator(), m_framesInFlight(), m_rayTracer(), m_vertexBuffer(sizeof(Vertex) * 3)
 {
 
     std::vector<Vertex> vertices = {
@@ -23,7 +32,7 @@ rfct::renderer::~renderer() {
 
 void rfct::renderer::showWindow()
 {
-	m_window.show();
+	(*m_window).show();
 }
 
 void rfct::renderer::render()
