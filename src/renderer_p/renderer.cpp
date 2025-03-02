@@ -1,13 +1,19 @@
 #include "renderer.h"
 #include <stdint.h>
-#include "platform_p\mobile\android_window.h"
+#include "android\android_window.h"
+#include "windows\glfw_window.h"
 rfct::renderer rfct::renderer::ren;
 namespace rfct {
-	unique<windowAbstact> createWindow() {
+	shared<windowAbstact> createWindow() {
 #ifdef WIN32
-        return std::make_unique<GlfwWindow>(968, 422, "reflect");
+        return std::make_shared<GlfwWindow>(968, 422, "reflect");
 #endif // WIN32
-        return std::make_unique<AndroidWindow>(968, 422, "reflect");
+#ifdef ANDROID_BUILD
+        return std::make_shared<AndroidWindow>(968, 422, "reflect");
+
+#endif // ANDROID_BUILD
+        RFCT_CRITICAL("build for either windows or android");
+        return nullptr;
 
 	}
 

@@ -1,0 +1,18 @@
+#pragma once
+#include <vector>
+#include "input_layer.h"
+namespace rfct {
+    class windowAbstact {
+    public:
+
+        virtual void create(int width, int height, const char* title) = 0;
+        virtual void destroy() = 0;
+        virtual void show() = 0;
+        virtual void hide() = 0;
+		virtual vk::Extent2D getExtent() = 0;
+		virtual vk::SurfaceKHR createSurface(vk::Instance instance) = 0;
+
+        virtual bool pollEvents() = 0;
+
+    };
+}

@@ -1,0 +1,163 @@
+cmake_minimum_required(VERSION 3.16)
+
+set(PLATFORM_ANDROID TRUE)
+# General configuration
+if(NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE Debug)
+endif()
+
+set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/build/lib CACHE PATH "Where to place compiled static libraries.")
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/build/dll CACHE PATH "Where to place compiled shared libraries.")
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/build/bin CACHE PATH "Where to place compiled executables.")
+set(BUILD_DIR "${CMAKE_CURRENT_SOURCE_DIR}/build")
+
+# Project name
+project(reflect)
+
+# Source setup
+file(GLOB_RECURSE REFLECT_SOURCE
+        "src/*.h"
+        "src/*.cpp"
+        "platform/input_layer.h"
+        "platform/window.h"
+)
+if(PLATFORM_WINDOWS)
+    file(GLOB_RECURSE REFLECT_SOURCE
+            ${REFLECT_SOURCE}
+            "platform/windows/*.h"
+            "platform/windows/*.cpp"
+    )
+elseif(PLATFORM_ANDROID)
+    file(GLOB_RECURSE REFLECT_SOURCE
+            ${REFLECT_SOURCE}
+            "platform/android/*.h"
+            "platform/android/*.cpp"
+    )
+endif()
+
+if(PLATFORM_WINDOWS)
+    add_executable(reflect  src/reflect_main.cpp)
+    set_target_properties(reflect PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/build/windows)
+    set_property(DIRECTORY ${CMAKE_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT reflect)
+endif()
+
+if(PLATFORM_ANDROID)
+    add_library(reflect SHARED ${REFLECT_SOURCE})
+
+    target_compile_definitions(reflect PUBLIC ANDROID_BUILD)
+    target_compile_definitions(reflect PUBLIC __ANDROID__)
+    target_compile_definitions(reflect PUBLIC VMA_STATIC_VULKAN_FUNCTIONS=0)
+    target_compile_definitions(reflect PUBLIC VMA_DYNAMIC_VULKAN_FUNCTIONS=1)
+    target_compile_definitions(reflect PUBLIC RFCT_VULKAN_DEBUG_OFF)
+
+    find_library(log-lib log)
+    find_library(android-lib android)
+    find_package(Vulkan REQUIRED)
+
+
+    target_include_directories(reflect PRIVATE ${Vulkan_INCLUDE_DIRS} Vulkan-Headers/include )
+
+    target_link_libraries(reflect PRIVATE ${log-lib} ${android-lib} Vulkan::Vulkan)
+
+    include_directories(${Vulkan_INCLUDE_DIRS})
+    link_directories(${VULKAN_SDK}/Lib)
+    add_definitions(-DVK_ENABLE_BETA_EXTENSIONS)
+
+    set_target_properties(reflect PROPERTIES
+            LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/build/android
+            ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/build/android
+    )
+
+    install(TARGETS reflect
+            LIBRARY DESTINATION ${CMAKE_BINARY_DIR}/build/android/libs/${ANDROID_ABI}
+    )
+    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -u ANativeActivity_onCreate")
+
+endif()
+
+set_target_properties(reflect PROPERTIES
+    CXX_STANDARD 20
+    CXX_STANDARD_REQUIRED YES
+)
+
+
+target_sources(reflect PRIVATE ${REFLECT_SOURCE})
+target_include_directories(reflect PUBLIC 
+    ${CMAKE_CURRENT_SOURCE_DIR}/src
+    ${CMAKE_CURRENT_SOURCE_DIR}/deps
+    ${CMAKE_CURRENT_SOURCE_DIR}/platform
+)
+
+# Settings specific configurations
+
+if(PLATFORM_WINDOWS)
+    if (${VLD_ENABLE} STREQUAL "y")
+        target_link_libraries(reflect PUBLIC "${VLD_PATH}/lib/Win64/vld.lib")
+        target_include_directories(reflect PUBLIC "${VLD_PATH}/include")
+        target_compile_definitions(reflect PUBLIC "VLD_ENABLE")
+    endif()
+    if (${NVTX_ENABLE} STREQUAL "y")
+        target_compile_definitions(reflect PUBLIC "NVTX_ENABLE")
+        include(reflect_util_scripts/reflect_nvtx_category_helper.cmake)
+    endif()
+    if (${VULKAN_DEBUG_UTILS_ENABLE} STREQUAL "n")
+        target_compile_definitions(reflect PUBLIC "RFCT_VULKAN_DEBUG_OFF")
+    endif()
+endif() # win32
+
+
+# Dependencies setup
+# Vulkan
+
+if(PLATFORM_WINDOWS)
+    find_package(Vulkan QUIET)
+
+    if (NOT Vulkan_FOUND)
+        if (DEFINED ENV{VULKAN_SDK})
+        set(VULKAN_SDK $ENV{VULKAN_SDK})
+        set(Vulkan_INCLUDE_DIR "${VULKAN_SDK}/Include")
+        set(Vulkan_LIBRARY "${VULKAN_SDK}/Lib/vulkan-1.lib")
+
+        include_directories(${Vulkan_INCLUDE_DIR})
+        link_directories(${VULKAN_SDK}/Lib)
+
+        message(STATUS "Using Vulkan SDK from: ${VULKAN_SDK}")
+        else()
+            message(FATAL_ERROR "Vulkan SDK not found! Please install Vulkan SDK or set the VULKAN_SDK environment variables.")
+        endif()
+        else()
+        message(STATUS "Vulkan found: ${Vulkan_INCLUDE_DIRS}")
+        include_directories(${Vulkan_INCLUDE_DIRS})
+        link_directories(${Vulkan_LIBRARY_DIRS})
+        target_link_libraries(reflect PUBLIC Vulkan::Vulkan)
+    endif()
+endif() # win32
+
+
+
+if(PLATFORM_WINDOWS)
+# glfw
+add_subdirectory(deps/glfw)
+target_include_directories(reflect PUBLIC deps/glfw/include)
+target_link_libraries(reflect PUBLIC glfw)
+endif() # win32
+
+
+
+if(MSVC)
+    target_compile_options(reflect PRIVATE /utf-8)
+endif()
+
+if(PLATFORM_WINDOWS)
+    target_compile_definitions(reflect PUBLIC "VK_USE_PLATFORM_WIN32_KHR")
+elseif(PLATFORM_ANDROID)
+    target_compile_definitions(reflect PUBLIC "VK_USE_PLATFORM_ANDROID_KHR")
+endif()
+
+# precompiled headers
+target_precompile_headers(reflect PUBLIC src/utils/pch.h)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Winvalid-pch")
+
+set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT reflect)

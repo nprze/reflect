@@ -1,5 +1,4 @@
 #pragma once
-#include "platform_p\desktop\glfw_window.h"
 #include "device\vulkan_instance.h"
 #include "device\vulkan_device.h"
 #include "renderer_p\rasterizer_pipeline\vulkan_rasterizer_pipeline.h"
@@ -7,6 +6,7 @@
 #include "renderer_p\ray_tracing\ray_tracer.h"
 #include "renderer_p\rasterizer_pipeline\vertex.h"
 #include "renderer_p\buffer\vulkan_vertex_buffer.h"
+#include "window.h"
 namespace rfct {
 	struct allocator
 	{
@@ -21,7 +21,7 @@ namespace rfct {
 		inline vk::Device getDevice() { return m_device.getDevice(); }
 		inline vulkanDevice& getDeviceWrapper() { return m_device; }
 		inline vk::Instance getInstance() { return m_instance.getInstance(); }
-		inline windowAbstact& getWindow() { return *m_window; }
+		inline windowAbstact& getWindow() { return *(m_window.get()); }
 		inline vulkanInstance& getInstanceWrapper() { return m_instance; }
 		inline vulkanRasterizerPipeline& getRasterizerPipeline() { return m_rasterizerPipeline; }
 		inline VmaAllocator& getAllocator() { return m_allocator.m_allocator; }
@@ -33,7 +33,7 @@ namespace rfct {
 		void setObjectName(void* objectHandle, const std::string& name, vk::ObjectType objectType);
 	private:
 	private:
-		unique<windowAbstact> m_window;
+		shared<windowAbstact> m_window;
 		vulkanInstance m_instance;
 		vulkanDevice m_device;
 		vulkanRasterizerPipeline m_rasterizerPipeline;
