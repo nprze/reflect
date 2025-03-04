@@ -41,6 +41,7 @@ rfct::renderer::renderer(ANativeWindow* window)
     };
 	m_vertexBuffer.copyData(vertices);
 
+
     m_device.getSwapChain().createFrameBuffers();
 }
 

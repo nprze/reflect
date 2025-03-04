@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.16)
 set(PLATFORM_ANDROID TRUE)
 # General configuration
 if(NOT CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE Debug)
+    set(CMAKE_BUILD_TYPE Debug)
 endif()
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
@@ -39,7 +39,7 @@ endif()
 if(PLATFORM_WINDOWS)
     add_executable(reflect  src/reflect_main.cpp)
     set_target_properties(reflect PROPERTIES
-        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/build/windows)
+            RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/build/windows)
     set_property(DIRECTORY ${CMAKE_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT reflect)
 endif()
 
@@ -78,16 +78,16 @@ if(PLATFORM_ANDROID)
 endif()
 
 set_target_properties(reflect PROPERTIES
-    CXX_STANDARD 20
-    CXX_STANDARD_REQUIRED YES
+        CXX_STANDARD 20
+        CXX_STANDARD_REQUIRED YES
 )
 
 
 target_sources(reflect PRIVATE ${REFLECT_SOURCE})
-target_include_directories(reflect PUBLIC 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src
-    ${CMAKE_CURRENT_SOURCE_DIR}/deps
-    ${CMAKE_CURRENT_SOURCE_DIR}/platform
+target_include_directories(reflect PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+        ${CMAKE_CURRENT_SOURCE_DIR}/deps
+        ${CMAKE_CURRENT_SOURCE_DIR}/platform
 )
 
 # Settings specific configurations
@@ -112,36 +112,19 @@ endif() # win32
 # Vulkan
 
 if(PLATFORM_WINDOWS)
-    find_package(Vulkan QUIET)
-
-    if (NOT Vulkan_FOUND)
-        if (DEFINED ENV{VULKAN_SDK})
-        set(VULKAN_SDK $ENV{VULKAN_SDK})
-        set(Vulkan_INCLUDE_DIR "${VULKAN_SDK}/Include")
-        set(Vulkan_LIBRARY "${VULKAN_SDK}/Lib/vulkan-1.lib")
-
-        include_directories(${Vulkan_INCLUDE_DIR})
-        link_directories(${VULKAN_SDK}/Lib)
-
-        message(STATUS "Using Vulkan SDK from: ${VULKAN_SDK}")
-        else()
-            message(FATAL_ERROR "Vulkan SDK not found! Please install Vulkan SDK or set the VULKAN_SDK environment variables.")
-        endif()
-        else()
-        message(STATUS "Vulkan found: ${Vulkan_INCLUDE_DIRS}")
-        include_directories(${Vulkan_INCLUDE_DIRS})
-        link_directories(${Vulkan_LIBRARY_DIRS})
-        target_link_libraries(reflect PUBLIC Vulkan::Vulkan)
-    endif()
+    find_package(Vulkan REQUIRED)
+    include_directories(${Vulkan_INCLUDE_DIRS})
+    link_directories(${Vulkan_LIBRARY_DIRS})
+    target_link_libraries(reflect PUBLIC Vulkan::Vulkan)
 endif() # win32
 
 
 
 if(PLATFORM_WINDOWS)
-# glfw
-add_subdirectory(deps/glfw)
-target_include_directories(reflect PUBLIC deps/glfw/include)
-target_link_libraries(reflect PUBLIC glfw)
+    # glfw
+    add_subdirectory(deps/glfw)
+    target_include_directories(reflect PUBLIC deps/glfw/include)
+    target_link_libraries(reflect PUBLIC glfw)
 endif() # win32
 
 
@@ -157,7 +140,7 @@ elseif(PLATFORM_ANDROID)
 endif()
 
 # precompiled headers
-target_precompile_headers(reflect PUBLIC src/utils/pch.h)
+target_precompile_headers(reflect PUBLIC src/utils/precompiled.h)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Winvalid-pch")
 
 set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT reflect)

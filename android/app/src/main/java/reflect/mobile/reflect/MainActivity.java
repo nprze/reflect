@@ -1,21 +1,27 @@
 package reflect.mobile.reflect;
 import android.app.Activity;
 import android.os.Bundle;
+import android.view.MotionEvent;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
-import android.view.Choreographer;
-import android.widget.Toast;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class MainActivity extends Activity {
+    public native void createVulkanApp(Surface surface);
+    private native void sendEventsToNative(List<InputEvent> events);
+    private native void renderNative();
 
     // Load the native library
     static {
         System.loadLibrary("reflect");
     }
 
+    private final List<InputEvent> eventQueue = new ArrayList<>();
+
     // Declare the native method to create Vulkan surface
-    public native void createVulkanSurface(Surface surface);
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -25,32 +31,61 @@ public class MainActivity extends Activity {
         // Find the SurfaceView (which holds a Surface object)
         SurfaceView surfaceView = findViewById(R.id.surface_view);
 
+
         surfaceView.getHolder().addCallback(new SurfaceHolder.Callback() {
             @Override
             public void surfaceCreated(SurfaceHolder holder) {
                 Surface surface = holder.getSurface();
-                if (surface != null) {
-                    // Use Choreographer to wait for one frame before creating Vulkan surface
-                    Choreographer.getInstance().postFrameCallback(new Choreographer.FrameCallback() {
-                        @Override
-                        public void doFrame(long frameTimeNanos) {
-                            createVulkanSurface(surface);
-                        }
-                    });
-                } else {
-                    Toast.makeText(MainActivity.this, "Surface not available", Toast.LENGTH_SHORT).show();
+                createVulkanApp(surface);
+                startRendering();
+            }
+
+            @Override
+            public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {}
+
+            @Override
+            public void surfaceDestroyed(SurfaceHolder holder) {}
+        });
+    }
+
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        synchronized (eventQueue) {
+            eventQueue.add(new InputEvent(event.getAction(), event.getX(), event.getY(), event.getEventTime()));
+        }
+        return true;
+    }
+
+    private void startRendering() {
+        new Thread(() -> {
+            while (true) {
+                List<InputEvent> eventsToSend;
+                synchronized (eventQueue) {
+                    eventsToSend = new ArrayList<>(eventQueue);
+                    eventQueue.clear();
+                }
+                if (!eventsToSend.isEmpty())
+                sendEventsToNative(eventsToSend);
+                renderNative();  // Call C++ to render the frame
+                try {
+                    Thread.sleep(16); // Simulate ~60FPS
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
                 }
             }
+        }).start();
+    }
 
-            @Override
-            public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-                // Handle surface changes if necessary
-            }
+    static class InputEvent {
+        int action;
+        float x, y;
+        long timestamp;
 
-            @Override
-            public void surfaceDestroyed(SurfaceHolder holder) {
-                // Handle surface destruction if necessary
-            }
-        });
+        InputEvent(int action, float x, float y, long timestamp) {
+            this.action = action;
+            this.x = x;
+            this.y = y;
+            this.timestamp = timestamp;
+        }
     }
 }
