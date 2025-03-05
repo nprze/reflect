@@ -25,7 +25,7 @@ rfct::VulkanBuffer::~VulkanBuffer()
     VmaAllocator allocator = renderer::getRen().getAllocator();
 
     if (allocation) {
-        vmaDestroyBuffer(allocator, buffer, allocation);
+        vmaDestroyBuffer(allocator, static_cast<VkBuffer>(buffer), allocation);
     }
 }
 

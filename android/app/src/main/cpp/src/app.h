@@ -3,7 +3,7 @@
 namespace rfct {
 	class reflectApplication {
 	public:
-		reflectApplication(ANativeWindow* window);
+        reflectApplication(RFCT_NATIVE_WINDOW_ANDROID RFCT_NATIVE_WINDOW_ANDROID_VAR);
 		~reflectApplication() {};
 		void render();
     private:

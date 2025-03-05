@@ -22,7 +22,7 @@ inline void initialize_logger() {
     auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
 
     console_sink->set_pattern("%^[%H:%M:%S:%e] %v%$");
-
+    
 
     auto logger = std::make_shared<spdlog::logger>("console", console_sink);
     spdlog::set_default_logger(logger);

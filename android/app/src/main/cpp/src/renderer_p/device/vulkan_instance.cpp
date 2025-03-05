@@ -94,7 +94,7 @@ rfct::vulkanInstance::vulkanInstance()
 
         m_instance = vk::createInstanceUnique(createInfo);
 #ifndef RFCT_VULKAN_DEBUG_OFF
-        m_dynamicLoader = RFCT_ANDROI_VULKAN_INSTANCE_NAMESPACE DispatchLoaderDynamic(*m_instance, vkGetInstanceProcAddr);
+        m_dynamicLoader = RFCT_ANDROID_VULKAN_INSTANCE_NAMESPACE DispatchLoaderDynamic(*m_instance, vkGetInstanceProcAddr);
 
 
         vk::DebugUtilsMessengerCreateInfoEXT debugCreateInfo(

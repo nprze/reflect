@@ -6,7 +6,7 @@ namespace rfct {
     vk::UniqueShaderModule loadShaderModule(const vk::Device& device, const std::string& filename) {
         std::ifstream file(filename, std::ios::binary | std::ios::ate);
         if (!file.is_open()) {
-			RFCT_CRITICAL("Failed to open shader file: {}", filename);
+            RFCT_CRITICAL("Failed to open shader file: {}", filename);
         }
 
         size_t fileSize = static_cast<size_t>(file.tellg());
@@ -40,7 +40,7 @@ namespace rfct {
 
     vulkanShader::vulkanShader(const std::filesystem::path& spirvFilePath)
     {
-		m_shaderModule = loadShaderModule(renderer::getRen().getDevice(), spirvFilePath.string());
+        m_shaderModule = loadShaderModule(renderer::getRen().getDevice(), spirvFilePath.string());
     }
 
 }
