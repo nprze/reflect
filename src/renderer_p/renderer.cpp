@@ -1,19 +1,17 @@
 #include "renderer.h"
 #include <stdint.h>
-#include "platform_p\mobile\android_window.h"
-rfct::renderer rfct::renderer::ren;
+
 namespace rfct {
-	unique<windowAbstact> createWindow() {
-#ifdef WIN32
-        return std::make_unique<GlfwWindow>(968, 422, "reflect");
-#endif // WIN32
-        return std::make_unique<AndroidWindow>(968, 422, "reflect");
+    uselessClass createUselessClass(renderer *rendererArg) {
+        renderer::ren = rendererArg;
+        return {false};
+    }
 
-	}
-
+    renderer *renderer::ren = nullptr;
 }
-rfct::renderer::renderer()
-	:  m_window(createWindow()), m_instance(), m_device(), m_rasterizerPipeline(), m_allocator(), m_framesInFlight(), m_rayTracer(), m_vertexBuffer(sizeof(Vertex) * 3)
+// LET THIS CODE COOK. IT DOES COOK FRFR
+rfct::renderer::renderer(RFCT_NATIVE_WINDOW_ANDROID RFCT_NATIVE_WINDOW_ANDROID_VAR)
+        : uc(createUselessClass(this)), m_window(RFCT_WINDOWS_WINDOW_ARGUMENTS RFCT_NATIVE_WINDOW_ANDROID_VAR), m_instance(), m_device(), m_rasterizerPipeline(), m_allocator(), m_framesInFlight(), m_rayTracer(), m_vertexBuffer(sizeof(Vertex) * 3)
 {
 
     std::vector<Vertex> vertices = {
@@ -22,6 +20,7 @@ rfct::renderer::renderer()
         {{-0.5f, 0.5f, 0.f}, {0.0f, 0.0f, 1.0f}}
     };
 	m_vertexBuffer.copyData(vertices);
+
 
     m_device.getSwapChain().createFrameBuffers();
 }
@@ -32,7 +31,7 @@ rfct::renderer::~renderer() {
 
 void rfct::renderer::showWindow()
 {
-	(*m_window).show();
+	m_window.show();
 }
 
 void rfct::renderer::render()
@@ -97,12 +96,30 @@ void rfct::renderer::setObjectName(void* objectHandle, const std::string& name, 
 
 rfct::allocator::allocator()
 {
+#ifdef ANDROID_BUILD
     VmaAllocatorCreateInfo allocatorCreateInfo = {};
-    allocatorCreateInfo.physicalDevice = rfct::renderer::ren.getDeviceWrapper().getPhysicalDevice();
-    allocatorCreateInfo.device = rfct::renderer::ren.getDevice();
-    allocatorCreateInfo.instance = rfct::renderer::ren.getInstance();
+    allocatorCreateInfo.physicalDevice = rfct::renderer::getRen().getDeviceWrapper().getPhysicalDevice();
+    allocatorCreateInfo.device = rfct::renderer::getRen().getDevice();
+    allocatorCreateInfo.instance = rfct::renderer::getRen().getInstance();
+    allocatorCreateInfo.vulkanApiVersion = VK_API_VERSION_1_3;
+    VmaVulkanFunctions vulkanFunctions = {};
+
+    vulkanFunctions.vkGetInstanceProcAddr = vkGetInstanceProcAddr;
+    vulkanFunctions.vkGetDeviceProcAddr = vkGetDeviceProcAddr;
+    vulkanFunctions.vkGetPhysicalDeviceProperties = vkGetPhysicalDeviceProperties;
+    vulkanFunctions.vkGetPhysicalDeviceMemoryProperties = vkGetPhysicalDeviceMemoryProperties;
+    vulkanFunctions.vkCreateBuffer = vkCreateBuffer;
+    allocatorCreateInfo.pVulkanFunctions = &vulkanFunctions;
+
+    vmaCreateAllocator(&allocatorCreateInfo, &m_allocator);
+#else
+    VmaAllocatorCreateInfo allocatorCreateInfo = {};
+    allocatorCreateInfo.physicalDevice = rfct::renderer::getRen().getDeviceWrapper().getPhysicalDevice();
+    allocatorCreateInfo.device = rfct::renderer::getRen().getDevice();
+    allocatorCreateInfo.instance = rfct::renderer::getRen().getInstance();
     allocatorCreateInfo.vulkanApiVersion = VK_API_VERSION_1_3;
     vmaCreateAllocator(&allocatorCreateInfo, &m_allocator);
+#endif
 }
 
 rfct::allocator::~allocator()

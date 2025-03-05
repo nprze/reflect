@@ -4,12 +4,12 @@
 #include <set>
 
 namespace rfct {
-	 const std::array<const char*, 5> vulkanDevice::deviceRequiredExtensions = {
-		VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME,
-		VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,
+	 const std::array<const char*, 1> vulkanDevice::deviceRequiredExtensions = {
+		//VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME,
+		//VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,
 		VK_KHR_SWAPCHAIN_EXTENSION_NAME,
-		VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME, 
-		VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME
+		//VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME,
+		//VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME
 	};
 	uint32_t rateDevice(vk::PhysicalDevice device) {
 		std::array<uint32_t, 3> queueFamilies = selectQueueFamilies(device);
@@ -36,7 +36,7 @@ namespace rfct {
 		if (!requiredExtensions.empty()) {
 			return 0;
 		}
-
+/*
 		// ray tracing support
 		vk::PhysicalDeviceRayTracingPipelineFeaturesKHR rtPipelineFeatures{};
 		vk::PhysicalDeviceAccelerationStructureFeaturesKHR accelStructFeatures{};
@@ -49,7 +49,7 @@ namespace rfct {
 
 		if (!rtPipelineFeatures.rayTracingPipeline || !accelStructFeatures.accelerationStructure) {
 			return 0;
-		}
+		}*/
 
 		uint32_t score = 100;
 
@@ -57,21 +57,21 @@ namespace rfct {
 		if (deviceProperties.deviceType == vk::PhysicalDeviceType::eDiscreteGpu) {
 			score += 500;
 		}
-
+/*
 		// Favor higher compute performance
 		score += deviceProperties.limits.maxComputeSharedMemorySize / 1024;
 
 		// Favor GPUs with more ray tracing capabilities
 		score += rtPipelineFeatures.rayTracingPipelineTraceRaysIndirect ? 50 : 0;
 		score += accelStructFeatures.accelerationStructureIndirectBuild ? 50 : 0;
-
+*/
 		return score;
 	}
 
 	vk::PhysicalDevice chooseBestPhysicalDevice()
 	{
 		RFCT_PROFILE_FUNCTION();
-		std::vector<vk::PhysicalDevice> physicalDevices = renderer::ren.getInstance().enumeratePhysicalDevices();
+		std::vector<vk::PhysicalDevice> physicalDevices = renderer::getRen().getInstance().enumeratePhysicalDevices();
 		std::vector<uint32_t> ratings;
 		for (uint32_t i = 0; i < physicalDevices.size(); i++)
 		{
@@ -147,7 +147,7 @@ namespace rfct {
 	}
 
 
-	vulkanDevice::vulkanDevice() :m_physicalDevice(chooseBestPhysicalDevice()), m_device(createDevice(m_physicalDevice)), m_queueManager(m_device.get(), m_physicalDevice), m_swapChain(m_device.get(), renderer::ren.getInstanceWrapper().getSurface(), m_physicalDevice, renderer::ren.getWindow().getExtent())
+	vulkanDevice::vulkanDevice() :m_physicalDevice(chooseBestPhysicalDevice()), m_device(createDevice(m_physicalDevice)), m_queueManager(m_device.get(), m_physicalDevice), m_swapChain(m_device.get(), renderer::getRen().getInstanceWrapper().getSurface(), m_physicalDevice, renderer::getRen().getWindow().getExtent())
 	{
 		std::string deviceNameStr = m_physicalDevice.getProperties().deviceName;
 		RFCT_TRACE("Physical device chosen: {}", deviceNameStr);

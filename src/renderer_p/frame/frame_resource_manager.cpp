@@ -6,7 +6,7 @@ namespace rfct {
 	{
 
 		for (uint32_t i = 0; i < RFCT_FRAMES_IN_FLIGHT; i++) {
-			m_frames.push_back(std::make_unique<frameData>(renderer::ren.getDevice(), renderer::ren.getAllocator()));
+			m_frames.push_back(std::make_unique<frameData>(renderer::getRen().getDevice(), renderer::getRen().getAllocator()));
 			RFCT_TRACE("Frame in flight #{0} created", i);
 		}
 	}

@@ -10,7 +10,7 @@ namespace rfct {
 		~framesInFlight();
 		frameData& getNextFrame();
 	private:
-		uint32_t m_nextFrame;
+		uint32_t m_nextFrame = 0;
 		std::vector<unique<frameData>> m_frames;
 	};
 }

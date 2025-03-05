@@ -1,5 +1,6 @@
-#ifndef SPDLOG_MACROS_H
-#define SPDLOG_MACROS_H
+#pragma once
+#ifdef WINDOWS_BUILD
+
 
 #include <spdlog/spdlog.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
@@ -27,5 +28,19 @@ inline void initialize_logger() {
     spdlog::set_default_logger(logger);
     spdlog::set_level(spdlog::level::trace);
 }
+#else
 
-#endif // SPDLOG_MACROS_H
+#include <android/log.h>
+#include <format>
+
+#define LOG_TAG "reflectEngine"
+
+#define RFCT_TRACE(fmtStr, ...) __android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, "%s", std::format(fmtStr, ##__VA_ARGS__).c_str())
+#define RFCT_INFO(fmtStr, ...)  __android_log_print(ANDROID_LOG_INFO, LOG_TAG, "%s", std::format(fmtStr, ##__VA_ARGS__).c_str())
+#define RFCT_WARN(fmtStr, ...)  __android_log_print(ANDROID_LOG_WARN, LOG_TAG, "%s", std::format(fmtStr, ##__VA_ARGS__).c_str())
+#define RFCT_ERROR(fmtStr, ...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, "%s", std::format(fmtStr, ##__VA_ARGS__).c_str())
+
+#define RFCT_CRITICAL(...) RFCT_ASSERT(false)
+
+
+#endif

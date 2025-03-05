@@ -3,7 +3,7 @@
 
 rfct::VulkanBuffer::VulkanBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, VmaMemoryUsage memoryUsage)
 {
-    VmaAllocator allocator = renderer::ren.getAllocator();
+    VmaAllocator allocator = renderer::getRen().getAllocator();
     VkBufferCreateInfo bufferCreateInfo{};
     bufferCreateInfo.size = size;
     bufferCreateInfo.usage = static_cast<VkBufferUsageFlags>(usage);
@@ -22,16 +22,16 @@ rfct::VulkanBuffer::VulkanBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage
 
 rfct::VulkanBuffer::~VulkanBuffer()
 {
-    VmaAllocator allocator = renderer::ren.getAllocator();
+    VmaAllocator allocator = renderer::getRen().getAllocator();
 
     if (allocation) {
-        vmaDestroyBuffer(allocator, buffer, allocation);
+        vmaDestroyBuffer(allocator, static_cast<VkBuffer>(buffer), allocation);
     }
 }
 
 void* rfct::VulkanBuffer::Map()
 {
-    VmaAllocator allocator = renderer::ren.getAllocator();
+    VmaAllocator allocator = renderer::getRen().getAllocator();
 
     void* mappedData = nullptr;
     VkResult res = vmaMapMemory(allocator, allocation, &mappedData);
@@ -43,7 +43,7 @@ void* rfct::VulkanBuffer::Map()
 
 void rfct::VulkanBuffer::Unmap()
 {
-    VmaAllocator allocator = renderer::ren.getAllocator();
+    VmaAllocator allocator = renderer::getRen().getAllocator();
 
     vmaUnmapMemory(allocator, allocation);
 }
