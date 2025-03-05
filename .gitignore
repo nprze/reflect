@@ -64,3 +64,75 @@ build/
 src/utils/reflect_directories.h
 reflect.dir
 *.exp
+
+# Android Studio and Gradle specific
+.idea/
+*.iml
+.gradle/
+local.properties
+
+# Gradle cache and logs
+.gradle
+!*build.gradle
+/.gradle/
+/build/
+/.gradle/
+/.idea/
+*.log
+
+# Android build
+**/build/
+**/captures/
+**/outputs/
+
+# APKs and Bundles
+*.apk
+*.aab
+
+# Keystore files
+*.jks
+*.keystore
+
+# NDK
+.cxx/
+.externalNativeBuild/
+
+# Misc
+*.class
+*.dex
+*.DS_Store
+
+# Google Services
+/google-services.json
+/firebase/
+
+# MacOS/Linux system files
+*.swp
+*.swo
+*.DS_Store
+
+# JetBrains IDEs
+.idea/
+out/
+
+# Gradle Wrapper
+/gradlew
+/gradlew.bat
+/gradle-wrapper.properties
+/gradle-wrapper.jar
+
+# Node.js (if React Native is used)
+/node_modules/
+/yarn.lock
+/package-lock.json
+
+# Proguard and Dexguard
+proguard/
+dexguard/
+
+# Fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots
+fastlane/test_output
+fastlane/readme.md
