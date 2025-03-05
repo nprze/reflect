@@ -88,14 +88,14 @@ void rfct::vulkanSwapChain::createFrameBuffers()
 			m_swapChainImageViews[i].get()
 		};
 		vk::FramebufferCreateInfo frameBufferCreateInfo = {};
-		frameBufferCreateInfo.renderPass = renderer::ren->getRasterizerPipeline().getRenderPass();
+		frameBufferCreateInfo.renderPass = renderer::getRen().getRasterizerPipeline().getRenderPass();
 		frameBufferCreateInfo.attachmentCount = 1;
 		frameBufferCreateInfo.pAttachments = attachments;
 		frameBufferCreateInfo.width = m_swapChainExtent.width;
 		frameBufferCreateInfo.height = m_swapChainExtent.height;
 		frameBufferCreateInfo.layers = 1;
 		m_frameBuffers[i] = m_device.createFramebufferUnique(frameBufferCreateInfo);
-        renderer::ren->setObjectName(m_frameBuffers[i].get(), "swapchain framebuffer", vk::ObjectType::eFramebuffer);
+        //renderer::getRen().setObjectName(m_frameBuffers[i].get(), "swapchain framebuffer", vk::ObjectType::eFramebuffer);
 	}
 }
 

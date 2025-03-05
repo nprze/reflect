@@ -71,7 +71,7 @@ namespace rfct {
 	vk::PhysicalDevice chooseBestPhysicalDevice()
 	{
 		RFCT_PROFILE_FUNCTION();
-		std::vector<vk::PhysicalDevice> physicalDevices = renderer::ren->getInstance().enumeratePhysicalDevices();
+		std::vector<vk::PhysicalDevice> physicalDevices = renderer::getRen().getInstance().enumeratePhysicalDevices();
 		std::vector<uint32_t> ratings;
 		for (uint32_t i = 0; i < physicalDevices.size(); i++)
 		{
@@ -147,7 +147,7 @@ namespace rfct {
 	}
 
 
-	vulkanDevice::vulkanDevice() :m_physicalDevice(chooseBestPhysicalDevice()), m_device(createDevice(m_physicalDevice)), m_queueManager(m_device.get(), m_physicalDevice), m_swapChain(m_device.get(), renderer::ren->getInstanceWrapper().getSurface(), m_physicalDevice, renderer::ren->getWindow().getExtent())
+	vulkanDevice::vulkanDevice() :m_physicalDevice(chooseBestPhysicalDevice()), m_device(createDevice(m_physicalDevice)), m_queueManager(m_device.get(), m_physicalDevice), m_swapChain(m_device.get(), renderer::getRen().getInstanceWrapper().getSurface(), m_physicalDevice, renderer::getRen().getWindow().getExtent())
 	{
 		std::string deviceNameStr = m_physicalDevice.getProperties().deviceName;
 		RFCT_TRACE("Physical device chosen: {}", deviceNameStr);

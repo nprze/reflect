@@ -66,7 +66,7 @@ std::array<uint32_t, 3> rfct::selectQueueFamilies(vk::PhysicalDevice physicalDev
     for (uint32_t i = 0; i < queueFamilies.size(); ++i) {
         uint32_t queueCount = queueFamilies[i].queueCount;
         vk::QueueFlags flags = queueFamilies[i].queueFlags;
-        bool supportsPresent = physicalDevice.getSurfaceSupportKHR(i, renderer::ren.getInstanceWrapper().getSurface());
+        bool supportsPresent = physicalDevice.getSurfaceSupportKHR(i, renderer::getRen().getInstanceWrapper().getSurface());
 
         if ((flags & vk::QueueFlagBits::eGraphics) && supportsPresent) {
             if (queueCount > std::get<1>(graphicsAndPresentFamily)) {

@@ -32,8 +32,6 @@ Java_reflect_mobile_reflect_MainActivity_createVulkanApp(JNIEnv *env, jobject th
 #include <vector>
 #include <android/log.h>
 
-#define LOG_TAG "NativeRenderer"
-#define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
 
 struct InputEvent {
     int action;
@@ -71,7 +69,7 @@ extern "C"
 JNIEXPORT void JNICALL
 Java_reflect_mobile_reflect_MainActivity_renderNative(JNIEnv*, jobject) {
     for (const auto& event : eventQueue) {
-        LOGI("Event: action=%d, x=%.2f, y=%.2f, timestamp=%ld", event.action, event.x, event.y,
+        RFCT_TRACE("Event: action={}, x={}, y={}, timestamp={}", event.action, event.x, event.y,
              event.timestamp);
     }
     eventQueue.clear();  // Clear after processing

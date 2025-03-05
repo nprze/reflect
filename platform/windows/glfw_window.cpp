@@ -3,7 +3,7 @@
 #include "renderer_p\renderer.h"
 
 void framebufferResizeCallback(GLFWwindow* window, int width, int height) {
-	rfct::renderer::ren.getDeviceWrapper().getSwapChain().framebufferResized = true;
+	rfct::renderer::getRen().getDeviceWrapper().getSwapChain().framebufferResized = true;
 }
 
 rfct::GlfwWindow::GlfwWindow(int width, int height, const char* title) {

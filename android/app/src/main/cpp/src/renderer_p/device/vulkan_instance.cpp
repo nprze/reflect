@@ -94,7 +94,7 @@ rfct::vulkanInstance::vulkanInstance()
 
         m_instance = vk::createInstanceUnique(createInfo);
 #ifndef RFCT_VULKAN_DEBUG_OFF
-        m_dynamicLoader = vk::detail::DispatchLoaderDynamic(*m_instance, vkGetInstanceProcAddr);
+        m_dynamicLoader = RFCT_ANDROI_VULKAN_INSTANCE_NAMESPACE DispatchLoaderDynamic(*m_instance, vkGetInstanceProcAddr);
 
 
         vk::DebugUtilsMessengerCreateInfoEXT debugCreateInfo(
@@ -108,7 +108,7 @@ rfct::vulkanInstance::vulkanInstance()
         m_debugMessenger = m_instance.get().createDebugUtilsMessengerEXTUnique(debugCreateInfo, nullptr, m_dynamicLoader);
 #endif // !RFCT_VULKAN_DEBUG_OFF
 
-        m_surface = vk::UniqueSurfaceKHR(renderer::ren->getWindow().createSurface(m_instance.get()), m_instance.get());
+        m_surface = vk::UniqueSurfaceKHR(renderer::getRen().getWindow().createSurface(m_instance.get()), m_instance.get());
 
 		RFCT_TRACE("Vulkan instance created successfully");
 

@@ -1,6 +1,12 @@
 cmake_minimum_required(VERSION 3.16)
+message("cmake running...")
+include(reflect_settings.cmake)
 
-set(PLATFORM_ANDROID TRUE)
+if(${BUILD_FOR_PLATFORM} STREQUAL "ANDROID")
+    set(PLATFORM_ANDROID TRUE)
+elseif(${BUILD_FOR_PLATFORM} STREQUAL "WINDOWS")
+    set(PLATFORM_WINDOWS TRUE)
+endif()
 # General configuration
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Debug)
@@ -38,10 +44,9 @@ endif()
 
 if(PLATFORM_WINDOWS)
     add_executable(reflect  src/reflect_main.cpp)
-    set_target_properties(reflect PROPERTIES
-            RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/build/windows)
     set_property(DIRECTORY ${CMAKE_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT reflect)
 endif()
+
 
 if(PLATFORM_ANDROID)
     add_library(reflect SHARED ${REFLECT_SOURCE})
@@ -56,8 +61,7 @@ if(PLATFORM_ANDROID)
     find_library(android-lib android)
     find_package(Vulkan REQUIRED)
 
-
-    target_include_directories(reflect PRIVATE ${Vulkan_INCLUDE_DIRS} Vulkan-Headers/include )
+    target_include_directories(reflect PRIVATE ${Vulkan_INCLUDE_DIRS})
 
     target_link_libraries(reflect PRIVATE ${log-lib} ${android-lib} Vulkan::Vulkan)
 
@@ -74,13 +78,10 @@ if(PLATFORM_ANDROID)
             LIBRARY DESTINATION ${CMAKE_BINARY_DIR}/build/android/libs/${ANDROID_ABI}
     )
     set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -u ANativeActivity_onCreate")
-
+else()
+    target_compile_definitions(reflect PUBLIC WINDOWS_BUILD)
 endif()
 
-set_target_properties(reflect PROPERTIES
-        CXX_STANDARD 20
-        CXX_STANDARD_REQUIRED YES
-)
 
 
 target_sources(reflect PRIVATE ${REFLECT_SOURCE})
@@ -105,29 +106,26 @@ if(PLATFORM_WINDOWS)
     if (${VULKAN_DEBUG_UTILS_ENABLE} STREQUAL "n")
         target_compile_definitions(reflect PUBLIC "RFCT_VULKAN_DEBUG_OFF")
     endif()
-endif() # win32
+endif()
 
 
 # Dependencies setup
-# Vulkan
 
 if(PLATFORM_WINDOWS)
+    # Vulkan
     find_package(Vulkan REQUIRED)
     include_directories(${Vulkan_INCLUDE_DIRS})
     link_directories(${Vulkan_LIBRARY_DIRS})
     target_link_libraries(reflect PUBLIC Vulkan::Vulkan)
-endif() # win32
-
-
-
-if(PLATFORM_WINDOWS)
     # glfw
     add_subdirectory(deps/glfw)
     target_include_directories(reflect PUBLIC deps/glfw/include)
     target_link_libraries(reflect PUBLIC glfw)
-endif() # win32
+endif()
 
-
+if(PLATFORM_ANDROID)
+    target_include_directories(reflect PRIVATE deps/Vulkan-Headers/include)
+endif()
 
 if(MSVC)
     target_compile_options(reflect PRIVATE /utf-8)
@@ -139,8 +137,13 @@ elseif(PLATFORM_ANDROID)
     target_compile_definitions(reflect PUBLIC "VK_USE_PLATFORM_ANDROID_KHR")
 endif()
 
+set_target_properties(reflect PROPERTIES
+        CXX_STANDARD 20
+        CXX_STANDARD_REQUIRED YES
+)
+
 # precompiled headers
 target_precompile_headers(reflect PUBLIC src/utils/precompiled.h)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Winvalid-pch")
-
-set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT reflect)
+if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Winvalid-pch")
+endif()

@@ -39,7 +39,7 @@ namespace rfct {
 
     vulkanShader::vulkanShader( const std::vector<uint8_t>& shader_source)
     {
-		m_shaderModule = loadShaderModule(renderer::ren->getDevice(), shader_source);
+		m_shaderModule = loadShaderModule(renderer::getRen().getDevice(), shader_source);
     }
 
 }

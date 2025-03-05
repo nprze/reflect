@@ -4,7 +4,6 @@ namespace rfct {
 	class reflectApplication {
 	public:
 		reflectApplication(ANativeWindow* window);
-		reflectApplication() {};
 		~reflectApplication() {};
 		void render();
     private:

@@ -7,5 +7,5 @@ rfct::reflectApplication::reflectApplication(ANativeWindow* windowArg):
 }
 
 void rfct::reflectApplication::render() {
-    renderer::ren->render();
+    renderer::getRen().render();
 }

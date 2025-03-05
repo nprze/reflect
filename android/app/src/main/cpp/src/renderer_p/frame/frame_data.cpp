@@ -5,7 +5,7 @@ rfct::frameData::frameData(vk::Device device, VmaAllocator& allocator)
 
     vk::CommandPoolCreateInfo poolInfo{
         vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
-        renderer::ren->getDeviceWrapper().getQueueManager().getGraphicQueueFamilyIndex()
+        renderer::getRen().getDeviceWrapper().getQueueManager().getGraphicQueueFamilyIndex()
     };
     m_commandPool = device.createCommandPoolUnique(poolInfo);
 

@@ -50,7 +50,6 @@ constexpr std::array<std::pair<const char*, const char*>, 46> lookup_table{{
 {"C:\\Users\\Natal\\Documents\\games\\reflect\\src\\utils\\pch.h","default"},
 {"C:\\Users\\Natal\\Documents\\games\\reflect\\src\\utils\\profiling_label.h","default"},
 {"C:\\Users\\Natal\\Documents\\games\\reflect\\src\\utils\\ptr.h","default"},
-{"C:\\Users\\Natal\\Documents\\games\\reflect\\src\\utils\\vma.cpp","default"},
 }}; 
 struct editor_p_domain { static constexpr char const* name{ "editor_p" }; };
 struct game_p_domain { static constexpr char const* name{ "game_p" }; };

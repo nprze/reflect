@@ -29,7 +29,7 @@ VKAPI_ATTR vk::Bool32 VKAPI_CALL debugCallback(
 
 rfct::vulkanInstance::vulkanInstance()
 {
-	RFCT_PROFILE_FUNCTION();
+    RFCT_PROFILE_FUNCTION();
     try {
         vk::ApplicationInfo appInfo(
             "game",
@@ -59,7 +59,7 @@ rfct::vulkanInstance::vulkanInstance()
                 RFCT_CRITICAL("VulkanInstanceExtension {} not avaible", ext);
             }
         }
-        
+
         std::vector<const char*> validationLayers = {
 #ifndef RFCT_VULKAN_DEBUG_OFF
             "VK_LAYER_KHRONOS_validation"
@@ -78,14 +78,14 @@ rfct::vulkanInstance::vulkanInstance()
             if (!layerFound) {
                 validationLayers.clear();
 #ifndef RFCT_VULKAN_DEBUG_OFF
-				RFCT_CRITICAL("Validation layer requested, but not avaible");
+                RFCT_CRITICAL("Validation layer requested, but not avaible");
 #endif // !RFCT_VULKAN_DEBUG_OFF
             }
         }
-        
+
         vk::InstanceCreateInfo createInfo(
             {},
-            &appInfo,0,nullptr,
+            &appInfo, 0, nullptr,
             //validationLayers.size(),
             //validationLayers.data(),
             extensionNames.size(),
@@ -94,7 +94,7 @@ rfct::vulkanInstance::vulkanInstance()
 
         m_instance = vk::createInstanceUnique(createInfo);
 #ifndef RFCT_VULKAN_DEBUG_OFF
-        m_dynamicLoader = vk::DispatchLoaderDynamic(*m_instance, vkGetInstanceProcAddr);
+        m_dynamicLoader = RFCT_ANDROI_VULKAN_INSTANCE_NAMESPACE DispatchLoaderDynamic(*m_instance, vkGetInstanceProcAddr);
 
 
         vk::DebugUtilsMessengerCreateInfoEXT debugCreateInfo(
@@ -108,13 +108,13 @@ rfct::vulkanInstance::vulkanInstance()
         m_debugMessenger = m_instance.get().createDebugUtilsMessengerEXTUnique(debugCreateInfo, nullptr, m_dynamicLoader);
 #endif // !RFCT_VULKAN_DEBUG_OFF
 
-        m_surface = vk::UniqueSurfaceKHR(renderer::ren.getWindow().createSurface(m_instance.get()), m_instance.get());
+        m_surface = vk::UniqueSurfaceKHR(renderer::getRen().getWindow().createSurface(m_instance.get()), m_instance.get());
 
-		RFCT_TRACE("Vulkan instance created successfully");
+        RFCT_TRACE("Vulkan instance created successfully");
 
     }
     catch (const vk::SystemError& e) {
-		RFCT_ERROR("vk::SystemError: {}", e.what());
+        RFCT_ERROR("vk::SystemError: {}", e.what());
     }
 }
 

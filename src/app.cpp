@@ -2,10 +2,12 @@
 #include "renderer_p\renderer.h"
 rfct::reflectApplication::reflectApplication()
 {
-	renderer::ren.render();
-	renderer::ren.showWindow();
-	while (renderer::ren.getWindow().pollEvents())
+	renderer* ren = new renderer();
+	renderer::getRen().render();
+	renderer::getRen().showWindow();
+	while (renderer::getRen().getWindow().pollEvents())
 	{
-		renderer::ren.render();
+		renderer::getRen().render();
 	}
+	delete ren;
 }

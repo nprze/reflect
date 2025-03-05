@@ -88,7 +88,7 @@ void rfct::vulkanRasterizerPipeline::createPipeline()
 
     // Pipeline layout
     vk::PipelineLayoutCreateInfo pipelineLayoutInfo = {};
-    m_pipelineLayout = renderer::ren->getDevice().createPipelineLayoutUnique(pipelineLayoutInfo);
+    m_pipelineLayout = renderer::getRen().getDevice().createPipelineLayoutUnique(pipelineLayoutInfo);
 
     vk::PipelineViewportStateCreateInfo viewportState = {};
     viewportState.viewportCount = 1;
@@ -110,7 +110,7 @@ void rfct::vulkanRasterizerPipeline::createPipeline()
     pipelineInfo.renderPass = m_renderPass.get();
     pipelineInfo.subpass = 0;
 
-    m_graphicsPipeline = renderer::ren->getDevice().createGraphicsPipelineUnique({}, pipelineInfo).value;
+    m_graphicsPipeline = renderer::getRen().getDevice().createGraphicsPipelineUnique({}, pipelineInfo).value;
 }
 
 
@@ -160,7 +160,7 @@ void rfct::vulkanRasterizerPipeline::createRenderPass()
     tempRenderPassInfo.dependencyCount = 2;
     tempRenderPassInfo.pDependencies = std::array{ dependency, dependency2 }.data();;
 
-    m_renderPass = renderer::ren->getDevice().createRenderPassUnique(tempRenderPassInfo);
+    m_renderPass = renderer::getRen().getDevice().createRenderPassUnique(tempRenderPassInfo);
 
 }
 
@@ -180,7 +180,7 @@ void rfct::vulkanRasterizerPipeline::recordAndSubmitCommandBuffer(frameData& fra
     renderPassInfo.renderPass = m_renderPass.get();
     renderPassInfo.framebuffer = framebuffer;
     renderPassInfo.renderArea.offset = vk::Offset2D{ 0, 0 };
-    renderPassInfo.renderArea.extent = renderer::ren->getDeviceWrapper().getSwapChain().getExtent();
+    renderPassInfo.renderArea.extent = renderer::getRen().getDeviceWrapper().getSwapChain().getExtent();
     renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
     renderPassInfo.pClearValues = clearValues.data();
 
@@ -188,7 +188,7 @@ void rfct::vulkanRasterizerPipeline::recordAndSubmitCommandBuffer(frameData& fra
 
     commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, m_graphicsPipeline.get());
 
-    vk::Buffer vertexBuffers[] = { renderer::ren->getVertexBuffer().getBuffer() };
+    vk::Buffer vertexBuffers[] = { renderer::getRen().getVertexBuffer().getBuffer() };
     vk::DeviceSize offsets[] = { 0 };
 	commandBuffer.bindVertexBuffers(0, 1, vertexBuffers, offsets);
 
@@ -213,5 +213,5 @@ void rfct::vulkanRasterizerPipeline::recordAndSubmitCommandBuffer(frameData& fra
 
     commandBuffer.end();
 
-    renderer::ren->getDeviceWrapper().getQueueManager().submitGraphics(frameData.submitInfo(), frameData.getFence());
+    renderer::getRen().getDeviceWrapper().getQueueManager().submitGraphics(frameData.submitInfo(), frameData.getFence());
 }
