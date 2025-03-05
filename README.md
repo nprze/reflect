@@ -1,12 +1,21 @@
 # reflect is an open source game engine
 
-## running reflect
+## before building
 
-make sure you have cmake installed ( min. v3.16 ).\
-make sure you have vulkan SDK installed with glm headers.
-
+- make sure you have cmake installed ( min. v3.16 ).
+- make sure you have vulkan SDK installed.
 - modify reflect_settings.cmake to suit your needs!
+
+## building for windows
+- manually modify reflect_settings.cmake and set BUILD_FOR_PLATFORM to "WINDOWS".
 - run 'cmake .' in folder
+
+
+
+## building for android
+- manually modify reflect_settings.cmake and set BUILD_FOR_PLATFORM to "ANDROID".
+- open android/ in android studio and build the project (using gradle).
+
 
 ## reflect usage
 
