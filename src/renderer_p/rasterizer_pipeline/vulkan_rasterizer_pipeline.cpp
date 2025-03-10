@@ -164,14 +164,11 @@ void rfct::vulkanRasterizerPipeline::createRenderPass()
 
 }
 
-void rfct::vulkanRasterizerPipeline::recordAndSubmitCommandBuffer(frameData& frameData, vk::Framebuffer framebuffer, uint32_t imageIndex)
+void rfct::vulkanRasterizerPipeline::recordCommandBuffer(frameData& frameData, vk::Framebuffer framebuffer, uint32_t imageIndex)
 {
-	vk::CommandBuffer commandBuffer = frameData.getCommandBuffer();
-	commandBuffer.reset({});
-    vk::CommandBufferBeginInfo beginInfo = {};
-    commandBuffer.begin(beginInfo);
 
 
+    vk::CommandBuffer commandBuffer = frameData.getCommandBuffer();
 
     std::array<vk::ClearValue, 1> clearValues = {};
     clearValues[0].color = vk::ClearColorValue(std::array<float, 4>{0.0f, 0.0f, 0.0f, 1.0f});
@@ -187,10 +184,11 @@ void rfct::vulkanRasterizerPipeline::recordAndSubmitCommandBuffer(frameData& fra
     commandBuffer.beginRenderPass(renderPassInfo, vk::SubpassContents::eInline);
 
     commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, m_graphicsPipeline.get());
+    
 
     vk::Buffer vertexBuffers[] = { renderer::getRen().getVertexBuffer().getBuffer() };
     vk::DeviceSize offsets[] = { 0 };
-	commandBuffer.bindVertexBuffers(0, 1, vertexBuffers, offsets);
+    commandBuffer.bindVertexBuffers(0, 1, vertexBuffers, offsets);
 
     vk::Viewport viewport = {};
     viewport.x = 0.0f;
@@ -208,10 +206,9 @@ void rfct::vulkanRasterizerPipeline::recordAndSubmitCommandBuffer(frameData& fra
 
     commandBuffer.draw(3, 1, 0, 0);
 
+	debugDraw::flush(frameData);
+
     commandBuffer.endRenderPass();
    
 
-    commandBuffer.end();
-
-    renderer::getRen().getDeviceWrapper().getQueueManager().submitGraphics(frameData.submitInfo(), frameData.getFence());
 }

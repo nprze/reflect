@@ -8,6 +8,7 @@
 #include "renderer_p\buffer\vulkan_vertex_buffer.h"
 #include "window.h"
 #include "platform_window.h"
+#include "renderer_p\debug\debug_draw.h"
 namespace rfct {
     struct uselessClass{
         bool state;
@@ -48,6 +49,7 @@ namespace rfct {
 		framesInFlight m_framesInFlight;
 		rayTracer m_rayTracer;
 		vulkanVertexBuffer m_vertexBuffer;
+		debugDraw m_debugDraw;
     private:
         friend class reflectApplication;
         friend uselessClass createUselessClass(renderer* rendererArg);

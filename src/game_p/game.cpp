@@ -1,12 +1,44 @@
 #include "game.h"
-
+#include "renderer_p\debug\debug_draw.h"
+using namespace rfct;
 game::game::game()
 {
 }
 
 void game::game::onUpdate()
 {
-	static uint32_t frame_count = 0;
-	frame_count++;
-	if (frame_count % 100 == 0) RFCT_TRACE("game update works as intended: update frame {0}", frame_count);
+	debugTriangle* trig = debugDraw::requestTriangles(2);
+	trig[0].vertices[0].pos = { 0.0f, -0.5f, 0.f };
+	trig[0].vertices[1].pos = { 0.5f, 0.5f, 0.f };;
+	trig[0].vertices[2].pos = { -0.5f, 0.5f, 0.f };
+
+	trig[1].vertices[0].pos = { 0.0f, 0.5f, 0.f };
+	trig[1].vertices[1].pos = { 0.5f, -0.5f, 0.f };
+	trig[1].vertices[2].pos = { -0.5f, -0.5f, 0.f };
+
+	trig[0].vertices[0].color = { 1.0f, 0.0f, 0.0f };
+	trig[0].vertices[1].color = { 1.0f, 0.0f, 0.0f };
+	trig[0].vertices[2].color = { 1.0f, 0.0f, 0.0f };
+
+	trig[1].vertices[0].color = { 1.0f, 0.0f, 0.0f };
+	trig[1].vertices[1].color = { 1.0f, 0.0f, 0.0f };
+	trig[1].vertices[2].color = { 1.0f, 0.0f, 0.0f };
+
+	trig = debugDraw::requestTriangles(2);
+	trig[0].vertices[0].pos = { -0.25f, -0.25f, 0.f };
+	trig[0].vertices[1].pos = { 0.25f, 0.25f, 0.f };
+	trig[0].vertices[2].pos = { -0.25f, 0.25f, 0.f };
+
+	trig[1].vertices[0].pos = { -0.25f, -0.25f, 0.f };
+	trig[1].vertices[1].pos = { 0.25f, -0.25f, 0.f };
+	trig[1].vertices[2].pos = { 0.25f, 0.25f, 0.f };
+
+	trig[0].vertices[0].color = { 1.0f, 1.0f, 1.0f };
+	trig[0].vertices[1].color = { 1.0f, 1.0f, 1.0f };
+	trig[0].vertices[2].color = { 1.0f, 1.0f, 1.0f };
+
+	trig[1].vertices[0].color = { 1.0f, 1.0f, 1.0f };
+	trig[1].vertices[1].color = { 1.0f, 1.0f, 1.0f };
+	trig[1].vertices[2].color = { 1.0f, 1.0f, 1.0f };
+	trig = debugDraw::requestTriangles(2);
 }

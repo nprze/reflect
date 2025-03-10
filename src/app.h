@@ -1,5 +1,6 @@
 #pragma once
 #include "renderer_p/renderer.h"
+#include "game_p\game.h"
 namespace rfct {
 	class reflectApplication {
 	public:
@@ -8,5 +9,6 @@ namespace rfct {
 		void render();
     private:
         unique<renderer> m_Renderer;
+		game::game m_Game;
 	};
 }

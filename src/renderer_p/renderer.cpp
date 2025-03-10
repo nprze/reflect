@@ -11,7 +11,7 @@ namespace rfct {
 }
 // LET THIS CODE COOK. IT DOES COOK FRFR
 rfct::renderer::renderer(RFCT_NATIVE_WINDOW_ANDROID RFCT_NATIVE_WINDOW_ANDROID_VAR)
-        : uc(createUselessClass(this)), m_window(RFCT_WINDOWS_WINDOW_ARGUMENTS RFCT_NATIVE_WINDOW_ANDROID_VAR), m_instance(), m_device(), m_rasterizerPipeline(), m_allocator(), m_framesInFlight(), m_rayTracer(), m_vertexBuffer(sizeof(Vertex) * 3)
+	: uc(createUselessClass(this)), m_window(RFCT_WINDOWS_WINDOW_ARGUMENTS RFCT_NATIVE_WINDOW_ANDROID_VAR), m_instance(), m_device(), m_rasterizerPipeline(), m_allocator(), m_framesInFlight(), m_rayTracer(), m_vertexBuffer(sizeof(Vertex) * 3), m_debugDraw()
 {
 
     std::vector<Vertex> vertices = {
@@ -56,8 +56,21 @@ void rfct::renderer::render()
     }
 
     RFCT_VULKAN_CHECK(m_device.getDevice().resetFences(1, &frame.m_inRenderFence.get()));
-	m_rasterizerPipeline.recordAndSubmitCommandBuffer(frame, m_device.getSwapChain().getFrameBuffer(imageIndex), imageIndex);
-
+    //Begin command buffer
+	{
+		RFCT_PROFILE_SCOPE("begin command buffer");
+        vk::CommandBuffer commandBuffer = frame.getCommandBuffer();
+        commandBuffer.reset({});
+        vk::CommandBufferBeginInfo beginInfo = {};
+        commandBuffer.begin(beginInfo);
+	}
+	m_rasterizerPipeline.recordCommandBuffer(frame, m_device.getSwapChain().getFrameBuffer(imageIndex), imageIndex);
+    {
+        RFCT_PROFILE_SCOPE("submit command buffer");
+        vk::CommandBuffer commandBuffer = frame.getCommandBuffer();
+        commandBuffer.end();
+        renderer::getRen().getDeviceWrapper().getQueueManager().submitGraphics(frame.submitInfo(), frame.getFence());
+    }
     RFCT_VULKAN_CHECK(m_device.getDevice().waitForFences(1, &frame.m_inRenderFence.get(), VK_TRUE, UINT64_MAX));
 
 

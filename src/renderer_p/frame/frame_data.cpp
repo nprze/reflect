@@ -12,7 +12,7 @@ rfct::frameData::frameData(vk::Device device, VmaAllocator& allocator)
     vk::CommandBufferAllocateInfo allocInfo{
         *m_commandPool, vk::CommandBufferLevel::ePrimary, 1
     };
-    m_commandBuffer = std::move(device.allocateCommandBuffersUnique(allocInfo)[0]);
+    m_sceneCommandBuffer = std::move(device.allocateCommandBuffersUnique(allocInfo)[0]);
 
     vk::FenceCreateInfo fenceInfo{ vk::FenceCreateFlagBits::eSignaled };
     m_inRenderFence = device.createFenceUnique(fenceInfo);
@@ -29,7 +29,7 @@ vk::SubmitInfo rfct::frameData::submitInfo()
     return vk::SubmitInfo()
         .setWaitSemaphores(m_imageAvailableSemaphore.get())
         .setWaitDstStageMask(waitStages)
-        .setCommandBuffers(m_commandBuffer.get())
+        .setCommandBuffers(m_sceneCommandBuffer.get())
         .setSignalSemaphores(m_renderFinishedSemaphore.get());
 }
 

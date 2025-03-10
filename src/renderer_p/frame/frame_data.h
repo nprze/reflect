@@ -9,7 +9,7 @@ namespace rfct {
         ~frameData() {};
 
 
-        vk::CommandBuffer getCommandBuffer() const { return m_commandBuffer.get(); }
+        vk::CommandBuffer getCommandBuffer() const { return m_sceneCommandBuffer.get(); }
         vk::Fence getFence() const { return m_inRenderFence.get(); }
         const vk::Semaphore& getImageAvailableSemaphore() const { return m_imageAvailableSemaphore.get(); }
         const vk::Semaphore& getRenderFinishedSemaphore() const { return m_renderFinishedSemaphore.get(); }
@@ -21,7 +21,7 @@ namespace rfct {
         VmaAllocator& m_allocator;
 
         vk::UniqueCommandPool m_commandPool;
-        vk::UniqueCommandBuffer m_commandBuffer;
+        vk::UniqueCommandBuffer m_sceneCommandBuffer;
         vk::UniqueFence m_inRenderFence;
         vk::UniqueSemaphore m_imageAvailableSemaphore;
         vk::UniqueSemaphore m_renderFinishedSemaphore;
