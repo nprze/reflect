@@ -9,7 +9,7 @@ void game::game::onUpdate()
 {
 	debugTriangle* trig = debugDraw::requestTriangles(2);
 	trig[0].vertices[0].pos = { 0.0f, -0.5f, 0.f };
-	trig[0].vertices[1].pos = { 0.5f, 0.5f, 0.f };;
+	trig[0].vertices[1].pos = { 0.5f, 0.5f, 0.f };
 	trig[0].vertices[2].pos = { -0.5f, 0.5f, 0.f };
 
 	trig[1].vertices[0].pos = { 0.0f, 0.5f, 0.f };

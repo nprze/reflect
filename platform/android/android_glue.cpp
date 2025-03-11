@@ -6,6 +6,8 @@
 #include "app.h"
 #include <iostream>
 #include "renderer_p/renderer.h"
+#include <vector>
+#include <android/log.h>
 
 static std::unique_ptr<rfct::reflectApplication> app;
 static jclass eventClass;
@@ -29,8 +31,6 @@ Java_reflect_mobile_reflect_MainActivity_createVulkanApp(JNIEnv *env, jobject th
 
 }
 
-#include <vector>
-#include <android/log.h>
 
 
 struct InputEvent {
@@ -41,7 +41,6 @@ struct InputEvent {
 
 std::vector<InputEvent> eventQueue;
 
-// Called from Java to send events
 extern "C"
 JNIEXPORT void JNICALL
 Java_reflect_mobile_reflect_MainActivity_sendEventsToNative(JNIEnv* env, jobject, jobject eventList) {
@@ -72,6 +71,16 @@ Java_reflect_mobile_reflect_MainActivity_renderNative(JNIEnv*, jobject) {
         RFCT_TRACE("Event: action={}, x={}, y={}, timestamp={}", event.action, event.x, event.y,
              event.timestamp);
     }
-    eventQueue.clear();  // Clear after processing
+    eventQueue.clear();
     app->render();
+}
+
+
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_reflect_mobile_reflect_MainActivity_readAndCopyFile(JNIEnv *env, jobject thiz, jstring dirPath) {
+    const char *cDirPath = env->GetStringUTFChars(dirPath, nullptr);
+    rfct::reflectApplication::AssetsDirectory = std::string(cDirPath);
+    env->ReleaseStringUTFChars(dirPath, cDirPath);
 }

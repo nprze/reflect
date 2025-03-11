@@ -2,7 +2,7 @@
 #include "renderer_p\renderer.h"
 #include "vertex.h"
 
-rfct::vulkanRasterizerPipeline::vulkanRasterizerPipeline() :m_vertexShader(vertex_spv), m_fragShader(fragment_spv)
+rfct::vulkanRasterizerPipeline::vulkanRasterizerPipeline() :m_vertexShader("shaders/cube/cube_vert.spv"), m_fragShader("shaders/cube/cube_frag.spv")
 {
     createRenderPass();
 	createPipeline();
@@ -167,8 +167,15 @@ void rfct::vulkanRasterizerPipeline::createRenderPass()
 void rfct::vulkanRasterizerPipeline::recordCommandBuffer(frameData& frameData, vk::Framebuffer framebuffer, uint32_t imageIndex)
 {
 
+    {
+        RFCT_PROFILE_SCOPE("begin command buffer");
+        vk::CommandBuffer commandBuffer = frameData.getSceneCommandBuffer();
+        commandBuffer.reset({});
+        vk::CommandBufferBeginInfo beginInfo = {};
+        commandBuffer.begin(beginInfo);
+    }
 
-    vk::CommandBuffer commandBuffer = frameData.getCommandBuffer();
+    vk::CommandBuffer commandBuffer = frameData.getSceneCommandBuffer();
 
     std::array<vk::ClearValue, 1> clearValues = {};
     clearValues[0].color = vk::ClearColorValue(std::array<float, 4>{0.0f, 0.0f, 0.0f, 1.0f});
@@ -206,9 +213,14 @@ void rfct::vulkanRasterizerPipeline::recordCommandBuffer(frameData& frameData, v
 
     commandBuffer.draw(3, 1, 0, 0);
 
-	debugDraw::flush(frameData);
 
     commandBuffer.endRenderPass();
-   
+    {
+        RFCT_PROFILE_SCOPE("submit command buffer");
+        vk::CommandBuffer commandBuffer = frameData.getSceneCommandBuffer();
+        commandBuffer.end();
+        vk::CommandBuffer cmdbfr = frameData.getSceneCommandBuffer();
+        renderer::getRen().getDeviceWrapper().getQueueManager().submitGraphics(frameData.submitInfo().setCommandBuffers(cmdbfr), frameData.getFence());
+    }
 
 }

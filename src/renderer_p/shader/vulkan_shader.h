@@ -11,5 +11,6 @@ namespace rfct {
         inline vk::ShaderModule getShaderModule() { return m_shaderModule.get(); }
     private:
         vk::UniqueShaderModule m_shaderModule;
+    friend class AssetsManager;
     };
 } // namespace rfct

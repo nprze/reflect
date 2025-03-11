@@ -9,6 +9,7 @@
 #include "window.h"
 #include "platform_window.h"
 #include "renderer_p\debug\debug_draw.h"
+#include "assets\assets_manager.h"
 namespace rfct {
     struct uselessClass{
         bool state;
@@ -33,7 +34,8 @@ namespace rfct {
 		inline vulkanRasterizerPipeline& getRasterizerPipeline() { return m_rasterizerPipeline; }
 		inline VmaAllocator& getAllocator() { return m_allocator.m_allocator; }
 		inline vulkanVertexBuffer& getVertexBuffer() { return m_vertexBuffer; }
-        renderer(RFCT_NATIVE_WINDOW_ANDROID RFCT_NATIVE_WINDOW_ANDROID_VAR);
+        inline AssetsManager* getAssetsManager() { return m_AssetsManager; }
+        renderer(RFCT_RENDERER_ARGUMENTS);
 		~renderer();
 		void showWindow();
 		void render();
@@ -41,6 +43,7 @@ namespace rfct {
 	private:
 	private:
         uselessClass uc;
+		AssetsManager* m_AssetsManager;
         RFCT_PLATFORM_WINDOW m_window;
 		vulkanInstance m_instance;
 		vulkanDevice m_device;

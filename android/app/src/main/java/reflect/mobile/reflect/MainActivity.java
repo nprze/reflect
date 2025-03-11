@@ -13,25 +13,21 @@ public class MainActivity extends Activity {
     public native void createVulkanApp(Surface surface);
     private native void sendEventsToNative(List<InputEvent> events);
     private native void renderNative();
+    public native void readAndCopyFile(String dirPath);
 
-    // Load the native library
     static {
         System.loadLibrary("reflect");
     }
 
     private final List<InputEvent> eventQueue = new ArrayList<>();
 
-    // Declare the native method to create Vulkan surface
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // Find the SurfaceView (which holds a Surface object)
         SurfaceView surfaceView = findViewById(R.id.surface_view);
-
-
         surfaceView.getHolder().addCallback(new SurfaceHolder.Callback() {
             @Override
             public void surfaceCreated(SurfaceHolder holder) {
@@ -46,6 +42,8 @@ public class MainActivity extends Activity {
             @Override
             public void surfaceDestroyed(SurfaceHolder holder) {}
         });
+        FileHelper.copyAssetsToInternalStorage(this);
+        readAndCopyFile(getFilesDir().getAbsolutePath());
     }
 
     @Override
@@ -66,9 +64,9 @@ public class MainActivity extends Activity {
                 }
                 if (!eventsToSend.isEmpty())
                 sendEventsToNative(eventsToSend);
-                renderNative();  // Call C++ to render the frame
+                renderNative();
                 try {
-                    Thread.sleep(16); // Simulate ~60FPS
+                    Thread.sleep(16);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }

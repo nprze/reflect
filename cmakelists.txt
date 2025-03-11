@@ -25,6 +25,7 @@ project(reflect)
 file(GLOB_RECURSE REFLECT_SOURCE
         "src/*.h"
         "src/*.cpp"
+        "src/assets/asset_manager.cpp"
         "platform/input_layer.h"
         "platform/window.h"
 )
@@ -45,11 +46,13 @@ endif()
 if(PLATFORM_WINDOWS)
     add_executable(reflect  src/reflect_main.cpp)
     set_property(DIRECTORY ${CMAKE_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT reflect)
+    target_compile_definitions(reflect PUBLIC RFCT_ASSETS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/assets")
 endif()
 
 
 if(PLATFORM_ANDROID)
     add_library(reflect SHARED ${REFLECT_SOURCE})
+    target_compile_definitions(reflect PRIVATE RFCT_ASSETS_DIR="\"\"")
 
     target_compile_definitions(reflect PUBLIC ANDROID_BUILD)
     target_compile_definitions(reflect PUBLIC __ANDROID__)
