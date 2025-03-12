@@ -7,7 +7,7 @@ rfct::reflectApplication::reflectApplication(RFCT_NATIVE_WINDOW_ANDROID RFCT_NAT
         m_AssetsManager(AssetsDirectory), m_Renderer(std::make_unique<renderer>(RFCT_RENDERER_ARGUMENTS_VAR)), m_Game()
 {
 #ifdef WINDOWS_BUILD
-    renderer::getRen().render();
+    render();
 	renderer::getRen().showWindow();
 	while (renderer::getRen().getWindow().pollEvents())
 	{

@@ -11,13 +11,15 @@ namespace rfct {
 
         vk::CommandBuffer getSceneCommandBuffer() const { return m_sceneCommandBuffer.get(); }
         vk::CommandBuffer getDebugTrianglesCommandBuffer() const { return m_debugDrawTrianglesCommandBuffer.get(); }
-        vk::Fence getFence() const { return m_sceneInRenderFence.get(); }
+        vk::Fence getSceneInRenderFence() const { return m_sceneInRenderFence.get(); }
+        vk::Fence getdebugDrawInRenderFence() const { return m_debugDrawTrianglesInRenderFence.get(); }
         const vk::Semaphore& getImageAvailableSemaphore() const { return m_imageAvailableSemaphore.get(); }
         const vk::Semaphore& getRenderFinishedSemaphore() const { return m_renderFinishedSemaphore.get(); }
         void waitForAllFences();
         void resetAllFences();
 
-        vk::SubmitInfo submitInfo();
+        vk::SubmitInfo sceneSubmitInfo();
+        vk::SubmitInfo debugDrawSubmitInfo();
     private:
         vk::Device m_device;
         VmaAllocator& m_allocator;

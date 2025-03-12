@@ -220,7 +220,7 @@ void rfct::vulkanRasterizerPipeline::recordCommandBuffer(frameData& frameData, v
         vk::CommandBuffer commandBuffer = frameData.getSceneCommandBuffer();
         commandBuffer.end();
         vk::CommandBuffer cmdbfr = frameData.getSceneCommandBuffer();
-        renderer::getRen().getDeviceWrapper().getQueueManager().submitGraphics(frameData.submitInfo().setCommandBuffers(cmdbfr), frameData.getFence());
+        renderer::getRen().getDeviceWrapper().getQueueManager().submitGraphics(frameData.sceneSubmitInfo(), frameData.getSceneInRenderFence());
     }
 
 }

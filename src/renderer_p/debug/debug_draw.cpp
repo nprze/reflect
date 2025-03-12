@@ -119,7 +119,7 @@ void rfct::debugDraw::createTriangleRenderPass()
     vk::AttachmentDescription colorAttachment = {};
     colorAttachment.format = vk::Format::eB8G8R8A8Unorm;
     colorAttachment.samples = vk::SampleCountFlagBits::e1;
-    colorAttachment.loadOp = vk::AttachmentLoadOp::eClear;
+    colorAttachment.loadOp = vk::AttachmentLoadOp::eLoad;
     colorAttachment.storeOp = vk::AttachmentStoreOp::eStore;
     colorAttachment.stencilLoadOp = vk::AttachmentLoadOp::eDontCare;
     colorAttachment.stencilStoreOp = vk::AttachmentStoreOp::eDontCare;
@@ -177,8 +177,7 @@ void rfct::debugDraw::draw(frameData& fd, vk::Framebuffer framebuffer, uint32_t 
 	{
 		return;
 	}
-
-    /*
+    
     {
         RFCT_PROFILE_SCOPE("begin command buffer");
         vk::CommandBuffer commandBuffer = fd.getDebugTrianglesCommandBuffer();
@@ -189,16 +188,14 @@ void rfct::debugDraw::draw(frameData& fd, vk::Framebuffer framebuffer, uint32_t 
 
     vk::CommandBuffer commandBuffer = fd.getDebugTrianglesCommandBuffer();
 
-    std::array<vk::ClearValue, 1> clearValues = {};
-    clearValues[0].color = vk::ClearColorValue(std::array<float, 4>{0.0f, 0.0f, 0.0f, 1.0f});
 
     vk::RenderPassBeginInfo renderPassInfo = {};
     renderPassInfo.renderPass = m_triangleRenderPass.get();
     renderPassInfo.framebuffer = framebuffer;
     renderPassInfo.renderArea.offset = vk::Offset2D{ 0, 0 };
     renderPassInfo.renderArea.extent = renderer::getRen().getDeviceWrapper().getSwapChain().getExtent();
-    renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
-    renderPassInfo.pClearValues = clearValues.data();
+    renderPassInfo.clearValueCount = 0;
+    renderPassInfo.pClearValues = VK_NULL_HANDLE;
 
     commandBuffer.beginRenderPass(renderPassInfo, vk::SubpassContents::eInline);
 
@@ -223,15 +220,16 @@ void rfct::debugDraw::draw(frameData& fd, vk::Framebuffer framebuffer, uint32_t 
     scissor.extent = renderer::getRen().getDeviceWrapper().getSwapChain().getExtent();
     commandBuffer.setScissor(0, scissor);
 
-    commandBuffer.draw(0, 1, 0, 0);
+    commandBuffer.draw(m_TriangleCount*3, 1, 0, 0);
     commandBuffer.endRenderPass();
 
     {
         RFCT_PROFILE_SCOPE("submit command buffer");
         vk::CommandBuffer commandBuffer = fd.getDebugTrianglesCommandBuffer();
         commandBuffer.end();
-        renderer::getRen().getDeviceWrapper().getQueueManager().submitGraphics(fd.submitInfo().set, fd.getFence());
-    }*/
+        vk::CommandBuffer cmdbfr = fd.getDebugTrianglesCommandBuffer();
+        renderer::getRen().getDeviceWrapper().getQueueManager().submitGraphics(fd.debugDrawSubmitInfo(), fd.getdebugDrawInRenderFence());
+    }
 	m_TriangleCount = 0;
 	m_Offset = 0;
 
