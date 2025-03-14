@@ -36,5 +36,6 @@ namespace rfct {
         vk::UniqueFence m_debugDrawTrianglesInRenderFence;
 
         friend class renderer;
+        friend class debugDraw;
     };
 } // namespace rfct

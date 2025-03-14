@@ -9,11 +9,28 @@ namespace rfct {
 	struct debugTriangle {
 		Vertex vertices[3];
 	};
+	struct debugLine {
+		Vertex vertices[2];
+	};
+	struct debugDrawVertexBuffer{
+		inline debugDrawVertexBuffer(uint32_t size, vk::BufferUsageFlags usage, VmaMemoryUsage memoryUsage) :buffer(size, usage, memoryUsage), bufferOffset(0), vertexCount(0) {
+			bufferMappedMemory = buffer.Map();
+		};
+		inline ~debugDrawVertexBuffer() { buffer.Unmap(); };
+		inline void postFrame() { bufferOffset = 0; vertexCount = 0; };
+		VulkanBuffer buffer;
+		uint32_t bufferOffset;
+		uint32_t vertexCount;
+		void* bufferMappedMemory;
+
+		
+	};
 	class debugDraw {
 	private:
 
 	public:
 		inline static debugTriangle* requestTriangles(uint32_t count) { return instance->requestNTriangles(count); };
+		inline static debugLine* requestLines(uint32_t count) { return instance->requestNLines(count); };
 		inline static void flush(frameData& fd, vk::Framebuffer framebuffer, uint32_t imageIndex) { instance->draw(fd, framebuffer, imageIndex); };
 	private:
 		static debugDraw* instance;
@@ -22,25 +39,31 @@ namespace rfct {
 		~debugDraw();
 		void draw(frameData& fd, vk::Framebuffer framebuffer, uint32_t imageIndex);// valid usage: command buffer has been begun, not ended.
 		debugTriangle* requestNTriangles(uint32_t count);
+		debugLine* requestNLines(uint32_t count);
 
 		
 	private:
-		VulkanBuffer m_Buffer;
-		uint32_t m_Offset;
-		uint32_t m_TriangleCount;
-		void* m_MappedMemory;
+		debugDrawVertexBuffer m_triangleBuffer;
+		debugDrawVertexBuffer m_lineBuffer;
 
 
+		vulkanShader m_vertexShader;
+		vulkanShader m_fragShader;
+
+
+
+		// Pipelines
+		void createPipelines();
+		void createRenderPass();
+
+		vk::UniquePipelineLayout m_PipelineLayout;
+		vk::UniqueRenderPass m_debugDrawRenderPass;
 
 		// Triangle pipeline
-		void createTrianglePipeline();
-		void createTriangleRenderPass();
-
-		vk::UniquePipelineLayout m_trianglePipelineLayout;
 		vk::UniquePipeline m_trianglePipeline;
-		vk::UniqueRenderPass m_triangleRenderPass;
-		vulkanShader m_triangleVertexShader;
-		vulkanShader m_triangleFragShader;
+
+		// Lines pipeline
+		vk::UniquePipeline m_linePipeline;
 
 
 

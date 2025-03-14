@@ -30,15 +30,13 @@ rfct::frameData::frameData(vk::Device device, VmaAllocator& allocator)
 void rfct::frameData::waitForAllFences()
 {
     RFCT_PROFILE_SCOPE("fences wait");
-	vk::Fence fences[] = { m_sceneInRenderFence.get(), m_debugDrawTrianglesInRenderFence.get() };
-    RFCT_VULKAN_CHECK(m_device.waitForFences(2, fences, VK_TRUE, UINT64_MAX));
+    RFCT_VULKAN_CHECK(m_device.waitForFences(1, &m_sceneInRenderFence.get(), VK_TRUE, UINT64_MAX));
 }
 
 void rfct::frameData::resetAllFences()
 {
     RFCT_PROFILE_SCOPE("fences reset");
-    vk::Fence fences[] = { m_sceneInRenderFence.get(), m_debugDrawTrianglesInRenderFence.get() };
-    RFCT_VULKAN_CHECK(m_device.resetFences(2, fences));
+    RFCT_VULKAN_CHECK(m_device.resetFences(1, &m_sceneInRenderFence.get()));
 }
 
 vk::SubmitInfo rfct::frameData::sceneSubmitInfo()

@@ -23,4 +23,13 @@ void game::game::onUpdate()
 	trig[1].vertices[0].color = { 1.0f, 1.0f, 1.0f };
 	trig[1].vertices[1].color = { 1.0f, 1.0f, 1.0f };
 	trig[1].vertices[2].color = { 1.0f, 1.0f, 1.0f };
+
+
+	debugLine* line = debugDraw::requestLines(1);
+	line[0].vertices[0].pos = { -0.25f, -0.25f, 0.f };
+	line[0].vertices[1].pos = { 0.25f, -0.25f, 0.f };
+
+	line[0].vertices[0].color = { 1.0f, 1.0f, 0.0f };
+	line[0].vertices[1].color = { 1.0f, 1.0f, 0.0f };
+	
 }

@@ -3,27 +3,25 @@
 #include "renderer_p\renderer.h"
 rfct::debugDraw* rfct::debugDraw::instance;
 
-rfct::debugDraw::debugDraw() :m_Buffer(RFCT_DEBUG_DRAW_VERTEX_BUFFER_MAX_TRIANGLE_COUNT * sizeof(debugTriangle), vk::BufferUsageFlagBits::eVertexBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU), m_triangleVertexShader("shaders/debug_draw/tri_vert.spv"), m_triangleFragShader("shaders/debug_draw/tri_frag.spv"),
-m_Offset(0), m_TriangleCount(0)
+rfct::debugDraw::debugDraw() :m_triangleBuffer(RFCT_DEBUG_DRAW_VERTEX_BUFFER_MAX_SIZE, vk::BufferUsageFlagBits::eVertexBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU), m_lineBuffer(RFCT_DEBUG_DRAW_VERTEX_BUFFER_MAX_SIZE, vk::BufferUsageFlagBits::eVertexBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU), m_vertexShader("shaders/debug_draw/tri_vert.spv"), m_fragShader("shaders/debug_draw/tri_frag.spv")
 {
-    createTrianglePipeline();
-	m_MappedMemory = m_Buffer.Map();
+    createPipelines();
 	instance = this;
 }
 
 
-void rfct::debugDraw::createTrianglePipeline()
+void rfct::debugDraw::createPipelines()
 {
-    createTriangleRenderPass();
+    createRenderPass();
     // Shaders
     vk::PipelineShaderStageCreateInfo vertShaderStageInfo = {};
     vertShaderStageInfo.stage = vk::ShaderStageFlagBits::eVertex;
-    vertShaderStageInfo.module = m_triangleVertexShader.getShaderModule();
+    vertShaderStageInfo.module = m_vertexShader.getShaderModule();
     vertShaderStageInfo.pName = "main";
 
     vk::PipelineShaderStageCreateInfo fragShaderStageInfo = {};
     fragShaderStageInfo.stage = vk::ShaderStageFlagBits::eFragment;
-    fragShaderStageInfo.module = m_triangleFragShader.getShaderModule();
+    fragShaderStageInfo.module = m_fragShader.getShaderModule();
     fragShaderStageInfo.pName = "main";
 
     std::vector<vk::PipelineShaderStageCreateInfo> shaderStages = { vertShaderStageInfo, fragShaderStageInfo };
@@ -47,7 +45,7 @@ void rfct::debugDraw::createTrianglePipeline()
     rasterizer.depthClampEnable = VK_FALSE;
     rasterizer.rasterizerDiscardEnable = VK_FALSE;
     rasterizer.polygonMode = vk::PolygonMode::eFill;
-    rasterizer.lineWidth = 1.0f;
+    rasterizer.lineWidth = 5.0f;
     rasterizer.cullMode = vk::CullModeFlagBits::eNone;
     rasterizer.frontFace = vk::FrontFace::eClockwise;
     rasterizer.depthBiasEnable = VK_FALSE;
@@ -89,7 +87,7 @@ void rfct::debugDraw::createTrianglePipeline()
 
     // Pipeline layout
     vk::PipelineLayoutCreateInfo pipelineLayoutInfo = {};
-    m_trianglePipelineLayout = renderer::getRen().getDevice().createPipelineLayoutUnique(pipelineLayoutInfo);
+    m_PipelineLayout = renderer::getRen().getDevice().createPipelineLayoutUnique(pipelineLayoutInfo);
 
     vk::PipelineViewportStateCreateInfo viewportState = {};
     viewportState.viewportCount = 1;
@@ -107,14 +105,36 @@ void rfct::debugDraw::createTrianglePipeline()
     pipelineInfo.pDepthStencilState = &depthStencil;
     pipelineInfo.pDynamicState = &dynamicState;
     pipelineInfo.pViewportState = &viewportState;
-    pipelineInfo.layout = m_trianglePipelineLayout.get();
-    pipelineInfo.renderPass = m_triangleRenderPass.get();
+    pipelineInfo.layout = m_PipelineLayout.get();
+    pipelineInfo.renderPass = m_debugDrawRenderPass.get();
     pipelineInfo.subpass = 0;
 
     m_trianglePipeline = renderer::getRen().getDevice().createGraphicsPipelineUnique({}, pipelineInfo).value;
+
+    // Line 
+    vk::PipelineInputAssemblyStateCreateInfo lineinputAssembly = {};
+    lineinputAssembly.topology = vk::PrimitiveTopology::eLineList;
+    lineinputAssembly.primitiveRestartEnable = VK_FALSE;
+
+    vk::GraphicsPipelineCreateInfo linePipelineInfo = {};
+    linePipelineInfo.stageCount = 2;
+    linePipelineInfo.pStages = shaderStages.data();
+    linePipelineInfo.pVertexInputState = &vertexInputInfo;
+    linePipelineInfo.pInputAssemblyState = &lineinputAssembly;
+    linePipelineInfo.pRasterizationState = &rasterizer;
+    linePipelineInfo.pMultisampleState = &multisampling;
+    linePipelineInfo.pColorBlendState = &colorBlending;
+    linePipelineInfo.pDepthStencilState = &depthStencil;
+    linePipelineInfo.pDynamicState = &dynamicState;
+    linePipelineInfo.pViewportState = &viewportState;
+    linePipelineInfo.layout = m_PipelineLayout.get();
+    linePipelineInfo.renderPass = m_debugDrawRenderPass.get();
+    linePipelineInfo.subpass = 0;
+
+    m_linePipeline = renderer::getRen().getDevice().createGraphicsPipelineUnique({}, linePipelineInfo).value;
 }
 
-void rfct::debugDraw::createTriangleRenderPass()
+void rfct::debugDraw::createRenderPass()
 {
     vk::AttachmentDescription colorAttachment = {};
     colorAttachment.format = vk::Format::eB8G8R8A8Unorm;
@@ -160,24 +180,26 @@ void rfct::debugDraw::createTriangleRenderPass()
     tempRenderPassInfo.dependencyCount = 2;
     tempRenderPassInfo.pDependencies = std::array{ dependency, dependency2 }.data();;
 
-    m_triangleRenderPass = renderer::getRen().getDevice().createRenderPassUnique(tempRenderPassInfo);
+    m_debugDrawRenderPass = renderer::getRen().getDevice().createRenderPassUnique(tempRenderPassInfo);
 }
 
 
 
 rfct::debugDraw::~debugDraw()
 {
-	m_Buffer.Unmap();
 }
 
 void rfct::debugDraw::draw(frameData& fd, vk::Framebuffer framebuffer, uint32_t imageIndex)
 {
     
-	if (m_TriangleCount == 0)
+	if (m_triangleBuffer.vertexCount == 0 && m_lineBuffer.vertexCount == 0)
 	{
 		return;
 	}
-    
+    {
+        RFCT_PROFILE_SCOPE("fences reset");
+        RFCT_VULKAN_CHECK(renderer::getRen().getDevice().resetFences(1, &fd.m_debugDrawTrianglesInRenderFence.get()));
+    }
     {
         RFCT_PROFILE_SCOPE("begin command buffer");
         vk::CommandBuffer commandBuffer = fd.getDebugTrianglesCommandBuffer();
@@ -190,7 +212,7 @@ void rfct::debugDraw::draw(frameData& fd, vk::Framebuffer framebuffer, uint32_t 
 
 
     vk::RenderPassBeginInfo renderPassInfo = {};
-    renderPassInfo.renderPass = m_triangleRenderPass.get();
+    renderPassInfo.renderPass = m_debugDrawRenderPass.get();
     renderPassInfo.framebuffer = framebuffer;
     renderPassInfo.renderArea.offset = vk::Offset2D{ 0, 0 };
     renderPassInfo.renderArea.extent = renderer::getRen().getDeviceWrapper().getSwapChain().getExtent();
@@ -198,13 +220,6 @@ void rfct::debugDraw::draw(frameData& fd, vk::Framebuffer framebuffer, uint32_t 
     renderPassInfo.pClearValues = VK_NULL_HANDLE;
 
     commandBuffer.beginRenderPass(renderPassInfo, vk::SubpassContents::eInline);
-
-    commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, m_trianglePipeline.get());
-
-
-    vk::Buffer vertexBuffers[] = { m_Buffer.buffer };
-    vk::DeviceSize offsets[] = { 0 };
-    commandBuffer.bindVertexBuffers(0, 1, vertexBuffers, offsets);
 
     vk::Viewport viewport = {};
     viewport.x = 0.0f;
@@ -220,7 +235,31 @@ void rfct::debugDraw::draw(frameData& fd, vk::Framebuffer framebuffer, uint32_t 
     scissor.extent = renderer::getRen().getDeviceWrapper().getSwapChain().getExtent();
     commandBuffer.setScissor(0, scissor);
 
-    commandBuffer.draw(m_TriangleCount*3, 1, 0, 0);
+
+    if(m_triangleBuffer.vertexCount!=0){
+        commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, m_trianglePipeline.get());
+
+
+        vk::Buffer vertexBuffers[] = { m_triangleBuffer.buffer.buffer };
+        vk::DeviceSize offsets[] = { 0 };
+        commandBuffer.bindVertexBuffers(0, 1, vertexBuffers, offsets);
+
+        commandBuffer.draw(m_triangleBuffer.vertexCount, 1, 0, 0);
+    }
+
+
+    if (m_lineBuffer.vertexCount != 0) {
+
+        commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, m_linePipeline.get());
+
+
+        vk::Buffer vertexBuffersLine[] = { m_lineBuffer.buffer.buffer };
+        vk::DeviceSize offsetsLine[] = { 0 };
+        commandBuffer.bindVertexBuffers(0, 1, vertexBuffersLine, offsetsLine);
+
+
+        commandBuffer.draw(m_lineBuffer.vertexCount, 1, 0, 0);
+    }
     commandBuffer.endRenderPass();
 
     {
@@ -230,17 +269,31 @@ void rfct::debugDraw::draw(frameData& fd, vk::Framebuffer framebuffer, uint32_t 
         vk::CommandBuffer cmdbfr = fd.getDebugTrianglesCommandBuffer();
         renderer::getRen().getDeviceWrapper().getQueueManager().submitGraphics(fd.debugDrawSubmitInfo(), fd.getdebugDrawInRenderFence());
     }
-	m_TriangleCount = 0;
-	m_Offset = 0;
+	m_triangleBuffer.postFrame();
+	m_lineBuffer.postFrame();
+    {
+        RFCT_PROFILE_SCOPE("fences wait");
+        RFCT_VULKAN_CHECK(renderer::getRen().getDevice().waitForFences(1, &fd.m_debugDrawTrianglesInRenderFence.get(), VK_TRUE, UINT64_MAX));
+    }
 
 }
 
 rfct::debugTriangle* rfct::debugDraw::requestNTriangles(uint32_t count)
 {
-    bool check = (m_TriangleCount + count) < RFCT_DEBUG_DRAW_VERTEX_BUFFER_MAX_TRIANGLE_COUNT;
+    bool check = (m_triangleBuffer.vertexCount + 3*count) < RFCT_DEBUG_DRAW_VERTEX_BUFFER_MAX_SIZE;
 	RFCT_ASSERT(check);
-	void* ret = (char*)m_MappedMemory + m_Offset;
-	m_TriangleCount += count;
-	m_Offset += count * sizeof(debugTriangle);
+	void* ret = (char*)m_triangleBuffer.bufferMappedMemory + m_triangleBuffer.bufferOffset;
+	m_triangleBuffer.vertexCount += count*3;
+	m_triangleBuffer.bufferOffset += count * sizeof(debugTriangle);
 	return (debugTriangle*)ret;
+}
+
+rfct::debugLine* rfct::debugDraw::requestNLines(uint32_t count)
+{
+    bool check = (m_lineBuffer.vertexCount + 2 * count) < RFCT_DEBUG_DRAW_VERTEX_BUFFER_MAX_SIZE;
+    RFCT_ASSERT(check);
+    void* ret = (char*)m_lineBuffer.bufferMappedMemory + m_lineBuffer.bufferOffset;
+    m_lineBuffer.vertexCount += count * 3;
+    m_lineBuffer.bufferOffset += count * sizeof(debugLine);
+    return (debugLine*)ret;
 }
