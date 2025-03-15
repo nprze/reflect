@@ -41,7 +41,6 @@ void rfct::GlfwWindow::hide() {
 }
 
 bool rfct::GlfwWindow::pollEvents() {
-    glfwPollEvents();
     return !glfwWindowShouldClose(window);
 }
 

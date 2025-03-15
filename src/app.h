@@ -4,6 +4,7 @@
 #include <string>
 #include "assets\assets_manager.h"
 #include "scene_p\scene_data.h"
+#include "input.h"
 namespace rfct {
 	class reflectApplication {
 	public:
@@ -16,6 +17,7 @@ namespace rfct {
         unique<renderer> m_Renderer;
 		camera m_camera;
 		scene m_Scene;
+		input m_Input;
 		game::game m_Game;
 	};
 }

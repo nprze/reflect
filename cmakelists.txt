@@ -26,7 +26,7 @@ file(GLOB_RECURSE REFLECT_SOURCE
         "src/*.h"
         "src/*.cpp"
         "src/assets/asset_manager.cpp"
-        "platform/input_layer.h"
+        "platform/input.h"
         "platform/window.h"
 )
 if(PLATFORM_WINDOWS)

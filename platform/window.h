@@ -1,6 +1,5 @@
 #pragma once
 #include <vector>
-#include "input_layer.h"
 namespace rfct {
     class windowAbstact {
     public:
