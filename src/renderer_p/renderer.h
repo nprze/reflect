@@ -35,6 +35,7 @@ namespace rfct {
 		inline VmaAllocator& getAllocator() { return m_allocator.m_allocator; }
 		inline vulkanVertexBuffer& getVertexBuffer() { return m_vertexBuffer; }
         inline AssetsManager* getAssetsManager() { return m_AssetsManager; }
+		inline float getAspectRatio() { return m_window.getAspectRatio(); }
         renderer(RFCT_RENDERER_ARGUMENTS);
 		~renderer();
 		void showWindow();

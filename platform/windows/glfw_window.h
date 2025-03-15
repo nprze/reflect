@@ -13,7 +13,7 @@ namespace rfct {
         GlfwWindow() = delete;
         GlfwWindow(int width, int height, const char* title);
         ~GlfwWindow() { destroy(); }
-
+		inline float getAspectRatio() { return (extent.width) / (extent.height); }
         void create(int width, int height, const char* title) override;
         void destroy() override;
         void show() override;

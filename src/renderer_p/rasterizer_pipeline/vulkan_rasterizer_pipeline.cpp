@@ -1,6 +1,8 @@
 #include "vulkan_rasterizer_pipeline.h"
 #include "renderer_p\renderer.h"
 #include "vertex.h"
+#include "renderer_p\descriptors\camera_ubo.h"
+#include "scene_p\scene_data.h"
 
 rfct::vulkanRasterizerPipeline::vulkanRasterizerPipeline() :m_vertexShader("shaders/cube/cube_vert.spv"), m_fragShader("shaders/cube/cube_frag.spv")
 {
@@ -86,8 +88,12 @@ void rfct::vulkanRasterizerPipeline::createPipeline()
     dynamicState.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
     dynamicState.pDynamicStates = dynamicStates.data();
 
+
     // Pipeline layout
     vk::PipelineLayoutCreateInfo pipelineLayoutInfo = {};
+    pipelineLayoutInfo.setLayoutCount = 1;
+	vk::DescriptorSetLayout dscSetLayout = cameraUbo::getDescriptorSetLayout();
+    pipelineLayoutInfo.pSetLayouts = &dscSetLayout;
     m_pipelineLayout = renderer::getRen().getDevice().createPipelineLayoutUnique(pipelineLayoutInfo);
 
     vk::PipelineViewportStateCreateInfo viewportState = {};
@@ -175,6 +181,8 @@ void rfct::vulkanRasterizerPipeline::recordCommandBuffer(frameData& frameData, v
         commandBuffer.begin(beginInfo);
     }
 
+	frameData.prepareFrame(scene::getCurrentScene()->m_camera);
+
     vk::CommandBuffer commandBuffer = frameData.getSceneCommandBuffer();
 
     std::array<vk::ClearValue, 1> clearValues = {};
@@ -210,6 +218,10 @@ void rfct::vulkanRasterizerPipeline::recordCommandBuffer(frameData& frameData, v
     scissor.offset = vk::Offset2D{ 0, 0 };
     scissor.extent = renderPassInfo.renderArea.extent;
     commandBuffer.setScissor(0, scissor);
+
+    // Camera Descriptor
+    commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_pipelineLayout.get(),0,frameData.getCameraUboDescSet(),{});
+
 
     commandBuffer.draw(3, 1, 0, 0);
 

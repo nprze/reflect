@@ -27,6 +27,7 @@ rfct::renderer::renderer(RFCT_RENDERER_ARGUMENTS)
 
 rfct::renderer::~renderer() {
     m_device.getDevice().waitIdle(); 
+    m_device.getDevice().destroyDescriptorSetLayout(cameraUbo::getDescriptorSetLayout());
 };
 
 void rfct::renderer::showWindow()

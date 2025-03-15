@@ -16,7 +16,7 @@ rfct::frameData::frameData(vk::Device device, VmaAllocator& allocator)
     auto commandBuffers = device.allocateCommandBuffersUnique(allocInfo);
 
     m_sceneCommandBuffer = std::move(commandBuffers[0]);
-    m_debugDrawTrianglesCommandBuffer = std::move(commandBuffers[1]);
+    m_debugDrawCommandBuffer = std::move(commandBuffers[1]);
 
     vk::FenceCreateInfo fenceInfo{ vk::FenceCreateFlagBits::eSignaled };
     m_sceneInRenderFence = device.createFenceUnique(fenceInfo);
@@ -25,6 +25,14 @@ rfct::frameData::frameData(vk::Device device, VmaAllocator& allocator)
     vk::SemaphoreCreateInfo semaphoreInfo{};
     m_imageAvailableSemaphore = device.createSemaphoreUnique(semaphoreInfo);
     m_renderFinishedSemaphore = device.createSemaphoreUnique(semaphoreInfo);
+
+	m_descriptors.bindCameraUbo(m_cameraUbo.getBuffer());
+
+}
+
+void rfct::frameData::prepareFrame(const camera& cam)
+{
+    m_cameraUbo.updateViewProj(cam.getVPMatrix());
 }
 
 void rfct::frameData::waitForAllFences()
@@ -56,7 +64,7 @@ vk::SubmitInfo rfct::frameData::debugDrawSubmitInfo()
     return vk::SubmitInfo()
         .setWaitSemaphores(m_renderFinishedSemaphore.get())
         .setWaitDstStageMask(waitStages)
-        .setCommandBuffers(m_debugDrawTrianglesCommandBuffer.get())
+        .setCommandBuffers(m_debugDrawCommandBuffer.get())
         .setSignalSemaphores(m_renderFinishedSemaphore.get());
 }
 

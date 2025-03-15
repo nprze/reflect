@@ -202,13 +202,13 @@ void rfct::debugDraw::draw(frameData& fd, vk::Framebuffer framebuffer, uint32_t 
     }
     {
         RFCT_PROFILE_SCOPE("begin command buffer");
-        vk::CommandBuffer commandBuffer = fd.getDebugTrianglesCommandBuffer();
+        vk::CommandBuffer commandBuffer = fd.getDebugDrawCommandBuffer();
         commandBuffer.reset({});
         vk::CommandBufferBeginInfo beginInfo = {};
         commandBuffer.begin(beginInfo);
     }
 
-    vk::CommandBuffer commandBuffer = fd.getDebugTrianglesCommandBuffer();
+    vk::CommandBuffer commandBuffer = fd.getDebugDrawCommandBuffer();
 
 
     vk::RenderPassBeginInfo renderPassInfo = {};
@@ -264,9 +264,9 @@ void rfct::debugDraw::draw(frameData& fd, vk::Framebuffer framebuffer, uint32_t 
 
     {
         RFCT_PROFILE_SCOPE("submit command buffer");
-        vk::CommandBuffer commandBuffer = fd.getDebugTrianglesCommandBuffer();
+        vk::CommandBuffer commandBuffer = fd.getDebugDrawCommandBuffer();
         commandBuffer.end();
-        vk::CommandBuffer cmdbfr = fd.getDebugTrianglesCommandBuffer();
+        vk::CommandBuffer cmdbfr = fd.getDebugDrawCommandBuffer();
         renderer::getRen().getDeviceWrapper().getQueueManager().submitGraphics(fd.debugDrawSubmitInfo(), fd.getdebugDrawInRenderFence());
     }
 	m_triangleBuffer.postFrame();
