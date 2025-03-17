@@ -5,6 +5,7 @@ rfct::VulkanBuffer::VulkanBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage
 {
     VmaAllocator allocator = renderer::getRen().getAllocator();
     VkBufferCreateInfo bufferCreateInfo{};
+    bufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
     bufferCreateInfo.size = size;
     bufferCreateInfo.usage = static_cast<VkBufferUsageFlags>(usage);
     VmaAllocationCreateInfo allocCreateInfo{};

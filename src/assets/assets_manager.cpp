@@ -9,6 +9,9 @@ namespace rfct {
             m_Path = std::string(RFCT_ASSETS_DIR);
         }
     }
+    AssetsManager::~AssetsManager()
+    {
+    }
     void AssetsManager::loadVulkanShader(std::string path, vulkanShader* shaderOut){
         std::string finalPath = m_Path+"/"+path;
         std::ifstream file(finalPath,std::ios::binary | std::ios::ate);

@@ -30,6 +30,6 @@ void game::game::onUpdate()
 	line[0].vertices[1].pos = { 0.25f, -0.25f, 0.f };
 
 	line[0].vertices[0].color = { 1.0f, 1.0f, 0.0f };
-	line[0].vertices[1].color = { 1.0f, 1.0f, 0.0f };
+	line[0].vertices[1].color = { 1.0f, 0.0f, 1.0f };
 	
 }

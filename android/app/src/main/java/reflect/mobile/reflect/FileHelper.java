@@ -45,9 +45,9 @@ public class FileHelper {
 
     private static void copyAssetFile(AssetManager assetManager, String assetPath, String destPath) {
         File file = new File(destPath, assetPath);
-        if (file.exists()) {
+        /*if (file.exists()) {
             return;
-        }
+        }*/
         try (InputStream is = assetManager.open(assetPath);
              OutputStream os = new FileOutputStream(file)) {
             byte[] buffer = new byte[1024];

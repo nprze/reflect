@@ -6,6 +6,7 @@ namespace rfct {
     class AssetsManager {
     public:
         AssetsManager(std::string path);
+        ~AssetsManager();
         void loadVulkanShader(std::string path, vulkanShader* shaderOut);
         
     private:

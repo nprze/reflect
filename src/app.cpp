@@ -18,6 +18,11 @@ rfct::reflectApplication::reflectApplication(RFCT_NATIVE_WINDOW_ANDROID RFCT_NAT
 #endif
 }
 
+rfct::reflectApplication::~reflectApplication()
+{
+	RFCT_TRACE("app deleted succesfully");
+}
+
 void rfct::reflectApplication::render() {
 	input::getInput().pollEvents();
 	m_Game.onUpdate();

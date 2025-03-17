@@ -21,5 +21,6 @@ namespace rfct {
 		static vk::DescriptorSetLayout m_descriptorSetLayout;
 	public:
 		static vk::DescriptorSetLayout getDescriptorSetLayout();
+		static void destroyDescriptorSetLayout();
 	};
 }

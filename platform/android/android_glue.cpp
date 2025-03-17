@@ -8,6 +8,8 @@
 #include "renderer_p/renderer.h"
 #include <vector>
 #include <android/log.h>
+#include "android_glue.h"
+std::vector<rfct::InputEvent> rfct::InputQueue::eventQueue;
 
 static std::unique_ptr<rfct::reflectApplication> app;
 static jclass eventClass;
@@ -39,7 +41,6 @@ struct InputEvent {
     long timestamp;
 };
 
-std::vector<InputEvent> eventQueue;
 
 extern "C"
 JNIEXPORT void JNICALL
@@ -50,7 +51,7 @@ Java_reflect_mobile_reflect_MainActivity_sendEventsToNative(JNIEnv* env, jobject
     jint size = env->CallIntMethod(eventList, sizeMethod);
 
 
-    eventQueue.clear();
+    rfct::InputQueue::eventQueue.clear();
     for (int i = 0; i < size; i++) {
         jobject eventObj = env->CallObjectMethod(eventList, getMethod, i);
         int action = env->GetIntField(eventObj, actionField);
@@ -58,7 +59,7 @@ Java_reflect_mobile_reflect_MainActivity_sendEventsToNative(JNIEnv* env, jobject
         float y = env->GetFloatField(eventObj, yField);
         long timestamp = env->GetLongField(eventObj, timestampField);
 
-        eventQueue.push_back({action, x, y, timestamp});
+        rfct::InputQueue::eventQueue.push_back({action, x, y, timestamp});
         env->DeleteLocalRef(eventObj);
     }
 }
@@ -67,12 +68,12 @@ Java_reflect_mobile_reflect_MainActivity_sendEventsToNative(JNIEnv* env, jobject
 extern "C"
 JNIEXPORT void JNICALL
 Java_reflect_mobile_reflect_MainActivity_renderNative(JNIEnv*, jobject) {
-    for (const auto& event : eventQueue) {
+    for (const auto& event : rfct::InputQueue::eventQueue) {
         RFCT_TRACE("Event: action={}, x={}, y={}, timestamp={}", event.action, event.x, event.y,
              event.timestamp);
     }
-    eventQueue.clear();
     app->render();
+    rfct::InputQueue::eventQueue.clear();
 }
 
 

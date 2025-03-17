@@ -13,6 +13,7 @@ namespace rfct {
 
 	framesInFlight::~framesInFlight()
 	{
+		cameraUbo::destroyDescriptorSetLayout();
 	}
 
 	frameData& framesInFlight::getNextFrame()

@@ -17,7 +17,7 @@ namespace rfct {
 
 	input* input::s_input;
 	GLFWwindow* window = nullptr;
-	input::input():xAxis(0), yAxis(0), zAxis(0), cameraXAxis(0), cameraYAxis(0), cameraZAxis(0)
+	input::input():xAxis(0), yAxis(0), zAxis(0), cameraXAxis(0), cameraYAxis(0), cameraZAxis(0), windowExtent(renderer::getRen().getWindow().extent)
 	{
 		window = renderer::getRen().getWindow().GetHandle();
 		s_input = this;

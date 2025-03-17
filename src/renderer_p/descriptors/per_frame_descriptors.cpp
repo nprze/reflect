@@ -5,13 +5,13 @@
 rfct::descriptors::descriptors()
 {
     // Create pool
-    std::array<vk::DescriptorPoolSize, 3> poolSizes = { {
+    std::array<vk::DescriptorPoolSize, 2> poolSizes = { {
        { vk::DescriptorType::eUniformBuffer, 10 },
        { vk::DescriptorType::eStorageBuffer, 10 }
    } };
 
     vk::DescriptorPoolCreateInfo poolCreateInfo(
-        {},             
+        vk::DescriptorPoolCreateFlags(vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet),
         20,             
         poolSizes.size(),
         poolSizes.data()
@@ -31,6 +31,7 @@ rfct::descriptors::descriptors()
 
 rfct::descriptors::~descriptors()
 {
+    RFCT_TRACE("desc cleanup");
 }
 
 void rfct::descriptors::bindCameraUbo(vk::Buffer ubo)

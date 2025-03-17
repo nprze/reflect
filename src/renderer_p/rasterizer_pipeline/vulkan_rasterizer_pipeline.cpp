@@ -222,7 +222,6 @@ void rfct::vulkanRasterizerPipeline::recordCommandBuffer(frameData& frameData, v
     // Camera Descriptor
     commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_pipelineLayout.get(),0,frameData.getCameraUboDescSet(),{});
 
-
     commandBuffer.draw(3, 1, 0, 0);
 
 

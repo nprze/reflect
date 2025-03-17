@@ -16,6 +16,7 @@ namespace rfct {
 		uint32_t keyCode;
 	};*/
 	class input {
+        vk::Extent2D& windowExtent;
 		static input* s_input;
 	public:
 		inline static input& getInput() { return *s_input; };

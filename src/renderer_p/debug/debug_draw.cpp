@@ -45,7 +45,8 @@ void rfct::debugDraw::createPipelines()
     rasterizer.depthClampEnable = VK_FALSE;
     rasterizer.rasterizerDiscardEnable = VK_FALSE;
     rasterizer.polygonMode = vk::PolygonMode::eFill;
-    rasterizer.lineWidth = 5.0f;
+    rasterizer.lineWidth = 1.0f;
+    
     rasterizer.cullMode = vk::CullModeFlagBits::eNone;
     rasterizer.frontFace = vk::FrontFace::eClockwise;
     rasterizer.depthBiasEnable = VK_FALSE;
@@ -78,7 +79,8 @@ void rfct::debugDraw::createPipelines()
     // Dynamic State
     std::vector<vk::DynamicState> dynamicStates = {
         vk::DynamicState::eViewport,
-        vk::DynamicState::eScissor
+        vk::DynamicState::eScissor,
+        vk::DynamicState::eLineWidth
     };
 
     vk::PipelineDynamicStateCreateInfo dynamicState = {};
@@ -143,7 +145,7 @@ void rfct::debugDraw::createRenderPass()
     colorAttachment.storeOp = vk::AttachmentStoreOp::eStore;
     colorAttachment.stencilLoadOp = vk::AttachmentLoadOp::eDontCare;
     colorAttachment.stencilStoreOp = vk::AttachmentStoreOp::eDontCare;
-    colorAttachment.initialLayout = vk::ImageLayout::eUndefined;
+    colorAttachment.initialLayout = vk::ImageLayout::ePresentSrcKHR;
     colorAttachment.finalLayout = vk::ImageLayout::ePresentSrcKHR;
 
     vk::AttachmentReference colorAttachmentRef = {};
@@ -235,6 +237,7 @@ void rfct::debugDraw::draw(frameData& fd, vk::Framebuffer framebuffer, uint32_t 
     scissor.extent = renderer::getRen().getDeviceWrapper().getSwapChain().getExtent();
     commandBuffer.setScissor(0, scissor);
 
+    commandBuffer.setLineWidth(1.f);
 
     if(m_triangleBuffer.vertexCount!=0){
         commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, m_trianglePipeline.get());

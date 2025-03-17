@@ -9,7 +9,7 @@ namespace rfct {
 	class reflectApplication {
 	public:
         reflectApplication(RFCT_NATIVE_WINDOW_ANDROID RFCT_NATIVE_WINDOW_ANDROID_VAR);
-		~reflectApplication() {};
+		~reflectApplication();
 		void render();
         static std::string AssetsDirectory;
     private:

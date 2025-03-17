@@ -77,17 +77,19 @@ rfct::vulkanInstance::vulkanInstance()
 
             if (!layerFound) {
                 validationLayers.clear();
-#ifndef RFCT_VULKAN_DEBUG_OFF
 				RFCT_CRITICAL("Validation layer requested, but not avaible");
-#endif // !RFCT_VULKAN_DEBUG_OFF
             }
         }
         
         vk::InstanceCreateInfo createInfo(
             {},
-            &appInfo,0,nullptr,
-            //validationLayers.size(),
-            //validationLayers.data(),
+            &appInfo,
+#ifndef RFCT_VULKAN_DEBUG_OFF
+            validationLayers.size(),
+            validationLayers.data(),
+#else
+            0, nullptr,
+#endif // !RFCT_VULKAN_DEBUG_OFF
             extensionNames.size(),
             extensionNames.data()
         );
