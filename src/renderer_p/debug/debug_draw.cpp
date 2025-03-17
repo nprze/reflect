@@ -3,7 +3,7 @@
 #include "renderer_p\renderer.h"
 rfct::debugDraw* rfct::debugDraw::instance;
 
-rfct::debugDraw::debugDraw() :m_triangleBuffer(RFCT_DEBUG_DRAW_VERTEX_BUFFER_MAX_SIZE, vk::BufferUsageFlagBits::eVertexBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU), m_lineBuffer(RFCT_DEBUG_DRAW_VERTEX_BUFFER_MAX_SIZE, vk::BufferUsageFlagBits::eVertexBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU), m_vertexShader("shaders/debug_draw/tri_vert.spv"), m_fragShader("shaders/debug_draw/tri_frag.spv")
+rfct::debugDraw::debugDraw() :m_triangleBuffer(RFCT_DEBUG_DRAW_VERTEX_BUFFER_MAX_SIZE, vk::BufferUsageFlagBits::eVertexBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU), m_lineBuffer(RFCT_DEBUG_DRAW_VERTEX_BUFFER_MAX_SIZE, vk::BufferUsageFlagBits::eVertexBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU), m_vertexShader("shaders/debug_draw/dbg_draw_vert.spv"), m_fragShader("shaders/debug_draw/dbg_draw_frag.spv")
 {
     createPipelines();
 	instance = this;
@@ -87,9 +87,14 @@ void rfct::debugDraw::createPipelines()
     dynamicState.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
     dynamicState.pDynamicStates = dynamicStates.data();
 
+
     // Pipeline layout
     vk::PipelineLayoutCreateInfo pipelineLayoutInfo = {};
+    pipelineLayoutInfo.setLayoutCount = 1;
+    vk::DescriptorSetLayout dscSetLayout = cameraUbo::getDescriptorSetLayout();
+    pipelineLayoutInfo.pSetLayouts = &dscSetLayout;
     m_PipelineLayout = renderer::getRen().getDevice().createPipelineLayoutUnique(pipelineLayoutInfo);
+
 
     vk::PipelineViewportStateCreateInfo viewportState = {};
     viewportState.viewportCount = 1;
@@ -238,6 +243,9 @@ void rfct::debugDraw::draw(frameData& fd, vk::Framebuffer framebuffer, uint32_t 
     commandBuffer.setScissor(0, scissor);
 
     commandBuffer.setLineWidth(1.f);
+
+    // Camera Descriptor
+    commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_PipelineLayout.get(), 0, fd.getCameraUboDescSet(), {});
 
     if(m_triangleBuffer.vertexCount!=0){
         commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, m_trianglePipeline.get());

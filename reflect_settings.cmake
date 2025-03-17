@@ -1,6 +1,6 @@
 # DO NOT REMOVE ANY SETTINGS FROM THIS FILE EVEN IF UNUSED. IF YOU DO NOT WANT TO USE A FEATURE, SET IT TO "n".
 
-# let it be or set manually WINDOWS or ANDROID
+# set manually WINDOWS or ANDROID
 set(BUILD_FOR_PLATFORM "WINDOWS")
 
 set(VLD_ENABLE "y") # y or n, enable or disable visual leak detector
