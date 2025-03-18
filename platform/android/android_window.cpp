@@ -17,7 +17,7 @@ void rfct::AndroidWindow::create(ANativeWindow* nativeWindow) {
 
 void rfct::AndroidWindow::destroy() {
     if (window) {
-        window = nullptr;
+        ANativeWindow_release(window);
     }
 }
 

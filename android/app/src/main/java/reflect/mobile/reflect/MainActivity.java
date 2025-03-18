@@ -13,6 +13,7 @@ public class MainActivity extends Activity {
     public native void createVulkanApp(Surface surface);
     private native void sendEventsToNative(List<InputEvent> events);
     private native void renderNative();
+    private native void resizedSurface(int width, int height);
     public native void readAndCopyFile(String dirPath);
 
     static {
@@ -37,7 +38,9 @@ public class MainActivity extends Activity {
             }
 
             @Override
-            public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {}
+            public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
+                resizedSurface(width, height);
+            }
 
             @Override
             public void surfaceDestroyed(SurfaceHolder holder) {}
@@ -54,6 +57,12 @@ public class MainActivity extends Activity {
         return true;
     }
 
+    @Override
+    protected void onPause() {
+        super.onPause();
+        resizedSurface(0,0);
+    }
+
     private void startRendering() {
         new Thread(() -> {
             while (true) {
@@ -62,8 +71,7 @@ public class MainActivity extends Activity {
                     eventsToSend = new ArrayList<>(eventQueue);
                     eventQueue.clear();
                 }
-                if (!eventsToSend.isEmpty())
-                sendEventsToNative(eventsToSend);
+                if (!eventsToSend.isEmpty()) sendEventsToNative(eventsToSend);
                 renderNative();
                 try {
                     Thread.sleep(16);
@@ -86,4 +94,7 @@ public class MainActivity extends Activity {
             this.timestamp = timestamp;
         }
     }
+
+
+
 }

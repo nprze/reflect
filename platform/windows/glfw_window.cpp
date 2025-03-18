@@ -1,9 +1,18 @@
 #include "glfw_window.h"
 #include <stdexcept>
 #include "renderer_p\renderer.h"
+#include "app.h"
 
 void framebufferResizeCallback(GLFWwindow* window, int width, int height) {
+
 	rfct::renderer::getRen().getDeviceWrapper().getSwapChain().framebufferResized = true;
+    if (width == 0 && height == 0)
+    {
+        rfct::reflectApplication::shouldRender = false;
+    }
+    else {
+        rfct::reflectApplication::shouldRender = true;
+    }
 }
 
 rfct::GlfwWindow::GlfwWindow(int width, int height, const char* title) {
@@ -46,7 +55,8 @@ bool rfct::GlfwWindow::pollEvents() {
 
 vk::SurfaceKHR rfct::GlfwWindow::createSurface(vk::Instance instance) {
     VkSurfaceKHR surface;
-    if (glfwCreateWindowSurface(instance, window, nullptr, &surface) != VK_SUCCESS) {
+    VkResult res = glfwCreateWindowSurface(instance, window, nullptr, &surface);
+    if (res != VK_SUCCESS) {
         RFCT_CRITICAL("Failed to create Vulkan surface");
     }
     return vk::SurfaceKHR(surface);

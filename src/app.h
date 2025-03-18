@@ -12,6 +12,7 @@ namespace rfct {
 		~reflectApplication();
 		void render();
         static std::string AssetsDirectory;
+        static bool shouldRender;
     private:
         AssetsManager m_AssetsManager;
         unique<renderer> m_Renderer;

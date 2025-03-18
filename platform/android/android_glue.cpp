@@ -19,7 +19,6 @@ static jfieldID yField;
 static jfieldID timestampField;
 extern "C" JNIEXPORT void JNICALL
 Java_reflect_mobile_reflect_MainActivity_createVulkanApp(JNIEnv *env, jobject thiz, jobject surface) {
-
     eventClass = env->FindClass("reflect/mobile/reflect/MainActivity$InputEvent");
     actionField = env->GetFieldID(eventClass, "action", "I");
     xField = env->GetFieldID(eventClass, "x", "F");
@@ -64,7 +63,6 @@ Java_reflect_mobile_reflect_MainActivity_sendEventsToNative(JNIEnv* env, jobject
     }
 }
 
-// Called from Java once per frame to render
 extern "C"
 JNIEXPORT void JNICALL
 Java_reflect_mobile_reflect_MainActivity_renderNative(JNIEnv*, jobject) {
@@ -76,6 +74,19 @@ Java_reflect_mobile_reflect_MainActivity_renderNative(JNIEnv*, jobject) {
     rfct::InputQueue::eventQueue.clear();
 }
 
+extern "C"
+JNIEXPORT void JNICALL
+Java_reflect_mobile_reflect_MainActivity_resizedSurface(JNIEnv *env, jobject thiz, int width, int height) {
+    rfct::renderer::getRen().getDeviceWrapper().getSwapChain().framebufferResized = true;
+    if (width == 0 && height == 0)
+    {
+        rfct::reflectApplication::shouldRender = false;
+    }
+    else {
+        rfct::reflectApplication::shouldRender = true;
+    }
+
+}
 
 
 extern "C"

@@ -56,6 +56,8 @@ void rfct::vulkanSwapChain::createSwapChain()
 
 void rfct::vulkanSwapChain::recreateSwapChain()
 {
+    vk::SurfaceCapabilitiesKHR capabilities = m_physicalDevice.getSurfaceCapabilitiesKHR(m_surface);
+    if (capabilities.currentExtent.width == 0 || capabilities.currentExtent.height) return;
 	m_device.waitIdle();
 	createSwapChain();
 	createImageViews();
@@ -98,29 +100,37 @@ void rfct::vulkanSwapChain::createFrameBuffers()
         //renderer::getRen().setObjectName(m_frameBuffers[i].get(), "swapchain framebuffer", vk::ObjectType::eFramebuffer);
 	}
 }
-
 uint32_t rfct::vulkanSwapChain::acquireNextImage(const vk::Semaphore& semaphore, vk::Fence fence)
 {
     vk::ResultValue<uint32_t> result = vk::ResultValue<uint32_t>(vk::Result::eSuccess, 0);
+
     if (framebufferResized)
     {
         recreateSwapChain();
         framebufferResized = false;
     }
+
     try
     {
         result = m_device.acquireNextImageKHR(m_swapChain.get(), UINT64_MAX, semaphore, fence);
-
     }
     catch (const vk::OutOfDateKHRError&)
     {
         recreateSwapChain();
         return -1;
-
     }
 
-    if (result.result != vk::Result::eSuccess && result.result != vk::Result::eSuboptimalKHR) {
+    if (result.result == vk::Result::eSuboptimalKHR)
+    {
+        RFCT_WARN("Swap chain is suboptimal, recreating...");
+        recreateSwapChain();
+        return -1;
+    }
+
+    if (result.result != vk::Result::eSuccess)
+    {
         RFCT_CRITICAL("Failed to acquire swap chain image!");
+        throw std::runtime_error("Failed to acquire swap chain image!");
     }
 
     return result.value;

@@ -38,13 +38,15 @@ rfct::vulkanInstance::vulkanInstance()
             VK_MAKE_VERSION(1, 0, 0),
             VK_API_VERSION_1_2
         );
-
-        auto extensions = vk::enumerateInstanceExtensionProperties();
+        
+        std::vector<vk::ExtensionProperties>  extensions = vk::enumerateInstanceExtensionProperties();
         std::vector<const char*> extensionNames;
         for (const auto& ext : extensions) {
             extensionNames.push_back(ext.extensionName);
         }
         std::vector<vk::ExtensionProperties> availableExtensions = vk::enumerateInstanceExtensionProperties();
+
+
 
         for (const char* ext : VulkanInstanceExtensions) {
             bool found = false;
