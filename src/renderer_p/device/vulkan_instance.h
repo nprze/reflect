@@ -12,13 +12,13 @@ namespace rfct {
     class vulkanInstance {
     public:
         vk::Instance getInstance() { return m_instance.get(); }
-        vk::SurfaceKHR getSurface() { return m_surface.get(); }
+       // vk::SurfaceKHR getSurface() { return m_surface.get(); }
         RFCT_ANDROID_VULKAN_INSTANCE_NAMESPACE DispatchLoaderDynamic& getDynamicLoader() { return m_dynamicLoader; }
         vulkanInstance();
     private:
         vk::UniqueInstance m_instance;
         vk::UniqueHandle<vk::DebugUtilsMessengerEXT,RFCT_ANDROID_VULKAN_INSTANCE_NAMESPACE DispatchLoaderDynamic> m_debugMessenger;
         RFCT_ANDROID_VULKAN_INSTANCE_NAMESPACE DispatchLoaderDynamic m_dynamicLoader;
-        vk::UniqueSurfaceKHR m_surface;
+        //vk::UniqueSurfaceKHR m_surface;
     };
 }

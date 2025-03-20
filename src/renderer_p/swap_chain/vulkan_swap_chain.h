@@ -10,12 +10,14 @@ namespace rfct {
 		void recreateSwapChain();
 		void createImageViews();
 		void createFrameBuffers();
+        void newSurfaceSet(const vk::SurfaceKHR& surArg);
 		uint32_t acquireNextImage(const vk::Semaphore& semaphore, vk::Fence fence);
 		vk::SwapchainKHR getSwapChain() { return m_swapChain.get(); }
 		vk::SurfaceFormatKHR getSurfaceFormat() { return m_surfaceFormat; }
 		vk::Image getImage(uint32_t index) { return m_swapChainImage[index]; }
 		vk::Framebuffer getFrameBuffer(uint32_t index) { return m_frameBuffers[index].get(); }
 		vk::Extent2D getExtent() { return m_swapChainExtent; }
+		vk::SurfaceKHR getSurface() { return m_surface; }
 		bool framebufferResized = false;
 	private:
 		vk::Device m_device;

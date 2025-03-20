@@ -19,7 +19,9 @@ m_AssetsManager(AssetsDirectory), m_Renderer(std::make_unique<renderer>(RFCT_REN
 	}
 #endif
 }
-
+void rfct::reflectApplication::updateWindow(ANativeWindow* win){
+    m_Renderer->updateWindow(win);
+};
 rfct::reflectApplication::~reflectApplication()
 {
 	RFCT_TRACE("app cleanup start");

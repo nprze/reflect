@@ -9,6 +9,19 @@
 #include <vector>
 #include <android/log.h>
 #include "android_glue.h"
+
+void resizeCallback(int width, int height){
+    rfct::renderer::getRen().getDeviceWrapper().getSwapChain().framebufferResized = true;
+    if (width == 0 && height == 0)
+    {
+        rfct::reflectApplication::shouldRender = false;
+    }
+    else {
+        rfct::reflectApplication::shouldRender = true;
+    }
+
+}
+
 std::vector<rfct::InputEvent> rfct::InputQueue::eventQueue;
 
 static std::unique_ptr<rfct::reflectApplication> app;
@@ -19,18 +32,22 @@ static jfieldID yField;
 static jfieldID timestampField;
 extern "C" JNIEXPORT void JNICALL
 Java_reflect_mobile_reflect_MainActivity_createVulkanApp(JNIEnv *env, jobject thiz, jobject surface) {
-    eventClass = env->FindClass("reflect/mobile/reflect/MainActivity$InputEvent");
-    actionField = env->GetFieldID(eventClass, "action", "I");
-    xField = env->GetFieldID(eventClass, "x", "F");
-    yField = env->GetFieldID(eventClass, "y", "F");
-    timestampField = env->GetFieldID(eventClass, "timestamp", "J");
-
-
-    ANativeWindow* nativeWindow = ANativeWindow_fromSurface(env, surface);
-    app = std::make_unique<rfct::reflectApplication>(nativeWindow);
-
+    if (!app) {  // Only create if it doesn't exist
+        eventClass = env->FindClass("reflect/mobile/reflect/MainActivity$InputEvent");
+        actionField = env->GetFieldID(eventClass, "action", "I");
+        xField = env->GetFieldID(eventClass, "x", "F");
+        yField = env->GetFieldID(eventClass, "y", "F");
+        timestampField = env->GetFieldID(eventClass, "timestamp", "J");
+        ANativeWindow* nativeWindow = ANativeWindow_fromSurface(env, surface);
+        app = std::make_unique<rfct::reflectApplication>(nativeWindow);
+    } else {
+        ANativeWindow* nativeWindow = ANativeWindow_fromSurface(env, surface);
+        rfct::reflectApplication::shouldRender = true;
+        app->updateWindow(nativeWindow);
+    }
 
 }
+
 
 
 
@@ -39,7 +56,6 @@ struct InputEvent {
     float x, y;
     long timestamp;
 };
-
 
 extern "C"
 JNIEXPORT void JNICALL
@@ -77,15 +93,7 @@ Java_reflect_mobile_reflect_MainActivity_renderNative(JNIEnv*, jobject) {
 extern "C"
 JNIEXPORT void JNICALL
 Java_reflect_mobile_reflect_MainActivity_resizedSurface(JNIEnv *env, jobject thiz, int width, int height) {
-    rfct::renderer::getRen().getDeviceWrapper().getSwapChain().framebufferResized = true;
-    if (width == 0 && height == 0)
-    {
-        rfct::reflectApplication::shouldRender = false;
-    }
-    else {
-        rfct::reflectApplication::shouldRender = true;
-    }
-
+    resizeCallback(width, height);
 }
 
 

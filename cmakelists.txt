@@ -64,7 +64,14 @@ if(PLATFORM_ANDROID)
     find_library(android-lib android)
     find_package(Vulkan REQUIRED)
 
-    target_include_directories(reflect PRIVATE ${Vulkan_INCLUDE_DIRS})
+    #set(ANDROID_NDK_PATH ${ANDROID_NDK})
+    #include_directories(${ANDROID_NDK_PATH}/sources/android/native_app_glue)
+
+    #target_include_directories(reflect PRIVATE ${ANDROID_NDK_PATH}/sources/android/native_app_glue)
+
+    target_include_directories(reflect PRIVATE
+            ${Vulkan_INCLUDE_DIRS}
+    )
 
     target_link_libraries(reflect PRIVATE ${log-lib} ${android-lib} Vulkan::Vulkan)
 

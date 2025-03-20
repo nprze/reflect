@@ -9,6 +9,7 @@ rfct::vulkanSwapChain::vulkanSwapChain(vk::Device device, vk::SurfaceKHR surface
 
 rfct::vulkanSwapChain::~vulkanSwapChain()
 {
+    renderer::getRen().getInstance().destroySurfaceKHR(m_surface);
 }
 
 void rfct::vulkanSwapChain::createSwapChain()
@@ -134,4 +135,11 @@ uint32_t rfct::vulkanSwapChain::acquireNextImage(const vk::Semaphore& semaphore,
     }
 
     return result.value;
+}
+
+void rfct::vulkanSwapChain::newSurfaceSet(const vk::SurfaceKHR &surArg) {
+    renderer::getRen().getInstance().destroySurfaceKHR(m_surface);
+    framebufferResized = true;
+    m_surface = surArg;
+
 }

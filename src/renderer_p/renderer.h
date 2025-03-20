@@ -36,6 +36,7 @@ namespace rfct {
 		inline vulkanVertexBuffer& getVertexBuffer() { return m_vertexBuffer; }
         inline AssetsManager* getAssetsManager() { return m_AssetsManager; }
 		inline float getAspectRatio() { return m_window.getAspectRatio(); }
+        void updateWindow(ANativeWindow* window);
         renderer(RFCT_RENDERER_ARGUMENTS);
 		~renderer();
 		void showWindow();

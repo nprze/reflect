@@ -27,7 +27,7 @@ namespace rfct {
         cameraZAxis=0;
 
         for (InputEvent event : InputQueue::eventQueue) {
-            if (event.action == 1||event.action == 2) { // Assuming action == 1 is a click
+            if (event.action == 1||event.action == 2) {
                 glm::vec2 point = {event.x, event.y};
 
                 if (point.x >= buttons[0].min.x && point.x <= buttons[0].max.x &&

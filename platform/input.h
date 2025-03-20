@@ -1,20 +1,6 @@
 #pragma once
 #include <vector>
 namespace rfct {
-	/*
-	struct androidEvent {
-		uint32_t action;
-		float x;
-		float y;
-	};
-	struct windowsClickEvent {
-		uint32_t action;
-		float x;
-		float y;
-	};
-	struct windowsButtonEvent {
-		uint32_t keyCode;
-	};*/
 	class input {
         vk::Extent2D& windowExtent;
 		static input* s_input;
@@ -29,6 +15,5 @@ namespace rfct {
 		float cameraYAxis;
 		float cameraZAxis;
 		void pollEvents();
-		void passEvents();//on android
 	};
 }

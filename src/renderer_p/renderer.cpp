@@ -25,6 +25,11 @@ rfct::renderer::renderer(RFCT_RENDERER_ARGUMENTS)
     m_device.getSwapChain().createFrameBuffers();
 }
 
+void rfct::renderer::updateWindow(ANativeWindow* nativeWidnowPtr){
+    m_window = AndroidWindow(nativeWidnowPtr);
+    rfct::renderer::getRen().getDeviceWrapper().getSwapChain().newSurfaceSet(m_window.createSurface(m_instance.getInstance()));
+};
+
 rfct::renderer::~renderer() {
     m_device.getDevice().waitIdle(); 
     m_device.getDevice().destroyDescriptorSetLayout(cameraUbo::getDescriptorSetLayout());

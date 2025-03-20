@@ -112,7 +112,7 @@ rfct::vulkanInstance::vulkanInstance()
         m_debugMessenger = m_instance.get().createDebugUtilsMessengerEXTUnique(debugCreateInfo, nullptr, m_dynamicLoader);
 #endif // !RFCT_VULKAN_DEBUG_OFF
 
-        m_surface = vk::UniqueSurfaceKHR(renderer::getRen().getWindow().createSurface(m_instance.get()), m_instance.get());
+        //m_surface = vk::UniqueSurfaceKHR(renderer::getRen().getWindow().createSurface(m_instance.get()), m_instance.get());
 
 		RFCT_TRACE("Vulkan instance created successfully");
 
