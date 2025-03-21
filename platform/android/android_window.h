@@ -10,12 +10,13 @@ namespace rfct {
     public:
         AndroidWindow() = delete;
         AndroidWindow(ANativeWindow* nativeWindow);
-        ~AndroidWindow() { destroy(); }
+        ~AndroidWindow() { }
         inline float getAspectRatio() { return (float)(extent.width) / (float)(extent.height); }
 
         void create(ANativeWindow* nativeWindow);
         void create(int width, int height, const char* title) override {};
-        void destroy() override;
+        void destroyWind();
+        void destroy() override {};
         void show() override {}
         void hide() override {}
         bool pollEvents() override; // TODO: Needs integration with an event system

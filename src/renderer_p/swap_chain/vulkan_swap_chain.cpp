@@ -1,7 +1,7 @@
 #include "vulkan_swap_chain.h"
 #include "renderer_p\renderer.h"
 rfct::vulkanSwapChain::vulkanSwapChain(vk::Device device, vk::SurfaceKHR surface, vk::PhysicalDevice physicalDevice, vk::Extent2D windowExtent)
-    : m_device(device), m_surface(surface), m_physicalDevice(physicalDevice), m_windowExtent(windowExtent)
+    : m_device(device), m_physicalDevice(physicalDevice), m_windowExtent(windowExtent)
 {
     createSwapChain();
 	createImageViews();
@@ -9,14 +9,13 @@ rfct::vulkanSwapChain::vulkanSwapChain(vk::Device device, vk::SurfaceKHR surface
 
 rfct::vulkanSwapChain::~vulkanSwapChain()
 {
-    renderer::getRen().getInstance().destroySurfaceKHR(m_surface);
 }
 
 void rfct::vulkanSwapChain::createSwapChain()
 {
-    vk::SurfaceCapabilitiesKHR capabilities = m_physicalDevice.getSurfaceCapabilitiesKHR(m_surface);
-    std::vector<vk::SurfaceFormatKHR> surfaceFormats = m_physicalDevice.getSurfaceFormatsKHR(m_surface);
-    std::vector<vk::PresentModeKHR> presentModes = m_physicalDevice.getSurfacePresentModesKHR(m_surface);
+    vk::SurfaceCapabilitiesKHR capabilities = m_physicalDevice.getSurfaceCapabilitiesKHR(renderer::getRen().getSurface());
+    std::vector<vk::SurfaceFormatKHR> surfaceFormats = m_physicalDevice.getSurfaceFormatsKHR(renderer::getRen().getSurface());
+    std::vector<vk::PresentModeKHR> presentModes = m_physicalDevice.getSurfacePresentModesKHR(renderer::getRen().getSurface());
     vk::SurfaceFormatKHR chosenSurfaceFormat = surfaceFormats[0];
 
     for (const auto& format : surfaceFormats) {
@@ -36,11 +35,11 @@ void rfct::vulkanSwapChain::createSwapChain()
     RFCT_TRACE("Choosen swap chain present mode: {0}", chosenPresentMode == vk::PresentModeKHR::eMailbox? "Mailbox": "Fifo");
     m_swapChainExtent = capabilities.currentExtent;
     vk::SwapchainCreateInfoKHR swapChainCreateInfo = {};
-    swapChainCreateInfo.surface = m_surface;
-    if (m_swapChain.get()!=nullptr)
+    swapChainCreateInfo.surface = renderer::getRen().m_surface.surface;
+    /*if (m_swapChain.get()!=nullptr)
     {
         swapChainCreateInfo.oldSwapchain = m_swapChain.get();
-    }
+    }*/
     swapChainCreateInfo.minImageCount = RFCT_FRAMES_IN_FLIGHT + 1;
     swapChainCreateInfo.imageFormat = chosenSurfaceFormat.format;
     swapChainCreateInfo.imageColorSpace = chosenSurfaceFormat.colorSpace;
@@ -57,8 +56,9 @@ void rfct::vulkanSwapChain::createSwapChain()
 
 void rfct::vulkanSwapChain::recreateSwapChain()
 {
-    vk::SurfaceCapabilitiesKHR capabilities = m_physicalDevice.getSurfaceCapabilitiesKHR(m_surface);
-    if (capabilities.currentExtent.width == 0 || capabilities.currentExtent.height) return;
+    renderer::getRen().getDevice().waitIdle();
+    vk::SurfaceCapabilitiesKHR capabilities = m_physicalDevice.getSurfaceCapabilitiesKHR(renderer::getRen().getSurface());
+    if (capabilities.currentExtent.width == 0 || capabilities.currentExtent.height == 0) return;
 	m_device.waitIdle();
 	createSwapChain();
 	createImageViews();
@@ -135,11 +135,4 @@ uint32_t rfct::vulkanSwapChain::acquireNextImage(const vk::Semaphore& semaphore,
     }
 
     return result.value;
-}
-
-void rfct::vulkanSwapChain::newSurfaceSet(const vk::SurfaceKHR &surArg) {
-    renderer::getRen().getInstance().destroySurfaceKHR(m_surface);
-    framebufferResized = true;
-    m_surface = surArg;
-
 }

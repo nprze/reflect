@@ -11,6 +11,12 @@
 #include "renderer_p\debug\debug_draw.h"
 #include "assets\assets_manager.h"
 namespace rfct {
+	struct SurfaceWrapper {
+		vk::SurfaceKHR surface;
+        SurfaceWrapper(vk::SurfaceKHR surfaceArg);
+        void newSurface(vk::SurfaceKHR surfaceArg);
+		~SurfaceWrapper();
+	};
     struct uselessClass{
         bool state;
     };
@@ -35,8 +41,9 @@ namespace rfct {
 		inline VmaAllocator& getAllocator() { return m_allocator.m_allocator; }
 		inline vulkanVertexBuffer& getVertexBuffer() { return m_vertexBuffer; }
         inline AssetsManager* getAssetsManager() { return m_AssetsManager; }
+		inline vk::SurfaceKHR& getSurface() { return m_surface.surface; }
 		inline float getAspectRatio() { return m_window.getAspectRatio(); }
-        void updateWindow(ANativeWindow* window);
+        void updateWindow(ANativeWindow* nativeWidnowPtr);
         renderer(RFCT_RENDERER_ARGUMENTS);
 		~renderer();
 		void showWindow();
@@ -48,6 +55,7 @@ namespace rfct {
 		AssetsManager* m_AssetsManager;
         RFCT_PLATFORM_WINDOW m_window;
 		vulkanInstance m_instance;
+		SurfaceWrapper m_surface;
 		vulkanDevice m_device;
 		vulkanRasterizerPipeline m_rasterizerPipeline;
 		allocator m_allocator;
@@ -56,6 +64,7 @@ namespace rfct {
 		vulkanVertexBuffer m_vertexBuffer;
 		debugDraw m_debugDraw;
     private:
+        friend class vulkanSwapChain;
         friend class reflectApplication;
         friend uselessClass createUselessClass(renderer* rendererArg);
 	};

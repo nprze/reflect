@@ -9,10 +9,25 @@ namespace rfct {
     }
 
     renderer *renderer::ren = nullptr;
+    SurfaceWrapper::SurfaceWrapper(vk::SurfaceKHR surfaceArg) {
+        surface = surfaceArg;
+        RFCT_TRACE("created surface: {}", (uint64_t)(VkSurfaceKHR)surface);
+    }
+    void SurfaceWrapper::newSurface(vk::SurfaceKHR surfaceArg){
+        RFCT_TRACE("deleting surface: {}", (uint64_t)(VkSurfaceKHR)surface);
+        renderer::getRen().getInstance().destroySurfaceKHR(surface);
+        surface = surfaceArg;
+    }
+    SurfaceWrapper::~SurfaceWrapper() {
+        RFCT_TRACE("deleting surface: {}", (uint64_t)(VkSurfaceKHR)surface);
+        renderer::getRen().getInstance().destroySurfaceKHR(surface);
+    }
 }
+
+
 // LET THIS CODE COOK. IT DOES COOK FRFR
 rfct::renderer::renderer(RFCT_RENDERER_ARGUMENTS)
-	: m_AssetsManager(assetsManager), uc(createUselessClass(this)), m_window(RFCT_WINDOWS_WINDOW_ARGUMENTS RFCT_NATIVE_WINDOW_ANDROID_VAR), m_instance(), m_device(), m_rasterizerPipeline(), m_allocator(), m_framesInFlight(), m_rayTracer(), m_vertexBuffer(sizeof(Vertex) * 3), m_debugDraw()
+	: m_AssetsManager(assetsManager), uc(createUselessClass(this)), m_window(RFCT_WINDOWS_WINDOW_ARGUMENTS RFCT_NATIVE_WINDOW_ANDROID_VAR), m_instance(), m_surface(m_window.createSurface(getInstance())), m_device(), m_rasterizerPipeline(), m_allocator(), m_framesInFlight(), m_rayTracer(), m_vertexBuffer(sizeof(Vertex) * 3), m_debugDraw()
 {
     std::vector<Vertex> vertices = {
         {{0.0f, -0.5f, 0.f}, {1.0f, 0.0f, 0.0f}},
@@ -26,8 +41,14 @@ rfct::renderer::renderer(RFCT_RENDERER_ARGUMENTS)
 }
 
 void rfct::renderer::updateWindow(ANativeWindow* nativeWidnowPtr){
+#ifdef ANDROID_BUILD
+    m_window.destroyWind();
     m_window = AndroidWindow(nativeWidnowPtr);
-    rfct::renderer::getRen().getDeviceWrapper().getSwapChain().newSurfaceSet(m_window.createSurface(m_instance.getInstance()));
+
+    m_surface.newSurface(m_window.createSurface(getInstance()));
+
+#endif // ANDROID_BUILD
+
 };
 
 rfct::renderer::~renderer() {

@@ -11,9 +11,7 @@ namespace rfct {
         reflectApplication(RFCT_NATIVE_WINDOW_ANDROID RFCT_NATIVE_WINDOW_ANDROID_VAR);
 		~reflectApplication();
 
-#ifdef ANDROID_BUILD
-        void updateWindow(ANativeWindow* win);
-#endif
+        void updateWindow(RFCT_NATIVE_WINDOW_ANDROID RFCT_NATIVE_WINDOW_ANDROID_VAR);
 		void render();
         static std::string AssetsDirectory;
         static bool shouldRender;

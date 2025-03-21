@@ -40,10 +40,6 @@ Java_reflect_mobile_reflect_MainActivity_createVulkanApp(JNIEnv *env, jobject th
         timestampField = env->GetFieldID(eventClass, "timestamp", "J");
         ANativeWindow* nativeWindow = ANativeWindow_fromSurface(env, surface);
         app = std::make_unique<rfct::reflectApplication>(nativeWindow);
-    } else {
-        ANativeWindow* nativeWindow = ANativeWindow_fromSurface(env, surface);
-        rfct::reflectApplication::shouldRender = true;
-        app->updateWindow(nativeWindow);
     }
 
 }
@@ -92,8 +88,11 @@ Java_reflect_mobile_reflect_MainActivity_renderNative(JNIEnv*, jobject) {
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_reflect_mobile_reflect_MainActivity_resizedSurface(JNIEnv *env, jobject thiz, int width, int height) {
+Java_reflect_mobile_reflect_MainActivity_resizedSurface(JNIEnv *env, jobject thiz, int width, int height, jobject surface) {
     resizeCallback(width, height);
+    if(width == 0 || height == 0)return;
+    ANativeWindow* nativeWindow = ANativeWindow_fromSurface(env, surface);
+    app->updateWindow(nativeWindow);
 }
 
 
