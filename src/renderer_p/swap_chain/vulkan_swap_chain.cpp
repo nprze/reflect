@@ -36,10 +36,12 @@ void rfct::vulkanSwapChain::createSwapChain()
     m_swapChainExtent = capabilities.currentExtent;
     vk::SwapchainCreateInfoKHR swapChainCreateInfo = {};
     swapChainCreateInfo.surface = renderer::getRen().m_surface.surface;
-    /*if (m_swapChain.get()!=nullptr)
+#ifdef WINDOWS_BUILD
+    if (m_swapChain.get()!=nullptr)
     {
         swapChainCreateInfo.oldSwapchain = m_swapChain.get();
-    }*/
+    }
+#endif // WINDOWS_BUILD
     swapChainCreateInfo.minImageCount = RFCT_FRAMES_IN_FLIGHT + 1;
     swapChainCreateInfo.imageFormat = chosenSurfaceFormat.format;
     swapChainCreateInfo.imageColorSpace = chosenSurfaceFormat.colorSpace;

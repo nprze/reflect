@@ -19,8 +19,8 @@ m_AssetsManager(AssetsDirectory), m_Renderer(std::make_unique<renderer>(RFCT_REN
 	}
 #endif
 }
-void rfct::reflectApplication::updateWindow(ANativeWindow* nativeWidnowPtr){
-    m_Renderer->updateWindow(nativeWidnowPtr);
+void rfct::reflectApplication::updateWindow(RFCT_NATIVE_WINDOW_ANDROID RFCT_NATIVE_WINDOW_ANDROID_VAR){
+    m_Renderer->updateWindow(RFCT_NATIVE_WINDOW_ANDROID_VAR);
 };
 rfct::reflectApplication::~reflectApplication()
 {

@@ -17,9 +17,6 @@ namespace rfct {
         void newSurface(vk::SurfaceKHR surfaceArg);
 		~SurfaceWrapper();
 	};
-    struct uselessClass{
-        bool state;
-    };
 	struct allocator
 	{
 		VmaAllocator m_allocator;
@@ -43,7 +40,7 @@ namespace rfct {
         inline AssetsManager* getAssetsManager() { return m_AssetsManager; }
 		inline vk::SurfaceKHR& getSurface() { return m_surface.surface; }
 		inline float getAspectRatio() { return m_window.getAspectRatio(); }
-        void updateWindow(ANativeWindow* nativeWidnowPtr);
+        void updateWindow(RFCT_NATIVE_WINDOW_ANDROID RFCT_NATIVE_WINDOW_ANDROID_VAR);
         renderer(RFCT_RENDERER_ARGUMENTS);
 		~renderer();
 		void showWindow();
@@ -51,7 +48,6 @@ namespace rfct {
 		void setObjectName(void* objectHandle, const std::string& name, vk::ObjectType objectType);
 	private:
 	private:
-        uselessClass uc;
 		AssetsManager* m_AssetsManager;
         RFCT_PLATFORM_WINDOW m_window;
 		vulkanInstance m_instance;
@@ -66,6 +62,6 @@ namespace rfct {
     private:
         friend class vulkanSwapChain;
         friend class reflectApplication;
-        friend uselessClass createUselessClass(renderer* rendererArg);
+		friend AssetsManager* setStaticRenderer(renderer* rendererArg, AssetsManager* assetsManager);
 	};
 }

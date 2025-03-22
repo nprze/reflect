@@ -3,7 +3,7 @@
 #include "game_p\game.h"
 #include <string>
 #include "assets\assets_manager.h"
-#include "scene_p\scene_data.h"
+#include "world_p\scene_data.h"
 #include "input.h"
 namespace rfct {
 	class reflectApplication {

@@ -3,7 +3,7 @@
 #include <vma\vk_mem_alloc.h>
 #include "renderer_p\descriptors\camera_ubo.h"
 #include "renderer_p\descriptors\per_frame_descriptors.h"
-#include "scene_p\camera.h"
+#include "world_p\camera.h"
 namespace rfct {
 
     class frameData {

@@ -2,7 +2,7 @@
 #include "renderer_p\renderer.h"
 #include "vertex.h"
 #include "renderer_p\descriptors\camera_ubo.h"
-#include "scene_p\scene_data.h"
+#include "world_p\scene_data.h"
 
 rfct::vulkanRasterizerPipeline::vulkanRasterizerPipeline() :m_vertexShader("shaders/cube/cube_vert.spv"), m_fragShader("shaders/cube/cube_frag.spv")
 {
