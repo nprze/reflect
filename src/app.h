@@ -5,6 +5,7 @@
 #include "assets\assets_manager.h"
 #include "world_p\scene_data.h"
 #include "input.h"
+#include "world_p\world.h"
 namespace rfct {
 	class reflectApplication {
 	public:
@@ -22,5 +23,6 @@ namespace rfct {
 		scene m_Scene;
 		input m_Input;
 		game::game m_Game;
+		world m_GameWorld;
 	};
 }

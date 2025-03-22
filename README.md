@@ -1,4 +1,4 @@
-# reflect is an open source game engine
+# reflect is a small game engine
 
 ## before building
 
@@ -22,3 +22,8 @@
 - DO NOT INCLUDE SPACE IN THE NAMES OF ANY CREATED FILE/FOLDER. REFLECT MIGHT BREAK.
 - leave app by closing the window, not by closing the terminal. Closing the app by closing the terminal results in memory leaks.
 - in order to run reflect from nvidia nsystems, you have to set VULKAN_DEBUG_UTILS_ENABLE to "n" in setting (and rebuild).
+
+
+## author notes
+- currently reflect has memory leaks (408bytes), which I can't seem to fix
+- in case of bugs feel free to drop an issue 
