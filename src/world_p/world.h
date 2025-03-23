@@ -13,8 +13,8 @@ namespace rfct {
 		template<typename... Components>
 		Entity createEntity(Components&&... components);
 
-		template<typename Components>
-		Components& getComponent(Entity entity);
+		template<typename Component>
+		Component& getComponent(Entity entity);
 
 	private:
 		std::vector<unique<BaseArchetype>> m_Archetypes;

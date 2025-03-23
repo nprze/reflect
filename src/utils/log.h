@@ -11,7 +11,7 @@
 #define RFCT_INFO(...) spdlog::info("[{}:{}] [info] {}", std::filesystem::path(__FILE__).filename().string(), __LINE__, fmt::format(__VA_ARGS__))
 #define RFCT_WARN(...) spdlog::warn("[{}:{}] [warn] {}", std::filesystem::path(__FILE__).filename().string(), __LINE__, fmt::format(__VA_ARGS__))
 #define RFCT_ERROR(...) spdlog::error("[{}:{}] [error] {}", std::filesystem::path(__FILE__).filename().string(), __LINE__, fmt::format(__VA_ARGS__))
-#define RFCT_CRITICAL(...) spdlog::error("[{}:{}] [critical error] {}", std::filesystem::path(__FILE__).filename().string(), __LINE__, fmt::format(__VA_ARGS__)); RFCT_ASSERT(false)
+#define RFCT_CRITICAL(...) { spdlog::error("[{}:{}] [critical error] {}", std::filesystem::path(__FILE__).filename().string(), __LINE__, fmt::format(__VA_ARGS__)); RFCT_ASSERT(false) }
 
 #define RFCT_LOGGER_INIT() initialize_logger();
 

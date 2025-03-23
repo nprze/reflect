@@ -15,4 +15,7 @@ namespace rfct {
 	struct NameComponent{
 		std::string name;
 	};
+	struct DamageComponent {
+		int damage;
+	};
 }
