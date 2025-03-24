@@ -9,15 +9,18 @@ namespace rfct {
 	public:
 		world();
 		~world();
+		void onUpdate(float dt);
 		void loadWorld(std::string path);
 		template<typename... Components>
-		Entity createEntity(Components&&... components);
+		Entity helloEntity(Components&&... components);
 
 		template<typename Component>
-		Component& getComponent(Entity entity);
+		Component* getComponent(Entity entity);
+
+
+		void goodbyeEntity(Entity entity);
 
 	private:
-		std::vector<unique<BaseArchetype>> m_Archetypes;
 		std::vector<EntityLocation> m_EntityLocations; // Entity is an index by which we adress this to get the actual location of components
 		std::vector<size_t> m_FreeEntityBlocks; // holds indices of m_EntityLocations of components which have been deleted and are waiting to be reused
 	};

@@ -1,8 +1,8 @@
 #include "world.h"
 #include "components.h"
-rfct::world::world() : m_Archetypes(10), m_EntityLocations(0)
+rfct::world::world() : m_EntityLocations(0)
 {
-	m_EntityLocations.reserve(10 * m_Archetypes.size());
+	m_EntityLocations.reserve(100);
 }
 
 rfct::world::~world()
@@ -10,42 +10,69 @@ rfct::world::~world()
 	Query::cleanUp();
 }
 
+void rfct::world::onUpdate(float dt)
+{
+	{
+		Entity e0 = { 0 };
+		NameComponent* nc = getComponent<NameComponent>(e0);
+		RFCT_INFO("entity0 name: {}", nc->name);
+	}
+	{
+		Entity e0 = { 1 };
+		HealthComponent* nc = getComponent<HealthComponent>(e0);
+		if (nc) {
+			RFCT_INFO("entity0 health: {}", nc->health);
+		}
+		else {
+			RFCT_INFO("entity0 has no health component");
+		}
+	}
+}
+
 void rfct::world::loadWorld(std::string path)
 {
 	{
-		Entity namedEnt = createEntity<NameComponent>({ "entity named" });
-		NameComponent nc = getComponent<NameComponent>(namedEnt);
-		RFCT_INFO("entity0 name: {}", nc.name);
+		Entity namedEnt = helloEntity<NameComponent>({ "entity named" });
+		NameComponent* nc = getComponent<NameComponent>(namedEnt);
+		RFCT_INFO("entity name: {}", nc->name);
+		goodbyeEntity(namedEnt);
 	}
 
 	{
-		Entity e1 = createEntity<NameComponent, DamageComponent>({ "entity 1" }, { 0 });
-		NameComponent nc1 = getComponent<NameComponent>(e1);
-		RFCT_INFO("entity1 name: {}", nc1.name);
-		DamageComponent dc1 = getComponent<DamageComponent>(e1);
-		RFCT_INFO("entity1 damage: {}", dc1.damage);
+		Entity e1 = helloEntity<NameComponent, DamageComponent>({ "entity 1" }, { 0 });
+		NameComponent* nc1 = getComponent<NameComponent>(e1);
+		RFCT_INFO("entity name: {}", nc1->name);
+		DamageComponent* dc1 = getComponent<DamageComponent>(e1);
+		RFCT_INFO("entity damage: {}", dc1->damage);
+	}
+
+
+	{
+		Entity e1 = helloEntity<NameComponent>({ "entity with name" });
+		NameComponent* nc1 = getComponent<NameComponent>(e1);
+		RFCT_INFO("entity name: {}", nc1->name);
 	}
 
 	{
-		Entity e2 = createEntity<NameComponent, DamageComponent>({ "entity 2" }, { 100 });
-		NameComponent nc2 = getComponent<NameComponent>(e2);
-		RFCT_INFO("entity2 name: {}", nc2.name);
-		DamageComponent dc2 = getComponent<DamageComponent>(e2);
-		RFCT_INFO("entity2 damage: {}", dc2.damage);
+		Entity e1 = helloEntity<NameComponent, DamageComponent>({ "entity 1" }, { 100 });
+		NameComponent* nc1 = getComponent<NameComponent>(e1);
+		RFCT_INFO("entity name: {}", nc1->name);
+		DamageComponent* dc1 = getComponent<DamageComponent>(e1);
+		RFCT_INFO("entity damage: {}", dc1->damage);
+		goodbyeEntity(e1);
 	}
 
 	{
-		Entity e2 = createEntity<NameComponent, DamageComponent>({ "entity 2" }, { 100 });
-		NameComponent nc2 = getComponent<NameComponent>(e2);
-		RFCT_INFO("entity name: {}", nc2.name);
-		DamageComponent dc2 = getComponent<DamageComponent>(e2);
-		RFCT_INFO("entity damage: {}", dc2.damage);
-
+		Entity e1 = helloEntity<NameComponent, DamageComponent>({ "entity yeepie" }, { 0 });
+		NameComponent* nc1 = getComponent<NameComponent>(e1);
+		RFCT_INFO("entity name: {}", nc1->name);
+		DamageComponent* dc1 = getComponent<DamageComponent>(e1);
+		RFCT_INFO("entity damage: {}", dc1->damage);
 	}
 }
 
 template<typename... Components>
-rfct::Entity rfct::world::createEntity(Components&&... components)
+rfct::Entity rfct::world::helloEntity(Components&&... components)
 {
   	size_t EntityID = 0;
 	if (m_FreeEntityBlocks.size() != 0) { 
@@ -55,9 +82,6 @@ rfct::Entity rfct::world::createEntity(Components&&... components)
 	}
 	else
 	{
-		/*if (m_EntityLocations.size() == m_EntityLocations.capacity()) {
-			m_EntityLocations.reserve(m_EntityLocations.size() * 2);
-		}*/
 		EntityID = m_EntityLocations.size();
 		m_EntityLocations.emplace_back(EntityLocation(nullptr, 0));
 	}
@@ -70,22 +94,22 @@ rfct::Entity rfct::world::createEntity(Components&&... components)
 }
 
 template<typename Component>
-Component& rfct::world::getComponent(Entity entity)
+Component* rfct::world::getComponent(Entity entity)
 {
 	EntityLocation& entityLoc = m_EntityLocations.at(entity.id);
 
 	if (!entityLoc.archetype) {
-		throw std::runtime_error("Entity does not exist or has no components.");
+		RFCT_CRITICAL("Entity does not exist or has no components.");
 	}
 	BaseArchetype* baseArch = entityLoc.archetype;
-	/*
-	auto* typedArchetype = dynamic_cast<Archetype<Component>*>(baseArch);
-
-	if (!typedArchetype) {
-		throw std::runtime_error("Requested component does not exist for this entity.");
-	}*/
 
 	return baseArch->getComponent<Component>(entityLoc.locationIndex);
 	
 }
 
+void rfct::world::goodbyeEntity(Entity entity)
+{
+	m_FreeEntityBlocks.emplace_back(entity);
+	m_EntityLocations[entity].archetype->removeEntity(m_EntityLocations[entity].locationIndex);
+	m_EntityLocations[entity] = EntityLocation(nullptr, 0);
+}

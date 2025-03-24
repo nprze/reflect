@@ -34,6 +34,7 @@ void rfct::reflectApplication::render() {
 		m_Game.onUpdate();
 	}
 	m_Scene.getCurrentScene()->onUpdate();
+	m_GameWorld.onUpdate(0);
 	if (shouldRender) {
 		renderer::getRen().render();
 	};

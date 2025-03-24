@@ -5,18 +5,22 @@
 #include "components.h"
 
 namespace rfct {
+    struct Query;
 
     struct BaseArchetype {
-        virtual ~BaseArchetype() = default;
-
+        virtual ~BaseArchetype() {};
         virtual void* getComponentRaw(size_t index, size_t typeHash) = 0;
+        virtual void removeEntity(size_t index) = 0;
+        virtual ComponentEnum getComponentsBitmask() = 0;
 
         template <typename Component>
-        Component& getComponent(size_t index) {
+        Component* getComponent(size_t index) {
             void* rawPtr = getComponentRaw(index, typeid(Component).hash_code());
-            if (!rawPtr) throw std::runtime_error("Invalid component access");
-            return *static_cast<Component*>(rawPtr);
+            //if (!rawPtr) RFCT_CRITICAL("Invalid component access");
+            return static_cast<Component*>(rawPtr);
         }
+
+
     };
 
     template<typename... Components>
@@ -27,9 +31,19 @@ namespace rfct {
 
         inline Archetype(size_t capacity = RFCT_DEFAULT_ARCHETYPE_COMPONENTS_COUNT)
             : componentsBitmask(ComponentEnum::None) {
+			componentsBitmask = GetComponentMask<Components...>(); 
             entities.reserve(capacity);
             (std::get<std::vector<Components>>(componentArrays).reserve(capacity), ...);
         }
+
+		inline ~Archetype() override {
+			entities.clear();
+			(std::get<std::vector<Components>>(componentArrays).clear(), ...);
+		}
+
+        inline ComponentEnum getComponentsBitmask() {
+            return componentsBitmask;
+        };
 
         inline size_t addEntity(Entity entity, Components&&... components) { // returns the index (row)
             entities.emplace_back(entity);
@@ -42,7 +56,7 @@ namespace rfct {
             return std::get<std::vector<Component>>(componentArrays);
         }
 
-        inline void removeEntity(size_t index) {
+        inline void removeEntity(size_t index) override {
             if (index >= entities.size()) return;
 
             size_t last = entities.size() - 1;
@@ -51,8 +65,12 @@ namespace rfct {
                 (std::swap(std::get<std::vector<Components>>(componentArrays)[index],
                     std::get<std::vector<Components>>(componentArrays)[last]), ...);
             }
-
+            if (entities.size() == 1) {
+				Query::removeArchetype(this);
+				return;
+			}
             entities.pop_back();
+			
             (std::get<std::vector<Components>>(componentArrays).pop_back(), ...);
         }
 
@@ -63,6 +81,7 @@ namespace rfct {
             return result;
         }
     };
+
 
     struct Query {
         static std::vector<BaseArchetype*> archetypes;
@@ -88,5 +107,15 @@ namespace rfct {
         inline static void addArchetype() {
             archetypes.push_back(new Archetype<Components...>(RFCT_DEFAULT_ARCHETYPE_COMPONENTS_COUNT));
         }
+
+        inline static void removeArchetype(BaseArchetype* Arch) {
+            auto it = std::find(archetypes.begin(), archetypes.end(), Arch);
+            if (it != archetypes.end()) {
+                delete* it;
+                archetypes.erase(it);
+            }
+        }
+
+
     };
 }
