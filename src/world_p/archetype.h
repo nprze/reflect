@@ -2,120 +2,109 @@
 #include <vector>
 #include <tuple>
 #include <stdexcept>
+#include <any>
 #include "components.h"
 
 namespace rfct {
     struct Query;
 
-    struct BaseArchetype {
-        virtual ~BaseArchetype() {};
-        virtual void* getComponentRaw(size_t index, size_t typeHash) = 0;
-        virtual void removeEntity(size_t index) = 0;
-        virtual ComponentEnum getComponentsBitmask() = 0;
+    class Archetype {
 
-        template <typename Component>
-        Component* getComponent(size_t index) {
-            void* rawPtr = getComponentRaw(index, typeid(Component).hash_code());
-            //if (!rawPtr) RFCT_CRITICAL("Invalid component access");
-            return static_cast<Component*>(rawPtr);
-        }
-
-
-    };
-
-    template<typename... Components>
-    struct Archetype : public BaseArchetype {
+    public:
         ComponentEnum componentsBitmask;
         std::vector<Entity> entities;
-        std::tuple<std::vector<Components>...> componentArrays;
+		std::unordered_map<ComponentEnum, void*> componentMap; // void* is a pointer to std::vector that holds the actual components
 
-        inline Archetype(size_t capacity = RFCT_DEFAULT_ARCHETYPE_COMPONENTS_COUNT)
-            : componentsBitmask(ComponentEnum::None) {
-			componentsBitmask = GetComponentMask<Components...>(); 
-            entities.reserve(capacity);
-            (std::get<std::vector<Components>>(componentArrays).reserve(capacity), ...);
+        inline Archetype(ComponentEnum components)
+            : componentsBitmask(components) {
+            entities.reserve(RFCT_DEFAULT_ARCHETYPE_COMPONENTS_COUNT);
         }
 
-		inline ~Archetype() override {
-			entities.clear();
-			(std::get<std::vector<Components>>(componentArrays).clear(), ...);
-		}
+        inline ~Archetype() {
+
+            entities.clear();
+            for (auto& [key, ptr] : componentMap) {
+                delete static_cast<std::vector<ComponentBase>*>(ptr);
+            }
+        }
 
         inline ComponentEnum getComponentsBitmask() {
             return componentsBitmask;
         };
-
-        inline size_t addEntity(Entity entity, Components&&... components) { // returns the index (row)
+		template<typename... Components>
+        inline size_t addEntity(Entity entity, Components&&... componentValues) {
             entities.emplace_back(entity);
-            (std::get<std::vector<Components>>(componentArrays).emplace_back(std::forward<Components>(components)), ...);
-			return entities.size() - 1;
+
+            ((
+                [&] {
+                        auto* componentVector = static_cast<std::vector<std::decay_t<Components>>*>(componentMap[Components::EnumValue]);
+                        componentVector->emplace_back(std::forward<Components>(componentValues));
+                }()
+                    ), ...);
+
+            return entities.size() - 1;
         }
+
 
         template <typename Component>
-        inline std::vector<Component>& getComponents() {
-            return std::get<std::vector<Component>>(componentArrays);
+        inline std::vector<Component>& getComponents(ComponentEnum componentEnum) {
+            return *(static_cast<std::vector<Component>*>(componentMap[Component::EnumValue]));
         }
+        
 
-        inline void removeEntity(size_t index) override {
-            if (index >= entities.size()) return;
-
-            size_t last = entities.size() - 1;
-            if (index != last) {
-                entities[index] = std::move(entities[last]);
-                (std::swap(std::get<std::vector<Components>>(componentArrays)[index],
-                    std::get<std::vector<Components>>(componentArrays)[last]), ...);
-            }
-            if (entities.size() == 1) {
-				Query::removeArchetype(this);
-				return;
-			}
-            entities.pop_back();
-			
-            (std::get<std::vector<Components>>(componentArrays).pop_back(), ...);
+    private:
+		template <typename ComponentType>
+        inline void addComponent(ComponentEnum componentEnum) {
+            RFCT_INFO("attempt");
+            if (componentMap.find(componentEnum) != componentMap.end())return;
+            RFCT_INFO("inside");
+			componentMap[componentEnum] = new std::vector<ComponentType>();
+            (static_cast<std::vector<ComponentType>*>(componentMap[componentEnum]))->reserve(RFCT_DEFAULT_ARCHETYPE_COMPONENTS_COUNT);
+            componentsBitmask |= componentEnum;
         }
-
-        virtual void* getComponentRaw(size_t index, size_t typeHash) override {
-            void* result = nullptr;
-            ((typeHash == typeid(Components).hash_code() ?
-                result = static_cast<void*>(&std::get<std::vector<Components>>(componentArrays).at(index)) : result), ...);
-            return result;
-        }
+		friend struct Query;
     };
 
-
     struct Query {
-        static std::vector<BaseArchetype*> archetypes;
+        static std::vector<Archetype*> archetypes;
 
         inline static void cleanUp() {
-            for (auto archetype : archetypes) {
+            for (Archetype* archetype : archetypes) {
                 delete archetype;
             }
+            archetypes.clear();
         }
 
-        template <typename... Components>
-        inline static Archetype<Components...>* getArchetype() {
-            for (auto archetype : archetypes) {
-                if (auto* typedArchetype = dynamic_cast<Archetype<Components...>*>(archetype)) {
-                    return typedArchetype;
-                }
-            }
-            addArchetype<Components...>();
-            return dynamic_cast<Archetype<Components...>*>(archetypes.back());
+        template<typename... Components>
+        inline static Archetype* getArchetype(ComponentEnum requestedComponents) {
+			for (Archetype* archetype : archetypes) {
+				if (archetype->getComponentsBitmask() == requestedComponents) {
+					return archetype;
+				}
+			}
+			addArchetype<Components...>(requestedComponents);
+			return archetypes.back();
         }
-
-        template <typename... Components>
-        inline static void addArchetype() {
-            archetypes.push_back(new Archetype<Components...>(RFCT_DEFAULT_ARCHETYPE_COMPONENTS_COUNT));
+		template<typename... Components>
+        inline static void addArchetype(ComponentEnum components) {
+			Archetype* archetype = new Archetype(components);
+			archetypes.push_back(archetype);
+            (archetype->addComponent<Components>(Components::EnumValue), ...);
         }
+        /*
+        // Function to remove an archetype by type
+        inline static void removeArchetype(Archetype* Arch) {
+            auto it = std::find_if(archetypes.begin(), archetypes.end(),
+                [Arch](const auto& pair) {
+                    return pair.second.get() == Arch;  // Compare the raw pointer to the Archetype
+                });
 
-        inline static void removeArchetype(BaseArchetype* Arch) {
-            auto it = std::find(archetypes.begin(), archetypes.end(), Arch);
             if (it != archetypes.end()) {
-                delete* it;
                 archetypes.erase(it);
             }
-        }
-
+        }*/
+    
+    
 
     };
 }

@@ -1,2 +1,2 @@
 #include "archetype.h"
-std::vector<rfct::BaseArchetype*> rfct::Query::archetypes;
+std::vector<rfct::Archetype*> rfct::Query::archetypes;

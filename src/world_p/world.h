@@ -2,7 +2,7 @@
 #include "archetype.h"
 namespace rfct {
 	struct EntityLocation {
-		BaseArchetype* archetype = nullptr;
+		Archetype* archetype = nullptr;
 		size_t locationIndex = 0;
 	};
 	class world {
@@ -12,7 +12,7 @@ namespace rfct {
 		void onUpdate(float dt);
 		void loadWorld(std::string path);
 		template<typename... Components>
-		Entity helloEntity(Components&&... components);
+		Entity helloEntity(ComponentEnum components, Components&&... componentMap);
 
 		template<typename Component>
 		Component* getComponent(Entity entity);

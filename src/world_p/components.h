@@ -9,14 +9,35 @@ namespace rfct {
 	};
 
 
+    enum class ComponentEnum : std::uint64_t {
+        None = 0,
+        nameComponent = 1ULL << 0,
+        damageComponent = 1ULL << 1,
+        healthComponent = 1ULL << 2,
+    };
 
-	struct NameComponent{
+    struct ComponentBase {
+	    virtual ComponentEnum getComponentEnum() = 0;
+    };
+	struct nameComponent : public ComponentBase {
+        static constexpr ComponentEnum EnumValue = ComponentEnum::nameComponent;
+        inline ComponentEnum getComponentEnum() override {
+            return ComponentEnum::nameComponent;
+        };
 		std::string name;
 	};
-	struct DamageComponent {
+	struct damageComponent : public ComponentBase {
+        static constexpr ComponentEnum EnumValue = ComponentEnum::damageComponent;
+        inline ComponentEnum getComponentEnum() override {
+            return ComponentEnum::damageComponent;
+        };
 		int damage;
 	};
-	struct HealthComponent {
+	struct healthComponent : public ComponentBase {
+        static constexpr ComponentEnum EnumValue = ComponentEnum::healthComponent;
+        inline ComponentEnum getComponentEnum() override {
+            return ComponentEnum::healthComponent;
+        };
 		int health;
 	};
 
@@ -32,12 +53,6 @@ namespace rfct {
 
 
 
-    enum class ComponentEnum : std::uint64_t {
-        None = 0,
-        nameComponent = 1ULL << 0,
-        damageComponent = 1ULL << 1,
-        healthComponent = 1ULL << 2,
-    };
 
     constexpr ComponentEnum operator|(ComponentEnum lhs, ComponentEnum rhs) {
         return static_cast<ComponentEnum>(
@@ -66,15 +81,15 @@ namespace rfct {
     constexpr ComponentEnum GetComponentEnum();
 
     template <>
-    constexpr ComponentEnum GetComponentEnum<NameComponent>() {
+    constexpr ComponentEnum GetComponentEnum<nameComponent>() {
         return ComponentEnum::nameComponent;
     }
     template <>
-    constexpr ComponentEnum GetComponentEnum<DamageComponent>() {
+    constexpr ComponentEnum GetComponentEnum<damageComponent>() {
         return ComponentEnum::damageComponent;
     }
     template <>
-    constexpr ComponentEnum GetComponentEnum<HealthComponent>() {
+    constexpr ComponentEnum GetComponentEnum<healthComponent>() {
         return ComponentEnum::healthComponent;
     }
 
