@@ -5,6 +5,7 @@ rfct::world::world() : m_EntityLocations(0)
 	m_EntityLocations.reserve(100);
 }
 
+rfct::world rfct::world::currentWorld;
 rfct::world::~world()
 {
 	Query::cleanUp();
@@ -31,53 +32,53 @@ void rfct::world::onUpdate(float dt)
 void rfct::world::loadWorld(std::string path)
 {
 	{
-		nameComponent nameComp{};
-		nameComp.name = "entity named";
-		Entity namedEnt = helloEntity<nameComponent>(ComponentEnum::nameComponent, std::move(nameComp));
-
-		/*
-		NameComponent* nc = getComponent<NameComponent>(namedEnt);
+		Entity namedEnt = helloEntity<nameComponent, damageComponent>(nameComponent("named0"), damageComponent(10));
+		nameComponent* nc = getComponent<nameComponent>(namedEnt);
 		RFCT_INFO("entity name: {}", nc->name);
-		goodbyeEntity(namedEnt);*/
+		damageComponent* dc = getComponent<damageComponent>(namedEnt);
+		RFCT_INFO("entity damage: {}", dc->damage);
+		RFCT_INFO("entity index in archatype: {}", m_EntityLocations[namedEnt].locationIndex);
+		//goodbyeEntity(namedEnt);
 	}
-
-	/*
 	{
-		Entity e1 = helloEntity<NameComponent, DamageComponent>(ComponentEnum::None, { "entity 1" }, { 0 });
-		NameComponent* nc1 = getComponent<NameComponent>(e1);
-		RFCT_INFO("entity name: {}", nc1->name);
-		DamageComponent* dc1 = getComponent<DamageComponent>(e1);
-		RFCT_INFO("entity damage: {}", dc1->damage);
+		Entity namedEnt = helloEntity<nameComponent, damageComponent>(nameComponent("named1"), damageComponent(20));
+		nameComponent* nc = getComponent<nameComponent>(namedEnt);
+		RFCT_INFO("entity name: {}", nc->name);
+		damageComponent* dc = getComponent<damageComponent>(namedEnt);
+		RFCT_INFO("entity damage: {}", dc->damage);
+		RFCT_INFO("entity index in archatype: {}", m_EntityLocations[namedEnt].locationIndex);
 	}
-
 	{
-		Entity e1 = helloEntity<NameComponent>(ComponentEnum::None, { "entity with name" });
-		NameComponent* nc1 = getComponent<NameComponent>(e1);
-		RFCT_INFO("entity name: {}", nc1->name);
+		Entity namedEnt = helloEntity<nameComponent, damageComponent>(nameComponent("named to be deleted"), damageComponent(20));
+		nameComponent* nc = getComponent<nameComponent>(namedEnt);
+		RFCT_INFO("entity name: {}", nc->name);
+		damageComponent* dc = getComponent<damageComponent>(namedEnt);
+		RFCT_INFO("entity damage: {}", dc->damage);
+		RFCT_INFO("entity index in archatype: {}", m_EntityLocations[namedEnt].locationIndex);
+		goodbyeEntity(namedEnt);
 	}
-
 	{
-		Entity e1 = helloEntity<NameComponent, DamageComponent>(ComponentEnum::None, { "entity 1" }, { 100 });
-		NameComponent* nc1 = getComponent<NameComponent>(e1);
-		RFCT_INFO("entity name: {}", nc1->name);
-		DamageComponent* dc1 = getComponent<DamageComponent>(e1);
-		RFCT_INFO("entity damage: {}", dc1->damage);
-		goodbyeEntity(e1);
+		Entity namedEnt = helloEntity<nameComponent, damageComponent>(nameComponent("named2"), damageComponent(20));
+		nameComponent* nc = getComponent<nameComponent>(namedEnt);
+		RFCT_INFO("entity name: {}", nc->name);
+		damageComponent* dc = getComponent<damageComponent>(namedEnt);
+		RFCT_INFO("entity damage: {}", dc->damage);
+		RFCT_INFO("entity index in archatype: {}", m_EntityLocations[namedEnt].locationIndex);
 	}
-
 	{
-		Entity e1 = helloEntity<NameComponent, DamageComponent>(ComponentEnum::None, { "entity yeepie" }, { 0 });
-		NameComponent* nc1 = getComponent<NameComponent>(e1);
-		RFCT_INFO("entity name: {}", nc1->name);
-		DamageComponent* dc1 = getComponent<DamageComponent>(e1);
-		RFCT_INFO("entity damage: {}", dc1->damage);
-	}*/
+		Entity namedEnt = helloEntity<nameComponent>(nameComponent("named3"));
+		nameComponent* nc = getComponent<nameComponent>(namedEnt);
+		RFCT_INFO("entity name: {}", nc->name);
+		RFCT_INFO("entity index in archatype: {}", m_EntityLocations[namedEnt].locationIndex);
+
+	}
 }
 
 template<typename... Components>
-rfct::Entity rfct::world::helloEntity(ComponentEnum components,Components&&... componentMap)
+rfct::Entity rfct::world::helloEntity(Components&&... componentMap)
 {
-	
+
+	ComponentEnum components = (Components::EnumValue | ...);
   	size_t EntityID = 0;
 	if (m_FreeEntityBlocks.size() != 0) { 
 		EntityID = m_FreeEntityBlocks.back(); 
@@ -89,7 +90,7 @@ rfct::Entity rfct::world::helloEntity(ComponentEnum components,Components&&... c
 		EntityID = m_EntityLocations.size();
 		m_EntityLocations.emplace_back(EntityLocation(nullptr, 0));
 	}
-	Archetype* arch = Query::getArchetype<Components...>(components);
+	Archetype* arch = Query::getArchetype<Components...>();
 	
 	m_EntityLocations[EntityID].archetype = arch; 
 	m_EntityLocations[EntityID].locationIndex = arch->addEntity<Components...>({ EntityID }, std::forward<Components>(componentMap)...);
@@ -102,23 +103,13 @@ rfct::Entity rfct::world::helloEntity(ComponentEnum components,Components&&... c
 template<typename Component>
 Component* rfct::world::getComponent(Entity entity)
 {
-	/*
-	EntityLocation& entityLoc = m_EntityLocations.at(entity.id);
-
-	if (!entityLoc.archetype) {
-		RFCT_CRITICAL("Entity does not exist or has no components.");
-	}
-	BaseArchetype* baseArch = entityLoc.archetype;
-
-	return baseArch->getComponent<Component>(entityLoc.locationIndex);
-	*/
-	return nullptr;
+	if (!((bool)(m_EntityLocations[entity.id].archetype->componentsBitmask & Component::EnumValue))) RFCT_CRITICAL("Entity does not have component");
+	return &m_EntityLocations[entity.id].archetype->getComponent<Component>(m_EntityLocations[entity.id].locationIndex);
 }
 
 void rfct::world::goodbyeEntity(Entity entity)
 {
-	/*
-	m_FreeEntityBlocks.emplace_back(entity);
 	m_EntityLocations[entity].archetype->removeEntity(m_EntityLocations[entity].locationIndex);
-	m_EntityLocations[entity] = EntityLocation(nullptr, 0);*/
+	m_FreeEntityBlocks.emplace_back(entity);
+	m_EntityLocations[entity] = EntityLocation(nullptr, 0);
 }

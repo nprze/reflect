@@ -17,27 +17,25 @@ namespace rfct {
     };
 
     struct ComponentBase {
-	    virtual ComponentEnum getComponentEnum() = 0;
+		static constexpr ComponentEnum EnumValue = ComponentEnum::None;
+        ComponentBase() = default;
     };
 	struct nameComponent : public ComponentBase {
+        nameComponent() = default;
+		nameComponent(std::string n) : name(n) {}
         static constexpr ComponentEnum EnumValue = ComponentEnum::nameComponent;
-        inline ComponentEnum getComponentEnum() override {
-            return ComponentEnum::nameComponent;
-        };
 		std::string name;
 	};
 	struct damageComponent : public ComponentBase {
+        damageComponent() = default;
+        damageComponent(int dmg) : damage(dmg) {}
         static constexpr ComponentEnum EnumValue = ComponentEnum::damageComponent;
-        inline ComponentEnum getComponentEnum() override {
-            return ComponentEnum::damageComponent;
-        };
 		int damage;
 	};
 	struct healthComponent : public ComponentBase {
+        healthComponent() = default;
+		healthComponent(int h) : health(h) {}
         static constexpr ComponentEnum EnumValue = ComponentEnum::healthComponent;
-        inline ComponentEnum getComponentEnum() override {
-            return ComponentEnum::healthComponent;
-        };
 		int health;
 	};
 

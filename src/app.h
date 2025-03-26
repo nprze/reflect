@@ -23,6 +23,5 @@ namespace rfct {
 		scene m_Scene;
 		input m_Input;
 		game::game m_Game;
-		world m_GameWorld;
 	};
 }
