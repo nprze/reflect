@@ -45,6 +45,12 @@ namespace rfct {
 
                 return entities.size() - 1;
             }
+
+            template<typename Component>
+            inline void addsingleComponent(Component componentValue) {
+                auto* componentVector = static_cast<std::vector<Component>*>(componentMap[Component::EnumValue]);
+                componentVector->emplace_back(componentValue);
+            }
             
             void removeEntity(size_t index);
 
@@ -62,7 +68,7 @@ namespace rfct {
         private:
 		    template <typename ComponentType>
             inline void addComponent() {
-				if (!(bool)(componentsBitmask & ComponentType::EnumValue)) return;
+				if (!(bool)(componentsBitmask & ComponentType::EnumValue)) RFCT_CRITICAL("attempting to add component to archetype which wasn't supposed to have that component");
                 if (componentMap.find(ComponentType::EnumValue) != componentMap.end())return;
 			    auto* vec = new std::vector<ComponentType>();
                 componentMap[ComponentType::EnumValue] = vec;
@@ -82,6 +88,7 @@ namespace rfct {
                 archetypes.clear();
             }
 
+            // this (with template args) is preferred
             template<typename... Components>
             inline static Archetype* getArchetype() {
                 ComponentEnum requestedComponents = (Components::EnumValue | ...);
@@ -90,8 +97,48 @@ namespace rfct {
 					    return archetype;
 				    }
 			    }
+				RFCT_INFO("Creating new archetype");
 			    addArchetype<Components...>();
 			    return archetypes.back();
+            }
+
+
+            // function with template args is preferred
+            inline static Archetype* getArchetype(ComponentEnum components, ComponentEnum newComponent = ComponentEnum::None ) {
+                for (Archetype* archetype : archetypes) {
+                    if (archetype->componentsBitmask == (components | newComponent)) {
+                        return archetype;
+                    }
+                }
+                RFCT_INFO("Creating new archetype");
+                components |= newComponent;
+                Archetype* archetype = new Archetype(components);
+                archetypes.push_back(archetype);
+
+                while ((bool)components) {
+                    ComponentEnum selBit = (ComponentEnum)((size_t)components & -(size_t)components);
+
+                    switch (selBit) {
+                    case ComponentEnum::nameComponent: {
+                        archetype->addComponent<nameComponent>();
+                        break;
+                    }
+                    case ComponentEnum::damageComponent: {
+                        archetype->addComponent<damageComponent>();
+                        break;
+                    }
+                    case ComponentEnum::healthComponent: {
+                        archetype->addComponent<healthComponent>();
+                        break;
+                    }
+                    default:
+                        RFCT_CRITICAL("Couldn't add entity components"); 
+                        break; 
+                    }
+                    components = static_cast<ComponentEnum>(static_cast<size_t>(components) & (static_cast<size_t>(components) - 1));
+
+                };                
+                return archetypes.back();
             }
 		    template<typename... Components>
             inline static void addArchetype() {
@@ -100,7 +147,10 @@ namespace rfct {
 			    archetypes.push_back(archetype);
                 (archetype->addComponent<Components>(), ...);
             }
-    
-
+            inline static void removeArchetype(Archetype* archetypeToBeRemoved) {
+                RFCT_ASSERT(archetypeToBeRemoved->entities.size() == 0); // attempting to remove archetype with entities still in it
+                archetypes.erase(std::remove(archetypes.begin(), archetypes.end(), archetypeToBeRemoved), archetypes.end());
+                delete archetypeToBeRemoved;
+            }
         };
     }

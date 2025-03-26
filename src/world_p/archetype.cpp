@@ -10,37 +10,9 @@ namespace rfct {
 		std::swap(entities.at(index), entities.back());
 		entities.pop_back();
 
-        for (auto& [compType, compVecPtr] : componentMap) {
-            switch (compType) {
-                case ComponentEnum::nameComponent: {
-                    auto* vec = static_cast<std::vector<nameComponent>*>(compVecPtr);
-                    if (index < vec->size() - 1) {
-                        std::swap(vec->at(index), vec->back());
-                    }
-                    vec->pop_back();
-                    break;
-                }
-                case ComponentEnum::damageComponent: {
-                    auto* vec = static_cast<std::vector<damageComponent>*>(compVecPtr);
-                    if (index < vec->size() - 1) {
-                        std::swap(vec->at(index), vec->back());
-                    }
-                    vec->pop_back();
-                    break;
-                }
-                case ComponentEnum::healthComponent: {
-                    auto* vec = static_cast<std::vector<healthComponent>*>(compVecPtr);
-                    if (index < vec->size() - 1) {
-                        std::swap(vec->at(index), vec->back());
-                    }
-                    vec->pop_back();
-                    break;
-                }
-                default:
-                    RFCT_CRITICAL("Couldn't delete entity components");
-                    break;
-            }
-        }
+		for (auto& [compType, compVecPtr] : componentMap) {
+			RFCT_REMOVE_COMPONENT_AT_INDEX(compVecPtr, compType, index);
+		}
 
     }
 }

@@ -19,8 +19,11 @@ namespace rfct {
 		template<typename Component>
 		Component* getComponent(Entity entity);
 
+		template<typename Component>
+		void addComponentToEntity(Entity entity, Component component);
 
 		void goodbyeEntity(Entity entity);
+		void runEntityTests();
 
 	private:
 		std::vector<EntityLocation> m_EntityLocations; // Entity is an index by which we adress this to get the actual location of components

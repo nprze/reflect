@@ -67,6 +67,11 @@ namespace rfct {
         return lhs;
     }
 
+    constexpr ComponentEnum operator&=(ComponentEnum lhs, ComponentEnum rhs) {
+        lhs = lhs & rhs;
+        return lhs;
+    }
+
 
     template <typename... Components>
     constexpr ComponentEnum GetComponentMask() {
