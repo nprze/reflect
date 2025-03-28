@@ -13,6 +13,9 @@ namespace rfct {
 		~world();
 		void onUpdate(float dt);
 		void loadWorld(std::string path);
+
+
+		// ecs
 		template<typename... Components>
 		Entity helloEntity(Components&&... componentMap);
 
@@ -24,6 +27,8 @@ namespace rfct {
 
 		void goodbyeEntity(Entity entity);
 		void runEntityTests();
+
+		void getAllComponents(std::unordered_map<ComponentEnum, std::vector<void*>>& out_components, ComponentEnum requestedComponents);
 
 	private:
 		std::vector<EntityLocation> m_EntityLocations; // Entity is an index by which we adress this to get the actual location of components

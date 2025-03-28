@@ -13,103 +13,14 @@ rfct::world::~world()
 
 void rfct::world::onUpdate(float dt)
 {
-	{
-		Entity e0 = { 0 };
-		nameComponent* nc = getComponent<nameComponent>(e0);
-	}
-	/* {
-		Entity e0 = { 1 };
-		healthComponent* nc = getComponent<healthComponent>(e0);
-		if (nc) {
-			RFCT_INFO("entity0 health: {}", nc->health);
-		}
-		else {
-			RFCT_INFO("entity0 has no health component");
-		}
-	}*/
+
 }
 
 
 void rfct::world::loadWorld(std::string path)
 {
-	{
-		Entity namedEnt = helloEntity<nameComponent, damageComponent>(nameComponent("named name and damage 0"), damageComponent(0));
-		nameComponent* nc = getComponent<nameComponent>(namedEnt);
-		RFCT_INFO("entity name: {}", nc->name);
-		damageComponent* dc = getComponent<damageComponent>(namedEnt);
-		RFCT_INFO("entity damage: {}", dc->damage);
-		RFCT_INFO("entity index in archatype: {}", m_EntityLocations[namedEnt].locationIndex);
-		RFCT_INFO("current number of archetypes: {}", Query::archetypes.size());
-	}
-	{
-		Entity namedEnt = helloEntity<nameComponent, damageComponent>(nameComponent("named naem and damage 1"), damageComponent(1));
-		nameComponent* nc = getComponent<nameComponent>(namedEnt);
-		RFCT_INFO("entity name: {}", nc->name);
-		damageComponent* dc = getComponent<damageComponent>(namedEnt);
-		RFCT_INFO("entity damage: {}", dc->damage);
-		RFCT_INFO("entity index in archatype: {}", m_EntityLocations[namedEnt].locationIndex);
-	}
-	Entity toBeDeletedEntity;
-	{
-		Entity namedEnt = helloEntity<nameComponent, damageComponent>(nameComponent("named name and damage to be deleted 2"), damageComponent(69));
-		nameComponent* nc = getComponent<nameComponent>(namedEnt);
-		RFCT_INFO("entity name: {}", nc->name);
-		damageComponent* dc = getComponent<damageComponent>(namedEnt);
-		RFCT_INFO("entity damage: {}", dc->damage);
-		RFCT_INFO("entity index in archatype: {}", m_EntityLocations[namedEnt].locationIndex);
-		RFCT_INFO("current number of archetypes: {}", Query::archetypes.size());
-		toBeDeletedEntity = namedEnt;
-		
-	}
-	{
-		Entity namedEnt = helloEntity<nameComponent, damageComponent>(nameComponent("named name and damage first 3 that is supposed to then become 2"), damageComponent(2));
-		nameComponent* nc = getComponent<nameComponent>(namedEnt);
-		RFCT_INFO("entity name: {}", nc->name);
-		damageComponent* dc = getComponent<damageComponent>(namedEnt);
-		RFCT_INFO("entity damage: {}", dc->damage);
-		RFCT_INFO("entity index in archatype: {}", m_EntityLocations[namedEnt].locationIndex); 
-		goodbyeEntity(toBeDeletedEntity);
-		RFCT_INFO("entity index in archatype: {}", m_EntityLocations[namedEnt].locationIndex);
-		RFCT_INFO("current number of archetypes: {}", Query::archetypes.size());
-	}
-
-	{
-		Entity namedEnt = helloEntity<nameComponent, damageComponent>(nameComponent("named name and damage 3"), damageComponent(3));
-		nameComponent* nc = getComponent<nameComponent>(namedEnt);
-		RFCT_INFO("entity name: {}", nc->name);
-		damageComponent* dc = getComponent<damageComponent>(namedEnt);
-		RFCT_INFO("entity damage: {}", dc->damage);
-		RFCT_INFO("entity index in archatype: {}", m_EntityLocations[namedEnt].locationIndex);
-		RFCT_INFO("current number of archetypes: {}", Query::archetypes.size());
-	}
-	{
-		Entity namedEnt = helloEntity<nameComponent>(nameComponent("named just name to be deleted 0"));
-		nameComponent* nc = getComponent<nameComponent>(namedEnt);
-		RFCT_INFO("entity name: {}", nc->name);
-		RFCT_INFO("entity index in archatype: {}", m_EntityLocations[namedEnt].locationIndex);
-		goodbyeEntity(namedEnt);
-		RFCT_INFO("current number of archetypes: {}", Query::archetypes.size());
-
-	}
-	{
-		Entity namedEnt = helloEntity<nameComponent>(nameComponent("named just name to have health added"));
-		nameComponent* nc = getComponent<nameComponent>(namedEnt);
-		RFCT_INFO("entity name: {}", nc->name);
-		RFCT_INFO("entity index in archatype: {}", m_EntityLocations[namedEnt].locationIndex);
-		RFCT_INFO("current number of archetypes: {}", Query::archetypes.size());
-		addComponentToEntity<healthComponent>(namedEnt, healthComponent(4));
-		healthComponent* hc = getComponent<healthComponent>(namedEnt);
-		RFCT_INFO("entity health: {}", hc->health);
-		RFCT_INFO("current number of archetypes: {}", Query::archetypes.size());
-		
-		//nc = getComponent<nameComponent>(namedEnt);
-		//RFCT_INFO("entity name: {}", nc->name);
-		//damageComponent* dc = getComponent<damageComponent>(namedEnt);
-		//RFCT_INFO("entity damage: {}", dc->damage);
-		RFCT_INFO("entity index in archatype: {}", m_EntityLocations[namedEnt].locationIndex);
-		RFCT_INFO("current number of archetypes: {}", Query::archetypes.size());
-
-	}
+	runEntityTests();
+	Query::cleanUp();
 }
 
 template<typename... Components>
@@ -189,6 +100,25 @@ void rfct::world::addComponentToEntity(Entity entity, Component component)
 	m_EntityLocations[entity].archetype = newArchetype;
 }
 
+void rfct::world::getAllComponents(std::unordered_map<ComponentEnum, std::vector<void*>>& out_components, ComponentEnum requestedComponents)
+{
+	std::vector<Archetype*> archetypes;
+	archetypes.reserve(5);
+	Query::getAllArchetypesWithComponents(requestedComponents, archetypes);
+
+	// adding component to new archetype
+	while ((bool)requestedComponents) {
+		ComponentEnum selBit = (ComponentEnum)((size_t)requestedComponents & -(size_t)requestedComponents);
+		std::vector<void*>& components = out_components[selBit];
+		components.reserve(5);
+		for (Archetype* arch : archetypes) {
+			components.emplace_back(arch->componentMap[selBit]);
+		}
+
+		requestedComponents = static_cast<ComponentEnum>(static_cast<size_t>(requestedComponents) & (static_cast<size_t>(requestedComponents) - 1));
+	}
+}
+
 void rfct::world::goodbyeEntity(Entity entity)
 {
 	m_EntityLocations[entity].archetype->removeEntity(m_EntityLocations[entity].locationIndex);
@@ -200,82 +130,128 @@ void rfct::world::goodbyeEntity(Entity entity)
 }
 
 void rfct::world::runEntityTests()
-{
-	/*
 	{
-		Entity namedEnt = helloEntity<nameComponent, damageComponent>(nameComponent("named name and damage 0"), damageComponent(0));
-		nameComponent* nc = getComponent<nameComponent>(namedEnt);
-		RFCT_ASSERT(nc->name == "named name and damage 0"); // entity name
-		damageComponent* dc = getComponent<damageComponent>(namedEnt);
-		RFCT_ASSERT(dc->damage == 0); // entity damage
-		RFCT_ASSERT(m_EntityLocations[namedEnt].locationIndex == 0); // entity index in archetype
-		RFCT_ASSERT(Query::archetypes.size() == 2); // number of archetypes
-	}
+		{
+			Entity namedEnt = helloEntity<nameComponent, damageComponent>(nameComponent("named name and damage 0"), damageComponent(0));
+			nameComponent* nc = getComponent<nameComponent>(namedEnt);
+			RFCT_ASSERT((nc->name == std::string("named name and damage 0"))); // entity name
+			damageComponent* dc = getComponent<damageComponent>(namedEnt);
+			RFCT_ASSERT(dc->damage == 0); // entity damage
+			RFCT_ASSERT(m_EntityLocations[namedEnt].locationIndex == 0); // entity index in archetype
+			RFCT_ASSERT((Query::archetypes.size() == 1)); // number of archetypes
+		}
 
-	{
-		Entity namedEnt = helloEntity<nameComponent, damageComponent>(nameComponent("named naem and damage 1"), damageComponent(1));
-		nameComponent* nc = getComponent<nameComponent>(namedEnt);
-		RFCT_ASSERT(nc->name == "named naem and damage 1"); // entity name
-		damageComponent* dc = getComponent<damageComponent>(namedEnt);
-		RFCT_ASSERT(dc->damage == 1); // entity damage
-		RFCT_ASSERT(m_EntityLocations[namedEnt].locationIndex == 1); // entity index in archetype
-	}
+		{
+			Entity namedEnt = helloEntity<nameComponent, damageComponent>(nameComponent("named naem and damage 1"), damageComponent(1));
+			nameComponent* nc = getComponent<nameComponent>(namedEnt);
+			RFCT_ASSERT((nc->name == std::string("named naem and damage 1"))); // entity name
+			damageComponent* dc = getComponent<damageComponent>(namedEnt);
+			RFCT_ASSERT(dc->damage == 1); // entity damage
+			RFCT_ASSERT(m_EntityLocations[namedEnt].locationIndex == 1); // entity index in archetype
+		}
 
-	Entity toBeDeletedEntity;
-	{
-		Entity namedEnt = helloEntity<nameComponent, damageComponent>(nameComponent("named name and damage to be deleted 2"), damageComponent(69));
-		nameComponent* nc = getComponent<nameComponent>(namedEnt);
-		RFCT_ASSERT(nc->name == "named name and damage to be deleted 2"); // entity name
-		damageComponent* dc = getComponent<damageComponent>(namedEnt);
-		RFCT_ASSERT(dc->damage == 69); // entity damage
-		RFCT_ASSERT(m_EntityLocations[namedEnt].locationIndex == 2); // entity index in archetype
-		RFCT_ASSERT(Query::archetypes.size() == 2); // number of archetypes
-		toBeDeletedEntity = namedEnt;
-	}
+		Entity toBeDeletedEntity;
+		{
+			Entity namedEnt = helloEntity<nameComponent, damageComponent>(nameComponent("named name and damage to be deleted 2"), damageComponent(69));
+			nameComponent* nc = getComponent<nameComponent>(namedEnt);
+			RFCT_ASSERT((nc->name == std::string("named name and damage to be deleted 2"))); // entity name
+			damageComponent* dc = getComponent<damageComponent>(namedEnt);
+			RFCT_ASSERT((bool)(dc->damage == 69)); // entity damage
+			RFCT_ASSERT((bool)(m_EntityLocations[namedEnt].locationIndex == 2)); // entity index in archetype
+			RFCT_ASSERT((bool)(Query::archetypes.size() == 1)); // number of archetypes
+			toBeDeletedEntity = namedEnt;
+		}
 
-	{
-		Entity namedEnt = helloEntity<nameComponent, damageComponent>(nameComponent("named name and damage first 3 that is supposed to then become 2"), damageComponent(2));
-		nameComponent* nc = getComponent<nameComponent>(namedEnt);
-		RFCT_ASSERT(nc->name == "named name and damage first 3 that is supposed to then become 2"); // entity name
-		damageComponent* dc = getComponent<damageComponent>(namedEnt);
-		RFCT_ASSERT(dc->damage == 2); // entity damage
-		RFCT_ASSERT(m_EntityLocations[namedEnt].locationIndex == 3); // entity index before deletion
-		goodbyeEntity(toBeDeletedEntity);
-		RFCT_ASSERT(m_EntityLocations[namedEnt].locationIndex == 2); // entity index after deletion
-		RFCT_ASSERT(Query::archetypes.size() == 2); // number of archetypes
-	}
+		{
+			Entity namedEnt = helloEntity<nameComponent, damageComponent>(nameComponent("named name and damage first 3 that is supposed to then become 2"), damageComponent(2));
+			nameComponent* nc = getComponent<nameComponent>(namedEnt);
+			RFCT_ASSERT((nc->name == std::string("named name and damage first 3 that is supposed to then become 2"))); // entity name
+			damageComponent* dc = getComponent<damageComponent>(namedEnt);
+			RFCT_ASSERT((bool)(dc->damage == 2)); // entity damage
+			RFCT_ASSERT((bool)(m_EntityLocations[namedEnt].locationIndex == 3)); // entity index before deletion
+			goodbyeEntity(toBeDeletedEntity);
+			RFCT_ASSERT(m_EntityLocations[namedEnt].locationIndex == 2); // entity index after deletion
+			RFCT_ASSERT(Query::archetypes.size() == 1); // number of archetypes
+		}
 
-	{
-		Entity namedEnt = helloEntity<nameComponent, damageComponent>(nameComponent("named name and damage 3"), damageComponent(3));
-		nameComponent* nc = getComponent<nameComponent>(namedEnt);
-		RFCT_ASSERT(nc->name == "named name and damage 3"); // entity name
-		damageComponent* dc = getComponent<damageComponent>(namedEnt);
-		RFCT_ASSERT(dc->damage == 3); // entity damage
-		RFCT_ASSERT(m_EntityLocations[namedEnt].locationIndex == 3); // entity index
-		RFCT_ASSERT(Query::archetypes.size() == 2); // number of archetypes
-	}
+		{
+			Entity namedEnt = helloEntity<nameComponent, damageComponent>(nameComponent("named name and damage 3"), damageComponent(3));
+			nameComponent* nc = getComponent<nameComponent>(namedEnt);
+			RFCT_ASSERT((nc->name == std::string("named name and damage 3"))); // entity name
+			damageComponent* dc = getComponent<damageComponent>(namedEnt);
+			RFCT_ASSERT(dc->damage == 3); // entity damage
+			RFCT_ASSERT(m_EntityLocations[namedEnt].locationIndex == 3); // entity index
+			RFCT_ASSERT(Query::archetypes.size() == 1); // number of archetypes
+		}
 
-	{
-		Entity namedEnt = helloEntity<nameComponent>(nameComponent("named just name to be deleted 0"));
-		nameComponent* nc = getComponent<nameComponent>(namedEnt);
-		RFCT_ASSERT(nc->name == "named just name to be deleted 0"); // entity name
-		RFCT_ASSERT(m_EntityLocations[namedEnt].locationIndex == 0); // entity index in archetype
-		goodbyeEntity(namedEnt);
-		RFCT_ASSERT(Query::archetypes.size() == 2); // number of archetypes
-	}
+		{
+			Entity namedEnt = helloEntity<nameComponent>(nameComponent("named just name to be deleted 0"));
+			nameComponent* nc = getComponent<nameComponent>(namedEnt);
+			RFCT_ASSERT((nc->name == std::string("named just name to be deleted 0"))); // entity name
+			RFCT_ASSERT(m_EntityLocations[namedEnt].locationIndex == 0); // entity index in archetype
+			goodbyeEntity(namedEnt);
+			RFCT_ASSERT(Query::archetypes.size() == 1); // number of archetypes
+		}
 
-	{
-		Entity namedEnt = helloEntity<nameComponent>(nameComponent("named just name to have health added"));
-		nameComponent* nc = getComponent<nameComponent>(namedEnt);
-		RFCT_ASSERT(nc->name == "named just name to have health added"); // entity name
-		RFCT_ASSERT(m_EntityLocations[namedEnt].locationIndex == 0); // entity index in archetype
-		RFCT_ASSERT(Query::archetypes.size() == 2); // number of archetypes
+		{
+			Entity namedEnt = helloEntity<nameComponent>(nameComponent("named just name to have health added"));
+			nameComponent* nc = getComponent<nameComponent>(namedEnt);
+			RFCT_ASSERT((nc->name == std::string("named just name to have health added"))); // entity name
+			RFCT_ASSERT(m_EntityLocations[namedEnt].locationIndex == 0); // entity index in archetype
+			RFCT_ASSERT(Query::archetypes.size() == 2); // number of archetypes
 
-		addComponentToEntity<healthComponent>(namedEnt, healthComponent(4));
-		healthComponent* hc = getComponent<healthComponent>(namedEnt);
-		RFCT_ASSERT(hc->health == 4); // entity health
-		RFCT_ASSERT(Query::archetypes.size() == 2); // number of archetypes remains 2 after adding healthComponent
-		RFCT_ASSERT(m_EntityLocations[namedEnt].locationIndex == 0); // entity index remains valid
+
+			addComponentToEntity<healthComponent>(namedEnt, healthComponent(4));
+			healthComponent* hc = getComponent<healthComponent>(namedEnt);
+			nc = getComponent<nameComponent>(namedEnt);
+			RFCT_ASSERT((nc->name == std::string("named just name to have health added")));
+			RFCT_ASSERT(hc->health == 4); // entity health
+			RFCT_ASSERT(Query::archetypes.size() == 2); // number of archetypes remains 2 after adding healthComponent
+			RFCT_ASSERT(m_EntityLocations[namedEnt].locationIndex == 0); // entity index remains valid
+		}
+
+		{
+			Entity namedEnt = helloEntity<nameComponent>(nameComponent("named just name to have damage added"));
+			nameComponent* nc = getComponent<nameComponent>(namedEnt);
+			RFCT_ASSERT((nc->name == std::string("named just name to have damage added"))); // entity name
+			RFCT_ASSERT(m_EntityLocations[namedEnt].locationIndex == 0); // entity index in archetype
+			RFCT_ASSERT(Query::archetypes.size() == 3); // number of archetypes
+
+
+			addComponentToEntity<damageComponent>(namedEnt, damageComponent(4));
+			damageComponent* hc = getComponent<damageComponent>(namedEnt);
+			RFCT_ASSERT(hc->damage == 4); // entity health
+			RFCT_ASSERT(Query::archetypes.size() == 2); // number of archetypes remains 2 after adding healthComponent
+			RFCT_ASSERT(m_EntityLocations[namedEnt].locationIndex == 4); // entity index remains valid
+		}
+		{
+			std::unordered_map<ComponentEnum, std::vector<void*>> out_components;
+			getAllComponents(out_components, ComponentEnum::nameComponent);
+			std::vector<void*> nameComponents = out_components[ComponentEnum::nameComponent];
+			for (void* ncs : nameComponents) {
+				std::vector<nameComponent>* nc = static_cast<std::vector<nameComponent>*>(ncs);
+				for (nameComponent n : *nc) {
+					RFCT_INFO("entity name: {}",n.name);
+				}
+			}
+		}
+		{
+			std::unordered_map<ComponentEnum, std::vector<void*>> out_components;
+			ComponentEnum comps= ComponentEnum::nameComponent | ComponentEnum::damageComponent;
+			getAllComponents(out_components,comps);
+			std::vector<void*> nameComponents = out_components[ComponentEnum::nameComponent];
+			for (void* ncs : nameComponents) {
+				std::vector<nameComponent>* nc = static_cast<std::vector<nameComponent>*>(ncs);
+				for (nameComponent n : *nc) {
+					RFCT_INFO("entity name: {}", n.name);
+				}
+			}
+			std::vector<void*> damageComponent_var = out_components[ComponentEnum::damageComponent];
+			for (void* dcs : damageComponent_var) {
+				std::vector<damageComponent>* dc = static_cast<std::vector<damageComponent>*>(dcs);
+				for (damageComponent d : *dc) {
+					RFCT_INFO("entity damage: {}", d.damage);
+				}
+			}
+		}
 	}
-	*/
-}

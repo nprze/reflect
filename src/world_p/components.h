@@ -72,6 +72,9 @@ namespace rfct {
         return lhs;
     }
 
+    constexpr bool operator==(ComponentEnum lhs, ComponentEnum rhs) {
+		return static_cast<std::uint64_t>(lhs) == static_cast<std::uint64_t>(rhs);
+    }
 
     template <typename... Components>
     constexpr ComponentEnum GetComponentMask() {

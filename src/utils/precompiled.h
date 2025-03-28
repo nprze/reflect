@@ -1,4 +1,5 @@
 #pragma once
+#define _CRT_SECURE_NO_WARNINGS
 #include "log.h"
 #include "ptr.h"
 #include "profiling_label.h"

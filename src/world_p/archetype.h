@@ -88,7 +88,6 @@ namespace rfct {
                 archetypes.clear();
             }
 
-            // this (with template args) is preferred
             template<typename... Components>
             inline static Archetype* getArchetype() {
                 ComponentEnum requestedComponents = (Components::EnumValue | ...);
@@ -103,7 +102,6 @@ namespace rfct {
             }
 
 
-            // function with template args is preferred
             inline static Archetype* getArchetype(ComponentEnum components, ComponentEnum newComponent = ComponentEnum::None ) {
                 for (Archetype* archetype : archetypes) {
                     if (archetype->componentsBitmask == (components | newComponent)) {
@@ -152,5 +150,12 @@ namespace rfct {
                 archetypes.erase(std::remove(archetypes.begin(), archetypes.end(), archetypeToBeRemoved), archetypes.end());
                 delete archetypeToBeRemoved;
             }
+			inline static void getAllArchetypesWithComponents(ComponentEnum requestedComponents, std::vector<Archetype*>& out_archetypes) {
+				for (Archetype* archetype : archetypes) {
+					if ((bool)((archetype->componentsBitmask & requestedComponents) == requestedComponents)) {
+						out_archetypes.emplace_back(archetype);
+					}
+				}
+			}
         };
     }
