@@ -80,27 +80,4 @@ namespace rfct {
 		return static_cast<std::uint64_t>(lhs) == static_cast<std::uint64_t>(rhs);
     }
 
-    template <typename... Components>
-    constexpr ComponentEnum GetComponentMask() {
-        uint64_t mask = 0;
-        ((mask |= (uint64_t)GetComponentEnum<Components>()), ...);
-        return (ComponentEnum)mask;
-    }
-
-    template <typename T>
-    constexpr ComponentEnum GetComponentEnum();
-
-    template <>
-    constexpr ComponentEnum GetComponentEnum<nameComponent>() {
-        return ComponentEnum::nameComponent;
-    }
-    template <>
-    constexpr ComponentEnum GetComponentEnum<damageComponent>() {
-        return ComponentEnum::damageComponent;
-    }
-    template <>
-    constexpr ComponentEnum GetComponentEnum<healthComponent>() {
-        return ComponentEnum::healthComponent;
-    }
-
 }
