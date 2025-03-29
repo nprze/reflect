@@ -3,7 +3,7 @@
 #include <vma\vk_mem_alloc.h>
 #include "renderer_p\descriptors\camera_ubo.h"
 #include "renderer_p\descriptors\per_frame_descriptors.h"
-#include "world_p\camera.h"
+#include "world_p\camera\camera.h"
 namespace rfct {
 
     class frameData {
@@ -11,7 +11,7 @@ namespace rfct {
         frameData(vk::Device device, VmaAllocator& allocator);
         ~frameData() {};
 
-		void prepareFrame(const camera& cam);
+		void prepareFrame();
 
         vk::CommandBuffer getSceneCommandBuffer() const { return m_sceneCommandBuffer.get(); }
         vk::CommandBuffer getDebugDrawCommandBuffer() const { return m_debugDrawCommandBuffer.get(); }

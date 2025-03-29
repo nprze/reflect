@@ -1,5 +1,6 @@
 #include "frame_data.h"
 #include "renderer_p\renderer.h"
+#include "world_p\components.h"
 rfct::frameData::frameData(vk::Device device, VmaAllocator& allocator)
     : m_device(device), m_allocator(allocator) {
 
@@ -30,9 +31,9 @@ rfct::frameData::frameData(vk::Device device, VmaAllocator& allocator)
 
 }
 
-void rfct::frameData::prepareFrame(const camera& cam)
+void rfct::frameData::prepareFrame()
 {
-    m_cameraUbo.updateViewProj(cam.getVPMatrix());
+    m_cameraUbo.updateViewProj(getVPMatrix());
 }
 
 void rfct::frameData::waitForAllFences()

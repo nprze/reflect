@@ -1,5 +1,9 @@
 #include "world.h"
 #include "components.h"
+#include <glm/glm.hpp>
+#include "renderer_p\renderer.h"
+#include "components_util.h"
+
 rfct::world::world() : m_EntityLocations(0)
 {
 	m_EntityLocations.reserve(100);
@@ -13,6 +17,16 @@ rfct::world::~world()
 
 void rfct::world::onUpdate(float dt)
 {
+	// delta time
+	static auto previousTime = std::chrono::high_resolution_clock::now();
+	auto currentTime = std::chrono::high_resolution_clock::now();
+	std::chrono::duration<float> deltaTime = currentTime - previousTime;
+	previousTime = currentTime;
+	dt = deltaTime.count();
+
+	// Update systems
+	world::getWorld().getComponent<cameraComponent>(world::getWorld().camera); 
+	cameraComponentOnUpdate(dt);
 
 }
 
@@ -21,12 +35,25 @@ void rfct::world::loadWorld(std::string path)
 {
 	runEntityTests();
 	Query::cleanUp();
+	/*
+		constexpr size_t entityCount = 1000;
+		for (size_t i = 0; i < entityCount; i++) {
+			helloEntity<nameComponent, damageComponent>(nameComponent("named name and damage " + std::to_string(i)), damageComponent(i));
+
+		}
+		std::unordered_map<ComponentEnum, std::vector<void*>> out_components;
+		out_components[ComponentEnum::nameComponent].reserve(1000);
+		out_components[ComponentEnum::damageComponent].reserve(1000);
+		getAllComponents(out_components, ComponentEnum::nameComponent | ComponentEnum::damageComponent);
+		Query::cleanUp();
+	*/
+	camera = helloEntity<cameraComponent>(cameraComponent{ glm::vec3(0.f, 0.f, 1.0f), glm::vec3(0), 45.f, renderer::getRen().getAspectRatio(), 0.f, 100.f });
 }
 
 template<typename... Components>
 rfct::Entity rfct::world::helloEntity(Components&&... componentMap)
 {
-
+	RFCT_PROFILE_FUNCTION();
 	ComponentEnum components = (Components::EnumValue | ...);
   	size_t EntityID = 0;
 	if (m_FreeEntityBlocks.size() != 0) { 
@@ -52,6 +79,7 @@ rfct::Entity rfct::world::helloEntity(Components&&... componentMap)
 template<typename Component>
 Component* rfct::world::getComponent(Entity entity)
 {
+	RFCT_PROFILE_FUNCTION();
 	if (!((bool)(m_EntityLocations[entity.id].archetype->componentsBitmask & Component::EnumValue))) RFCT_CRITICAL("Entity does not have component");
 	return &m_EntityLocations[entity.id].archetype->getComponent<Component>(m_EntityLocations[entity.id].locationIndex);
 }
@@ -60,6 +88,7 @@ Component* rfct::world::getComponent(Entity entity)
 template<typename Component>
 void rfct::world::addComponentToEntity(Entity entity, Component component)
 {
+	RFCT_PROFILE_FUNCTION();
 	Archetype* oldArchetype = m_EntityLocations[entity].archetype;
 	if ((bool)(oldArchetype->componentsBitmask & Component::EnumValue)) RFCT_CRITICAL("Entity already has component");
 
@@ -70,24 +99,8 @@ void rfct::world::addComponentToEntity(Entity entity, Component component)
 	while ((bool)components) {
 		ComponentEnum selBit = (ComponentEnum)((size_t)components & -(size_t)components);
 
-		switch (selBit) {
-			case ComponentEnum::nameComponent: {
-				newArchetype->addsingleComponent<nameComponent>(oldArchetype->getComponent<nameComponent>(m_EntityLocations[entity].locationIndex));
-				break;
-			}
-			case ComponentEnum::damageComponent: {
-				newArchetype->addsingleComponent<damageComponent>(oldArchetype->getComponent<damageComponent>(m_EntityLocations[entity].locationIndex));
-				break;
-			}
-			case ComponentEnum::healthComponent: {
-				newArchetype->addsingleComponent<healthComponent>(oldArchetype->getComponent<healthComponent>(m_EntityLocations[entity].locationIndex));
-				break;
-			}
-			default: {
-				RFCT_CRITICAL("Couldn't add entity components");
-				break;
-			}
-		}
+		RFCT_ADD_SINGLE_COMPONENT(selBit, newArchetype, oldArchetype, entity);
+
 		components = static_cast<ComponentEnum>(static_cast<size_t>(components) & (static_cast<size_t>(components) - 1));
 	}
 	newArchetype->addsingleComponent<Component>(component);
@@ -102,6 +115,7 @@ void rfct::world::addComponentToEntity(Entity entity, Component component)
 
 void rfct::world::getAllComponents(std::unordered_map<ComponentEnum, std::vector<void*>>& out_components, ComponentEnum requestedComponents)
 {
+	RFCT_PROFILE_FUNCTION();
 	std::vector<Archetype*> archetypes;
 	archetypes.reserve(5);
 	Query::getAllArchetypesWithComponents(requestedComponents, archetypes);
@@ -121,6 +135,7 @@ void rfct::world::getAllComponents(std::unordered_map<ComponentEnum, std::vector
 
 void rfct::world::goodbyeEntity(Entity entity)
 {
+	RFCT_PROFILE_FUNCTION();
 	m_EntityLocations[entity].archetype->removeEntity(m_EntityLocations[entity].locationIndex);
 	if (m_EntityLocations[entity].archetype->entities.size() == 0) {
 		Query::removeArchetype(m_EntityLocations[entity].archetype);
@@ -228,30 +243,36 @@ void rfct::world::runEntityTests()
 			std::unordered_map<ComponentEnum, std::vector<void*>> out_components;
 			getAllComponents(out_components, ComponentEnum::nameComponent);
 			std::vector<void*> nameComponents = out_components[ComponentEnum::nameComponent];
+			size_t componentCount = 0;
 			for (void* ncs : nameComponents) {
 				std::vector<nameComponent>* nc = static_cast<std::vector<nameComponent>*>(ncs);
 				for (nameComponent n : *nc) {
-					RFCT_INFO("entity name: {}",n.name);
+					componentCount++;
 				}
 			}
+			RFCT_ASSERT(componentCount == 6);
 		}
 		{
 			std::unordered_map<ComponentEnum, std::vector<void*>> out_components;
-			ComponentEnum comps= ComponentEnum::nameComponent | ComponentEnum::damageComponent;
+			ComponentEnum comps= ComponentEnum::nameComponent | ComponentEnum::healthComponent;
 			getAllComponents(out_components,comps);
 			std::vector<void*> nameComponents = out_components[ComponentEnum::nameComponent];
+			size_t componentCount = 0;
 			for (void* ncs : nameComponents) {
 				std::vector<nameComponent>* nc = static_cast<std::vector<nameComponent>*>(ncs);
 				for (nameComponent n : *nc) {
-					RFCT_INFO("entity name: {}", n.name);
+					componentCount++;
 				}
 			}
-			std::vector<void*> damageComponent_var = out_components[ComponentEnum::damageComponent];
+			RFCT_ASSERT(componentCount == 1);
+			componentCount = 0;
+			std::vector<void*> damageComponent_var = out_components[ComponentEnum::healthComponent];
 			for (void* dcs : damageComponent_var) {
-				std::vector<damageComponent>* dc = static_cast<std::vector<damageComponent>*>(dcs);
-				for (damageComponent d : *dc) {
-					RFCT_INFO("entity damage: {}", d.damage);
+				std::vector<healthComponent>* dc = static_cast<std::vector<healthComponent>*>(dcs);
+				for (healthComponent d : *dc) {
+					componentCount++;
 				}
 			}
+			RFCT_ASSERT(componentCount == 1);
 		}
 	}

@@ -4,6 +4,7 @@
 #include <stdexcept>
 #include <any>
 #include "components.h"
+#include "components_util.h"
 
 namespace rfct {
     struct Query;
@@ -96,7 +97,6 @@ namespace rfct {
 					    return archetype;
 				    }
 			    }
-				RFCT_INFO("Creating new archetype");
 			    addArchetype<Components...>();
 			    return archetypes.back();
             }
@@ -108,7 +108,6 @@ namespace rfct {
                         return archetype;
                     }
                 }
-                RFCT_INFO("Creating new archetype");
                 components |= newComponent;
                 Archetype* archetype = new Archetype(components);
                 archetypes.push_back(archetype);
@@ -116,23 +115,8 @@ namespace rfct {
                 while ((bool)components) {
                     ComponentEnum selBit = (ComponentEnum)((size_t)components & -(size_t)components);
 
-                    switch (selBit) {
-                    case ComponentEnum::nameComponent: {
-                        archetype->addComponent<nameComponent>();
-                        break;
-                    }
-                    case ComponentEnum::damageComponent: {
-                        archetype->addComponent<damageComponent>();
-                        break;
-                    }
-                    case ComponentEnum::healthComponent: {
-                        archetype->addComponent<healthComponent>();
-                        break;
-                    }
-                    default:
-                        RFCT_CRITICAL("Couldn't add entity components"); 
-                        break; 
-                    }
+					RFCT_ADD_COMPONENT(selBit, archetype);
+                    
                     components = static_cast<ComponentEnum>(static_cast<size_t>(components) & (static_cast<size_t>(components) - 1));
 
                 };                

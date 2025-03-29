@@ -5,11 +5,10 @@ std::string rfct::reflectApplication::AssetsDirectory;
 bool rfct::reflectApplication::shouldRender;
 
 rfct::reflectApplication::reflectApplication(RFCT_NATIVE_WINDOW_ANDROID RFCT_NATIVE_WINDOW_ANDROID_VAR):
-m_AssetsManager(AssetsDirectory), m_Renderer(std::make_unique<renderer>(RFCT_RENDERER_ARGUMENTS_VAR)),m_camera(glm::vec3(0.f, 0.f, 1.0f), glm::vec3(0), 45.f, renderer::getRen().getAspectRatio(), 0.f, 100.f), m_Scene(m_camera), m_Game()
+m_AssetsManager(AssetsDirectory), m_Renderer(std::make_unique<renderer>(RFCT_RENDERER_ARGUMENTS_VAR)), m_Game()
 {
 	world::getWorld().loadWorld("");
     shouldRender = true;
-	scene::setCurrentScene(&m_Scene);
 	input::setInput(&m_Input);
 #ifdef WINDOWS_BUILD
     render();
@@ -33,7 +32,6 @@ void rfct::reflectApplication::render() {
 	if (shouldRender) {
 		m_Game.onUpdate();
 	}
-	m_Scene.getCurrentScene()->onUpdate();
 	world::getWorld().onUpdate(0);
 	if (shouldRender) {
 		renderer::getRen().render();

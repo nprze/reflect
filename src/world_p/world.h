@@ -8,6 +8,7 @@ namespace rfct {
 	class world {
 		static world currentWorld;
 	public:
+		Entity camera;
 		static world& getWorld() { return currentWorld; }
 		world();
 		~world();

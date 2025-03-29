@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include <glm\glm.hpp>
 namespace rfct {
 	struct Entity {
 		size_t id;
@@ -12,32 +13,35 @@ namespace rfct {
     enum class ComponentEnum : std::uint64_t {
         None = 0,
         nameComponent = 1ULL << 0,
-        damageComponent = 1ULL << 1,
-        healthComponent = 1ULL << 2,
+        cameraComponent = 1ULL << 1,
+        damageComponent = 1ULL << 2,
+        healthComponent = 1ULL << 3,
     };
 
-    struct ComponentBase {
-		static constexpr ComponentEnum EnumValue = ComponentEnum::None;
-        ComponentBase() = default;
-    };
-	struct nameComponent : public ComponentBase {
+	struct nameComponent {
         nameComponent() = default;
 		nameComponent(std::string n) : name(n) {}
         static constexpr ComponentEnum EnumValue = ComponentEnum::nameComponent;
 		std::string name;
 	};
-	struct damageComponent : public ComponentBase {
+	struct damageComponent {
         damageComponent() = default;
         damageComponent(int dmg) : damage(dmg) {}
         static constexpr ComponentEnum EnumValue = ComponentEnum::damageComponent;
 		int damage;
 	};
-	struct healthComponent : public ComponentBase {
+	struct healthComponent {
         healthComponent() = default;
 		healthComponent(int h) : health(h) {}
         static constexpr ComponentEnum EnumValue = ComponentEnum::healthComponent;
 		int health;
 	};
+    struct cameraComponent {
+        static constexpr ComponentEnum EnumValue = ComponentEnum::nameComponent;
+        glm::vec3 position;
+        glm::vec3 rotation; 
+        float fov, aspectRatio, nearPlane, farPlane;
+    };
 
 
 

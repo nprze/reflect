@@ -2,7 +2,6 @@
 #include "renderer_p\renderer.h"
 #include "vertex.h"
 #include "renderer_p\descriptors\camera_ubo.h"
-#include "world_p\scene_data.h"
 
 rfct::vulkanRasterizerPipeline::vulkanRasterizerPipeline() :m_vertexShader("shaders/cube/cube_vert.spv"), m_fragShader("shaders/cube/cube_frag.spv")
 {
@@ -181,7 +180,7 @@ void rfct::vulkanRasterizerPipeline::recordCommandBuffer(frameData& frameData, v
         commandBuffer.begin(beginInfo);
     }
 
-	frameData.prepareFrame(scene::getCurrentScene()->m_camera);
+	frameData.prepareFrame();
 
     vk::CommandBuffer commandBuffer = frameData.getSceneCommandBuffer();
 

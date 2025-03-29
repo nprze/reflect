@@ -3,7 +3,6 @@
 #include "game_p\game.h"
 #include <string>
 #include "assets\assets_manager.h"
-#include "world_p\scene_data.h"
 #include "input.h"
 #include "world_p\world.h"
 namespace rfct {
@@ -19,8 +18,6 @@ namespace rfct {
     private:
         AssetsManager m_AssetsManager;
         unique<renderer> m_Renderer;
-		camera m_camera;
-		scene m_Scene;
 		input m_Input;
 		game::game m_Game;
 	};
