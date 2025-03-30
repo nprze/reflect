@@ -13,7 +13,7 @@ namespace rfct {
         void submitCompute(const vk::SubmitInfo& submitInfo, vk::Fence fence = nullptr);
         void submitTransfer(const vk::SubmitInfo& submitInfo, vk::Fence fence = nullptr);
         inline vk::Queue getPresentQueue() { return m_graphicsQueue; }
-        uint32_t getGraphicQueueFamilyIndex() { return m_graphicsQueueFamilyIndex; }
+        uint32_t getGraphicsQueueFamilyIndex() { return m_graphicsQueueFamilyIndex; }
 
     private:
         // Removed worker function, as threading is no longer needed

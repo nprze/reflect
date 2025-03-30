@@ -6,22 +6,24 @@ rfct::frameData::frameData(vk::Device device, VmaAllocator& allocator)
 
     vk::CommandPoolCreateInfo poolInfo{
         vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
-        renderer::getRen().getDeviceWrapper().getQueueManager().getGraphicQueueFamilyIndex()
+        renderer::getRen().getDeviceWrapper().getQueueManager().getGraphicsQueueFamilyIndex()
     };
     m_commandPool = device.createCommandPoolUnique(poolInfo);
 
     vk::CommandBufferAllocateInfo allocInfo{
-        *m_commandPool, vk::CommandBufferLevel::ePrimary, 2
+        *m_commandPool, vk::CommandBufferLevel::ePrimary, 3
     };
 
     auto commandBuffers = device.allocateCommandBuffersUnique(allocInfo);
 
     m_sceneCommandBuffer = std::move(commandBuffers[0]);
     m_debugDrawCommandBuffer = std::move(commandBuffers[1]);
+    m_uiCommandBuffer = std::move(commandBuffers[2]);
 
     vk::FenceCreateInfo fenceInfo{ vk::FenceCreateFlagBits::eSignaled };
     m_sceneInRenderFence = device.createFenceUnique(fenceInfo);
     m_debugDrawTrianglesInRenderFence = device.createFenceUnique(fenceInfo);
+    m_uiInRenderFence = device.createFenceUnique(fenceInfo);
 
     vk::SemaphoreCreateInfo semaphoreInfo{};
     m_imageAvailableSemaphore = device.createSemaphoreUnique(semaphoreInfo);
@@ -66,6 +68,17 @@ vk::SubmitInfo rfct::frameData::debugDrawSubmitInfo()
         .setWaitSemaphores(m_renderFinishedSemaphore.get())
         .setWaitDstStageMask(waitStages)
         .setCommandBuffers(m_debugDrawCommandBuffer.get())
+        .setSignalSemaphores(m_renderFinishedSemaphore.get());
+}
+
+vk::SubmitInfo rfct::frameData::uiSubmitInfo()
+{
+    vk::PipelineStageFlags waitStages = vk::PipelineStageFlagBits::eColorAttachmentOutput;
+
+    return vk::SubmitInfo()
+        .setWaitSemaphores(m_renderFinishedSemaphore.get())
+        .setWaitDstStageMask(waitStages)
+        .setCommandBuffers(m_uiCommandBuffer.get())
         .setSignalSemaphores(m_renderFinishedSemaphore.get());
 }
 

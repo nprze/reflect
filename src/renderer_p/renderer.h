@@ -10,6 +10,7 @@
 #include "platform_window.h"
 #include "renderer_p\debug\debug_draw.h"
 #include "assets\assets_manager.h"
+#include "renderer_p\UI\ui_pipeline.h"
 namespace rfct {
 	struct SurfaceWrapper {
 		vk::SurfaceKHR surface;
@@ -40,6 +41,7 @@ namespace rfct {
         inline AssetsManager* getAssetsManager() { return m_AssetsManager; }
 		inline vk::SurfaceKHR& getSurface() { return m_surface.surface; }
 		inline float getAspectRatio() { return m_window.getAspectRatio(); }
+		inline vk::CommandPool getAssetsCommandPool() { return m_AssetsCommandPool.get(); }
         void updateWindow(RFCT_NATIVE_WINDOW_ANDROID RFCT_NATIVE_WINDOW_ANDROID_VAR);
         renderer(RFCT_RENDERER_ARGUMENTS);
 		~renderer();
@@ -53,12 +55,14 @@ namespace rfct {
 		vulkanInstance m_instance;
 		SurfaceWrapper m_surface;
 		vulkanDevice m_device;
+		vk::UniqueCommandPool m_AssetsCommandPool;
 		vulkanRasterizerPipeline m_rasterizerPipeline;
 		allocator m_allocator;
 		framesInFlight m_framesInFlight;
 		rayTracer m_rayTracer;
 		vulkanVertexBuffer m_vertexBuffer;
 		debugDraw m_debugDraw;
+		UIPipeline m_UIPipeline;
     private:
         friend class vulkanSwapChain;
         friend class reflectApplication;

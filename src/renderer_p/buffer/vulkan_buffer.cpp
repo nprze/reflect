@@ -10,6 +10,10 @@ rfct::VulkanBuffer::VulkanBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage
     bufferCreateInfo.usage = static_cast<VkBufferUsageFlags>(usage);
     VmaAllocationCreateInfo allocCreateInfo{};
     allocCreateInfo.usage = memoryUsage;
+    allocCreateInfo.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+    allocCreateInfo.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
+
+
 
     VkBuffer vkBuffer;
     VkResult res = vmaCreateBuffer(allocator, &bufferCreateInfo,
@@ -33,7 +37,7 @@ rfct::VulkanBuffer::~VulkanBuffer()
 void* rfct::VulkanBuffer::Map()
 {
     VmaAllocator allocator = renderer::getRen().getAllocator();
-
+    
     void* mappedData = nullptr;
     VkResult res = vmaMapMemory(allocator, allocation, &mappedData);
     if (res != VK_SUCCESS) {

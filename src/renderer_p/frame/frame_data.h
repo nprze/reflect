@@ -15,8 +15,10 @@ namespace rfct {
 
         vk::CommandBuffer getSceneCommandBuffer() const { return m_sceneCommandBuffer.get(); }
         vk::CommandBuffer getDebugDrawCommandBuffer() const { return m_debugDrawCommandBuffer.get(); }
+        vk::CommandBuffer getuiCommandBuffer() const { return m_uiCommandBuffer.get(); }
         vk::Fence getSceneInRenderFence() const { return m_sceneInRenderFence.get(); }
         vk::Fence getdebugDrawInRenderFence() const { return m_debugDrawTrianglesInRenderFence.get(); }
+        vk::Fence getuiInRenderFence() const { return m_uiInRenderFence.get(); }
         const vk::Semaphore& getImageAvailableSemaphore() const { return m_imageAvailableSemaphore.get(); }
         const vk::Semaphore& getRenderFinishedSemaphore() const { return m_renderFinishedSemaphore.get(); }
         void waitForAllFences();
@@ -25,6 +27,7 @@ namespace rfct {
 
         vk::SubmitInfo sceneSubmitInfo();
         vk::SubmitInfo debugDrawSubmitInfo();
+        vk::SubmitInfo uiSubmitInfo();
     private:
         vk::Device m_device;
         VmaAllocator& m_allocator;
@@ -38,11 +41,15 @@ namespace rfct {
         vk::UniqueCommandBuffer m_debugDrawCommandBuffer;
         vk::UniqueFence m_debugDrawTrianglesInRenderFence;
 
+        vk::UniqueCommandBuffer m_uiCommandBuffer;
+        vk::UniqueFence m_uiInRenderFence;
+
 
 		cameraUbo m_cameraUbo;
 		descriptors m_descriptors;
 
         friend class renderer;
         friend class debugDraw;
+        friend class UIPipeline;
     };
 } // namespace rfct

@@ -49,5 +49,5 @@ def process_header_file(input_filename, output_filename):
 
 if __name__ == "__main__":
     input_file = "components.h"
-    output_file = "component_utils.h"
+    output_file = "components_util.h"
     process_header_file(input_file, output_file)

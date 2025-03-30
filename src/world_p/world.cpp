@@ -48,6 +48,7 @@ void rfct::world::loadWorld(std::string path)
 		Query::cleanUp();
 	*/
 	camera = helloEntity<cameraComponent>(cameraComponent{ glm::vec3(0.f, 0.f, 1.0f), glm::vec3(0), 45.f, renderer::getRen().getAspectRatio(), 0.f, 100.f });
+
 }
 
 template<typename... Components>
