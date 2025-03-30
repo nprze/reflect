@@ -111,4 +111,35 @@ namespace rfct {
         imageOut->m_imageView = renderer::getRen().getDevice().createImageView(viewInfo);
     }
 
+    void AssetsManager::loadGlyphs(const std::string& path, font* fontOut)
+    {
+        std::string finalPath = m_Path + "/" + path;
+        std::ifstream file(finalPath);
+        if (!file.is_open()) {
+            RFCT_CRITICAL("Failed to open font data file: {}", finalPath);
+            return;
+        }
+
+        std::string line;
+        while (std::getline(file, line)) {
+            if (line.rfind("char id=", 0) == 0) {
+                std::istringstream stream(line);
+                std::string key;
+                int id;
+                glyph g;
+                while (stream >> key) {
+                    if (key.find("id=") == 0) id = std::stoi(key.substr(3));
+                    else if (key.find("x=") == 0) g.x = std::stof(key.substr(2));
+                    else if (key.find("y=") == 0) g.y = std::stof(key.substr(2));
+                    else if (key.find("width=") == 0) g.width = std::stof(key.substr(6));
+                    else if (key.find("height=") == 0) g.height = std::stof(key.substr(7));
+                    else if (key.find("xoffset=") == 0) g.xoffset = std::stof(key.substr(8));
+                    else if (key.find("yoffset=") == 0) g.yoffset = std::stof(key.substr(8));
+                    else if (key.find("xadvance=") == 0) g.xadvance = std::stof(key.substr(9));
+                }
+                fontOut->glyphMap[static_cast<char>(id)] = g;
+            }
+        }
+    }
+
 }

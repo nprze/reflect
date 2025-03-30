@@ -2,11 +2,11 @@
 #include "ui_pipeline.h"
 
 
-rfct::UIPipeline::UIPipeline() : m_vertexShader("shaders/UI/text_vert.spv"), m_fragShader("shaders/UI/text_frag.spv"), m_glyphsRenderData(RFCT_DEBUG_DRAW_VERTEX_BUFFER_MAX_SIZE, vk::BufferUsageFlagBits::eVertexBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU), m_defaultFont("")
+rfct::UIPipeline::UIPipeline() : m_vertexShader("shaders/UI/text_vert.spv"), m_fragShader("shaders/UI/text_frag.spv"), m_glyphsRenderData(RFCT_DEBUG_DRAW_VERTEX_BUFFER_MAX_SIZE, vk::BufferUsageFlagBits::eVertexBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU), m_defaultFont("fonts/jetbrainsMono-medium.txt")
 {
     createPipeline();
     createDescriptorSet();
-    GlyphVertex square[] = {
+    /*GlyphVertex square[] = {
         // Bottom-left triangle
         { {-0.5f, -0.5f}, {0.0f, 0.0f} }, // Bottom-left
         { { 0.0f, -0.5f}, {1.0f, 0.0f} }, // Bottom-right
@@ -19,7 +19,10 @@ rfct::UIPipeline::UIPipeline() : m_vertexShader("shaders/UI/text_vert.spv"), m_f
     };
 
     m_glyphsRenderData.buffer.CopyData((void*)square, sizeof(GlyphVertex)*6);
-    m_glyphsRenderData.vertexCount = 6;
+    m_glyphsRenderData.vertexCount = 6;*/
+    std::string what = "I want to go home";
+    addTextVertices(what, glm::vec2(0,0), 20);
+    m_glyphsRenderData.vertexCount = what.size() * 6;
 }
 
 rfct::UIPipeline::~UIPipeline()
@@ -302,6 +305,58 @@ void rfct::UIPipeline::draw(frameData& fd, vk::Framebuffer framebuffer, uint32_t
     }
 
 }
+
+void rfct::UIPipeline::addTextVertices(const std::string& text, glm::vec2 position, uint32_t height)
+{
+    vk::Extent2D windowExtent = renderer::getRen().getWindow().getExtent();
+
+    float windowWidth = static_cast<float>(windowExtent.width);
+    float windowHeight = static_cast<float>(windowExtent.height);
+
+    // Convert the Vulkan space position to pixel space
+    float cursorX = (position.x * 0.5f + 0.5f) * windowWidth;
+    float cursorY = (position.y * 0.5f + 0.5f) * windowHeight;
+
+    std::vector<GlyphVertex> vertices;
+
+    for (char c : text) {
+        const glyph* g = m_defaultFont.getGlyph(c);
+        if (!g) continue;
+
+        float scale = static_cast<float>(height) / m_defaultFont.getGlyph('A')->height; // Scale based on 'A' height
+
+        float x0 = cursorX + g->xoffset * scale;
+        float y0 = cursorY - g->yoffset * scale; // Flip Y offset
+        float x1 = x0 + g->width * scale;
+        float y1 = y0 - g->height * scale;
+
+        // Convert to Vulkan NDC (-1 to 1 range)
+        x0 = (x0 / windowWidth) * 2.0f - 1.0f;
+        x1 = (x1 / windowWidth) * 2.0f - 1.0f;
+        y0 = 1.0f - (y0 / windowHeight) * 2.0f;
+        y1 = 1.0f - (y1 / windowHeight) * 2.0f;
+
+        size_t index = vertices.size(); 
+        float atlasWidth = static_cast<float>(m_defaultFont.m_TextureAtlas.m_Image.width);
+        float atlasHeight = static_cast<float>(m_defaultFont.m_TextureAtlas.m_Image.height);
+
+        float u0 = g->x / atlasWidth;
+        float v0 = g->y / atlasHeight;
+        float u1 = (g->x + g->width) / atlasWidth;
+        float v1 = (g->y + g->height) / atlasHeight;
+
+        vertices.push_back({ {x0, y0}, {u0, v0} });
+        vertices.push_back({ {x1, y0}, {u1, v0} });
+        vertices.push_back({ {x1, y1}, {u1, v1} });
+        vertices.push_back({ {x0, y1}, {u0, v1} });
+        vertices.push_back(vertices[index]);     // First vertex again to close the quad
+        vertices.push_back(vertices[index + 2]); // Third vertex to form two triangles
+
+        cursorX += g->xadvance * scale;
+    }
+
+    m_glyphsRenderData.buffer.CopyData(vertices.data(), vertices.size() * sizeof(vertices[0]));
+ }
 
 vk::DescriptorSetLayout rfct::UIPipeline::getDescriptorSetLayout()
 {

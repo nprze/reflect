@@ -38,7 +38,13 @@ namespace rfct {
 	};
 	class font {
 	public:
+		inline const glyph* getGlyph(char character) const {
+			auto it = glyphMap.find(character);
+			if (it == glyphMap.end()) RFCT_CRITICAL("trying to get a glyph which isn't in the font");
+			return &it->second;
+		}
 		font(std::string path);
 		bindableImage m_TextureAtlas;
+		std::unordered_map<char, glyph> glyphMap;
 	};
 }
