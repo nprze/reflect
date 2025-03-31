@@ -21,7 +21,7 @@ rfct::UIPipeline::UIPipeline() : m_vertexShader("shaders/UI/text_vert.spv"), m_f
     m_glyphsRenderData.buffer.CopyData((void*)square, sizeof(GlyphVertex)*6);
     m_glyphsRenderData.vertexCount = 6;*/
     std::string what = "I want to go home";
-    addTextVertices(what, glm::vec2(0,0), 20);
+    addTextVertices(what, glm::vec2(0, 0), 20);
     m_glyphsRenderData.vertexCount = what.size() * 6;
 }
 
@@ -74,11 +74,10 @@ void rfct::UIPipeline::createPipeline()
     vk::PipelineMultisampleStateCreateInfo multisampling = {};
     multisampling.rasterizationSamples = vk::SampleCountFlagBits::e1;
 
-    // Color Blend State
     vk::PipelineColorBlendAttachmentState colorBlendAttachment = {};
-    colorBlendAttachment.blendEnable = VK_FALSE;
-    colorBlendAttachment.srcColorBlendFactor = vk::BlendFactor::eOne;
-    colorBlendAttachment.dstColorBlendFactor = vk::BlendFactor::eZero;
+    colorBlendAttachment.blendEnable = VK_TRUE;
+    colorBlendAttachment.srcColorBlendFactor = vk::BlendFactor::eSrcAlpha;
+    colorBlendAttachment.dstColorBlendFactor = vk::BlendFactor::eOneMinusSrcAlpha;
     colorBlendAttachment.colorBlendOp = vk::BlendOp::eAdd;
     colorBlendAttachment.srcAlphaBlendFactor = vk::BlendFactor::eOne;
     colorBlendAttachment.dstAlphaBlendFactor = vk::BlendFactor::eZero;
@@ -193,28 +192,28 @@ void rfct::UIPipeline::createDescriptorSet()
 
     vk::DescriptorPoolSize poolSize(
         vk::DescriptorType::eCombinedImageSampler,
-        1                                  
+        1
     );
 
     vk::DescriptorPoolCreateInfo poolCreateInfo(
-        {},        
-        1,         
-        1,         
-        &poolSize  
+        { vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet },
+        1,
+        1,
+        &poolSize
     );
 
     m_DescriptorPool = renderer::getRen().getDevice().createDescriptorPoolUnique(poolCreateInfo);
 
-    vk::DescriptorSetLayout dsLayout  = getDescriptorSetLayout();
+    vk::DescriptorSetLayout dsLayout = getDescriptorSetLayout();
     vk::DescriptorSetAllocateInfo allocInfo(
         m_DescriptorPool.get(),
-        1,                   
+        1,
         &dsLayout
     );
 
     m_DescriptorSet = std::move(renderer::getRen().getDevice().allocateDescriptorSetsUnique(allocInfo)[0]);
 
-    vk::DescriptorImageInfo imageInfo = {};
+    vk::DescriptorImageInfo imageInfo = {}; 
     imageInfo.imageView = m_defaultFont.m_TextureAtlas.m_Image.m_imageView;
     imageInfo.sampler = m_defaultFont.m_TextureAtlas.m_sampler.get();
     imageInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
@@ -336,7 +335,7 @@ void rfct::UIPipeline::addTextVertices(const std::string& text, glm::vec2 positi
         y0 = 1.0f - (y0 / windowHeight) * 2.0f;
         y1 = 1.0f - (y1 / windowHeight) * 2.0f;
 
-        size_t index = vertices.size(); 
+        size_t index = vertices.size();
         float atlasWidth = static_cast<float>(m_defaultFont.m_TextureAtlas.m_Image.width);
         float atlasHeight = static_cast<float>(m_defaultFont.m_TextureAtlas.m_Image.height);
 
@@ -356,7 +355,7 @@ void rfct::UIPipeline::addTextVertices(const std::string& text, glm::vec2 positi
     }
 
     m_glyphsRenderData.buffer.CopyData(vertices.data(), vertices.size() * sizeof(vertices[0]));
- }
+}
 
 vk::DescriptorSetLayout rfct::UIPipeline::getDescriptorSetLayout()
 {
@@ -365,7 +364,7 @@ vk::DescriptorSetLayout rfct::UIPipeline::getDescriptorSetLayout()
     layoutBinding.binding = 0;
     layoutBinding.descriptorType = vk::DescriptorType::eCombinedImageSampler;
     layoutBinding.descriptorCount = 1;
-    layoutBinding.stageFlags = vk::ShaderStageFlagBits::eFragment; 
+    layoutBinding.stageFlags = vk::ShaderStageFlagBits::eFragment;
 
     vk::DescriptorSetLayoutCreateInfo layoutCreateInfo = {};
     layoutCreateInfo.bindingCount = 1;
