@@ -22,4 +22,5 @@ namespace rfct {
         cameraComponent* cam = world::getWorld().getComponent<cameraComponent>(world::getWorld().camera);
         return getProjectionMatrix(cam) * getViewMatrix(cam);
     }
+
 }

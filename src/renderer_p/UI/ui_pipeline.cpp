@@ -21,7 +21,7 @@ rfct::UIPipeline::UIPipeline() : m_vertexShader("shaders/UI/text_vert.spv"), m_f
     m_glyphsRenderData.buffer.CopyData((void*)square, sizeof(GlyphVertex)*6);
     m_glyphsRenderData.vertexCount = 6;*/
     std::string what = "I want to go home";
-    addTextVertices(what, glm::vec2(0, 0), 20);
+    addTextVertices(what, glm::vec2(100, 100), 0.5);
     m_glyphsRenderData.vertexCount = what.size() * 6;
 }
 
@@ -279,7 +279,7 @@ void rfct::UIPipeline::draw(frameData& fd, vk::Framebuffer framebuffer, uint32_t
 
 
     // Descriptors
-    vk::DescriptorSet descSets[] = { fd.getCameraUboDescSet(), m_DescriptorSet.get() };
+    vk::DescriptorSet descSets[] = { fd.getUICameraUboDescSet(), m_DescriptorSet.get() };
     commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_PipelineLayout.get(), 0, descSets, {});
 
     commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, m_pipeline.get());
@@ -305,35 +305,22 @@ void rfct::UIPipeline::draw(frameData& fd, vk::Framebuffer framebuffer, uint32_t
 
 }
 
-void rfct::UIPipeline::addTextVertices(const std::string& text, glm::vec2 position, uint32_t height)
+void rfct::UIPipeline::addTextVertices(const std::string& text, glm::vec2 position, float scale)
 {
     vk::Extent2D windowExtent = renderer::getRen().getWindow().getExtent();
 
-    float windowWidth = static_cast<float>(windowExtent.width);
-    float windowHeight = static_cast<float>(windowExtent.height);
-
-    // Convert the Vulkan space position to pixel space
-    float cursorX = (position.x * 0.5f + 0.5f) * windowWidth;
-    float cursorY = (position.y * 0.5f + 0.5f) * windowHeight;
-
+    float cursorX = position.x;
+    float cursorY = position.y;
     std::vector<GlyphVertex> vertices;
 
     for (char c : text) {
         const glyph* g = m_defaultFont.getGlyph(c);
-        if (!g) continue;
 
-        float scale = static_cast<float>(height) / m_defaultFont.getGlyph('A')->height; // Scale based on 'A' height
+        float y0 = cursorY + g->yoffset * scale;
+        float y1 = y0 + g->height * scale;
 
         float x0 = cursorX + g->xoffset * scale;
-        float y0 = cursorY - g->yoffset * scale; // Flip Y offset
         float x1 = x0 + g->width * scale;
-        float y1 = y0 - g->height * scale;
-
-        // Convert to Vulkan NDC (-1 to 1 range)
-        x0 = (x0 / windowWidth) * 2.0f - 1.0f;
-        x1 = (x1 / windowWidth) * 2.0f - 1.0f;
-        y0 = 1.0f - (y0 / windowHeight) * 2.0f;
-        y1 = 1.0f - (y1 / windowHeight) * 2.0f;
 
         size_t index = vertices.size();
         float atlasWidth = static_cast<float>(m_defaultFont.m_TextureAtlas.m_Image.width);
@@ -348,8 +335,8 @@ void rfct::UIPipeline::addTextVertices(const std::string& text, glm::vec2 positi
         vertices.push_back({ {x1, y0}, {u1, v0} });
         vertices.push_back({ {x1, y1}, {u1, v1} });
         vertices.push_back({ {x0, y1}, {u0, v1} });
-        vertices.push_back(vertices[index]);     // First vertex again to close the quad
-        vertices.push_back(vertices[index + 2]); // Third vertex to form two triangles
+        vertices.push_back(vertices[index]);
+        vertices.push_back(vertices[index + 2]);
 
         cursorX += g->xadvance * scale;
     }

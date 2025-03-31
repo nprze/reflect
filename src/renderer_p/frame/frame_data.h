@@ -24,6 +24,7 @@ namespace rfct {
         void waitForAllFences();
         void resetAllFences();
 		vk::DescriptorSet getCameraUboDescSet() const { return m_descriptors.m_cameraUboDescSet.get(); }
+		vk::DescriptorSet getUICameraUboDescSet() const { return m_UIcameradescriptors.m_cameraUboDescSet.get(); }
 
         vk::SubmitInfo sceneSubmitInfo();
         vk::SubmitInfo debugDrawSubmitInfo();
@@ -46,7 +47,10 @@ namespace rfct {
 
 
 		cameraUbo m_cameraUbo;
+		cameraUbo m_UIcameraUbo;
+
 		descriptors m_descriptors;
+		descriptors m_UIcameradescriptors;
 
         friend class renderer;
         friend class debugDraw;

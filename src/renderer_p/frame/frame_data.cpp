@@ -1,6 +1,17 @@
 #include "frame_data.h"
 #include "renderer_p\renderer.h"
 #include "world_p\components.h"
+
+
+inline static glm::mat4 getUIMatrix() {
+    vk::Extent2D extent = rfct::renderer::getRen().getWindow().getExtent();
+    float width = static_cast<float>(extent.width);
+    float height = static_cast<float>(extent.height);
+
+    return glm::ortho(0.0f, width, 0.0f, height);
+    return glm::ortho(0.0f, width, height, 0.0f);
+}
+
 rfct::frameData::frameData(vk::Device device, VmaAllocator& allocator)
     : m_device(device), m_allocator(allocator) {
 
@@ -30,12 +41,14 @@ rfct::frameData::frameData(vk::Device device, VmaAllocator& allocator)
     m_renderFinishedSemaphore = device.createSemaphoreUnique(semaphoreInfo);
 
 	m_descriptors.bindCameraUbo(m_cameraUbo.getBuffer());
+	m_UIcameradescriptors.bindCameraUbo(m_UIcameraUbo.getBuffer());
 
 }
 
 void rfct::frameData::prepareFrame()
 {
     m_cameraUbo.updateViewProj(getVPMatrix());
+    m_UIcameraUbo.updateViewProj(getUIMatrix());
 }
 
 void rfct::frameData::waitForAllFences()

@@ -9,6 +9,7 @@ namespace rfct {
         virtual void show() = 0;
         virtual void hide() = 0;
 		virtual vk::Extent2D getExtent() = 0;
+        virtual void setExtent(vk::Extent2D ext) = 0;
 		virtual vk::SurfaceKHR createSurface(vk::Instance instance) = 0;
 
         virtual bool pollEvents() = 0;
