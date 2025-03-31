@@ -2,7 +2,7 @@
 #include "ui_pipeline.h"
 
 
-rfct::UIPipeline::UIPipeline() : m_vertexShader("shaders/UI/text_vert.spv"), m_fragShader("shaders/UI/text_frag.spv"), m_glyphsRenderData(RFCT_DEBUG_DRAW_VERTEX_BUFFER_MAX_SIZE, vk::BufferUsageFlagBits::eVertexBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU), m_defaultFont("fonts/jetbrainsMono-medium.txt")
+rfct::UIPipeline::UIPipeline() : m_vertexShader("shaders/UI/text_vert.spv"), m_fragShader("shaders/UI/text_frag.spv"), m_glyphsRenderData(RFCT_DEBUG_DRAW_VERTEX_BUFFER_MAX_SIZE, vk::BufferUsageFlagBits::eVertexBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU), m_debugDrawglyphsRenderData(RFCT_DEBUG_DRAW_VERTEX_BUFFER_MAX_SIZE, vk::BufferUsageFlagBits::eVertexBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU), m_defaultFont("fonts/jetbrainsMono-medium.txt")
 {
     createPipeline();
     createDescriptorSet();
@@ -21,8 +21,10 @@ rfct::UIPipeline::UIPipeline() : m_vertexShader("shaders/UI/text_vert.spv"), m_f
     m_glyphsRenderData.buffer.CopyData((void*)square, sizeof(GlyphVertex)*6);
     m_glyphsRenderData.vertexCount = 6;*/
     std::string what = "I want to go home";
-    addTextVertices(what, glm::vec2(100, 100), 0.5);
-    m_glyphsRenderData.vertexCount = what.size() * 6;
+    
+    addTextVertices(&m_glyphsRenderData,what, glm::vec2(0, 0), 0.3);
+    std::string what1 = "hallo :3";
+    addTextVertices(&m_glyphsRenderData,what1, glm::vec2(0, 25), 0.3);
 }
 
 rfct::UIPipeline::~UIPipeline()
@@ -235,7 +237,7 @@ void rfct::UIPipeline::createDescriptorSet()
 void rfct::UIPipeline::draw(frameData& fd, vk::Framebuffer framebuffer, uint32_t imageIndex)
 {
 
-    if (m_glyphsRenderData.vertexCount == 0)
+    if (m_glyphsRenderData.vertexCount == 0 && m_debugDrawglyphsRenderData.vertexCount == 0)
     {
         return;
     }
@@ -285,11 +287,20 @@ void rfct::UIPipeline::draw(frameData& fd, vk::Framebuffer framebuffer, uint32_t
     commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, m_pipeline.get());
 
 
-    vk::Buffer vertexBuffers[] = { m_glyphsRenderData.buffer.buffer };
-    vk::DeviceSize offsets[] = { 0 };
-    commandBuffer.bindVertexBuffers(0, 1, vertexBuffers, offsets);
+    if (m_glyphsRenderData.vertexCount != 0) {
+        vk::Buffer vertexBuffers[] = { m_glyphsRenderData.buffer.buffer };
+        vk::DeviceSize offsets[] = { 0 };
+        commandBuffer.bindVertexBuffers(0, 1, vertexBuffers, offsets);
 
-    commandBuffer.draw(m_glyphsRenderData.vertexCount, 1, 0, 0);
+        commandBuffer.draw(m_glyphsRenderData.vertexCount, 1, 0, 0);
+    }
+    if (m_debugDrawglyphsRenderData.vertexCount != 0) {
+        vk::Buffer vertexBuffers[] = { m_debugDrawglyphsRenderData.buffer.buffer };
+        vk::DeviceSize offsets[] = { 0 };
+        commandBuffer.bindVertexBuffers(0, 1, vertexBuffers, offsets);
+
+        commandBuffer.draw(m_debugDrawglyphsRenderData.vertexCount, 1, 0, 0);
+    }
     commandBuffer.endRenderPass();
 
     {
@@ -298,14 +309,21 @@ void rfct::UIPipeline::draw(frameData& fd, vk::Framebuffer framebuffer, uint32_t
         commandBuffer.end();
         renderer::getRen().getDeviceWrapper().getQueueManager().submitGraphics(fd.uiSubmitInfo(), fd.getuiInRenderFence());
     }
+    m_debugDrawglyphsRenderData.postFrame();
     {
         RFCT_PROFILE_SCOPE("fences wait");
         RFCT_VULKAN_CHECK(renderer::getRen().getDevice().waitForFences(1, &fd.m_uiInRenderFence.get(), VK_TRUE, UINT64_MAX));
     }
 
+
 }
 
-void rfct::UIPipeline::addTextVertices(const std::string& text, glm::vec2 position, float scale)
+void rfct::UIPipeline::debugText(const std::string& text, glm::vec2 startPosition, float scale)
+{
+    addTextVertices(&m_debugDrawglyphsRenderData, text, startPosition, scale);
+}
+
+void rfct::UIPipeline::addTextVertices(glyphsRenderData* rd , const std::string& text, glm::vec2 position, float scale)
 {
     vk::Extent2D windowExtent = renderer::getRen().getWindow().getExtent();
 
@@ -341,7 +359,15 @@ void rfct::UIPipeline::addTextVertices(const std::string& text, glm::vec2 positi
         cursorX += g->xadvance * scale;
     }
 
-    m_glyphsRenderData.buffer.CopyData(vertices.data(), vertices.size() * sizeof(vertices[0]));
+    rd->bufferOffset;
+    char* mapped = (char*)rd->buffer.Map();
+    mapped += rd->bufferOffset;
+    memcpy(mapped, vertices.data(), vertices.size() * sizeof(vertices[0]));
+    //rd->buffer.CopyData(vertices.data(), vertices.size() * sizeof(vertices[0]));
+
+    rd->bufferOffset += vertices.size() * sizeof(vertices[0]);
+    rd->buffer.Unmap();
+    rd->vertexCount += vertices.size();
 }
 
 vk::DescriptorSetLayout rfct::UIPipeline::getDescriptorSetLayout()

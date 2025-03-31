@@ -18,12 +18,6 @@ rfct::world::~world()
 void rfct::world::onUpdate(float dt)
 {
 	// delta time
-	static auto previousTime = std::chrono::high_resolution_clock::now();
-	auto currentTime = std::chrono::high_resolution_clock::now();
-	std::chrono::duration<float> deltaTime = currentTime - previousTime;
-	previousTime = currentTime;
-	dt = deltaTime.count();
-
 	// Update systems
 	world::getWorld().getComponent<cameraComponent>(world::getWorld().camera); 
 	cameraComponentOnUpdate(dt);

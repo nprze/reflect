@@ -308,3 +308,8 @@ rfct::debugLine* rfct::debugDraw::requestNLines(uint32_t count)
     m_lineBuffer.bufferOffset += count * sizeof(debugLine);
     return (debugLine*)ret;
 }
+
+void rfct::debugDraw::text(const std::string& text, glm::vec2 startPosition, float scale)
+{
+    renderer::getRen().getUIPipeline().debugText(text, startPosition, scale);
+}

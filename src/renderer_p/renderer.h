@@ -42,6 +42,7 @@ namespace rfct {
 		inline vk::SurfaceKHR& getSurface() { return m_surface.surface; }
 		inline float getAspectRatio() { return m_window.getAspectRatio(); }
 		inline vk::CommandPool getAssetsCommandPool() { return m_AssetsCommandPool.get(); }
+		inline UIPipeline& getUIPipeline() { return m_UIPipeline; };
         void updateWindow(RFCT_NATIVE_WINDOW_ANDROID RFCT_NATIVE_WINDOW_ANDROID_VAR);
         renderer(RFCT_RENDERER_ARGUMENTS);
 		~renderer();

@@ -23,7 +23,8 @@ namespace rfct {
 		void createRenderPass();
 		void createDescriptorSet();
 		void draw(frameData& fd, vk::Framebuffer framebuffer, uint32_t imageIndex);
-		void addTextVertices(const std::string& text, glm::vec2 position, float scale);
+		void debugText(const std::string& text, glm::vec2 startPosition, float scale);
+		void addTextVertices(glyphsRenderData* rd, const std::string& text, glm::vec2 position, float scale);
 		vk::DescriptorSetLayout getDescriptorSetLayout();
 	private:
 		vulkanShader m_vertexShader;
@@ -40,5 +41,6 @@ namespace rfct {
 		font m_defaultFont;
 
 		glyphsRenderData m_glyphsRenderData;
+		glyphsRenderData m_debugDrawglyphsRenderData;
 	};
 }

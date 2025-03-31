@@ -5,7 +5,11 @@ game::game::game()
 {
 }
 
-void game::game::onUpdate()
+std::chrono::high_resolution_clock::time_point lastTime;
+int frameCount = 0;
+float fps = 0.0f;
+
+void game::game::onUpdate(float dt)
 {
 	debugTriangle* trig = debugDraw::requestTriangles(2);
 	trig[0].vertices[0].pos = { -0.25f, -0.25f, 0.f };
@@ -31,5 +35,6 @@ void game::game::onUpdate()
 
 	line[0].vertices[0].color = { 1.0f, 1.0f, 0.0f };
 	line[0].vertices[1].color = { 1.0f, 0.0f, 1.0f };
-	
+
+	debugDraw::drawText("FPS: " + std::to_string(int(1/dt)), glm::vec2(0, 50), 0.3);
 }

@@ -28,11 +28,18 @@ rfct::reflectApplication::~reflectApplication()
 }
 
 void rfct::reflectApplication::render() {
+
+	static auto previousTime = std::chrono::high_resolution_clock::now();
+	auto currentTime = std::chrono::high_resolution_clock::now();
+	std::chrono::duration<float> deltaTime = currentTime - previousTime;
+	previousTime = currentTime;
+	float dt = deltaTime.count();
+
 	input::getInput().pollEvents();
 	if (shouldRender) {
-		m_Game.onUpdate();
+		m_Game.onUpdate(dt);
 	}
-	world::getWorld().onUpdate(0);
+	world::getWorld().onUpdate(dt);
 	if (shouldRender) {
 		renderer::getRen().render();
 	};
