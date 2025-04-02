@@ -11,7 +11,7 @@ namespace rfct {
         AndroidWindow() = delete;
         AndroidWindow(ANativeWindow* nativeWindow);
         ~AndroidWindow() { }
-        inline float getAspectRatio() { return (float)(extent.width) / (float)(extent.height); }
+        inline float getAspectRatio() { return (float)((float)(extent.width) / (float)(extent.height)); }
 
         void create(ANativeWindow* nativeWindow);
         void create(int width, int height, const char* title) override {};

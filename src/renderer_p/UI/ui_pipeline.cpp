@@ -20,11 +20,10 @@ rfct::UIPipeline::UIPipeline() : m_vertexShader("shaders/UI/text_vert.spv"), m_f
 
     m_glyphsRenderData.buffer.CopyData((void*)square, sizeof(GlyphVertex)*6);
     m_glyphsRenderData.vertexCount = 6;*/
-    std::string what = "I want to go home";
-    
-    addTextVertices(&m_glyphsRenderData,what, glm::vec2(0, 0), 0.3);
-    std::string what1 = "hallo :3";
-    addTextVertices(&m_glyphsRenderData,what1, glm::vec2(0, 25), 0.3);
+    //std::string what = "I want to go home";
+    //addTextVertices(&m_glyphsRenderData,what, glm::vec2(0, 0), 0.3);
+    //std::string what1 = "hallo :3";
+    //addTextVertices(&m_glyphsRenderData,what1, glm::vec2(0, 25), 0.3);
 }
 
 rfct::UIPipeline::~UIPipeline()

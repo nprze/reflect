@@ -4,7 +4,6 @@
 #include <string>
 #include "assets\assets_manager.h"
 #include "input.h"
-#include "world_p\world.h"
 namespace rfct {
 	class reflectApplication {
 	public:

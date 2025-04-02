@@ -15,7 +15,7 @@ namespace rfct {
 	private:
 		uniformBufferObject ubo;
 		VulkanBuffer m_buffer;
-		void* mappedData;
+		void* m_mappedData;
 
 	private:
 		static vk::DescriptorSetLayout m_descriptorSetLayout;

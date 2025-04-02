@@ -38,12 +38,12 @@ void* rfct::VulkanBuffer::Map()
 {
     VmaAllocator allocator = renderer::getRen().getAllocator();
     
-    void* mappedData = nullptr;
-    VkResult res = vmaMapMemory(allocator, allocation, &mappedData);
+    void* m_mappedData = nullptr;
+    VkResult res = vmaMapMemory(allocator, allocation, &m_mappedData);
     if (res != VK_SUCCESS) {
         RFCT_CRITICAL("Failed to map Vulkan buffer memory.");
     }
-    return mappedData;
+    return m_mappedData;
 }
 
 void rfct::VulkanBuffer::Unmap()
@@ -55,9 +55,9 @@ void rfct::VulkanBuffer::Unmap()
 
 void rfct::VulkanBuffer::CopyData(const void* data, size_t size)
 {
-    void* mappedData = Map();
+    void* m_mappedData = Map();
 
-    std::memcpy(mappedData, data, size);
+    std::memcpy(m_mappedData, data, size);
 
     Unmap();
 }

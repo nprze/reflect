@@ -90,9 +90,9 @@ void rfct::vulkanRasterizerPipeline::createPipeline()
 
     // Pipeline layout
     vk::PipelineLayoutCreateInfo pipelineLayoutInfo = {};
-    pipelineLayoutInfo.setLayoutCount = 1;
-	vk::DescriptorSetLayout dscSetLayout = cameraUbo::getDescriptorSetLayout();
-    pipelineLayoutInfo.pSetLayouts = &dscSetLayout;
+    pipelineLayoutInfo.setLayoutCount = 2;
+    vk::DescriptorSetLayout dscSetLayouts[] = { cameraUbo::getDescriptorSetLayout(), world::getWorld().getCurrentScene().getRenderData().getDescriptorSetLayout() };
+    pipelineLayoutInfo.pSetLayouts = dscSetLayouts;
     m_pipelineLayout = renderer::getRen().getDevice().createPipelineLayoutUnique(pipelineLayoutInfo);
 
     vk::PipelineViewportStateCreateInfo viewportState = {};
@@ -169,7 +169,7 @@ void rfct::vulkanRasterizerPipeline::createRenderPass()
 
 }
 
-void rfct::vulkanRasterizerPipeline::recordCommandBuffer(frameData& frameData, vk::Framebuffer framebuffer, uint32_t imageIndex)
+void rfct::vulkanRasterizerPipeline::recordCommandBuffer(const sceneRenderData& renderdata, frameData& frameData, vk::Framebuffer framebuffer, uint32_t imageIndex)
 {
 
     {
@@ -200,7 +200,7 @@ void rfct::vulkanRasterizerPipeline::recordCommandBuffer(frameData& frameData, v
     commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, m_graphicsPipeline.get());
     
 
-    vk::Buffer vertexBuffers[] = { renderer::getRen().getVertexBuffer().getBuffer() };
+    vk::Buffer vertexBuffers[] = { renderdata.m_VertexBuffer.m_Buffer.buffer };
     vk::DeviceSize offsets[] = { 0 };
     commandBuffer.bindVertexBuffers(0, 1, vertexBuffers, offsets);
 
@@ -219,9 +219,10 @@ void rfct::vulkanRasterizerPipeline::recordCommandBuffer(frameData& frameData, v
     commandBuffer.setScissor(0, scissor);
 
     // Camera Descriptor
-    commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_pipelineLayout.get(),0,frameData.getCameraUboDescSet(),{});
+    vk::DescriptorSet sets[] = {frameData.getCameraUboDescSet(), renderdata.m_DescriptorSet.get() };
+    commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_pipelineLayout.get(),0,sets,{});
 
-    commandBuffer.draw(3, 1, 0, 0);
+    commandBuffer.draw(renderdata.m_verticesCount, 1, 0, 0);
 
 
     commandBuffer.endRenderPass();

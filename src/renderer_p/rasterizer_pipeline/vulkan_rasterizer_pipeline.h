@@ -9,7 +9,7 @@ namespace rfct {
 		~vulkanRasterizerPipeline();
 		void createPipeline();
 		void createRenderPass();
-		void recordCommandBuffer(frameData& frameData, vk::Framebuffer framebuffer, uint32_t imageIndex);
+		void recordCommandBuffer(const sceneRenderData& renderdata, frameData& frameData, vk::Framebuffer framebuffer, uint32_t imageIndex);
 		vk::RenderPass getRenderPass() { return m_renderPass.get(); }
 	private:
 		vulkanShader m_vertexShader;

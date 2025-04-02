@@ -5,7 +5,7 @@
 vk::DescriptorSetLayout rfct::cameraUbo::m_descriptorSetLayout;
 
 rfct::cameraUbo::cameraUbo():m_buffer(sizeof(uniformBufferObject), vk::BufferUsageFlagBits::eUniformBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU){
-	mappedData = m_buffer.Map();
+	m_mappedData = m_buffer.Map();
 }
 
 rfct::cameraUbo::~cameraUbo() { 
@@ -15,7 +15,7 @@ rfct::cameraUbo::~cameraUbo() {
 void rfct::cameraUbo::updateViewProj(glm::mat4 vp)
 {
     //vp = glm::mat4(1);
-	memcpy(mappedData, &vp, sizeof(uniformBufferObject));
+	memcpy(m_mappedData, &vp, sizeof(uniformBufferObject));
 }
 
 vk::DescriptorSetLayout rfct::cameraUbo::getDescriptorSetLayout()

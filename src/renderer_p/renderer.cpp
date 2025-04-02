@@ -27,9 +27,9 @@ rfct::renderer::renderer(RFCT_RENDERER_ARGUMENTS)
 	: m_AssetsManager(setStaticRenderer(this, assetsManager)), m_window(RFCT_WINDOWS_WINDOW_ARGUMENTS RFCT_NATIVE_WINDOW_ANDROID_VAR), m_instance(), m_surface(m_window.createSurface(getInstance())), m_device(), m_AssetsCommandPool(m_device.getDevice().createCommandPoolUnique({ {}, m_device.getQueueManager().getGraphicsQueueFamilyIndex() })), m_rasterizerPipeline(), m_allocator(), m_framesInFlight(), m_rayTracer(), m_vertexBuffer(sizeof(Vertex) * 3), m_debugDraw()
 {
     std::vector<Vertex> vertices = {
-        {{0.0f, -0.5f, 0.f}, {1.0f, 0.0f, 0.0f}},
-        {{0.5f, 0.5f, 0.f}, {0.0f, 1.0f, 0.0f}},
-        {{-0.5f, 0.5f, 0.f}, {0.0f, 0.0f, 1.0f}}
+        {{0.0f, -0.5f, 0.f}, {1.0f, 0.0f, 0.0f},0,0},
+        {{0.5f, 0.5f, 0.f}, {0.0f, 1.0f, 0.0f},0,0},
+        {{-0.5f, 0.5f, 0.f}, {0.0f, 0.0f, 1.0f},0,0}
     };
 	m_vertexBuffer.copyData(vertices);
 
@@ -58,7 +58,7 @@ void rfct::renderer::showWindow()
 	m_window.show();
 }
 
-void rfct::renderer::render()
+void rfct::renderer::render(const sceneRenderData& renderdata)
 {
     RFCT_PROFILE_FUNCTION(); 
 	frameData& frame = m_framesInFlight.getNextFrame();
@@ -80,7 +80,7 @@ void rfct::renderer::render()
     }
     frame.resetAllFences();
 
-	m_rasterizerPipeline.recordCommandBuffer(frame, m_device.getSwapChain().getFrameBuffer(imageIndex), imageIndex);
+	m_rasterizerPipeline.recordCommandBuffer(renderdata, frame, m_device.getSwapChain().getFrameBuffer(imageIndex), imageIndex);
     
     debugDraw::flush(frame, m_device.getSwapChain().getFrameBuffer(imageIndex), imageIndex);
 	m_UIPipeline.draw(frame, m_device.getSwapChain().getFrameBuffer(imageIndex), imageIndex);

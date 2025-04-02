@@ -47,7 +47,7 @@ namespace rfct {
         renderer(RFCT_RENDERER_ARGUMENTS);
 		~renderer();
 		void showWindow();
-		void render();
+		void render(const sceneRenderData& renderdata);
 		void setObjectName(void* objectHandle, const std::string& name, vk::ObjectType objectType);
 	private:
 	private:

@@ -19,7 +19,7 @@ namespace rfct {
     }
 
     inline static glm::mat4 getVPMatrix() {
-        cameraComponent* cam = world::getWorld().getComponent<cameraComponent>(world::getWorld().camera);
+        cameraComponent* cam = world::getWorld().getCurrentScene().getComponent<cameraComponent>(world::getWorld().getCurrentScene().camera);
         return getProjectionMatrix(cam) * getViewMatrix(cam);
     }
 

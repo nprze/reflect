@@ -1,13 +1,14 @@
 #include "app.h"
 #include "renderer_p\renderer.h"
 #include "assets\assets_manager.h"
+#include "world_p\world.h"
 std::string rfct::reflectApplication::AssetsDirectory;
 bool rfct::reflectApplication::shouldRender;
 
 rfct::reflectApplication::reflectApplication(RFCT_NATIVE_WINDOW_ANDROID RFCT_NATIVE_WINDOW_ANDROID_VAR):
 m_AssetsManager(AssetsDirectory), m_Renderer(std::make_unique<renderer>(RFCT_RENDERER_ARGUMENTS_VAR)), m_Game()
 {
-	world::getWorld().loadWorld("");
+	world::getWorld().loadScene("");
     shouldRender = true;
 	input::setInput(&m_Input);
 #ifdef WINDOWS_BUILD
@@ -25,6 +26,7 @@ void rfct::reflectApplication::updateWindow(RFCT_NATIVE_WINDOW_ANDROID RFCT_NATI
 rfct::reflectApplication::~reflectApplication()
 {
 	RFCT_TRACE("app cleanup start");
+	world::getWorld().cleanWorld();
 }
 
 void rfct::reflectApplication::render() {
@@ -39,8 +41,8 @@ void rfct::reflectApplication::render() {
 	if (shouldRender) {
 		m_Game.onUpdate(dt);
 	}
-	world::getWorld().onUpdate(dt);
+	world::getWorld().getCurrentScene().onUpdate(dt);
 	if (shouldRender) {
-		renderer::getRen().render();
+		renderer::getRen().render(world::getWorld().getCurrentScene().getRenderData());
 	};
 }

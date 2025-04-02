@@ -1,7 +1,12 @@
 #pragma once
 #include <string>
 #include <glm\glm.hpp>
+#include "renderer_p\buffer\vulkan_buffer.h"
 namespace rfct {
+    struct objectLocation {
+        VulkanBuffer* SSBO;
+        uint32_t indexInSSBO;
+    };
 	struct Entity {
 		size_t id;
         operator size_t() const {
@@ -14,8 +19,10 @@ namespace rfct {
         None = 0,
         nameComponent = 1ULL << 0,
         cameraComponent = 1ULL << 1,
-        damageComponent = 1ULL << 2,
-        healthComponent = 1ULL << 3,
+        transformComponent = 1ULL << 2,
+        renderMeshComponent = 1ULL << 3,
+        damageComponent = 1ULL << 20,
+        healthComponent = 1ULL << 30,
     };
 
 	struct nameComponent {
@@ -24,6 +31,22 @@ namespace rfct {
         static constexpr ComponentEnum EnumValue = ComponentEnum::nameComponent;
 		std::string name;
 	};
+    struct cameraComponent {
+        static constexpr ComponentEnum EnumValue = ComponentEnum::cameraComponent;
+        glm::vec3 position;
+        glm::vec3 rotation;
+        float fov, aspectRatio, nearPlane, farPlane;
+    };
+    struct transformComponent {
+        static constexpr ComponentEnum EnumValue = ComponentEnum::transformComponent;
+        glm::vec3 position;
+        glm::vec3 rotation;
+        glm::vec3 scale;
+    };
+    struct renderMeshComponent {
+        static constexpr ComponentEnum EnumValue = ComponentEnum::renderMeshComponent;
+        objectLocation renderDataLocations;
+    };
 	struct damageComponent {
         damageComponent() = default;
         damageComponent(int dmg) : damage(dmg) {}
@@ -36,12 +59,6 @@ namespace rfct {
         static constexpr ComponentEnum EnumValue = ComponentEnum::healthComponent;
 		int health;
 	};
-    struct cameraComponent {
-        static constexpr ComponentEnum EnumValue = ComponentEnum::nameComponent;
-        glm::vec3 position;
-        glm::vec3 rotation; 
-        float fov, aspectRatio, nearPlane, farPlane;
-    };
 
 
 

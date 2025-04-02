@@ -36,5 +36,5 @@ void game::game::onUpdate(float dt)
 	line[0].vertices[0].color = { 1.0f, 1.0f, 0.0f };
 	line[0].vertices[1].color = { 1.0f, 0.0f, 1.0f };
 
-	debugDraw::drawText("FPS: " + std::to_string(int(1/dt)), glm::vec2(0, 50), 0.3);
+	debugDraw::drawText("FPS: " + std::to_string(int(1/dt)), glm::vec2(0, 0), 0.2);
 }

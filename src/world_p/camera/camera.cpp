@@ -1,9 +1,10 @@
 #include "camera.h"
 #include "renderer_p\renderer.h"
+#include "world_p\world.h"
 namespace rfct {
 	void cameraComponentOnUpdate(float dt)
     {
-        cameraComponent* cam = world::getWorld().getComponent<cameraComponent>(world::getWorld().camera);
+        cameraComponent* cam = world::getWorld().getCurrentScene().getComponent<cameraComponent>(world::getWorld().getCurrentScene().camera);
         cam->aspectRatio = renderer::getRen().getAspectRatio();
 
 
