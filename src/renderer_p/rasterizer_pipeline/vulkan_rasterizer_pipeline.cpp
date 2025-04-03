@@ -200,9 +200,6 @@ void rfct::vulkanRasterizerPipeline::recordCommandBuffer(const sceneRenderData& 
     commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, m_graphicsPipeline.get());
     
 
-    vk::Buffer vertexBuffers[] = { renderdata.m_VertexBuffer.m_Buffer.buffer };
-    vk::DeviceSize offsets[] = { 0 };
-    commandBuffer.bindVertexBuffers(0, 1, vertexBuffers, offsets);
 
     vk::Viewport viewport = {};
     viewport.x = 0.0f;
@@ -218,12 +215,30 @@ void rfct::vulkanRasterizerPipeline::recordCommandBuffer(const sceneRenderData& 
     scissor.extent = renderPassInfo.renderArea.extent;
     commandBuffer.setScissor(0, scissor);
 
+    vk::DeviceSize offsets[] = { 0 };
     // Camera Descriptor
-    vk::DescriptorSet sets[] = {frameData.getCameraUboDescSet(), renderdata.m_DescriptorSet.get() };
-    commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_pipelineLayout.get(),0,sets,{});
+    if (renderdata.m_verticesCountStaticObj) {
 
-    commandBuffer.draw(renderdata.m_verticesCount, 1, 0, 0);
+        vk::Buffer vertexBuffers[] = { renderdata.m_VertexBufferStatic.m_Buffer.buffer };
 
+        commandBuffer.bindVertexBuffers(0, 1, vertexBuffers, offsets);
+
+        vk::DescriptorSet sets[] = { frameData.getCameraUboDescSet(), renderdata.m_DescriptorSetStatic.get() };
+        commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_pipelineLayout.get(), 0, sets, {});
+
+        commandBuffer.draw(renderdata.m_verticesCountStaticObj, 1, 0, 0);
+    }
+    if (renderdata.m_verticesCountDynamicObj) {
+
+        vk::Buffer vertexBuffers[] = { renderdata.m_VertexBufferDynamic.m_Buffer.buffer };
+        
+        commandBuffer.bindVertexBuffers(0, 1, vertexBuffers, offsets);
+
+        vk::DescriptorSet sets[] = { frameData.getCameraUboDescSet(), renderdata.m_DescriptorSetDynamic.get() };
+        commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_pipelineLayout.get(), 0, sets, {});
+
+        commandBuffer.draw(renderdata.m_verticesCountDynamicObj, 1, 0, 0);
+    }
 
     commandBuffer.endRenderPass();
     {

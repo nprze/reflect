@@ -32,6 +32,12 @@ namespace rfct {
 
 		void getAllComponents(std::unordered_map<ComponentEnum, std::vector<void*>>& out_components, ComponentEnum requestedComponents);
 
+		// add entities
+		Entity createStaticRenderingEntity(std::vector<Vertex>* vertices, transformComponent* tranform);
+		Entity createDynamicRenderingEntity(std::vector<Vertex>* vertices, transformComponent* tranform);
+
+		void updateTransformData(Entity ent);
+
 	private:
 		std::vector<EntityLocation> m_EntityLocations; // Entity is an index by which we adress this to get the actual location of components
 		std::vector<size_t> m_FreeEntityBlocks; // holds indices of m_EntityLocations of components which have been deleted and are waiting to be reused

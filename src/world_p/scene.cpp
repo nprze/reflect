@@ -3,6 +3,7 @@
 #include <glm/glm.hpp>
 #include "renderer_p\renderer.h"
 #include "components_util.h"
+#include "transform.h"
 
 rfct::scene::scene() : m_EntityLocations(0)
 {
@@ -16,7 +17,6 @@ rfct::scene::~scene()
 
 void rfct::scene::onUpdate(float dt)
 {
-	// delta time
 	// Update systems
 	getComponent<cameraComponent>(camera); 
 	cameraComponentOnUpdate(dt);
@@ -43,24 +43,14 @@ void rfct::scene::loadScene(std::string path)
 	camera = helloEntity<cameraComponent>(cameraComponent{ glm::vec3(0.f, 0.f, 1.0f), glm::vec3(0), 45.f, renderer::getRen().getAspectRatio(), 0.f, 100.f });
 	m_RenderData.startTransfer();
 	{
-		std::vector<Vertex> vertices = {
-			{{0.0f, -0.5f, 0.f}, {1.0f, 1.0f, 1.0f},0,0},
-			{{0.5f, 0.5f, 0.f}, {0.0f, 1.0f, 0.0f},0,0},
-			{{-0.5f, 0.5f, 0.f}, {0.0f, 0.0f, 1.0f},0,0}
-		};
-		glm::mat4 model = glm::mat4(1);
-		model = glm::translate(model, glm::vec3(1.f, 0, 0));
-		m_RenderData.addStaticObject(&vertices, &model);
-	}
-	{
 
 		std::vector<Vertex> vertices = {
 			{{0.0f, -0.5f, 0.f}, {1.0f, 0.0f, 0.0f},0,0},
 			{{0.5f, 0.5f, 0.f}, {0.0f, 1.0f, 0.0f},0,0},
 			{{-0.5f, 0.5f, 0.f}, {0.0f, 0.0f, 1.0f},0,0}
 		};
-		glm::mat4 model = glm::mat4(1);
-		m_RenderData.addStaticObject(&vertices, &model);
+		transformComponent tc = {};
+		createStaticRenderingEntity(&vertices, &tc);
 	}
 	{
 
@@ -69,9 +59,9 @@ void rfct::scene::loadScene(std::string path)
 			{{0.5f, 0.5f, 0.f}, {0.0f, 1.0f, 0.0f},0,0},
 			{{-0.5f, 0.5f, 0.f}, {0.0f, 0.0f, 1.0f},0,0}
 		};
-		glm::mat4 model = glm::mat4(1);
-		model = glm::translate(model, glm::vec3(-1.f, 0, 0));
-		m_RenderData.addStaticObject(&vertices, &model);
+		transformComponent tc = {};
+		tc.position.x -= 1.f;
+		createStaticRenderingEntity(&vertices, &tc);
 	}
 	m_RenderData.endTransfer();
 }
@@ -157,6 +147,28 @@ void rfct::scene::getAllComponents(std::unordered_map<ComponentEnum, std::vector
 
 		requestedComponents = static_cast<ComponentEnum>(static_cast<size_t>(requestedComponents) & (static_cast<size_t>(requestedComponents) - 1));
 	}
+}
+
+rfct::Entity rfct::scene::createStaticRenderingEntity(std::vector<Vertex>* vertices, transformComponent* tranform)
+{
+	glm::mat4 model = getModelMatrixFromTranform(*tranform);
+	renderMeshComponent rmc = { m_RenderData.addStaticObject(vertices, &model) };
+	return helloEntity<transformComponent, renderMeshComponent>(std::move(*tranform), std::move(rmc));
+}
+
+rfct::Entity rfct::scene::createDynamicRenderingEntity(std::vector<Vertex>* vertices, transformComponent* tranform)
+{
+	glm::mat4 model = getModelMatrixFromTranform(*tranform);
+	renderMeshComponent rmc = { m_RenderData.addDynamicObject(vertices, &model) };
+	return helloEntity<transformComponent, renderMeshComponent>(std::move(*tranform), std::move(rmc));
+}
+
+void rfct::scene::updateTransformData(Entity ent)
+{
+	transformComponent* tc = getComponent<transformComponent>(ent);
+	renderMeshComponent* rmc = getComponent<renderMeshComponent>(ent);
+	glm::mat4 model = getModelMatrixFromTranform(*tc);
+	m_RenderData.updateMat(rmc->renderDataLocations, &model);
 }
 
 void rfct::scene::goodbyeEntity(Entity entity)

@@ -6,6 +6,9 @@ namespace rfct {
     struct objectLocation {
         VulkanBuffer* SSBO;
         uint32_t indexInSSBO;
+        uint32_t verticesCount;
+        VulkanBuffer* vertexBuffer;
+        size_t vertexBufferOffset;
     };
 	struct Entity {
 		size_t id;
@@ -39,9 +42,9 @@ namespace rfct {
     };
     struct transformComponent {
         static constexpr ComponentEnum EnumValue = ComponentEnum::transformComponent;
-        glm::vec3 position;
-        glm::vec3 rotation;
-        glm::vec3 scale;
+        glm::vec3 position = glm::vec3(0.f);
+        glm::vec3 rotation = glm::vec3(0.f);
+        glm::vec3 scale = glm::vec3(1.f);
     };
     struct renderMeshComponent {
         static constexpr ComponentEnum EnumValue = ComponentEnum::renderMeshComponent;

@@ -8,6 +8,30 @@
             vec->pop_back();\
             break;\
         }\
+        case ComponentEnum::cameraComponent: {\
+            auto* vec = static_cast<std::vector<cameraComponent>*>(compVecPtr);\
+            if (index < vec->size() - 1) {\
+                std::swap(vec->at(index), vec->back());\
+            }\
+            vec->pop_back();\
+            break;\
+        }\
+        case ComponentEnum::transformComponent: {\
+            auto* vec = static_cast<std::vector<transformComponent>*>(compVecPtr);\
+            if (index < vec->size() - 1) {\
+                std::swap(vec->at(index), vec->back());\
+            }\
+            vec->pop_back();\
+            break;\
+        }\
+        case ComponentEnum::renderMeshComponent: {\
+            auto* vec = static_cast<std::vector<renderMeshComponent>*>(compVecPtr);\
+            if (index < vec->size() - 1) {\
+                std::swap(vec->at(index), vec->back());\
+            }\
+            vec->pop_back();\
+            break;\
+        }\
         case ComponentEnum::damageComponent: {\
             auto* vec = static_cast<std::vector<damageComponent>*>(compVecPtr);\
             if (index < vec->size() - 1) {\
@@ -18,14 +42,6 @@
         }\
         case ComponentEnum::healthComponent: {\
             auto* vec = static_cast<std::vector<healthComponent>*>(compVecPtr);\
-            if (index < vec->size() - 1) {\
-                std::swap(vec->at(index), vec->back());\
-            }\
-            vec->pop_back();\
-            break;\
-        }\
-        case ComponentEnum::cameraComponent: {\
-            auto* vec = static_cast<std::vector<cameraComponent>*>(compVecPtr);\
             if (index < vec->size() - 1) {\
                 std::swap(vec->at(index), vec->back());\
             }\
@@ -44,16 +60,24 @@
             newArchetype->addsingleComponent<nameComponent>(oldArchetype->getComponent<nameComponent>(m_EntityLocations[entity].locationIndex));\
             break;\
         }\
+        case ComponentEnum::cameraComponent: {\
+            newArchetype->addsingleComponent<cameraComponent>(oldArchetype->getComponent<cameraComponent>(m_EntityLocations[entity].locationIndex));\
+            break;\
+        }\
+        case ComponentEnum::transformComponent: {\
+            newArchetype->addsingleComponent<transformComponent>(oldArchetype->getComponent<transformComponent>(m_EntityLocations[entity].locationIndex));\
+            break;\
+        }\
+        case ComponentEnum::renderMeshComponent: {\
+            newArchetype->addsingleComponent<renderMeshComponent>(oldArchetype->getComponent<renderMeshComponent>(m_EntityLocations[entity].locationIndex));\
+            break;\
+        }\
         case ComponentEnum::damageComponent: {\
             newArchetype->addsingleComponent<damageComponent>(oldArchetype->getComponent<damageComponent>(m_EntityLocations[entity].locationIndex));\
             break;\
         }\
         case ComponentEnum::healthComponent: {\
             newArchetype->addsingleComponent<healthComponent>(oldArchetype->getComponent<healthComponent>(m_EntityLocations[entity].locationIndex));\
-            break;\
-        }\
-        case ComponentEnum::cameraComponent: {\
-            newArchetype->addsingleComponent<cameraComponent>(oldArchetype->getComponent<cameraComponent>(m_EntityLocations[entity].locationIndex));\
             break;\
         }\
         default: {\
@@ -69,16 +93,24 @@
             archetype->addComponent<nameComponent>();\
             break;\
         }\
+        case ComponentEnum::cameraComponent: {\
+            archetype->addComponent<cameraComponent>();\
+            break;\
+        }\
+        case ComponentEnum::transformComponent: {\
+            archetype->addComponent<transformComponent>();\
+            break;\
+        }\
+        case ComponentEnum::renderMeshComponent: {\
+            archetype->addComponent<renderMeshComponent>();\
+            break;\
+        }\
         case ComponentEnum::damageComponent: {\
             archetype->addComponent<damageComponent>();\
             break;\
         }\
         case ComponentEnum::healthComponent: {\
             archetype->addComponent<healthComponent>();\
-            break;\
-        }\
-        case ComponentEnum::cameraComponent: {\
-            archetype->addComponent<cameraComponent>();\
             break;\
         }\
         default:\
