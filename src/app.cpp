@@ -6,22 +6,22 @@ std::string rfct::reflectApplication::AssetsDirectory;
 bool rfct::reflectApplication::shouldRender;
 
 rfct::reflectApplication::reflectApplication(RFCT_NATIVE_WINDOW_ANDROID RFCT_NATIVE_WINDOW_ANDROID_VAR):
-m_AssetsManager(AssetsDirectory), m_Renderer(std::make_unique<renderer>(RFCT_RENDERER_ARGUMENTS_VAR)), m_Game()
+m_AssetsManager(AssetsDirectory), m_Renderer(RFCT_RENDERER_ARGUMENTS_VAR)
 {
 	world::getWorld().loadScene("");
     shouldRender = true;
 	input::setInput(&m_Input);
 #ifdef WINDOWS_BUILD
-    render();
+    update();
 	renderer::getRen().showWindow();
 	while (renderer::getRen().getWindow().pollEvents())
 	{
-		render();
+		update();
 	}
 #endif
 }
 void rfct::reflectApplication::updateWindow(RFCT_NATIVE_WINDOW_ANDROID RFCT_NATIVE_WINDOW_ANDROID_VAR){
-    m_Renderer->updateWindow(RFCT_NATIVE_WINDOW_ANDROID_VAR);
+    m_Renderer.updateWindow(RFCT_NATIVE_WINDOW_ANDROID_VAR);
 };
 rfct::reflectApplication::~reflectApplication()
 {
@@ -29,20 +29,25 @@ rfct::reflectApplication::~reflectApplication()
 	world::getWorld().cleanWorld();
 }
 
-void rfct::reflectApplication::render() {
-
+void rfct::reflectApplication::update() {
 	static auto previousTime = std::chrono::high_resolution_clock::now();
 	auto currentTime = std::chrono::high_resolution_clock::now();
 	std::chrono::duration<float> deltaTime = currentTime - previousTime;
 	previousTime = currentTime;
-	float dt = deltaTime.count();
-
-	input::getInput().pollEvents();
-	if (shouldRender) {
-		m_Game.onUpdate(dt);
-	}
-	world::getWorld().getCurrentScene().onUpdate(dt);
-	if (shouldRender) {
-		renderer::getRen().render(world::getWorld().getCurrentScene().getRenderData());
+	//currentFrame = (currentFrame + 1) % RFCT_FRAMES_IN_FLIGHT;
+	frameContext context = {
+		.dt = deltaTime.count(),
+		.scene = nullptr,
 	};
+
+	m_Input.pollEvents();
+	updateGameplay(context);
+	if (shouldRender) {
+		renderer::getRen().render(context);
+	};
+}
+
+void rfct::reflectApplication::updateGameplay(frameContext& ContextArg)
+{
+	world::getWorld().onUpdate(ContextArg);
 }

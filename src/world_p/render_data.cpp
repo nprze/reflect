@@ -106,7 +106,7 @@ void rfct::sceneRenderData::updateMat(const objectLocation& objLoc, glm::mat4* m
 
 uint32_t rfct::sceneRenderData::addStaticMat(void* data)
 {
-	if (!m_mappedDataStatic) { RFCT_CRITICAL("trying to add matrices when startTransfer() hasn't been called"); }
+	if (!m_mappedDataStatic) { RFCT_CRITICAL("trying to add matrices when startTransferStatic() hasn't been called"); }
 	char* finalPtr = ((char*)m_mappedDataStatic) + (m_matsCounterStatic * sizeof(glm::mat4));
 	memcpy(finalPtr, data, sizeof(glm::mat4));
 	return m_matsCounterStatic++;

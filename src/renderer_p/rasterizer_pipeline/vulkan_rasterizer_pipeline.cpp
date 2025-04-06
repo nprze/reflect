@@ -171,10 +171,10 @@ void rfct::vulkanRasterizerPipeline::createRenderPass()
 
 void rfct::vulkanRasterizerPipeline::recordCommandBuffer(const sceneRenderData& renderdata, frameData& frameData, vk::Framebuffer framebuffer, uint32_t imageIndex)
 {
+    vk::CommandBuffer commandBuffer = frameData.m_sceneCommandBuffer.get();
 
     {
         RFCT_PROFILE_SCOPE("begin command buffer");
-        vk::CommandBuffer commandBuffer = frameData.getSceneCommandBuffer();
         commandBuffer.reset({});
         vk::CommandBufferBeginInfo beginInfo = {};
         commandBuffer.begin(beginInfo);
@@ -182,7 +182,6 @@ void rfct::vulkanRasterizerPipeline::recordCommandBuffer(const sceneRenderData& 
 
 	frameData.prepareFrame();
 
-    vk::CommandBuffer commandBuffer = frameData.getSceneCommandBuffer();
 
     std::array<vk::ClearValue, 1> clearValues = {};
     clearValues[0].color = vk::ClearColorValue(std::array<float, 4>{0.0f, 0.0f, 0.0f, 1.0f});
@@ -242,11 +241,8 @@ void rfct::vulkanRasterizerPipeline::recordCommandBuffer(const sceneRenderData& 
 
     commandBuffer.endRenderPass();
     {
-        RFCT_PROFILE_SCOPE("submit command buffer");
-        vk::CommandBuffer commandBuffer = frameData.getSceneCommandBuffer();
+        RFCT_PROFILE_SCOPE("end command buffer scene");
         commandBuffer.end();
-        vk::CommandBuffer cmdbfr = frameData.getSceneCommandBuffer();
-        renderer::getRen().getDeviceWrapper().getQueueManager().submitGraphics(frameData.sceneSubmitInfo(), frameData.getSceneInRenderFence());
     }
 
 }

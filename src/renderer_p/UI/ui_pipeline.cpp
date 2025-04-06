@@ -240,11 +240,7 @@ void rfct::UIPipeline::draw(frameData& fd, vk::Framebuffer framebuffer, uint32_t
     {
         return;
     }
-    {
-        RFCT_PROFILE_SCOPE("fences reset");
-        RFCT_VULKAN_CHECK(renderer::getRen().getDevice().resetFences(1, &fd.m_uiInRenderFence.get()));
-    }
-    vk::CommandBuffer commandBuffer = fd.getuiCommandBuffer();
+    vk::CommandBuffer commandBuffer = fd.m_uiCommandBuffer.get();
     {
         RFCT_PROFILE_SCOPE("begin command buffer");
         commandBuffer.reset({});
@@ -303,18 +299,10 @@ void rfct::UIPipeline::draw(frameData& fd, vk::Framebuffer framebuffer, uint32_t
     commandBuffer.endRenderPass();
 
     {
-        RFCT_PROFILE_SCOPE("submit command buffer");
-        vk::CommandBuffer commandBuffer = fd.getuiCommandBuffer();
+        RFCT_PROFILE_SCOPE("end command buffer UI");
         commandBuffer.end();
-        renderer::getRen().getDeviceWrapper().getQueueManager().submitGraphics(fd.uiSubmitInfo(), fd.getuiInRenderFence());
     }
     m_debugDrawglyphsRenderData.postFrame();
-    {
-        RFCT_PROFILE_SCOPE("fences wait");
-        RFCT_VULKAN_CHECK(renderer::getRen().getDevice().waitForFences(1, &fd.m_uiInRenderFence.get(), VK_TRUE, UINT64_MAX));
-    }
-
-
 }
 
 void rfct::UIPipeline::debugText(const std::string& text, glm::vec2 startPosition, float scale)

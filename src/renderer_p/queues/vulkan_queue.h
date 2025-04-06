@@ -26,5 +26,7 @@ namespace rfct {
         uint32_t m_graphicsQueueFamilyIndex;
         uint32_t m_computeQueueFamilyIndex;
         uint32_t m_transferQueueFamilyIndex;
+
+        std::mutex m_graphicsMutex;
     };
 }

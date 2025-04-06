@@ -102,7 +102,7 @@ namespace rfct {
 		RFCT_VULKAN_CHECK(renderer::getRen().getDevice().waitForFences(fence, VK_TRUE, UINT64_MAX));
 
         renderer::getRen().getDevice().freeCommandBuffers(renderer::getRen().getAssetsCommandPool(), commandBuffer);
-        vmaDestroyBuffer(renderer::getRen().getAllocator(), stagingBuffer, stagingBufferAllocation);
+        vmaDestroyBuffer(renderer::getRen().getAllocator(), static_cast<VkBuffer>(stagingBuffer), stagingBufferAllocation);
 		renderer::getRen().getDevice().destroyFence(fence);
 
         // Create Image View

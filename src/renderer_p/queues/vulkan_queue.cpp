@@ -110,9 +110,10 @@ rfct::vulkanQueueManager::~vulkanQueueManager() {
 }
 
 void rfct::vulkanQueueManager::submitGraphics(const vk::SubmitInfo& submitInfo, vk::Fence fence) {
-    // Directly submit to the graphics queue
+    std::lock_guard<std::mutex> lock(m_graphicsMutex);
     m_graphicsQueue.submit(submitInfo, fence);
 }
+
 
 void rfct::vulkanQueueManager::submitCompute(const vk::SubmitInfo& submitInfo, vk::Fence fence) {
     // Directly submit to the compute queue

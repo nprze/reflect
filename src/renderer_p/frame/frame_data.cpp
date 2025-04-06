@@ -9,35 +9,39 @@ inline static glm::mat4 getUIMatrix() {
     float height = static_cast<float>(extent.height);
 
     return glm::ortho(0.0f, width, 0.0f, height);
-    return glm::ortho(0.0f, width, height, 0.0f);
 }
 
-rfct::frameData::frameData(vk::Device device, VmaAllocator& allocator)
-    : m_device(device), m_allocator(allocator) {
+rfct::frameData::frameData(vk::Device device, VmaAllocator& allocator, vk::Semaphore& prevFramePresentFinishedSem)
+    : m_device(device), m_allocator(allocator), m_previousFramePresentFinishedSemaphore(prevFramePresentFinishedSem) {
 
     vk::CommandPoolCreateInfo poolInfo{
         vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
         renderer::getRen().getDeviceWrapper().getQueueManager().getGraphicsQueueFamilyIndex()
     };
-    m_commandPool = device.createCommandPoolUnique(poolInfo);
+    m_sceneCommandPool = device.createCommandPoolUnique(poolInfo);
+    m_debugDrawCommandPool = device.createCommandPoolUnique(poolInfo);
+    m_uiCommandPool = device.createCommandPoolUnique(poolInfo);
 
-    vk::CommandBufferAllocateInfo allocInfo{
-        *m_commandPool, vk::CommandBufferLevel::ePrimary, 3
-    };
+    vk::CommandBufferAllocateInfo allocInfoScene{*m_sceneCommandPool, vk::CommandBufferLevel::ePrimary, 1};
+    auto commandBuffersScene = device.allocateCommandBuffersUnique(allocInfoScene);
+    m_sceneCommandBuffer = std::move(commandBuffersScene[0]);
 
-    auto commandBuffers = device.allocateCommandBuffersUnique(allocInfo);
+    vk::CommandBufferAllocateInfo allocInfoDebugDraw{ *m_debugDrawCommandPool, vk::CommandBufferLevel::ePrimary, 1 };
+    auto commandBuffersDebugDraw = device.allocateCommandBuffersUnique(allocInfoDebugDraw);
+    m_debugDrawCommandBuffer = std::move(commandBuffersDebugDraw[0]);
 
-    m_sceneCommandBuffer = std::move(commandBuffers[0]);
-    m_debugDrawCommandBuffer = std::move(commandBuffers[1]);
-    m_uiCommandBuffer = std::move(commandBuffers[2]);
+    vk::CommandBufferAllocateInfo allocInfoUI{ *m_uiCommandPool, vk::CommandBufferLevel::ePrimary, 1 };
+    auto commandBuffersui = device.allocateCommandBuffersUnique(allocInfoUI);
+    m_uiCommandBuffer = std::move(commandBuffersui[0]);
 
     vk::FenceCreateInfo fenceInfo{ vk::FenceCreateFlagBits::eSignaled };
-    m_sceneInRenderFence = device.createFenceUnique(fenceInfo);
-    m_debugDrawTrianglesInRenderFence = device.createFenceUnique(fenceInfo);
-    m_uiInRenderFence = device.createFenceUnique(fenceInfo);
+    m_renderingFence = device.createFenceUnique(fenceInfo);
 
     vk::SemaphoreCreateInfo semaphoreInfo{};
-    m_imageAvailableSemaphore = device.createSemaphoreUnique(semaphoreInfo);
+    m_ImageAvaibleSemaphore = device.createSemaphoreUnique(semaphoreInfo);
+
+    m_sceneFinishedSemaphore = device.createSemaphoreUnique(semaphoreInfo);
+    m_debugDrawFinishedSemaphore = device.createSemaphoreUnique(semaphoreInfo);
     m_renderFinishedSemaphore = device.createSemaphoreUnique(semaphoreInfo);
 
 	m_descriptors.bindCameraUbo(m_cameraUbo.getBuffer());
@@ -54,42 +58,42 @@ void rfct::frameData::prepareFrame()
 void rfct::frameData::waitForAllFences()
 {
     RFCT_PROFILE_SCOPE("fences wait");
-    RFCT_VULKAN_CHECK(m_device.waitForFences(1, &m_sceneInRenderFence.get(), VK_TRUE, UINT64_MAX));
+    RFCT_VULKAN_CHECK(m_device.waitForFences(1, &m_renderingFence.get(), VK_TRUE, UINT64_MAX));
 }
 
 void rfct::frameData::resetAllFences()
 {
     RFCT_PROFILE_SCOPE("fences reset");
-    RFCT_VULKAN_CHECK(m_device.resetFences(1, &m_sceneInRenderFence.get()));
+    RFCT_VULKAN_CHECK(m_device.resetFences(1, &m_renderingFence.get()));
 }
 
-vk::SubmitInfo rfct::frameData::sceneSubmitInfo()
+vk::SubmitInfo rfct::frameData::sceneSubmitInfo() const
 {
     vk::PipelineStageFlags waitStages = vk::PipelineStageFlagBits::eColorAttachmentOutput;
 
     return vk::SubmitInfo()
-        .setWaitSemaphores(m_imageAvailableSemaphore.get())
+        .setWaitSemaphores(m_ImageAvaibleSemaphore.get())
         .setWaitDstStageMask(waitStages)
         .setCommandBuffers(m_sceneCommandBuffer.get())
-        .setSignalSemaphores(m_renderFinishedSemaphore.get());
+        .setSignalSemaphores(m_sceneFinishedSemaphore.get());
 }
-vk::SubmitInfo rfct::frameData::debugDrawSubmitInfo()
+vk::SubmitInfo rfct::frameData::debugDrawSubmitInfo() const
 {
     vk::PipelineStageFlags waitStages = vk::PipelineStageFlagBits::eColorAttachmentOutput;
 
     return vk::SubmitInfo()
-        .setWaitSemaphores(m_renderFinishedSemaphore.get())
+        .setWaitSemaphores(m_sceneFinishedSemaphore.get())
         .setWaitDstStageMask(waitStages)
         .setCommandBuffers(m_debugDrawCommandBuffer.get())
-        .setSignalSemaphores(m_renderFinishedSemaphore.get());
+        .setSignalSemaphores(m_debugDrawFinishedSemaphore.get());
 }
 
-vk::SubmitInfo rfct::frameData::uiSubmitInfo()
+vk::SubmitInfo rfct::frameData::uiSubmitInfo() const
 {
     vk::PipelineStageFlags waitStages = vk::PipelineStageFlagBits::eColorAttachmentOutput;
 
     return vk::SubmitInfo()
-        .setWaitSemaphores(m_renderFinishedSemaphore.get())
+        .setWaitSemaphores(m_debugDrawFinishedSemaphore.get())
         .setWaitDstStageMask(waitStages)
         .setCommandBuffers(m_uiCommandBuffer.get())
         .setSignalSemaphores(m_renderFinishedSemaphore.get());

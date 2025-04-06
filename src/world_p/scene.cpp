@@ -3,9 +3,10 @@
 #include <glm/glm.hpp>
 #include "renderer_p\renderer.h"
 #include "components_util.h"
+#include "archetype.h"
 #include "transform.h"
 
-rfct::scene::scene() : m_EntityLocations(0)
+rfct::scene::scene(world* worldArg) : m_World(worldArg), m_EntityLocations(0)
 {
 	m_EntityLocations.reserve(100);
 }
@@ -15,11 +16,19 @@ rfct::scene::~scene()
 	Query::cleanUp();
 }
 
-void rfct::scene::onUpdate(float dt)
+void rfct::scene::onUpdate(frameContext* context)
 {
 	// Update systems
+	transformComponent* tc = world::getWorld().getCurrentScene().getComponent<transformComponent>(epicRotatingTriangle);
+	if (input::getInput().xAxis) {
+		tc->position.x += 3 * input::getInput().xAxis * context->dt;
+	}
+	if (input::getInput().yAxis) {
+		tc->position.y += 3 * input::getInput().yAxis * context->dt;
+	}
+	updateTransformData(epicRotatingTriangle);
 	getComponent<cameraComponent>(camera); 
-	cameraComponentOnUpdate(dt);
+	cameraComponentOnUpdate(context->dt, *tc);
 
 }
 
@@ -28,20 +37,8 @@ void rfct::scene::loadScene(std::string path)
 {
 	runEntityTests();
 	Query::cleanUp();
-	/*
-		constexpr size_t entityCount = 1000;
-		for (size_t i = 0; i < entityCount; i++) {
-			helloEntity<nameComponent, damageComponent>(nameComponent("named name and damage " + std::to_string(i)), damageComponent(i));
-
-		}
-		std::unordered_map<ComponentEnum, std::vector<void*>> out_components;
-		out_components[ComponentEnum::nameComponent].reserve(1000);
-		out_components[ComponentEnum::damageComponent].reserve(1000);
-		getAllComponents(out_components, ComponentEnum::nameComponent | ComponentEnum::damageComponent);
-		Query::cleanUp();
-	*/
-	camera = helloEntity<cameraComponent>(cameraComponent{ glm::vec3(0.f, 0.f, 1.0f), glm::vec3(0), 45.f, renderer::getRen().getAspectRatio(), 0.f, 100.f });
-	m_RenderData.startTransfer();
+	camera = helloEntity<cameraComponent>(cameraComponent{ glm::vec3(0.f, 0.f, 10.0f), glm::vec3(0), 45.f, renderer::getRen().getAspectRatio(), 0.f, 100.f });
+	m_RenderData.startTransferStatic();
 	{
 
 		std::vector<Vertex> vertices = {
@@ -63,7 +60,15 @@ void rfct::scene::loadScene(std::string path)
 		tc.position.x -= 1.f;
 		createStaticRenderingEntity(&vertices, &tc);
 	}
-	m_RenderData.endTransfer();
+	m_RenderData.endTransferStatic();
+	std::vector<Vertex> vertices = {
+		{{0.0f, -0.5f, 0.f}, {1.0f, 1.0f, 1.0f},0,0},
+		{{0.5f, 0.5f, 0.f}, {0.0f, 1.0f, 0.0f},0,0},
+		{{-0.5f, 0.5f, 0.f}, {0.0f, 0.0f, 1.0f},0,0}
+	};
+	transformComponent tc = {};
+	tc.position.x += 1.f;
+	epicRotatingTriangle = createDynamicRenderingEntity(&vertices, &tc);
 }
 
 template<typename... Components>

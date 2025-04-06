@@ -6,12 +6,14 @@ namespace rfct {
 		Archetype* archetype = nullptr;
 		size_t locationIndex = 0;
 	};
+	class world;
+	struct frameContext;
 	class scene {
 	public:
 		Entity camera;
-		scene();
+		scene(world* worldArg);
 		~scene();
-		void onUpdate(float dt);
+		void onUpdate(frameContext* context);
 		void loadScene(std::string path);
 		inline void unloadScene() {};
 		inline sceneRenderData& getRenderData() { return m_RenderData; };
@@ -38,11 +40,16 @@ namespace rfct {
 
 		void updateTransformData(Entity ent);
 
+		world* getWorld() { return m_World; }
+
 	private:
 		std::vector<EntityLocation> m_EntityLocations; // Entity is an index by which we adress this to get the actual location of components
 		std::vector<size_t> m_FreeEntityBlocks; // holds indices of m_EntityLocations of components which have been deleted and are waiting to be reused
 		
 		sceneRenderData m_RenderData;
+		world* m_World;
+
+		rfct::Entity epicRotatingTriangle;
 
 		friend class Archetype;
 	};

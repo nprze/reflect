@@ -196,26 +196,21 @@ rfct::debugDraw::~debugDraw()
 {
 }
 
-void rfct::debugDraw::draw(frameData& fd, vk::Framebuffer framebuffer, uint32_t imageIndex)
+void rfct::debugDraw::draw(const frameData& fd, vk::Framebuffer framebuffer, uint32_t imageIndex)
 {
     
 	if (m_triangleBuffer.vertexCount == 0 && m_lineBuffer.vertexCount == 0)
 	{
 		return;
 	}
-    {
-        RFCT_PROFILE_SCOPE("fences reset");
-        RFCT_VULKAN_CHECK(renderer::getRen().getDevice().resetFences(1, &fd.m_debugDrawTrianglesInRenderFence.get()));
-    }
+    vk::CommandBuffer commandBuffer = fd.m_debugDrawCommandBuffer.get();
     {
         RFCT_PROFILE_SCOPE("begin command buffer");
-        vk::CommandBuffer commandBuffer = fd.getDebugDrawCommandBuffer();
         commandBuffer.reset({});
         vk::CommandBufferBeginInfo beginInfo = {};
         commandBuffer.begin(beginInfo);
     }
 
-    vk::CommandBuffer commandBuffer = fd.getDebugDrawCommandBuffer();
 
 
     vk::RenderPassBeginInfo renderPassInfo = {};
@@ -274,19 +269,11 @@ void rfct::debugDraw::draw(frameData& fd, vk::Framebuffer framebuffer, uint32_t 
     commandBuffer.endRenderPass();
 
     {
-        RFCT_PROFILE_SCOPE("submit command buffer");
-        vk::CommandBuffer commandBuffer = fd.getDebugDrawCommandBuffer();
+        RFCT_PROFILE_SCOPE("end command buffer");
         commandBuffer.end();
-        vk::CommandBuffer cmdbfr = fd.getDebugDrawCommandBuffer();
-        renderer::getRen().getDeviceWrapper().getQueueManager().submitGraphics(fd.debugDrawSubmitInfo(), fd.getdebugDrawInRenderFence());
     }
 	m_triangleBuffer.postFrame();
 	m_lineBuffer.postFrame();
-    {
-        RFCT_PROFILE_SCOPE("fences wait");
-        RFCT_VULKAN_CHECK(renderer::getRen().getDevice().waitForFences(1, &fd.m_debugDrawTrianglesInRenderFence.get(), VK_TRUE, UINT64_MAX));
-    }
-
 }
 
 rfct::debugTriangle* rfct::debugDraw::requestNTriangles(uint32_t count)

@@ -32,13 +32,13 @@ namespace rfct {
 		inline static debugTriangle* requestTriangles(uint32_t count) { return instance->requestNTriangles(count); };
 		inline static debugLine* requestLines(uint32_t count) { return instance->requestNLines(count); };
 		inline static void drawText(const std::string& text, glm::vec2 startPosition, float scale) { instance->text(text, startPosition, scale); }
-		inline static void flush(frameData& fd, vk::Framebuffer framebuffer, uint32_t imageIndex) { instance->draw(fd, framebuffer, imageIndex); };
+		inline static void flush(const frameData& fd, vk::Framebuffer framebuffer, uint32_t imageIndex) { instance->draw(fd, framebuffer, imageIndex); };
 	private:
 		static debugDraw* instance;
 	private:
 		debugDraw();
 		~debugDraw();
-		void draw(frameData& fd, vk::Framebuffer framebuffer, uint32_t imageIndex);// valid usage: command buffer has been begun, not ended.
+		void draw(const frameData& fd, vk::Framebuffer framebuffer, uint32_t imageIndex);
 		debugTriangle* requestNTriangles(uint32_t count);
 		debugLine* requestNLines(uint32_t count);
 		void text(const std::string& text, glm::vec2 startPosition, float scale);

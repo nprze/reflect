@@ -58,10 +58,10 @@ void rfct::renderer::showWindow()
 	m_window.show();
 }
 
-void rfct::renderer::render(const sceneRenderData& renderdata)
+void rfct::renderer::render(frameContext& frameContext)
 {
     RFCT_PROFILE_FUNCTION(); 
-	frameData& frame = m_framesInFlight.getNextFrame();
+	frameData& frame = m_framesInFlight.getNextFrame(&frameContext);
     {
         RFCT_PROFILE_SCOPE("fences wait");
         frame.waitForAllFences();
@@ -70,7 +70,7 @@ void rfct::renderer::render(const sceneRenderData& renderdata)
     uint32_t imageIndex;
     {
         RFCT_PROFILE_SCOPE("get sawpchain image");
-        imageIndex = m_device.getSwapChain().acquireNextImage(frame.getImageAvailableSemaphore(), VK_NULL_HANDLE);
+        imageIndex = m_device.getSwapChain().acquireNextImage(frame.m_ImageAvaibleSemaphore.get(), VK_NULL_HANDLE);
 
         if (imageIndex == -1)
         {
@@ -78,20 +78,30 @@ void rfct::renderer::render(const sceneRenderData& renderdata)
         }
         RFCT_MARK("acquired frame");
     }
+    //RFCT_ASSERT(imageIndex == frameContext.frame);
     frame.resetAllFences();
+    auto jobs = std::make_shared<rfct::jobTracker>();
+    frameContext.scene->getWorld()->getJobSystem().KickJob([&]() {
+        m_rasterizerPipeline.recordCommandBuffer(frameContext.scene->getRenderData(), frame, m_device.getSwapChain().getFrameBuffer(imageIndex), imageIndex);
+    }, *jobs);
 
-	m_rasterizerPipeline.recordCommandBuffer(renderdata, frame, m_device.getSwapChain().getFrameBuffer(imageIndex), imageIndex);
-    
-    debugDraw::flush(frame, m_device.getSwapChain().getFrameBuffer(imageIndex), imageIndex);
-	m_UIPipeline.draw(frame, m_device.getSwapChain().getFrameBuffer(imageIndex), imageIndex);
-    frame.waitForAllFences();
+    frameContext.scene->getWorld()->getJobSystem().KickJob([&]() {
+        debugDraw::flush(frame, m_device.getSwapChain().getFrameBuffer(imageIndex), imageIndex);
+    }, *jobs);
+    frameContext.scene->getWorld()->getJobSystem().KickJob([&]() {
+        m_UIPipeline.draw(frame, m_device.getSwapChain().getFrameBuffer(imageIndex), imageIndex);
+    }, *jobs);
+	jobs->waitUntil(3);
 
+    renderer::getRen().getDeviceWrapper().getQueueManager().submitGraphics(frame.sceneSubmitInfo());
+    renderer::getRen().getDeviceWrapper().getQueueManager().submitGraphics(frame.debugDrawSubmitInfo());
+    renderer::getRen().getDeviceWrapper().getQueueManager().submitGraphics(frame.uiSubmitInfo(), frame.m_renderingFence.get());
 
     vk::PresentInfoKHR presentInfo{};
     presentInfo.sType = vk::StructureType::ePresentInfoKHR;
 
     presentInfo.waitSemaphoreCount = 1;
-    const vk::Semaphore& sem = frame.getRenderFinishedSemaphore();
+    const vk::Semaphore& sem = frame.m_renderFinishedSemaphore.get();
     presentInfo.pWaitSemaphores = &sem;
 
     presentInfo.swapchainCount = 1;

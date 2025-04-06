@@ -2,11 +2,19 @@ cmake_minimum_required(VERSION 3.16)
 
 include(reflect_settings.cmake)
 
-if(${BUILD_FOR_PLATFORM} STREQUAL "ANDROID")
-    set(PLATFORM_ANDROID TRUE)
-elseif(${BUILD_FOR_PLATFORM} STREQUAL "WINDOWS")
+#if(${BUILD_FOR_PLATFORM} STREQUAL "ANDROID")
+#    set(PLATFORM_ANDROID TRUE)
+#elseif(${BUILD_FOR_PLATFORM} STREQUAL "WINDOWS")
+#    set(PLATFORM_WINDOWS TRUE)
+#endif()
+find_library(android-lib android)
+
+if(NOT android-lib)
     set(PLATFORM_WINDOWS TRUE)
+else()
+    set(PLATFORM_ANDROID TRUE)
 endif()
+
 # General configuration
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Debug)

@@ -6,7 +6,7 @@
 #include "world_p\world.h"
 #include "input.h"
 namespace rfct {
-    void cameraComponentOnUpdate(float dt);
+    void cameraComponentOnUpdate(float dt, const transformComponent& playertransform);
 
     inline glm::mat4 getViewMatrix(cameraComponent* cam)  {
         glm::mat4 rotationMat = glm::yawPitchRoll(cam->rotation.y, cam->rotation.x, cam->rotation.z);
