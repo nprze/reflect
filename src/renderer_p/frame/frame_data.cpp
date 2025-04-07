@@ -11,8 +11,8 @@ inline static glm::mat4 getUIMatrix() {
     return glm::ortho(0.0f, width, 0.0f, height);
 }
 
-rfct::frameData::frameData(vk::Device device, VmaAllocator& allocator, vk::Semaphore& prevFramePresentFinishedSem)
-    : m_device(device), m_allocator(allocator), m_previousFramePresentFinishedSemaphore(prevFramePresentFinishedSem) {
+rfct::frameData::frameData(vk::Device device, VmaAllocator& allocator, vk::Fence lastFramePresentFinishedFence, vk::Fence thisFramePresentFinishedFence)
+    : m_device(device), m_allocator(allocator), m_lastFrameRenderFinishedFence(lastFramePresentFinishedFence), m_thisFrameRenderFinishedFence(thisFramePresentFinishedFence) {
 
     vk::CommandPoolCreateInfo poolInfo{
         vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
@@ -58,18 +58,19 @@ void rfct::frameData::prepareFrame()
 void rfct::frameData::waitForAllFences()
 {
     RFCT_PROFILE_SCOPE("fences wait");
-    RFCT_VULKAN_CHECK(m_device.waitForFences(1, &m_renderingFence.get(), VK_TRUE, UINT64_MAX));
+    RFCT_VULKAN_CHECK(m_device.waitForFences(1, &m_thisFrameRenderFinishedFence, VK_TRUE, UINT64_MAX));
 }
 
 void rfct::frameData::resetAllFences()
 {
     RFCT_PROFILE_SCOPE("fences reset");
-    RFCT_VULKAN_CHECK(m_device.resetFences(1, &m_renderingFence.get()));
+    RFCT_VULKAN_CHECK(m_device.resetFences(1, &m_thisFrameRenderFinishedFence));
 }
 
 vk::SubmitInfo rfct::frameData::sceneSubmitInfo() const
 {
-    vk::PipelineStageFlags waitStages = vk::PipelineStageFlagBits::eColorAttachmentOutput;
+    vk::PipelineStageFlags waitStages[] = { vk::PipelineStageFlagBits::eColorAttachmentOutput };
+
 
     return vk::SubmitInfo()
         .setWaitSemaphores(m_ImageAvaibleSemaphore.get())
@@ -79,7 +80,7 @@ vk::SubmitInfo rfct::frameData::sceneSubmitInfo() const
 }
 vk::SubmitInfo rfct::frameData::debugDrawSubmitInfo() const
 {
-    vk::PipelineStageFlags waitStages = vk::PipelineStageFlagBits::eColorAttachmentOutput;
+    vk::PipelineStageFlags waitStages[] = { vk::PipelineStageFlagBits::eColorAttachmentOutput };
 
     return vk::SubmitInfo()
         .setWaitSemaphores(m_sceneFinishedSemaphore.get())
@@ -90,7 +91,7 @@ vk::SubmitInfo rfct::frameData::debugDrawSubmitInfo() const
 
 vk::SubmitInfo rfct::frameData::uiSubmitInfo() const
 {
-    vk::PipelineStageFlags waitStages = vk::PipelineStageFlagBits::eColorAttachmentOutput;
+    vk::PipelineStageFlags waitStages[] = { vk::PipelineStageFlagBits::eColorAttachmentOutput };
 
     return vk::SubmitInfo()
         .setWaitSemaphores(m_debugDrawFinishedSemaphore.get())

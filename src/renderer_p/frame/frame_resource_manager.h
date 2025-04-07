@@ -14,6 +14,6 @@ namespace rfct {
 	private:
 		uint32_t m_nextFrame = 0;
 		std::vector<unique<frameData>> m_frames;
-		std::vector<vk::UniqueSemaphore> m_presentFinishedSemaphores;
+		std::vector<vk::UniqueFence> m_fences;
 	};
 }

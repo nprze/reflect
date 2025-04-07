@@ -8,7 +8,7 @@ namespace rfct {
 
     class frameData {
     public:
-        frameData(vk::Device device, VmaAllocator& allocator, vk::Semaphore& prevFramePresentFinishedSem);
+        frameData(vk::Device device, VmaAllocator& allocator, vk::Fence lastFramePresentFinishedFence, vk::Fence thisFramePresentFinishedFence);
         ~frameData() {};
 
 		void prepareFrame();
@@ -43,10 +43,8 @@ namespace rfct {
 
         vk::UniqueFence m_renderingFence;
 
-
-        vk::UniqueSemaphore m_FramePresentFinishedSemaphore;
-        vk::Semaphore m_previousFramePresentFinishedSemaphore;
-
+		vk::Fence m_thisFrameRenderFinishedFence;
+		vk::Fence m_lastFrameRenderFinishedFence;
 
 		cameraUbo m_cameraUbo;
 		cameraUbo m_UIcameraUbo;

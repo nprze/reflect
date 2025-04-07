@@ -80,9 +80,9 @@ namespace rfct {
         };
 
         struct Query {
-            static std::vector<Archetype*> archetypes;
+            std::vector<Archetype*> archetypes;
 
-            inline static void cleanUp() {
+            inline void cleanUp() {
                 for (Archetype* archetype : archetypes) {
                     delete archetype;
                 }
@@ -90,7 +90,7 @@ namespace rfct {
             }
 
             template<typename... Components>
-            inline static Archetype* getArchetype() {
+            inline Archetype* getArchetype() {
                 ComponentEnum requestedComponents = (Components::EnumValue | ...);
 			    for (Archetype* archetype : archetypes) {
 				    if (archetype->componentsBitmask == requestedComponents) {
@@ -102,7 +102,7 @@ namespace rfct {
             }
 
 
-            inline static Archetype* getArchetype(ComponentEnum components, ComponentEnum newComponent = ComponentEnum::None ) {
+            inline Archetype* getArchetype(ComponentEnum components, ComponentEnum newComponent = ComponentEnum::None ) {
                 for (Archetype* archetype : archetypes) {
                     if (archetype->componentsBitmask == (components | newComponent)) {
                         return archetype;
@@ -123,18 +123,18 @@ namespace rfct {
                 return archetypes.back();
             }
 		    template<typename... Components>
-            inline static void addArchetype() {
+            inline void addArchetype() {
                 ComponentEnum components = (Components::EnumValue | ...);
 			    Archetype* archetype = new Archetype(components);
 			    archetypes.push_back(archetype);
                 (archetype->addComponent<Components>(), ...);
             }
-            inline static void removeArchetype(Archetype* archetypeToBeRemoved) {
+            inline void removeArchetype(Archetype* archetypeToBeRemoved) {
                 RFCT_ASSERT(archetypeToBeRemoved->entities.size() == 0); // attempting to remove archetype with entities still in it
                 archetypes.erase(std::remove(archetypes.begin(), archetypes.end(), archetypeToBeRemoved), archetypes.end());
                 delete archetypeToBeRemoved;
             }
-			inline static void getAllArchetypesWithComponents(ComponentEnum requestedComponents, std::vector<Archetype*>& out_archetypes) {
+			inline void getAllArchetypesWithComponents(ComponentEnum requestedComponents, std::vector<Archetype*>& out_archetypes) {
 				for (Archetype* archetype : archetypes) {
 					if ((bool)((archetype->componentsBitmask & requestedComponents) == requestedComponents)) {
 						out_archetypes.emplace_back(archetype);

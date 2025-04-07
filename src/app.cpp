@@ -34,9 +34,10 @@ void rfct::reflectApplication::update() {
 	auto currentTime = std::chrono::high_resolution_clock::now();
 	std::chrono::duration<float> deltaTime = currentTime - previousTime;
 	previousTime = currentTime;
-	//currentFrame = (currentFrame + 1) % RFCT_FRAMES_IN_FLIGHT;
+	currentFrame = (currentFrame + 1) % RFCT_FRAMES_IN_FLIGHT;
 	frameContext context = {
 		.dt = deltaTime.count(),
+		.frame = currentFrame,
 		.scene = nullptr,
 	};
 

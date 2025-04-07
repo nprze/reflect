@@ -78,28 +78,48 @@ void rfct::renderer::render(frameContext& frameContext)
         }
         RFCT_MARK("acquired frame");
     }
-    //RFCT_ASSERT(imageIndex == frameContext.frame);
+    RFCT_ASSERT(imageIndex == frameContext.frame);
     frame.resetAllFences();
     auto jobs = std::make_shared<rfct::jobTracker>();
     frameContext.scene->getWorld()->getJobSystem().KickJob([&]() {
-        m_rasterizerPipeline.recordCommandBuffer(frameContext.scene->getRenderData(), frame, m_device.getSwapChain().getFrameBuffer(imageIndex), imageIndex);
+      m_rasterizerPipeline.recordCommandBuffer(&frameContext, frameContext.scene->getRenderData(), frame, m_device.getSwapChain().getFrameBuffer(imageIndex), imageIndex);
     }, *jobs);
-
+    
     frameContext.scene->getWorld()->getJobSystem().KickJob([&]() {
-        debugDraw::flush(frame, m_device.getSwapChain().getFrameBuffer(imageIndex), imageIndex);
+      debugDraw::flush(frame, m_device.getSwapChain().getFrameBuffer(imageIndex), imageIndex);
     }, *jobs);
     frameContext.scene->getWorld()->getJobSystem().KickJob([&]() {
-        m_UIPipeline.draw(frame, m_device.getSwapChain().getFrameBuffer(imageIndex), imageIndex);
+      m_UIPipeline.draw(frame, m_device.getSwapChain().getFrameBuffer(imageIndex), imageIndex);
     }, *jobs);
 	jobs->waitUntil(3);
 
-    renderer::getRen().getDeviceWrapper().getQueueManager().submitGraphics(frame.sceneSubmitInfo());
-    renderer::getRen().getDeviceWrapper().getQueueManager().submitGraphics(frame.debugDrawSubmitInfo());
-    renderer::getRen().getDeviceWrapper().getQueueManager().submitGraphics(frame.uiSubmitInfo(), frame.m_renderingFence.get());
+
+
+
+
+    vk::PipelineStageFlags waitStages[] = { vk::PipelineStageFlagBits::eColorAttachmentOutput };
+
+
+    vk::SubmitInfo sceneSubmitInfo = frame.sceneSubmitInfo(); 
+    sceneSubmitInfo.pWaitDstStageMask = waitStages; 
+    renderer::getRen().getDeviceWrapper().getQueueManager().submitGraphics(sceneSubmitInfo);
+
+    vk::SubmitInfo debugDrawSubmitInfo = frame.debugDrawSubmitInfo();
+    debugDrawSubmitInfo.pWaitDstStageMask = waitStages;
+    renderer::getRen().getDeviceWrapper().getQueueManager().submitGraphics(debugDrawSubmitInfo);
+
+    vk::SubmitInfo uiSubmitInfo = frame.uiSubmitInfo();
+    uiSubmitInfo.pWaitDstStageMask = waitStages;
+    renderer::getRen().getDeviceWrapper().getQueueManager().submitGraphics(uiSubmitInfo, frame.m_thisFrameRenderFinishedFence);
+
+
+
+
 
     vk::PresentInfoKHR presentInfo{};
     presentInfo.sType = vk::StructureType::ePresentInfoKHR;
 
+    //RFCT_VULKAN_CHECK(m_device.getDevice().waitForFences(1, &frame.m_lastFrameRenderFinishedFence, VK_TRUE, UINT64_MAX));
     presentInfo.waitSemaphoreCount = 1;
     const vk::Semaphore& sem = frame.m_renderFinishedSemaphore.get();
     presentInfo.pWaitSemaphores = &sem;

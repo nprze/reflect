@@ -2,7 +2,6 @@
 #include "app.h"
 #include "world.h"
 #include "components_util.h"
-std::vector<rfct::Archetype*> rfct::Query::archetypes;
 namespace rfct {
     void Archetype::removeEntity(size_t index) {
         if (index >= entities.size()) RFCT_CRITICAL("trying to remove entity out of range");

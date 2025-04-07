@@ -24,8 +24,8 @@
             vec->pop_back();\
             break;\
         }\
-        case ComponentEnum::renderMeshComponent: {\
-            auto* vec = static_cast<std::vector<renderMeshComponent>*>(compVecPtr);\
+        case ComponentEnum::staticRenderMeshComponent: {\
+            auto* vec = static_cast<std::vector<staticRenderMeshComponent>*>(compVecPtr);\
             if (index < vec->size() - 1) {\
                 std::swap(vec->at(index), vec->back());\
             }\
@@ -68,8 +68,8 @@
             newArchetype->addsingleComponent<transformComponent>(oldArchetype->getComponent<transformComponent>(m_EntityLocations[entity].locationIndex));\
             break;\
         }\
-        case ComponentEnum::renderMeshComponent: {\
-            newArchetype->addsingleComponent<renderMeshComponent>(oldArchetype->getComponent<renderMeshComponent>(m_EntityLocations[entity].locationIndex));\
+        case ComponentEnum::staticRenderMeshComponent: {\
+            newArchetype->addsingleComponent<staticRenderMeshComponent>(oldArchetype->getComponent<staticRenderMeshComponent>(m_EntityLocations[entity].locationIndex));\
             break;\
         }\
         case ComponentEnum::damageComponent: {\
@@ -101,8 +101,8 @@
             archetype->addComponent<transformComponent>();\
             break;\
         }\
-        case ComponentEnum::renderMeshComponent: {\
-            archetype->addComponent<renderMeshComponent>();\
+        case ComponentEnum::staticRenderMeshComponent: {\
+            archetype->addComponent<staticRenderMeshComponent>();\
             break;\
         }\
         case ComponentEnum::damageComponent: {\

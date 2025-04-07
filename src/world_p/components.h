@@ -4,10 +4,8 @@
 #include "renderer_p\buffer\vulkan_buffer.h"
 namespace rfct {
     struct objectLocation {
-        VulkanBuffer* SSBO;
         uint32_t indexInSSBO;
         uint32_t verticesCount;
-        VulkanBuffer* vertexBuffer;
         size_t vertexBufferOffset;
     };
 	struct Entity {
@@ -23,7 +21,8 @@ namespace rfct {
         nameComponent = 1ULL << 0,
         cameraComponent = 1ULL << 1,
         transformComponent = 1ULL << 2,
-        renderMeshComponent = 1ULL << 3,
+        staticRenderMeshComponent = 1ULL << 3,
+        dynamicRenderMeshComponent = 1ULL << 4,
         damageComponent = 1ULL << 20,
         healthComponent = 1ULL << 30,
     };
@@ -46,8 +45,12 @@ namespace rfct {
         glm::vec3 rotation = glm::vec3(0.f);
         glm::vec3 scale = glm::vec3(1.f);
     };
-    struct renderMeshComponent {
-        static constexpr ComponentEnum EnumValue = ComponentEnum::renderMeshComponent;
+    struct staticRenderMeshComponent {
+        static constexpr ComponentEnum EnumValue = ComponentEnum::staticRenderMeshComponent;
+        objectLocation renderDataLocations;
+    };
+    struct dynamicRenderMeshComponent {
+        static constexpr ComponentEnum EnumValue = ComponentEnum::dynamicRenderMeshComponent;
         objectLocation renderDataLocations;
     };
 	struct damageComponent {

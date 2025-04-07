@@ -38,7 +38,7 @@ namespace rfct {
 		Entity createStaticRenderingEntity(std::vector<Vertex>* vertices, transformComponent* tranform);
 		Entity createDynamicRenderingEntity(std::vector<Vertex>* vertices, transformComponent* tranform);
 
-		void updateTransformData(Entity ent);
+		void updateTransformData(frameContext* ctx, Entity ent);
 
 		world* getWorld() { return m_World; }
 
@@ -48,6 +48,7 @@ namespace rfct {
 		
 		sceneRenderData m_RenderData;
 		world* m_World;
+		Query m_Query;
 
 		rfct::Entity epicRotatingTriangle;
 

@@ -9,16 +9,19 @@
 rfct::scene::scene(world* worldArg) : m_World(worldArg), m_EntityLocations(0)
 {
 	m_EntityLocations.reserve(100);
+	m_Query.archetypes.reserve(5);
 }
 
 rfct::scene::~scene()
 {
-	Query::cleanUp();
+	m_Query.cleanUp();
 }
+
 
 void rfct::scene::onUpdate(frameContext* context)
 {
 	// Update systems
+	
 	transformComponent* tc = world::getWorld().getCurrentScene().getComponent<transformComponent>(epicRotatingTriangle);
 	if (input::getInput().xAxis) {
 		tc->position.x += 3 * input::getInput().xAxis * context->dt;
@@ -26,7 +29,7 @@ void rfct::scene::onUpdate(frameContext* context)
 	if (input::getInput().yAxis) {
 		tc->position.y += 3 * input::getInput().yAxis * context->dt;
 	}
-	updateTransformData(epicRotatingTriangle);
+	updateTransformData(context, epicRotatingTriangle);
 	getComponent<cameraComponent>(camera); 
 	cameraComponentOnUpdate(context->dt, *tc);
 
@@ -36,7 +39,7 @@ void rfct::scene::onUpdate(frameContext* context)
 void rfct::scene::loadScene(std::string path)
 {
 	runEntityTests();
-	Query::cleanUp();
+	m_Query.cleanUp();
 	camera = helloEntity<cameraComponent>(cameraComponent{ glm::vec3(0.f, 0.f, 10.0f), glm::vec3(0), 45.f, renderer::getRen().getAspectRatio(), 0.f, 100.f });
 	m_RenderData.startTransferStatic();
 	{
@@ -87,7 +90,7 @@ rfct::Entity rfct::scene::helloEntity(Components&&... componentMap)
 		EntityID = m_EntityLocations.size();
 		m_EntityLocations.emplace_back(EntityLocation(nullptr, 0));
 	}
-	Archetype* arch = Query::getArchetype<Components...>();
+	Archetype* arch = m_Query.getArchetype<Components...>();
 	
 	m_EntityLocations[EntityID].archetype = arch; 
 	m_EntityLocations[EntityID].locationIndex = arch->addEntity<Components...>({ EntityID }, std::forward<Components>(componentMap)...);
@@ -113,7 +116,7 @@ void rfct::scene::addComponentToEntity(Entity entity, Component component)
 	Archetype* oldArchetype = m_EntityLocations[entity].archetype;
 	if ((bool)(oldArchetype->componentsBitmask & Component::EnumValue)) RFCT_CRITICAL("Entity already has component");
 
-	Archetype* newArchetype = Query::getArchetype(m_EntityLocations[entity].archetype->componentsBitmask, Component::EnumValue);
+	Archetype* newArchetype = m_Query.getArchetype(m_EntityLocations[entity].archetype->componentsBitmask, Component::EnumValue);
 
 	ComponentEnum components = m_EntityLocations[entity].archetype->componentsBitmask;
 	// adding component to new archetype
@@ -128,7 +131,7 @@ void rfct::scene::addComponentToEntity(Entity entity, Component component)
 
 	oldArchetype->removeEntity(m_EntityLocations[entity].locationIndex);
 	if (oldArchetype->entities.size() == 0) { 
-		Query::removeArchetype(m_EntityLocations[entity].archetype);
+		m_Query.removeArchetype(m_EntityLocations[entity].archetype);
 	}
 	m_EntityLocations[entity].locationIndex = newArchetype->addEntity(entity);
 	m_EntityLocations[entity].archetype = newArchetype;
@@ -139,7 +142,7 @@ void rfct::scene::getAllComponents(std::unordered_map<ComponentEnum, std::vector
 	RFCT_PROFILE_FUNCTION();
 	std::vector<Archetype*> archetypes;
 	archetypes.reserve(5);
-	Query::getAllArchetypesWithComponents(requestedComponents, archetypes);
+	m_Query.getAllArchetypesWithComponents(requestedComponents, archetypes);
 
 	// adding component to new archetype
 	while ((bool)requestedComponents) {
@@ -157,23 +160,23 @@ void rfct::scene::getAllComponents(std::unordered_map<ComponentEnum, std::vector
 rfct::Entity rfct::scene::createStaticRenderingEntity(std::vector<Vertex>* vertices, transformComponent* tranform)
 {
 	glm::mat4 model = getModelMatrixFromTranform(*tranform);
-	renderMeshComponent rmc = { m_RenderData.addStaticObject(vertices, &model) };
-	return helloEntity<transformComponent, renderMeshComponent>(std::move(*tranform), std::move(rmc));
+	staticRenderMeshComponent rmc = { m_RenderData.addStaticObject(vertices, &model) };
+	return helloEntity<transformComponent, staticRenderMeshComponent>(std::move(*tranform), std::move(rmc));
 }
 
 rfct::Entity rfct::scene::createDynamicRenderingEntity(std::vector<Vertex>* vertices, transformComponent* tranform)
 {
 	glm::mat4 model = getModelMatrixFromTranform(*tranform);
-	renderMeshComponent rmc = { m_RenderData.addDynamicObject(vertices, &model) };
-	return helloEntity<transformComponent, renderMeshComponent>(std::move(*tranform), std::move(rmc));
+	dynamicRenderMeshComponent rmc = { m_RenderData.addDynamicObject(vertices, &model) };
+	return helloEntity<transformComponent, dynamicRenderMeshComponent>(std::move(*tranform), std::move(rmc));
 }
 
-void rfct::scene::updateTransformData(Entity ent)
+void rfct::scene::updateTransformData(frameContext* ctx, Entity ent)
 {
 	transformComponent* tc = getComponent<transformComponent>(ent);
-	renderMeshComponent* rmc = getComponent<renderMeshComponent>(ent);
+	dynamicRenderMeshComponent* rmc = getComponent<dynamicRenderMeshComponent>(ent);
 	glm::mat4 model = getModelMatrixFromTranform(*tc);
-	m_RenderData.updateMat(rmc->renderDataLocations, &model);
+	m_RenderData.updateMat(ctx, rmc->renderDataLocations, &model);
 }
 
 void rfct::scene::goodbyeEntity(Entity entity)
@@ -181,7 +184,7 @@ void rfct::scene::goodbyeEntity(Entity entity)
 	RFCT_PROFILE_FUNCTION();
 	m_EntityLocations[entity].archetype->removeEntity(m_EntityLocations[entity].locationIndex);
 	if (m_EntityLocations[entity].archetype->entities.size() == 0) {
-		Query::removeArchetype(m_EntityLocations[entity].archetype);
+		m_Query.removeArchetype(m_EntityLocations[entity].archetype);
 	}
 	m_FreeEntityBlocks.emplace_back(entity);
 	m_EntityLocations[entity] = EntityLocation(nullptr, 0);
@@ -196,7 +199,7 @@ void rfct::scene::runEntityTests()
 			damageComponent* dc = getComponent<damageComponent>(namedEnt);
 			RFCT_ASSERT(dc->damage == 0); // entity damage
 			RFCT_ASSERT(m_EntityLocations[namedEnt].locationIndex == 0); // entity index in archetype
-			RFCT_ASSERT((Query::archetypes.size() == 1)); // number of archetypes
+			RFCT_ASSERT((m_Query.archetypes.size() == 1)); // number of archetypes
 		}
 
 		{
@@ -216,7 +219,7 @@ void rfct::scene::runEntityTests()
 			damageComponent* dc = getComponent<damageComponent>(namedEnt);
 			RFCT_ASSERT((bool)(dc->damage == 69)); // entity damage
 			RFCT_ASSERT((bool)(m_EntityLocations[namedEnt].locationIndex == 2)); // entity index in archetype
-			RFCT_ASSERT((bool)(Query::archetypes.size() == 1)); // number of archetypes
+			RFCT_ASSERT((bool)(m_Query.archetypes.size() == 1)); // number of archetypes
 			toBeDeletedEntity = namedEnt;
 		}
 
@@ -229,7 +232,7 @@ void rfct::scene::runEntityTests()
 			RFCT_ASSERT((bool)(m_EntityLocations[namedEnt].locationIndex == 3)); // entity index before deletion
 			goodbyeEntity(toBeDeletedEntity);
 			RFCT_ASSERT(m_EntityLocations[namedEnt].locationIndex == 2); // entity index after deletion
-			RFCT_ASSERT(Query::archetypes.size() == 1); // number of archetypes
+			RFCT_ASSERT(m_Query.archetypes.size() == 1); // number of archetypes
 		}
 
 		{
@@ -239,7 +242,7 @@ void rfct::scene::runEntityTests()
 			damageComponent* dc = getComponent<damageComponent>(namedEnt);
 			RFCT_ASSERT(dc->damage == 3); // entity damage
 			RFCT_ASSERT(m_EntityLocations[namedEnt].locationIndex == 3); // entity index
-			RFCT_ASSERT(Query::archetypes.size() == 1); // number of archetypes
+			RFCT_ASSERT(m_Query.archetypes.size() == 1); // number of archetypes
 		}
 
 		{
@@ -248,7 +251,7 @@ void rfct::scene::runEntityTests()
 			RFCT_ASSERT((nc->name == std::string("named just name to be deleted 0"))); // entity name
 			RFCT_ASSERT(m_EntityLocations[namedEnt].locationIndex == 0); // entity index in archetype
 			goodbyeEntity(namedEnt);
-			RFCT_ASSERT(Query::archetypes.size() == 1); // number of archetypes
+			RFCT_ASSERT(m_Query.archetypes.size() == 1); // number of archetypes
 		}
 
 		{
@@ -256,7 +259,7 @@ void rfct::scene::runEntityTests()
 			nameComponent* nc = getComponent<nameComponent>(namedEnt);
 			RFCT_ASSERT((nc->name == std::string("named just name to have health added"))); // entity name
 			RFCT_ASSERT(m_EntityLocations[namedEnt].locationIndex == 0); // entity index in archetype
-			RFCT_ASSERT(Query::archetypes.size() == 2); // number of archetypes
+			RFCT_ASSERT(m_Query.archetypes.size() == 2); // number of archetypes
 
 
 			addComponentToEntity<healthComponent>(namedEnt, healthComponent(4));
@@ -264,7 +267,7 @@ void rfct::scene::runEntityTests()
 			nc = getComponent<nameComponent>(namedEnt);
 			RFCT_ASSERT((nc->name == std::string("named just name to have health added")));
 			RFCT_ASSERT(hc->health == 4); // entity health
-			RFCT_ASSERT(Query::archetypes.size() == 2); // number of archetypes remains 2 after adding healthComponent
+			RFCT_ASSERT(m_Query.archetypes.size() == 2); // number of archetypes remains 2 after adding healthComponent
 			RFCT_ASSERT(m_EntityLocations[namedEnt].locationIndex == 0); // entity index remains valid
 		}
 
@@ -273,13 +276,13 @@ void rfct::scene::runEntityTests()
 			nameComponent* nc = getComponent<nameComponent>(namedEnt);
 			RFCT_ASSERT((nc->name == std::string("named just name to have damage added"))); // entity name
 			RFCT_ASSERT(m_EntityLocations[namedEnt].locationIndex == 0); // entity index in archetype
-			RFCT_ASSERT(Query::archetypes.size() == 3); // number of archetypes
+			RFCT_ASSERT(m_Query.archetypes.size() == 3); // number of archetypes
 
 
 			addComponentToEntity<damageComponent>(namedEnt, damageComponent(4));
 			damageComponent* hc = getComponent<damageComponent>(namedEnt);
 			RFCT_ASSERT(hc->damage == 4); // entity health
-			RFCT_ASSERT(Query::archetypes.size() == 2); // number of archetypes remains 2 after adding healthComponent
+			RFCT_ASSERT(m_Query.archetypes.size() == 2); // number of archetypes remains 2 after adding healthComponent
 			RFCT_ASSERT(m_EntityLocations[namedEnt].locationIndex == 4); // entity index remains valid
 		}
 		{

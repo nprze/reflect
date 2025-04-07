@@ -169,7 +169,7 @@ void rfct::vulkanRasterizerPipeline::createRenderPass()
 
 }
 
-void rfct::vulkanRasterizerPipeline::recordCommandBuffer(const sceneRenderData& renderdata, frameData& frameData, vk::Framebuffer framebuffer, uint32_t imageIndex)
+void rfct::vulkanRasterizerPipeline::recordCommandBuffer(frameContext* ctx, const sceneRenderData& renderdata, frameData& frameData, vk::Framebuffer framebuffer, uint32_t imageIndex)
 {
     vk::CommandBuffer commandBuffer = frameData.m_sceneCommandBuffer.get();
 
@@ -229,11 +229,11 @@ void rfct::vulkanRasterizerPipeline::recordCommandBuffer(const sceneRenderData& 
     }
     if (renderdata.m_verticesCountDynamicObj) {
 
-        vk::Buffer vertexBuffers[] = { renderdata.m_VertexBufferDynamic.m_Buffer.buffer };
+        vk::Buffer vertexBuffers[] = { renderdata.m_VertexBufferDynamic[ctx->frame].m_Buffer.buffer};
         
         commandBuffer.bindVertexBuffers(0, 1, vertexBuffers, offsets);
 
-        vk::DescriptorSet sets[] = { frameData.getCameraUboDescSet(), renderdata.m_DescriptorSetDynamic.get() };
+        vk::DescriptorSet sets[] = { frameData.getCameraUboDescSet(), renderdata.m_DescriptorSetsDynamic[ctx->frame].get() };
         commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_pipelineLayout.get(), 0, sets, {});
 
         commandBuffer.draw(renderdata.m_verticesCountDynamicObj, 1, 0, 0);
