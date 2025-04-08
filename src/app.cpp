@@ -25,6 +25,7 @@ void rfct::reflectApplication::updateWindow(RFCT_NATIVE_WINDOW_ANDROID RFCT_NATI
 };
 rfct::reflectApplication::~reflectApplication()
 {
+	renderer::getRen().getDevice().waitIdle();
 	RFCT_TRACE("app cleanup start");
 	world::getWorld().cleanWorld();
 }

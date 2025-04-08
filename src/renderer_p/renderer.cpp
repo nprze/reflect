@@ -49,7 +49,6 @@ void rfct::renderer::updateWindow(RFCT_NATIVE_WINDOW_ANDROID RFCT_NATIVE_WINDOW_
 };
 
 rfct::renderer::~renderer() {
-    m_device.getDevice().waitIdle(); 
     m_device.getDevice().destroyDescriptorSetLayout(cameraUbo::getDescriptorSetLayout());
 };
 
@@ -81,18 +80,18 @@ void rfct::renderer::render(frameContext& frameContext)
     //RFCT_ASSERT(imageIndex == frameContext.frame);
     frame.resetAllFences();
     frame.prepareFrame(frameContext.frame);
-   // auto jobs = std::make_shared<rfct::jobTracker>();
-    //frameContext.scene->getWorld()->getJobSystem().KickJob([&]() {
+    auto jobs = std::make_shared<rfct::jobTracker>();
+    frameContext.scene->getWorld()->getJobSystem().KickJob([&]() {
       m_rasterizerPipeline.recordCommandBuffer(&frameContext, frameContext.scene->getRenderData(), frame, m_device.getSwapChain().getFrameBuffer(imageIndex), imageIndex);
-    //}, *jobs);
+    }, *jobs);
     
-    //frameContext.scene->getWorld()->getJobSystem().KickJob([&]() {
+    frameContext.scene->getWorld()->getJobSystem().KickJob([&]() {
       debugDraw::flush(&frameContext, frame, m_device.getSwapChain().getFrameBuffer(imageIndex), imageIndex);
-    //}, *jobs);
-    //frameContext.scene->getWorld()->getJobSystem().KickJob([&]() {
+    }, *jobs);
+    frameContext.scene->getWorld()->getJobSystem().KickJob([&]() {
      m_UIPipeline.draw(frame, m_device.getSwapChain().getFrameBuffer(imageIndex), imageIndex);
-   // }, *jobs);
-	//jobs->waitUntil(3);
+    }, *jobs);
+	jobs->waitUntil(3);
 
 
 
@@ -120,7 +119,7 @@ void rfct::renderer::render(frameContext& frameContext)
     vk::PresentInfoKHR presentInfo{};
     presentInfo.sType = vk::StructureType::ePresentInfoKHR;
 
-    //RFCT_VULKAN_CHECK(m_device.getDevice().waitForFences(1, &frame.m_lastFrameRenderFinishedFence, VK_TRUE, UINT64_MAX));
+    RFCT_VULKAN_CHECK(m_device.getDevice().waitForFences(1, &frame.m_lastFrameRenderFinishedFence, VK_TRUE, UINT64_MAX));
     presentInfo.waitSemaphoreCount = 1;
     const vk::Semaphore& sem = frame.m_renderFinishedSemaphore.get();
     presentInfo.pWaitSemaphores = &sem;
