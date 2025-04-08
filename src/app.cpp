@@ -42,13 +42,15 @@ void rfct::reflectApplication::update() {
 	};
 
 	m_Input.pollEvents();
-	updateGameplay(context);
 	if (shouldRender) {
+		updateGameplay(context);
 		renderer::getRen().render(context);
 	};
 }
 
 void rfct::reflectApplication::updateGameplay(frameContext& ContextArg)
 {
+
+	//std::this_thread::sleep_for(std::chrono::milliseconds(5)); 
 	world::getWorld().onUpdate(ContextArg);
 }

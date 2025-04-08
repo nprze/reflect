@@ -196,7 +196,7 @@ rfct::debugDraw::~debugDraw()
 {
 }
 
-void rfct::debugDraw::draw(const frameData& fd, vk::Framebuffer framebuffer, uint32_t imageIndex)
+void rfct::debugDraw::draw(frameContext* ctx, frameData& fd, vk::Framebuffer framebuffer, uint32_t imageIndex)
 {
     
 	if (m_triangleBuffer.vertexCount == 0 && m_lineBuffer.vertexCount == 0)
@@ -240,7 +240,7 @@ void rfct::debugDraw::draw(const frameData& fd, vk::Framebuffer framebuffer, uin
     commandBuffer.setLineWidth(1.f);
 
     // Camera Descriptor
-    commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_PipelineLayout.get(), 0, fd.getCameraUboDescSet(), {});
+    commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_PipelineLayout.get(), 0, fd.getCameraUboDescSet((uint32_t)(ctx->frame)), {});
 
     if(m_triangleBuffer.vertexCount!=0){
         commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, m_trianglePipeline.get());

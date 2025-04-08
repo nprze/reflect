@@ -180,7 +180,6 @@ void rfct::vulkanRasterizerPipeline::recordCommandBuffer(frameContext* ctx, cons
         commandBuffer.begin(beginInfo);
     }
 
-	frameData.prepareFrame();
 
 
     std::array<vk::ClearValue, 1> clearValues = {};
@@ -222,18 +221,18 @@ void rfct::vulkanRasterizerPipeline::recordCommandBuffer(frameContext* ctx, cons
 
         commandBuffer.bindVertexBuffers(0, 1, vertexBuffers, offsets);
 
-        vk::DescriptorSet sets[] = { frameData.getCameraUboDescSet(), renderdata.m_DescriptorSetStatic.get() };
+        vk::DescriptorSet sets[] = { frameData.getCameraUboDescSet(ctx->frame), renderdata.m_DescriptorSetStatic.get() };
         commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_pipelineLayout.get(), 0, sets, {});
 
         commandBuffer.draw(renderdata.m_verticesCountStaticObj, 1, 0, 0);
     }
     if (renderdata.m_verticesCountDynamicObj) {
 
-        vk::Buffer vertexBuffers[] = { renderdata.m_VertexBufferDynamic[ctx->frame].m_Buffer.buffer};
+        vk::Buffer vertexBuffers[] = { renderdata.m_VertexBufferDynamic[ctx->frame]->m_Buffer.buffer};
         
         commandBuffer.bindVertexBuffers(0, 1, vertexBuffers, offsets);
 
-        vk::DescriptorSet sets[] = { frameData.getCameraUboDescSet(), renderdata.m_DescriptorSetsDynamic[ctx->frame].get() };
+        vk::DescriptorSet sets[] = { frameData.getCameraUboDescSet(ctx->frame), renderdata.m_DescriptorSetsDynamic[ctx->frame].get() };
         commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_pipelineLayout.get(), 0, sets, {});
 
         commandBuffer.draw(renderdata.m_verticesCountDynamicObj, 1, 0, 0);

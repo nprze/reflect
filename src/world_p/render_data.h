@@ -25,15 +25,15 @@ namespace rfct {
 		vk::UniqueDescriptorPool m_DescriptorPool;
 		vk::UniqueDescriptorSet m_DescriptorSetStatic;
 
-		std::vector<vulkanVertexBuffer> m_VertexBufferDynamic;
-		std::vector<vk::UniqueDescriptorSet> m_DescriptorSetsDynamic;
-		std::vector<VulkanBuffer> m_DynamicModelMatsBuffer; // for model matrices of object that are changing frequently (ssbo) TODO: make it a dynamic ssbo
+		std::array<unique<vulkanVertexBuffer>, RFCT_FRAMES_IN_FLIGHT> m_VertexBufferDynamic;
+		std::array<unique<VulkanBuffer>, RFCT_FRAMES_IN_FLIGHT> m_DynamicModelMatsBuffers;
+		std::array<vk::UniqueDescriptorSet, RFCT_FRAMES_IN_FLIGHT> m_DescriptorSetsDynamic;
+		std::array<void*, RFCT_FRAMES_IN_FLIGHT> m_mappedDataDynamic;
 
 		size_t m_verticesCountStaticObj;
 		size_t m_verticesCountDynamicObj;
 	private:
 		void* m_mappedDataStatic;
-		std::vector<void*> m_mappedDataDynamic;
 		uint32_t m_matsCounterStatic;
 		uint32_t m_matsCounterDynamic;
 	};

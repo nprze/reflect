@@ -4,7 +4,10 @@
 namespace rfct {
 	struct VulkanBuffer {
         VulkanBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, VmaMemoryUsage memoryUsage);
+        VulkanBuffer() = default;
         ~VulkanBuffer();
+
+
 
         void* Map();
         void Unmap();

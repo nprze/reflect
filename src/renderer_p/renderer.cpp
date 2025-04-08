@@ -78,20 +78,21 @@ void rfct::renderer::render(frameContext& frameContext)
         }
         RFCT_MARK("acquired frame");
     }
-    RFCT_ASSERT(imageIndex == frameContext.frame);
+    //RFCT_ASSERT(imageIndex == frameContext.frame);
     frame.resetAllFences();
-    auto jobs = std::make_shared<rfct::jobTracker>();
-    frameContext.scene->getWorld()->getJobSystem().KickJob([&]() {
+    frame.prepareFrame(frameContext.frame);
+   // auto jobs = std::make_shared<rfct::jobTracker>();
+    //frameContext.scene->getWorld()->getJobSystem().KickJob([&]() {
       m_rasterizerPipeline.recordCommandBuffer(&frameContext, frameContext.scene->getRenderData(), frame, m_device.getSwapChain().getFrameBuffer(imageIndex), imageIndex);
-    }, *jobs);
+    //}, *jobs);
     
-    frameContext.scene->getWorld()->getJobSystem().KickJob([&]() {
-      debugDraw::flush(frame, m_device.getSwapChain().getFrameBuffer(imageIndex), imageIndex);
-    }, *jobs);
-    frameContext.scene->getWorld()->getJobSystem().KickJob([&]() {
-      m_UIPipeline.draw(frame, m_device.getSwapChain().getFrameBuffer(imageIndex), imageIndex);
-    }, *jobs);
-	jobs->waitUntil(3);
+    //frameContext.scene->getWorld()->getJobSystem().KickJob([&]() {
+      debugDraw::flush(&frameContext, frame, m_device.getSwapChain().getFrameBuffer(imageIndex), imageIndex);
+    //}, *jobs);
+    //frameContext.scene->getWorld()->getJobSystem().KickJob([&]() {
+     m_UIPipeline.draw(frame, m_device.getSwapChain().getFrameBuffer(imageIndex), imageIndex);
+   // }, *jobs);
+	//jobs->waitUntil(3);
 
 
 

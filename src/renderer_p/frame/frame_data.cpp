@@ -12,7 +12,7 @@ inline static glm::mat4 getUIMatrix() {
 }
 
 rfct::frameData::frameData(vk::Device device, VmaAllocator& allocator, vk::Fence lastFramePresentFinishedFence, vk::Fence thisFramePresentFinishedFence)
-    : m_device(device), m_allocator(allocator), m_lastFrameRenderFinishedFence(lastFramePresentFinishedFence), m_thisFrameRenderFinishedFence(thisFramePresentFinishedFence) {
+    : m_device(device), m_allocator(allocator), m_lastFrameRenderFinishedFence(lastFramePresentFinishedFence), m_thisFrameRenderFinishedFence(thisFramePresentFinishedFence), m_descriptors(RFCT_FRAMES_IN_FLIGHT) {
 
     vk::CommandPoolCreateInfo poolInfo{
         vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
@@ -44,14 +44,17 @@ rfct::frameData::frameData(vk::Device device, VmaAllocator& allocator, vk::Fence
     m_debugDrawFinishedSemaphore = device.createSemaphoreUnique(semaphoreInfo);
     m_renderFinishedSemaphore = device.createSemaphoreUnique(semaphoreInfo);
 
-	m_descriptors.bindCameraUbo(m_cameraUbo.getBuffer());
+	for (size_t i = 0; i < RFCT_FRAMES_IN_FLIGHT; i++)
+	{
+        m_descriptors.bindCameraUbo(m_cameraUbo[i].getBuffer(), i);
+	}
 	m_UIcameradescriptors.bindCameraUbo(m_UIcameraUbo.getBuffer());
 
 }
 
-void rfct::frameData::prepareFrame()
+void rfct::frameData::prepareFrame(uint32_t BufferIndex)
 {
-    m_cameraUbo.updateViewProj(getVPMatrix());
+    m_cameraUbo[BufferIndex].updateViewProj(getVPMatrix());
     m_UIcameraUbo.updateViewProj(getUIMatrix());
 }
 

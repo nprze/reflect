@@ -11,12 +11,12 @@ namespace rfct {
         frameData(vk::Device device, VmaAllocator& allocator, vk::Fence lastFramePresentFinishedFence, vk::Fence thisFramePresentFinishedFence);
         ~frameData() {};
 
-		void prepareFrame();
+		void prepareFrame(uint32_t BufferIndex);
 
         void waitForAllFences();
         void resetAllFences();
-		vk::DescriptorSet getCameraUboDescSet() const { return m_descriptors.m_cameraUboDescSet.get(); }
-		vk::DescriptorSet getUICameraUboDescSet() const { return m_UIcameradescriptors.m_cameraUboDescSet.get(); }
+		vk::DescriptorSet& getCameraUboDescSet(uint32_t BufferIndex) { return m_descriptors.getCameraDescSet(BufferIndex); }
+		vk::DescriptorSet& getUICameraUboDescSet() { return m_UIcameradescriptors.getCameraDescSet(); }
 
         vk::SubmitInfo sceneSubmitInfo() const;
         vk::SubmitInfo debugDrawSubmitInfo() const;
@@ -46,7 +46,7 @@ namespace rfct {
 		vk::Fence m_thisFrameRenderFinishedFence;
 		vk::Fence m_lastFrameRenderFinishedFence;
 
-		cameraUbo m_cameraUbo;
+		std::array<cameraUbo, RFCT_FRAMES_IN_FLIGHT> m_cameraUbo;
 		cameraUbo m_UIcameraUbo;
 
 		descriptors m_descriptors;

@@ -21,14 +21,19 @@ rfct::scene::~scene()
 void rfct::scene::onUpdate(frameContext* context)
 {
 	// Update systems
-	
+	//static float deltaTime = 0.f;
+	//deltaTime += context->dt;
 	transformComponent* tc = world::getWorld().getCurrentScene().getComponent<transformComponent>(epicRotatingTriangle);
-	if (input::getInput().xAxis) {
-		tc->position.x += 3 * input::getInput().xAxis * context->dt;
-	}
-	if (input::getInput().yAxis) {
-		tc->position.y += 3 * input::getInput().yAxis * context->dt;
-	}
+	//if (deltaTime > 1.f) {
+		//deltaTime = 0.f;
+
+		if (input::getInput().xAxis) {
+			tc->position.x += 3 * input::getInput().xAxis * context->dt;
+		}
+		if (input::getInput().yAxis) {
+			tc->position.y += 3 * input::getInput().yAxis * context->dt;
+		}
+	//}
 	updateTransformData(context, epicRotatingTriangle);
 	getComponent<cameraComponent>(camera); 
 	cameraComponentOnUpdate(context->dt, *tc);
@@ -40,7 +45,7 @@ void rfct::scene::loadScene(std::string path)
 {
 	runEntityTests();
 	m_Query.cleanUp();
-	camera = helloEntity<cameraComponent>(cameraComponent{ glm::vec3(0.f, 0.f, 10.0f), glm::vec3(0), 45.f, renderer::getRen().getAspectRatio(), 0.f, 100.f });
+	camera = helloEntity<cameraComponent>(cameraComponent{ glm::vec3(0.f, 0.f, 2.0f), glm::vec3(0), 45.f, renderer::getRen().getAspectRatio(), 0.f, 100.f });
 	m_RenderData.startTransferStatic();
 	{
 

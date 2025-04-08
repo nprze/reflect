@@ -7,11 +7,11 @@
 #include <chrono>
 #include <filesystem>
 
-#define RFCT_TRACE(...) spdlog::trace("[{}:{}] {}", std::filesystem::path(__FILE__).filename().string(), __LINE__, fmt::format(__VA_ARGS__))
-#define RFCT_INFO(...) spdlog::info("[{}:{}] {}", std::filesystem::path(__FILE__).filename().string(), __LINE__, fmt::format(__VA_ARGS__))
-#define RFCT_WARN(...) spdlog::warn("[{}:{}] {}", std::filesystem::path(__FILE__).filename().string(), __LINE__, fmt::format(__VA_ARGS__))
-#define RFCT_ERROR(...) spdlog::error("[{}:{}] {}", std::filesystem::path(__FILE__).filename().string(), __LINE__, fmt::format(__VA_ARGS__))
-#define RFCT_CRITICAL(...) { spdlog::error("[{}:{}] {}", std::filesystem::path(__FILE__).filename().string(), __LINE__, fmt::format(__VA_ARGS__)); RFCT_ASSERT(false) }
+#define RFCT_TRACE(...) spdlog::trace("{}", fmt::format(__VA_ARGS__))
+#define RFCT_INFO(...) spdlog::info("{}", fmt::format(__VA_ARGS__))
+#define RFCT_WARN(...) spdlog::warn("{}", fmt::format(__VA_ARGS__))
+#define RFCT_ERROR(...) spdlog::error("{}", fmt::format(__VA_ARGS__))
+#define RFCT_CRITICAL(...) { spdlog::error("{}", fmt::format(__VA_ARGS__)); RFCT_ASSERT(false) }
 
 #define RFCT_LOGGER_INIT() initialize_logger();
 
