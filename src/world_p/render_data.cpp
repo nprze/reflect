@@ -32,7 +32,7 @@ rfct::sceneRenderData::sceneRenderData() : m_VertexBufferStatic(RFCT_DEBUG_DRAW_
 {
  	for (uint32_t i = 0; i < RFCT_FRAMES_IN_FLIGHT; ++i) {
 		m_VertexBufferDynamic[i] = std::make_unique<vulkanVertexBuffer>(RFCT_DEBUG_DRAW_VERTEX_BUFFER_MAX_SIZE);
-		m_DynamicModelMatsBuffers[i] = std::make_unique<VulkanBuffer>(sizeof(glm::mat4) * 20, vk::BufferUsageFlagBits::eStorageBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU);
+		m_DynamicModelMatsBuffers[i] = std::move(VulkanBuffer(sizeof(glm::mat4) * 20, vk::BufferUsageFlagBits::eStorageBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU));
 		m_mappedDataDynamic[i] = nullptr;
 	}
 	m_verticesCountDynamicObj = 0;
@@ -89,7 +89,7 @@ rfct::sceneRenderData::sceneRenderData() : m_VertexBufferStatic(RFCT_DEBUG_DRAW_
 		m_DescriptorSetsDynamic[i] = std::move(descriptorSets[0]);
 
 		vk::DescriptorBufferInfo bufferInfoDynamic = {
-			m_DynamicModelMatsBuffers[i]->buffer,
+			m_DynamicModelMatsBuffers[i].buffer,
 			0,
 			sizeof(glm::mat4) * 20
 		};
@@ -106,14 +106,15 @@ rfct::sceneRenderData::sceneRenderData() : m_VertexBufferStatic(RFCT_DEBUG_DRAW_
 		renderer::getRen().getDevice().updateDescriptorSets(1, &write, 0, nullptr);
 
 		// Map buffer immediately if desired
-		m_mappedDataDynamic[i] = m_DynamicModelMatsBuffers[i]->Map();
+		m_mappedDataDynamic[i] = m_DynamicModelMatsBuffers[i].Map();
 	}
 }
 
 rfct::sceneRenderData::~sceneRenderData()
 {
 	for (size_t i = 0; i < RFCT_FRAMES_IN_FLIGHT; i++) {
-		m_DynamicModelMatsBuffers[i]->Unmap();
+		m_DynamicModelMatsBuffers[i].Unmap();
+
 	}
 	destroyDescriptorSetLayout();
 }

@@ -2,11 +2,6 @@ cmake_minimum_required(VERSION 3.16)
 
 include(reflect_settings.cmake)
 
-#if(${BUILD_FOR_PLATFORM} STREQUAL "ANDROID")
-#    set(PLATFORM_ANDROID TRUE)
-#elseif(${BUILD_FOR_PLATFORM} STREQUAL "WINDOWS")
-#    set(PLATFORM_WINDOWS TRUE)
-#endif()
 find_library(android-lib android)
 
 if(NOT android-lib)
@@ -72,11 +67,6 @@ if(PLATFORM_ANDROID)
     find_library(android-lib android)
     find_package(Vulkan REQUIRED)
 
-    #set(ANDROID_NDK_PATH ${ANDROID_NDK})
-    #include_directories(${ANDROID_NDK_PATH}/sources/android/native_app_glue)
-
-    #target_include_directories(reflect PRIVATE ${ANDROID_NDK_PATH}/sources/android/native_app_glue)
-
     target_include_directories(reflect PRIVATE
             ${Vulkan_INCLUDE_DIRS}
     )
@@ -140,6 +130,9 @@ if(PLATFORM_WINDOWS)
     target_include_directories(reflect PUBLIC deps/glfw/include)
     target_link_libraries(reflect PUBLIC glfw)
 endif()
+
+add_subdirectory(deps/flecs)
+target_link_libraries(reflect PUBLIC flecs)
 
 if(PLATFORM_ANDROID)
     target_include_directories(reflect PRIVATE deps/Vulkan-Headers/include)

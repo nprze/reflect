@@ -3,6 +3,10 @@
 #include <glm\glm.hpp>
 #include "renderer_p\buffer\vulkan_buffer.h"
 namespace rfct {
+    class scene;
+	struct frameContext;
+
+
     struct objectLocation {
         uint32_t indexInSSBO;
         uint32_t verticesCount;
@@ -15,6 +19,11 @@ namespace rfct {
         }
 	};
 
+    void updateDynamicRenderMeshComponents(scene* scene, frameContext* ctx);
+    void updatePlayer(scene* scene, Entity player, float dt);
+    void updatePhysics(scene* scene, float dt);
+
+
 
     enum class ComponentEnum : std::uint64_t {
         None = 0,
@@ -23,6 +32,9 @@ namespace rfct {
         transformComponent = 1ULL << 2,
         staticRenderMeshComponent = 1ULL << 3,
         dynamicRenderMeshComponent = 1ULL << 4,
+        staticBoxColliderComponent = 1ULL << 5,
+        dynamicBoxColliderComponent = 1ULL << 6,
+        rigidBodyComponent = 1ULL << 6,
         damageComponent = 1ULL << 20,
         healthComponent = 1ULL << 30,
     };
@@ -53,6 +65,21 @@ namespace rfct {
         static constexpr ComponentEnum EnumValue = ComponentEnum::dynamicRenderMeshComponent;
         objectLocation renderDataLocations;
     };
+    struct staticBoxColliderComponent {
+        static constexpr ComponentEnum EnumValue = ComponentEnum::staticBoxColliderComponent;
+        glm::vec3 min;
+        glm::vec3 max;
+    };
+    struct dynamicBoxColliderComponent {
+        static constexpr ComponentEnum EnumValue = ComponentEnum::dynamicBoxColliderComponent;
+        glm::vec3 min;
+        glm::vec3 max;
+    };
+	struct rigidBodyComponent {
+		static constexpr ComponentEnum EnumValue = ComponentEnum::rigidBodyComponent;
+		glm::vec3 velocity;
+		float gravityScale = 10.f;
+	};
 	struct damageComponent {
         damageComponent() = default;
         damageComponent(int dmg) : damage(dmg) {}

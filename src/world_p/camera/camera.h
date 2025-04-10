@@ -5,6 +5,8 @@
 #include "glm/gtx/euler_angles.hpp"
 #include "world_p\world.h"
 #include "input.h"
+#include "world_p/components.h"
+#include "world_p\scene.h"
 namespace rfct {
     void cameraComponentOnUpdate(float dt, const transformComponent& playertransform);
 

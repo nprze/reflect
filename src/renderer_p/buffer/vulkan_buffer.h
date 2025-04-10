@@ -8,6 +8,13 @@ namespace rfct {
         ~VulkanBuffer();
 
 
+        VulkanBuffer& operator=(VulkanBuffer&& bffr) noexcept {
+            buffer = bffr.buffer;
+			allocation = bffr.allocation;
+			bffr.buffer = nullptr;
+			bffr.allocation = nullptr;
+            return *this;
+        }
 
         void* Map();
         void Unmap();

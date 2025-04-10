@@ -26,7 +26,7 @@ namespace rfct {
 		vk::UniqueDescriptorSet m_DescriptorSetStatic;
 
 		std::array<unique<vulkanVertexBuffer>, RFCT_FRAMES_IN_FLIGHT> m_VertexBufferDynamic;
-		std::array<unique<VulkanBuffer>, RFCT_FRAMES_IN_FLIGHT> m_DynamicModelMatsBuffers;
+		std::array<VulkanBuffer, RFCT_FRAMES_IN_FLIGHT> m_DynamicModelMatsBuffers;
 		std::array<vk::UniqueDescriptorSet, RFCT_FRAMES_IN_FLIGHT> m_DescriptorSetsDynamic;
 		std::array<void*, RFCT_FRAMES_IN_FLIGHT> m_mappedDataDynamic;
 

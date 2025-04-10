@@ -1,9 +1,8 @@
 #pragma once
-#include "scene.h"
 #include <string>
 #include "context.h"
-#include "job_system_p\job_system.h"
 namespace rfct {
+	class scene;
 	class world {
 	private:
 		static world currentWorld;
@@ -13,11 +12,9 @@ namespace rfct {
 		inline scene& getCurrentScene() { return *m_currentScene; };
 		void cleanWorld();
 		void onUpdate(frameContext& context);
-		jobSystem& getJobSystem() { return m_jobSystem; }
 	private:
-		jobSystem m_jobSystem;
-		world();
-		~world();
+		world() = default;
+		~world() = default;
 		scene* m_currentScene;
 	};
 }

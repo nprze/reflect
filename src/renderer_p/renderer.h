@@ -3,7 +3,6 @@
 #include "device\vulkan_device.h"
 #include "renderer_p\rasterizer_pipeline\vulkan_rasterizer_pipeline.h"
 #include "renderer_p\frame\frame_resource_manager.h"
-#include "renderer_p\ray_tracing\ray_tracer.h"
 #include "renderer_p\rasterizer_pipeline\vertex.h"
 #include "renderer_p\buffer\vulkan_vertex_buffer.h"
 #include "window.h"
@@ -37,7 +36,6 @@ namespace rfct {
 		inline vulkanInstance& getInstanceWrapper() { return m_instance; }
 		inline vulkanRasterizerPipeline& getRasterizerPipeline() { return m_rasterizerPipeline; }
 		inline VmaAllocator& getAllocator() { return m_allocator.m_allocator; }
-		inline vulkanVertexBuffer& getVertexBuffer() { return m_vertexBuffer; }
         inline AssetsManager* getAssetsManager() { return m_AssetsManager; }
 		inline vk::SurfaceKHR& getSurface() { return m_surface.surface; }
 		inline float getAspectRatio() { return m_window.getAspectRatio(); }
@@ -60,8 +58,6 @@ namespace rfct {
 		vulkanRasterizerPipeline m_rasterizerPipeline;
 		allocator m_allocator;
 		framesInFlight m_framesInFlight;
-		rayTracer m_rayTracer;
-		vulkanVertexBuffer m_vertexBuffer;
 		debugDraw m_debugDraw;
 		UIPipeline m_UIPipeline;
     private:

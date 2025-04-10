@@ -1,4 +1,5 @@
 #include "renderer.h"
+#include "job_system_p\job_system.h"
 #include <stdint.h>
 
 
@@ -24,16 +25,8 @@ namespace rfct {
 
 // LET THIS CODE COOK. IT DOES COOK FRFR
 rfct::renderer::renderer(RFCT_RENDERER_ARGUMENTS)
-	: m_AssetsManager(setStaticRenderer(this, assetsManager)), m_window(RFCT_WINDOWS_WINDOW_ARGUMENTS RFCT_NATIVE_WINDOW_ANDROID_VAR), m_instance(), m_surface(m_window.createSurface(getInstance())), m_device(), m_AssetsCommandPool(m_device.getDevice().createCommandPoolUnique({ {}, m_device.getQueueManager().getGraphicsQueueFamilyIndex() })), m_rasterizerPipeline(), m_allocator(), m_framesInFlight(), m_rayTracer(), m_vertexBuffer(sizeof(Vertex) * 3), m_debugDraw()
+	: m_AssetsManager(setStaticRenderer(this, assetsManager)), m_window(RFCT_WINDOWS_WINDOW_ARGUMENTS RFCT_NATIVE_WINDOW_ANDROID_VAR), m_instance(), m_surface(m_window.createSurface(getInstance())), m_device(), m_AssetsCommandPool(m_device.getDevice().createCommandPoolUnique({ {}, m_device.getQueueManager().getGraphicsQueueFamilyIndex() })), m_rasterizerPipeline(), m_allocator(), m_framesInFlight(), m_debugDraw()
 {
-    std::vector<Vertex> vertices = {
-        {{0.0f, -0.5f, 0.f}, {1.0f, 0.0f, 0.0f},0,0},
-        {{0.5f, 0.5f, 0.f}, {0.0f, 1.0f, 0.0f},0,0},
-        {{-0.5f, 0.5f, 0.f}, {0.0f, 0.0f, 1.0f},0,0}
-    };
-	m_vertexBuffer.copyData(vertices);
-
-
     m_device.getSwapChain().createFrameBuffers();
 }
 
@@ -81,17 +74,17 @@ void rfct::renderer::render(frameContext& frameContext)
     frame.resetAllFences();
     frame.prepareFrame(frameContext.frame);
     auto jobs = std::make_shared<rfct::jobTracker>();
-    frameContext.scene->getWorld()->getJobSystem().KickJob([&]() {
+    jobSystem::get().KickJob([&]() {
       m_rasterizerPipeline.recordCommandBuffer(&frameContext, frameContext.scene->getRenderData(), frame, m_device.getSwapChain().getFrameBuffer(imageIndex), imageIndex);
     }, *jobs);
     
-    frameContext.scene->getWorld()->getJobSystem().KickJob([&]() {
+    jobSystem::get().KickJob([&]() {
       debugDraw::flush(&frameContext, frame, m_device.getSwapChain().getFrameBuffer(imageIndex), imageIndex);
     }, *jobs);
-    frameContext.scene->getWorld()->getJobSystem().KickJob([&]() {
+    jobSystem::get().KickJob([&]() {
      m_UIPipeline.draw(frame, m_device.getSwapChain().getFrameBuffer(imageIndex), imageIndex);
     }, *jobs);
-	jobs->waitUntil(3);
+	jobs->waitAll();
 
 
 
@@ -119,7 +112,8 @@ void rfct::renderer::render(frameContext& frameContext)
     vk::PresentInfoKHR presentInfo{};
     presentInfo.sType = vk::StructureType::ePresentInfoKHR;
 
-    RFCT_VULKAN_CHECK(m_device.getDevice().waitForFences(1, &frame.m_lastFrameRenderFinishedFence, VK_TRUE, UINT64_MAX));
+    //RFCT_VULKAN_CHECK(m_device.getDevice().waitForFences(1, &frame.m_lastFrameRenderFinishedFence, VK_TRUE, UINT64_MAX));
+
     presentInfo.waitSemaphoreCount = 1;
     const vk::Semaphore& sem = frame.m_renderFinishedSemaphore.get();
     presentInfo.pWaitSemaphores = &sem;

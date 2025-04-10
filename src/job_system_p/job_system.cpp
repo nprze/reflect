@@ -1,8 +1,11 @@
 #include "job_system.h"
 
-rfct::jobSystem::jobSystem(size_t numThreads)
+rfct::jobSystem rfct::jobSystem::instance;
+
+rfct::jobSystem::jobSystem()
 {
-    threads.resize(numThreads);
+    threads.resize(4);
+    Start();
 }
 
 rfct::jobSystem::~jobSystem()
@@ -14,6 +17,7 @@ void rfct::jobSystem::KickJob(std::function<void()> job, jobTracker& counter)
 {
     {
         std::lock_guard<std::mutex> lock(queueMutex);
+        counter.addTask();
         jobQueue.push({ job, &counter });
     }
     cv.notify_one();
@@ -60,10 +64,9 @@ void rfct::jobSystem::WorkerThread()
             jobQueue.pop();
         }
 
+
         job(); 
 
-        if (counter) {
-            counter->increment();
-        }
+        counter->increment();
     }
 }
