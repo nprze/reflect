@@ -32,13 +32,16 @@ namespace rfct {
     };
 
     struct positionComponent {
+        glm::vec2 position = glm::vec2(0.f);
+    };
+    struct position3DComponent {
         glm::vec3 position = glm::vec3(0.f);
     };
     struct rotationComponent {
-        glm::vec3 rotation = glm::vec3(0.f);
+        glm::vec2 rotation = glm::vec2(0.f);
     };
     struct scaleComponent {
-        glm::vec3 scale = glm::vec3(1.f);
+        glm::vec2 scale = glm::vec2(1.f);
     };
     struct matrixComponent {
         glm::mat4 model = glm::mat4(1.f);
@@ -56,23 +59,26 @@ namespace rfct {
     };
 
 
-    struct staticBoxColliderComponent {
-        glm::vec3 min;
-        glm::vec3 max;
+    struct staticBoxColliderComponent { // it is in fact an AABB
+        glm::vec2 min;
+        glm::vec2 max;
     };
-    struct dynamicBoxColliderComponent {
-        glm::vec3 min;
-        glm::vec3 max;
+    struct dynamicBoxColliderComponent { // it is in fact an AABB
+        glm::vec2 min;
+        glm::vec2 max;
     };
 
 
 	struct velocityComponent {
-		glm::vec3 velocity;
+		glm::vec2 velocity;
 	};
 	struct gravityComponent {
 		bool gravityEnabled = true;
 		float gravity = 10.f;
 	};
+
+
+    bool checkForCollisionAABBAABB(dynamicBoxColliderComponent* a, staticBoxColliderComponent* b);
 
     struct transform {
 		positionComponent pos;

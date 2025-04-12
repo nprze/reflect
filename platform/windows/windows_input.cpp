@@ -47,19 +47,18 @@ namespace rfct {
 		{
 			cameraXAxis -= 1;
 		}
-		if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS && !(glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS)) { // Scene movement
-			yAxis -= 1;
-		}
-		else if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS && (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS)) //Camera movement
+		if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS && (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS)) //Camera movement
 		{
 			cameraYAxis -= 1;
 		}
-		if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS && !(glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS)) { // Scene movement
-			yAxis += 1;
-		}
-		else if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS && (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS)) //Camera movement
+		if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS && (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS)) //Camera movement
 		{
 			cameraYAxis += 1;
+		}
+
+		if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) // Scene movement
+		{
+			yAxis += 1;
 		}
 
 	}

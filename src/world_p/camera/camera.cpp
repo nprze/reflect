@@ -23,14 +23,14 @@ namespace rfct {
     }
     void cameraComponentOnUpdate(float dt, entity player)
     {
-        if (input::getInput().cameraXAxis || input::getInput().cameraYAxis || ((!input::getInput().xAxis) && (!input::getInput().yAxis))) {
+        if (input::getInput().cameraXAxis || input::getInput().cameraYAxis) {
             cameraEntity.get_mut<positionComponent>()->position.x += dt * input::getInput().cameraXAxis;
             cameraEntity.get_mut<positionComponent>()->position.y += dt * input::getInput().cameraYAxis;
         }
         else {
-			glm::vec3 playerPos = player.get<positionComponent>()->position;
-            cameraEntity.get_mut<positionComponent>()->position.x = playerPos.x;
-            cameraEntity.get_mut<positionComponent>()->position.y = playerPos.y;
+			glm::vec2 playerPos = player.get<positionComponent>()->position;
+            cameraEntity.get_mut<position3DComponent>()->position.x = playerPos.x;
+            cameraEntity.get_mut<position3DComponent>()->position.y = playerPos.y;
         }
         if (renderer::getRen().getDeviceWrapper().getSwapChain().framebufferResized) {
             cameraEntity.get_mut<cameraComponent>()->aspectRatio = renderer::getRen().getAspectRatio();
@@ -39,13 +39,12 @@ namespace rfct {
 
     }
     glm::mat4 getViewMatrix() {
-        //return glm::mat4(1);
         glm::mat4 model = glm::mat4(1.0f);
-        const positionComponent* position = cameraEntity.get<positionComponent>();
+        const position3DComponent* position = cameraEntity.get<position3DComponent>();
         model = glm::translate(model, (glm::vec3)position->position);
         const rotationComponent* rotation = cameraEntity.get<rotationComponent>();
 
-        glm::mat4 rotationMat = glm::yawPitchRoll(rotation->rotation.x, rotation->rotation.y, rotation->rotation.z);
+        glm::mat4 rotationMat = glm::yawPitchRoll(rotation->rotation.x, rotation->rotation.y, 0.f);
         glm::vec3 direction = glm::vec3(rotationMat * glm::vec4(0, 0, -1, 1));
         return glm::lookAt(position->position, position->position + direction, glm::vec3(0, 1, 0));
     }

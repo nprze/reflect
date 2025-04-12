@@ -14,6 +14,8 @@ namespace rfct {
 		inline void unloadScene() {};
 		inline sceneRenderData& getRenderData() { return m_RenderData; };
 
+		entity createStaticRect(staticBoxColliderComponent* bounds, glm::vec3 color = glm::vec3(1.f,1.f,1.f));
+		entity createDynamicRect(dynamicBoxColliderComponent* bounds, glm::vec3 color = glm::vec3(1.f,1.f,1.f));
 		entity createStaticRenderingEntity(std::vector<Vertex>* vertices, glm::mat4* model);
 		entity createDynamicRenderingEntity(std::vector<Vertex>* vertices, glm::mat4* model);
 		void updateTransformData(frameContext* ctx, entity entityToUpdate);

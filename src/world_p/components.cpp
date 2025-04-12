@@ -10,6 +10,7 @@ namespace rfct {
 		ecs::get().component<sceneComponent>();
 		ecs::get().component<cameraComponent>();
 		ecs::get().component<positionComponent>();
+		ecs::get().component<position3DComponent>();
 		ecs::get().component<rotationComponent>();
 		ecs::get().component<scaleComponent>();
 		ecs::get().component<matrixComponent>();
@@ -74,7 +75,6 @@ namespace rfct {
 	{
 		if (a->min.x > b->max.x || a->max.x < b->min.x) return false;
 		if (a->min.y > b->max.y || a->max.y < b->min.y) return false;
-		if (a->min.z > b->max.z || a->max.z < b->min.z) return false;
 		return true;
 	}
 }
