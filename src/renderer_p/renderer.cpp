@@ -1,7 +1,8 @@
 #include "renderer.h"
 #include "job_system_p\job_system.h"
 #include <stdint.h>
-
+#include "frame\frame_data.h"
+#include "world_p\scene.h"
 
 namespace rfct {
     AssetsManager* setStaticRenderer(renderer *rendererArg, AssetsManager* assetsManager) {

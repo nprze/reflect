@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include "context.h"
+#include "scene.h"
 namespace rfct {
 	class scene;
 	class world {

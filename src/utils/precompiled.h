@@ -9,3 +9,6 @@
 #include <array>
 #include <stdint.h>
 #include "sizes.h"
+#include "flecs/flecs.h"
+
+using entity = flecs::entity;

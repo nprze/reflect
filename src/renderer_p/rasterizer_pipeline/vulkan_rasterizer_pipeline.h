@@ -1,7 +1,9 @@
 #pragma once
 #include "renderer_p\shader\vulkan_shader.h"
 #include "renderer_p\frame\frame_data.h"
+#include "context.h"
 namespace rfct {
+	class sceneRenderData;
 	class vulkanRasterizerPipeline
 	{
 	public:

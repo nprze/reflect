@@ -119,9 +119,9 @@ rfct::sceneRenderData::~sceneRenderData()
 	destroyDescriptorSetLayout();
 }
 
-void rfct::sceneRenderData::updateMat(frameContext* ctx, const objectLocation& objLoc, glm::mat4* mat)
+void rfct::sceneRenderData::updateMat(frameContext* ctx, const uint32_t& objIndexInSSBO, glm::mat4* mat)
 {
-	char* finalPtr = (char*)m_mappedDataDynamic[ctx->frame] + objLoc.indexInSSBO * sizeof(glm::mat4);
+	char* finalPtr = (char*)m_mappedDataDynamic[ctx->frame] + objIndexInSSBO * sizeof(glm::mat4);
 	memcpy(finalPtr, mat, sizeof(glm::mat4));
 }
 

@@ -8,6 +8,7 @@ bool rfct::reflectApplication::shouldRender;
 rfct::reflectApplication::reflectApplication(RFCT_NATIVE_WINDOW_ANDROID RFCT_NATIVE_WINDOW_ANDROID_VAR):
 m_AssetsManager(AssetsDirectory), m_Renderer(RFCT_RENDERER_ARGUMENTS_VAR)
 {
+	registerComponents();
 	world::getWorld().loadScene("");
     shouldRender = true;
 	input::setInput(&m_Input);
@@ -51,7 +52,5 @@ void rfct::reflectApplication::update() {
 
 void rfct::reflectApplication::updateGameplay(frameContext& ContextArg)
 {
-
-	//std::this_thread::sleep_for(std::chrono::milliseconds(5)); 
 	world::getWorld().onUpdate(ContextArg);
 }

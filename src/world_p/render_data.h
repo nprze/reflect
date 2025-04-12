@@ -14,7 +14,7 @@ namespace rfct {
 		~sceneRenderData();
 		inline void startTransferStatic() { m_mappedDataStatic = m_StaticModelMatsBuffer.Map(); };
 		inline void endTransferStatic() { m_StaticModelMatsBuffer.Unmap(); };
-		void updateMat(frameContext* ctx, const objectLocation& objLoc, glm::mat4* mat);
+		void updateMat(frameContext* ctx, const uint32_t& objIndexInSSBO, glm::mat4* mat);
 		uint32_t addStaticMat(void* data);
 		uint32_t addDynamicMat(frameContext* ctx, void* data);
 		objectLocation addStaticObject(std::vector<Vertex>* vertices, glm::mat4* matrix);

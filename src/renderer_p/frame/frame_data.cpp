@@ -1,6 +1,9 @@
 #include "frame_data.h"
 #include "renderer_p\renderer.h"
 #include "world_p\components.h"
+#include "glm/gtc/matrix_transform.hpp"
+#define GLM_ENABLE_EXPERIMENTAL
+#include "glm/gtx/euler_angles.hpp"
 
 
 inline static glm::mat4 getUIMatrix() {

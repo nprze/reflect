@@ -5,6 +5,7 @@
 #include "renderer_p\shader\vulkan_shader.h"
 #include "renderer_p\rasterizer_pipeline\vertex.h"
 #include <stdint.h>
+#include "context.h"
 namespace rfct {
 	struct debugTriangle {
 		Vertex vertices[3];
