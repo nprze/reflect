@@ -17,17 +17,23 @@ rfct::scene::~scene()
 	cleanupQueries();
 }
 
+namespace rfct {
+	void updateGamplay(float dt, entity player) {
+		playerStateComponent* playerState = player.get_mut<playerStateComponent>();
+		positionComponent* pos = player.get_mut<positionComponent>();
+		if (input::getInput().xAxis) {
+			pos->position.x += 3 * input::getInput().xAxis * dt;
+		}
+		if (input::getInput().yAxis) {
+			player.get_mut<velocityComponent>()->velocity.y -= input::getInput().yAxis * 20 * dt;
+		}
+	}
+}
+
 
 void rfct::scene::onUpdate(frameContext* context)
 {
-	positionComponent* pos = epicRotatingTriangle.get_mut<positionComponent>();
-	if (input::getInput().xAxis) {
-		pos->position.x += 3 * input::getInput().xAxis * context->dt;
-	}
-	if (input::getInput().yAxis) {
-		epicRotatingTriangle.get_mut<velocityComponent>()->velocity.y -= input::getInput().yAxis * 20 * context->dt;
-		//pos->position.y += 3 * input::getInput().yAxis * context->dt;
-	}
+	updateGamplay(context->dt, epicRotatingTriangle);
 	updateTransformData(context, epicRotatingTriangle);
 	updatePhysics(context->dt, sceneEntity);
 	cameraComponentOnUpdate(context->dt, epicRotatingTriangle);

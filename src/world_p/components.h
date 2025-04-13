@@ -1,7 +1,5 @@
 #pragma once
-#include <string>
 #include <glm\glm.hpp>
-#include "renderer_p\buffer\vulkan_buffer.h"
 namespace flecs {
 	class world;
 	class entity;
@@ -19,9 +17,6 @@ namespace rfct {
 
     void registerComponents();
 
-    void updateDynamicRenderMeshComponents(scene* scene, frameContext* ctx);
-    void updatePlayer(scene* scene, flecs::entity* player, float dt);
-    void updatePhysics(scene* scene, float dt);
 
 
 	struct sceneComponent {
@@ -76,6 +71,10 @@ namespace rfct {
 		bool gravityEnabled = true;
 		float gravity = 10.f;
 	};
+
+    struct playerStateComponent {
+        bool grounded = false;
+    };
 
 
     bool checkForCollisionAABBAABB(dynamicBoxColliderComponent* a, staticBoxColliderComponent* b);
