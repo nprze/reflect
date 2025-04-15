@@ -7,6 +7,7 @@
 #include "camera\camera.h"
 #include "renderer_p\renderer.h"
 #include "physics\physics.h"
+#include "physics\collision_callback.h"
 
 rfct::scene::scene(world* worldArg) : m_World(worldArg)
 {
@@ -24,8 +25,9 @@ namespace rfct {
 		if (input::getInput().xAxis) {
 			pos->position.x += 3 * input::getInput().xAxis * dt;
 		}
-		if (input::getInput().yAxis) {
-			player.get_mut<velocityComponent>()->velocity.y -= input::getInput().yAxis * 20 * dt;
+		if (input::getInput().yAxis && playerState->grounded) {
+			playerState->grounded = false;
+			player.get_mut<velocityComponent>()->velocity.y -= input::getInput().yAxis * 150.f;
 		}
 	}
 }
@@ -34,8 +36,8 @@ namespace rfct {
 void rfct::scene::onUpdate(frameContext* context)
 {
 	updateGamplay(context->dt, epicRotatingTriangle);
+	updatePhysics(context->dt);
 	updateTransformData(context, epicRotatingTriangle);
-	updatePhysics(context->dt, sceneEntity);
 	cameraComponentOnUpdate(context->dt, epicRotatingTriangle);
 
 }
@@ -47,7 +49,7 @@ void rfct::scene::loadScene(std::string path)
 	createQueries(sceneEntity);
 	camera = ecs::get().entity()
 		.child_of(sceneEntity)
-		.set<position3DComponent>({ { 0.f,  0.f, 8.f} })
+		.set<position3DComponent>({ { 0.f,  0.f, 20.f} })
 		.set<rotationComponent>({ {0.f, 0.f} })
 		.set<cameraComponent>({ 45.0f, renderer::getRen().getAspectRatio(), 0.1f, 100.0f });
 	setCamera(camera);
@@ -68,7 +70,9 @@ void rfct::scene::loadScene(std::string path)
 	{
 		dynamicBoxColliderComponent bounds = { { -0.5f, -0.5f }, { 0.5f, 0.5f } };
 		epicRotatingTriangle = createDynamicRect(&bounds, glm::vec3(0.2f, 0.7f, 0.4f));
-		epicRotatingTriangle.set<positionComponent>({ { 0.f, -6.f } }).set<gravityComponent>({}).set<velocityComponent>({ glm::vec3(0.f,0.f,0.f)});
+		collisionCallbackComponent colCallback;
+		colCallback.handler = onCollision_Player_StaticObj;
+		epicRotatingTriangle.set<positionComponent>({ { 0.f, -6.f } }).set<gravityComponent>({}).set<velocityComponent>({ glm::vec3(0.f,0.f,0.f) }).set<collisionCallbackComponent>(colCallback).set<playerStateComponent>({});
 
 	}
 	m_RenderData.endTransferStatic();

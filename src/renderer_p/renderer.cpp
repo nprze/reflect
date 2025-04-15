@@ -113,7 +113,7 @@ void rfct::renderer::render(frameContext& frameContext)
     vk::PresentInfoKHR presentInfo{};
     presentInfo.sType = vk::StructureType::ePresentInfoKHR;
 
-    //RFCT_VULKAN_CHECK(m_device.getDevice().waitForFences(1, &frame.m_lastFrameRenderFinishedFence, VK_TRUE, UINT64_MAX));
+    RFCT_VULKAN_CHECK(m_device.getDevice().waitForFences(1, &frame.m_lastFrameRenderFinishedFence, VK_TRUE, UINT64_MAX));
 
     presentInfo.waitSemaphoreCount = 1;
     const vk::Semaphore& sem = frame.m_renderFinishedSemaphore.get();

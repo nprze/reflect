@@ -39,7 +39,7 @@ void rfct::world::onUpdate(frameContext& context)
 		RFCT_PROFILE_SCOPE("Scene update");
 		m_currentScene->onUpdate(&context);
 		}, *jobs);
-	jobs->waitUntil(2);
+	jobs->waitAll();
 	RFCT_TRACE("yeepie");
 }
 

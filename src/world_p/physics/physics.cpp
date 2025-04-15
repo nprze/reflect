@@ -3,15 +3,25 @@
 #include "world_p\ecs.h"
 
 constexpr uint32_t substepCount = 10;
+constexpr float dumping = 0.97f;
 
 namespace rfct
 {
-    static flecs::query<gravityComponent, velocityComponent, positionComponent, dynamicBoxColliderComponent> gravityVelocityPositionBoxQuery;
+    static flecs::query<gravityComponent, velocityComponent, positionComponent, dynamicBoxColliderComponent, collisionCallbackComponent> gravityVelocityPositionBoxQuery;
     static flecs::query<staticBoxColliderComponent> staticBoxColliderQuery;
+
+
+    struct BVHnode {
+        glm::vec2 min;
+        glm::vec2 max;
+        int left = -1;
+        int right = -1;
+        entity entity;
+    };
 }
 void rfct::createQueries(entity sceneEntity) {
     gravityVelocityPositionBoxQuery =
-        ecs::get().query_builder<gravityComponent, velocityComponent, positionComponent, dynamicBoxColliderComponent>()
+        ecs::get().query_builder<gravityComponent, velocityComponent, positionComponent, dynamicBoxColliderComponent, collisionCallbackComponent>()
         .with(flecs::ChildOf, sceneEntity)
         .build();
     staticBoxColliderQuery =
@@ -55,32 +65,32 @@ namespace rfct {
     }
 }
 
-void rfct::updatePhysics(float dt, entity sceneEntity)
+void rfct::updatePhysics(float dt)
 {
-	static float accululator = 0.f;
-	accululator += dt;
-    if (accululator <= 1.f / 60.f) return;
-    gravityVelocityPositionBoxQuery.each([&](flecs::entity ent, gravityComponent& gravity, velocityComponent& velocity, positionComponent& position, dynamicBoxColliderComponent& dynamicBox) {
-        velocity.velocity += glm::vec2(0.f, 1.f) * gravity.gravity * dt;
-		float substepTime = (1.f / 60.f) / (float)substepCount;
-        for (uint32_t substep = 0; substep < substepCount; substep++) {
-            glm::vec2 substepVelocity = velocity.velocity / (float)substepCount;
-            position.position += substepVelocity * substepTime;
-            dynamicBoxColliderComponent finalBoundingBox = { dynamicBox.min + position.position, dynamicBox.max + position.position };
-            // TODO: not brute force
-             staticBoxColliderQuery.each([&](flecs::entity e, staticBoxColliderComponent& staticBox) {
-                if (checkForCollisionAABBAABB(&finalBoundingBox, &staticBox)) {
-                    glm::vec2 resolution = ResolveAABBCollision(finalBoundingBox, staticBox);
-                    position.position += resolution;
+    constexpr float deltaTime = 1.f / 60.f;
+    static float accululator = 0.f;
+    accululator += dt;
+    while (accululator >= deltaTime){
+        accululator -= deltaTime;
+        gravityVelocityPositionBoxQuery.each([&](flecs::entity ent, gravityComponent& gravity, velocityComponent& velocity, positionComponent& position, dynamicBoxColliderComponent& dynamicBox, collisionCallbackComponent& callback) {
+            velocity.velocity += glm::vec2(0.f, 1.f) * gravity.gravity * 20.f * deltaTime;
+            velocity.velocity *= dumping;
+            float substepTime = (deltaTime) / (float)substepCount;
+            for (uint32_t substep = 0; substep < substepCount; substep++) {
+                glm::vec2 substepVelocity = velocity.velocity / (float)substepCount;
+                position.position += substepVelocity * substepTime;
+                dynamicBoxColliderComponent finalBoundingBox = { dynamicBox.min + position.position, dynamicBox.max + position.position };
+                // TODO: not brute force
+                staticBoxColliderQuery.each([&](flecs::entity e, staticBoxColliderComponent& staticBox) {
+                    if (checkForCollisionAABBAABB(&finalBoundingBox, &staticBox)) {
+                        glm::vec2 resolution = ResolveAABBCollision(finalBoundingBox, staticBox);
 
-                    if (resolution.x != 0.0f) {
-                        velocity.velocity.x = 0.0f;
+                        callback.handler(ent, e, resolution);
                     }
-                    if (resolution.y != 0.0f) {
-                        velocity.velocity.y = 0.0f;
-                    }
-                }
-                });
-        }
-    });
+                    });
+            }
+
+            });
+
+    }
 }

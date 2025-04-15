@@ -1,5 +1,7 @@
 #pragma once
 #include <glm\glm.hpp>
+
+using collisionHandler = void(*)(entity, entity, glm::vec2);
 namespace flecs {
 	class world;
 	class entity;
@@ -74,6 +76,10 @@ namespace rfct {
 
     struct playerStateComponent {
         bool grounded = false;
+    };
+
+    struct collisionCallbackComponent {
+        collisionHandler handler;
     };
 
 

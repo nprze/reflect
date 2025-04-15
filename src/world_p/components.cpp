@@ -22,6 +22,7 @@ namespace rfct {
 		ecs::get().component<gravityComponent>();
 		ecs::get().component<velocityComponent>();
 		ecs::get().component<playerStateComponent>();
+		ecs::get().component<collisionCallbackComponent>();
 
 		
 
