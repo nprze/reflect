@@ -94,15 +94,17 @@ void rfct::renderer::render(frameContext& frameContext)
     vk::PipelineStageFlags waitStages[] = { vk::PipelineStageFlagBits::eColorAttachmentOutput };
 
 
-    vk::SubmitInfo sceneSubmitInfo = frame.sceneSubmitInfo(); 
+    vk::SubmitInfo sceneSubmitInfo = frame.sceneSubmitInfo(frameContext);
     sceneSubmitInfo.pWaitDstStageMask = waitStages; 
     renderer::getRen().getDeviceWrapper().getQueueManager().submitGraphics(sceneSubmitInfo);
 
-    vk::SubmitInfo debugDrawSubmitInfo = frame.debugDrawSubmitInfo();
-    debugDrawSubmitInfo.pWaitDstStageMask = waitStages;
-    renderer::getRen().getDeviceWrapper().getQueueManager().submitGraphics(debugDrawSubmitInfo);
+    if (frameContext.renderDebugDraw) {
+        vk::SubmitInfo debugDrawSubmitInfo = frame.debugDrawSubmitInfo(frameContext);
+        debugDrawSubmitInfo.pWaitDstStageMask = waitStages;
+        renderer::getRen().getDeviceWrapper().getQueueManager().submitGraphics(debugDrawSubmitInfo);
+    }
 
-    vk::SubmitInfo uiSubmitInfo = frame.uiSubmitInfo();
+    vk::SubmitInfo uiSubmitInfo = frame.uiSubmitInfo(frameContext);
     uiSubmitInfo.pWaitDstStageMask = waitStages;
     renderer::getRen().getDeviceWrapper().getQueueManager().submitGraphics(uiSubmitInfo, frame.m_thisFrameRenderFinishedFence);
 

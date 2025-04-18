@@ -1,6 +1,12 @@
 #include "assets_manager.h"
 #include "app.h"
 #include "stb_image\stb_image.h"
+
+#include "renderer_p/shader/vulkan_shader.h"
+#include "renderer_p\image\image.h"
+#include "renderer_p\UI\font\font.h"
+#include "renderer_p\mesh\mesh.h"
+
 namespace rfct {
     AssetsManager::AssetsManager(std::string path){
         if (path.length()!=0) {
@@ -140,6 +146,58 @@ namespace rfct {
                 fontOut->glyphMap[static_cast<char>(id)] = g;
             }
         }
+    }
+
+    void AssetsManager::loadMesh(const std::string& path, mesh* meshOut)
+    {
+        std::string finalPath = m_Path + "/" + path;
+        std::ifstream file(finalPath);
+
+        if (!file.is_open()) {
+            RFCT_CRITICAL("Failed to open mesh file: {}", finalPath);
+        }
+
+        std::vector<glm::vec2> coords;
+        std::string line;
+
+        while (std::getline(file, line)) {
+            std::istringstream iss(line);
+            std::vector<float> values;
+
+            double number;
+
+            while (iss >> number) {
+                values.push_back(static_cast<float>(number));
+            }
+
+
+
+            if (values.size() == 2) {
+                coords.emplace_back(values[0], values[1]);
+
+            }
+            else if (values.size() == 3) {
+                if (coords.size() == 3 || coords.size() == 6) {
+                    glm::vec3 color = glm::vec3(values[0] / 255.0f, values[1] / 255.0f, values[2] / 255.0f);
+
+                    for (size_t i = 0; i < coords.size(); i++) {
+                        Vertex vtx{};
+                        vtx.pos = glm::vec3(coords[i], 0.0f);
+                        vtx.color = color;
+                        meshOut->m_Vertices.push_back(vtx);
+                    }
+
+                    coords.clear();
+                }
+                else {
+                    RFCT_CRITICAL("Invalid number of coordinates before color line.");
+                }
+            }
+            else {
+                RFCT_CRITICAL("Invalid line {} of file {}", line, finalPath);
+            }
+        }
+
     }
 
 }

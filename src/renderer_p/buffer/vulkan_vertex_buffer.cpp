@@ -8,7 +8,7 @@ rfct::vulkanVertexBuffer::~vulkanVertexBuffer()
 {
 }
 
-size_t rfct::vulkanVertexBuffer::copyData(std::vector<Vertex> vertices)
+size_t rfct::vulkanVertexBuffer::copyData(const std::vector<Vertex>& vertices)
 {
 
 	char* m_mappedData = (char*)m_Buffer.Map();

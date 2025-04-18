@@ -10,7 +10,7 @@ namespace rfct {
 		~vulkanVertexBuffer();
 
 		inline const vk::Buffer& getBuffer() { return m_Buffer.buffer; }
-		size_t copyData(std::vector<Vertex> vertices);
+		size_t copyData(const std::vector<Vertex>& vertices);
 
 		VulkanBuffer m_Buffer;
 

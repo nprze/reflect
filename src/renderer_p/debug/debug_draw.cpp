@@ -201,8 +201,10 @@ void rfct::debugDraw::draw(frameContext* ctx, frameData& fd, vk::Framebuffer fra
     
 	if (m_triangleBuffer.vertexCount == 0 && m_lineBuffer.vertexCount == 0)
 	{
+        ctx->renderDebugDraw = false;
 		return;
 	}
+    ctx->renderDebugDraw = true;
     vk::CommandBuffer commandBuffer = fd.m_debugDrawCommandBuffer.get();
     {
         RFCT_PROFILE_SCOPE("begin command buffer");

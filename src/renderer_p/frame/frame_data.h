@@ -4,6 +4,7 @@
 #include "renderer_p\descriptors\camera_ubo.h"
 #include "renderer_p\descriptors\per_frame_descriptors.h"
 #include "world_p\camera\camera.h"
+#include "context.h"
 namespace rfct {
 
     class frameData {
@@ -18,9 +19,9 @@ namespace rfct {
 		vk::DescriptorSet& getCameraUboDescSet(uint32_t BufferIndex) { return m_descriptors.getCameraDescSet(BufferIndex); }
 		vk::DescriptorSet& getUICameraUboDescSet() { return m_UIcameradescriptors.getCameraDescSet(); }
 
-        vk::SubmitInfo sceneSubmitInfo() const;
-        vk::SubmitInfo debugDrawSubmitInfo() const;
-        vk::SubmitInfo uiSubmitInfo() const;
+        vk::SubmitInfo sceneSubmitInfo(const frameContext& ctx) const;
+        vk::SubmitInfo debugDrawSubmitInfo(const frameContext& ctx) const;
+        vk::SubmitInfo uiSubmitInfo(const frameContext& ctx) const;
 
 
         vk::Device m_device;

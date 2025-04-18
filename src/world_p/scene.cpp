@@ -8,6 +8,7 @@
 #include "renderer_p\renderer.h"
 #include "physics\physics.h"
 #include "physics\collision_callback.h"
+#include "renderer_p\mesh\mesh.h"
 
 rfct::scene::scene(world* worldArg) : m_World(worldArg)
 {
@@ -55,7 +56,7 @@ void rfct::scene::loadScene(std::string path)
 	setCamera(camera);
 	m_RenderData.startTransferStatic();
 	{
-		staticBoxColliderComponent bounds = { { 3.f, -3.f }, { 7.f, -2.f } };
+		staticBoxColliderComponent bounds = { { 8.f, -2.f }, { 9.f, -1.f } };
 		createStaticRect(&bounds, glm::vec3(0.2f, 0.7f, 0.9f));
 	}
 	{
@@ -68,6 +69,12 @@ void rfct::scene::loadScene(std::string path)
 		createStaticRect(&bounds);
 	}
 	{
+		createStaticMesh("building_blocks/700x70.txt", glm::vec2(10.f, 1.f), glm::vec2(8.f, 2.f));
+	}
+	{
+		createStaticMesh("building_blocks/700x70.txt", glm::vec2(10.f, 1.f), glm::vec2(-8.f, 5.f));
+	}
+	{
 		dynamicBoxColliderComponent bounds = { { -0.5f, -0.5f }, { 0.5f, 0.5f } };
 		epicRotatingTriangle = createDynamicRect(&bounds, glm::vec3(0.2f, 0.7f, 0.4f));
 		collisionCallbackComponent colCallback;
@@ -76,6 +83,33 @@ void rfct::scene::loadScene(std::string path)
 
 	}
 	m_RenderData.endTransferStatic();
+	buildBVH();
+}
+
+entity rfct::scene::createStaticMesh(std::string path, glm::vec2 size, glm::vec2 pos)
+{
+	mesh mesh1;
+	renderer::getRen().getAssetsManager()->loadMesh(path, &mesh1);
+	staticBoxColliderComponent collider;
+	collider.min = pos;
+	collider.max.x = pos.x + size.x;
+	collider.max.y = pos.y + size.y;
+	transform transform1;
+	transform1.scale.scale.x = 1.f / 70.f;
+	transform1.scale.scale.y = 1.f / 70.f;
+
+	transform1.pos.position = pos;
+	glm::mat4 model = getModelMatrixFromTransform(transform1);
+	objectLocation ol = m_RenderData.addStaticObject(&mesh1.m_Vertices, &model);
+	staticSSBOIndexComponent ssboIndex = { ol.indexInSSBO };
+	return ecs::get().entity<>()
+		.child_of(sceneEntity)
+		.set<staticSSBOIndexComponent>({ ol.indexInSSBO })
+		.set<vertexRenderInfoComponent>({ ol.verticesCount, ol.vertexBufferOffset })
+		.set<positionComponent>({})
+		.set<rotationComponent>({})
+		.set<scaleComponent>(transform1.scale)
+		.set<staticBoxColliderComponent>(collider);
 }
 
 entity rfct::scene::createStaticRect(staticBoxColliderComponent* bounds, glm::vec3 color)

@@ -26,13 +26,6 @@ void rfct::world::onUpdate(frameContext& context)
 	auto jobs = std::make_shared<rfct::jobTracker>();
 	jobSystem::get().KickJob([&]() {
 		RFCT_PROFILE_SCOPE("Debug Draw");
-		debugLine* line = debugDraw::requestLines(1);
-		line[0].vertices[0].pos = { -0.25f, -0.25f, 0.f };
-		line[0].vertices[1].pos = { 0.25f, -0.25f, 0.f };
-
-		line[0].vertices[0].color = { 1.0f, 1.0f, 1.0f };
-		line[0].vertices[1].color = { 1.0f, 1.0f, 1.0f };
-
 		debugDraw::drawText("FPS: " + std::to_string(int(1 / context.dt)), glm::vec2(0, 0), 0.2);
 		}, *jobs);
 	jobSystem::get().KickJob([&]() {
@@ -40,7 +33,6 @@ void rfct::world::onUpdate(frameContext& context)
 		m_currentScene->onUpdate(&context);
 		}, *jobs);
 	jobs->waitAll();
-	RFCT_TRACE("yeepie");
 }
 
 
