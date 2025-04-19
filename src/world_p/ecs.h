@@ -1,5 +1,5 @@
 #pragma once
-#include "flecs\flecs.h"
+#include "flecs/flecs.h"
 namespace rfct {
 	class ecs { // TODO: make this thread safe
 	public:

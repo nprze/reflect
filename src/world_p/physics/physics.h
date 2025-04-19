@@ -1,7 +1,10 @@
 #pragma once
 namespace rfct{
+	// setup
 	void createQueries(entity sceneEntity);
-	void buildBVH();
 	void cleanupQueries();
+	void buildBVH(); // for static entities
+
+	// update
 	void updatePhysics(float dt);
 }

@@ -10,10 +10,10 @@ void framebufferResizeCallback(GLFWwindow* window, int width, int height) {
     rfct::renderer::getRen().getWindow().setExtent(newExtent);
     if (width == 0 && height == 0)
     {
-        rfct::reflectApplication::shouldRender = false;
+        rfct::reflectApplication::isAppMinimised = true;
     }
     else {
-        rfct::reflectApplication::shouldRender = true;
+        rfct::reflectApplication::isAppMinimised = false;
     }
 }
 

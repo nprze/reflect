@@ -35,7 +35,6 @@ namespace rfct {
 
         vk::UniqueCommandPool m_debugDrawCommandPool;
         vk::UniqueCommandBuffer m_debugDrawCommandBuffer;
-        //vk::UniqueSemaphore m_debugDrawTrigsFinishedSemaphore;
         vk::UniqueSemaphore m_debugDrawFinishedSemaphore;
 
         vk::UniqueCommandPool m_uiCommandPool;

@@ -1,5 +1,4 @@
 #include "frame_resource_manager.h"
-#include "renderer_p\frame\frame_data.h"
 #include "renderer_p\renderer.h"
 namespace rfct {
 	framesInFlight::framesInFlight()
@@ -20,10 +19,9 @@ namespace rfct {
 		cameraUbo::destroyDescriptorSetLayout();
 	}
 
-	frameData& framesInFlight::getNextFrame(frameContext* ctx)
+	frameData& framesInFlight::getNextFrame(uint32_t frame_index)
 	{
-		frameData& fc = *m_frames[m_nextFrame].get();
-		m_nextFrame = (m_nextFrame + 1) % m_frames.size();
+		frameData& fc = *m_frames[frame_index].get();
 		return fc;
 	}
 }

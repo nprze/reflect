@@ -1,16 +1,17 @@
 #include "renderer.h"
-#include "job_system_p\job_system.h"
 #include <stdint.h>
-#include "frame\frame_data.h"
-#include "world_p\scene.h"
+
+#include "job_system_p/job_system.h"
+#include "frame/frame_data.h"
+#include "world_p/scene.h"
 
 namespace rfct {
-    AssetsManager* setStaticRenderer(renderer *rendererArg, AssetsManager* assetsManager) {
+    renderer* renderer::ren = nullptr;
+    AssetsManager* setStaticRenderer(renderer *rendererArg, AssetsManager* assetsManager) { // this exists bcs the static renderer var needs to be set before the components' constructors
         renderer::ren = rendererArg;
         return assetsManager;
     }
 
-    renderer *renderer::ren = nullptr;
     SurfaceWrapper::SurfaceWrapper(vk::SurfaceKHR surfaceArg) {
         surface = surfaceArg;
     }
@@ -31,30 +32,23 @@ rfct::renderer::renderer(RFCT_RENDERER_ARGUMENTS)
     m_device.getSwapChain().createFrameBuffers();
 }
 
-void rfct::renderer::updateWindow(RFCT_NATIVE_WINDOW_ANDROID RFCT_NATIVE_WINDOW_ANDROID_VAR){
+void rfct::renderer::updateWindow(RFCT_NATIVE_WINDOW_ANDROID RFCT_NATIVE_WINDOW_ANDROID_VAR){ 
+    // surface holder change on android
 #ifdef ANDROID_BUILD
     m_window.destroyWind();
     m_window = AndroidWindow(RFCT_NATIVE_WINDOW_ANDROID_VAR);
-
     m_surface.newSurface(m_window.createSurface(getInstance()));
-
 #endif // ANDROID_BUILD
-
 };
 
 rfct::renderer::~renderer() {
     m_device.getDevice().destroyDescriptorSetLayout(cameraUbo::getDescriptorSetLayout());
 };
 
-void rfct::renderer::showWindow()
-{
-	m_window.show();
-}
-
 void rfct::renderer::render(frameContext& frameContext)
 {
     RFCT_PROFILE_FUNCTION(); 
-	frameData& frame = m_framesInFlight.getNextFrame(&frameContext);
+	frameData& frame = m_framesInFlight.getNextFrame(frameContext.frame);
     {
         RFCT_PROFILE_SCOPE("fences wait");
         frame.waitForAllFences();
@@ -71,14 +65,12 @@ void rfct::renderer::render(frameContext& frameContext)
         }
         RFCT_MARK("acquired frame");
     }
-    //RFCT_ASSERT(imageIndex == frameContext.frame);
     frame.resetAllFences();
     frame.prepareFrame(frameContext.frame);
     auto jobs = std::make_shared<rfct::jobTracker>();
     jobSystem::get().KickJob([&]() {
       m_rasterizerPipeline.recordCommandBuffer(&frameContext, frameContext.scene->getRenderData(), frame, m_device.getSwapChain().getFrameBuffer(imageIndex), imageIndex);
     }, *jobs);
-    
     jobSystem::get().KickJob([&]() {
       debugDraw::flush(&frameContext, frame, m_device.getSwapChain().getFrameBuffer(imageIndex), imageIndex);
     }, *jobs);
@@ -147,7 +139,7 @@ void rfct::renderer::setObjectName(void* objectHandle, const std::string& name, 
 
 }
 
-rfct::allocator::allocator()
+rfct::allocator::allocator() 
 {
 #ifdef ANDROID_BUILD
     VmaAllocatorCreateInfo allocatorCreateInfo = {};

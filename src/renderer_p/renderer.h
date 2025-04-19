@@ -1,23 +1,22 @@
 #pragma once
-#include "device\vulkan_instance.h"
-#include "device\vulkan_device.h"
-#include "renderer_p\rasterizer_pipeline\vulkan_rasterizer_pipeline.h"
-#include "renderer_p\frame\frame_resource_manager.h"
-#include "renderer_p\rasterizer_pipeline\vertex.h"
-#include "renderer_p\buffer\vulkan_vertex_buffer.h"
+#include "device/vulkan_instance.h"
+#include "device/vulkan_device.h"
+#include "renderer_p/rasterizer_pipeline/vulkan_rasterizer_pipeline.h"
+#include "renderer_p/frame/frame_resource_manager.h"
+#include "renderer_p/rasterizer_pipeline/vertex.h"
 #include "window.h"
 #include "platform_window.h"
-#include "renderer_p\debug\debug_draw.h"
-#include "assets\assets_manager.h"
-#include "renderer_p\UI\ui_pipeline.h"
+#include "renderer_p/debug/debug_draw.h"
+#include "assets/assets_manager.h"
+#include "renderer_p/UI/ui_pipeline.h"
 namespace rfct {
-	struct SurfaceWrapper {
+	struct SurfaceWrapper { // surface works a little bit sussy on android (this handles the calls java makes on surface holder change)
 		vk::SurfaceKHR surface;
         SurfaceWrapper(vk::SurfaceKHR surfaceArg);
         void newSurface(vk::SurfaceKHR surfaceArg);
 		~SurfaceWrapper();
 	};
-	struct allocator
+	struct allocator // vma is static on windows, dynamic on android (different setups). this is to help with the setup
 	{
 		VmaAllocator m_allocator;
 		allocator();
@@ -41,10 +40,10 @@ namespace rfct {
 		inline float getAspectRatio() { return m_window.getAspectRatio(); }
 		inline vk::CommandPool getAssetsCommandPool() { return m_AssetsCommandPool.get(); }
 		inline UIPipeline& getUIPipeline() { return m_UIPipeline; };
+
         void updateWindow(RFCT_NATIVE_WINDOW_ANDROID RFCT_NATIVE_WINDOW_ANDROID_VAR);
         renderer(RFCT_RENDERER_ARGUMENTS);
 		~renderer();
-		void showWindow();
 		void render(frameContext& frameContext);
 		void setObjectName(void* objectHandle, const std::string& name, vk::ObjectType objectType);
 	private:

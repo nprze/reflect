@@ -6,7 +6,6 @@ namespace rfct {
 	struct frameContext;
 	class scene {
 	public:
-		entity camera;
 		scene(world* worldArg);
 		~scene();
 		void onUpdate(frameContext* context);
@@ -16,15 +15,17 @@ namespace rfct {
 
 		entity createStaticMesh(std::string path, glm::vec2 size, glm::vec2 pos);
 		entity createStaticRect(staticBoxColliderComponent* bounds, glm::vec3 color = glm::vec3(1.f, 1.f, 1.f));
-		entity createDynamicRect(dynamicBoxColliderComponent* bounds, glm::vec3 color = glm::vec3(1.f, 1.f, 1.f));
 		entity createStaticRenderingEntity(std::vector<Vertex>* vertices, glm::mat4* model);
+		
+		entity createDynamicRect(dynamicBoxColliderComponent* bounds, glm::vec3 color = glm::vec3(1.f, 1.f, 1.f));
 		entity createDynamicRenderingEntity(std::vector<Vertex>* vertices, glm::mat4* model);
 		void updateTransformData(frameContext* ctx, entity entityToUpdate);
 
 
 		world* getWorld() { return m_World; }
 
-		entity sceneEntity; // root of all object in this scene
+		entity camera;
+		entity sceneEntity; // root of all objects in this scene
 	private:
 		sceneRenderData m_RenderData;
 		world* m_World;

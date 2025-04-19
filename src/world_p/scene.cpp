@@ -48,6 +48,7 @@ void rfct::scene::loadScene(std::string path)
 {
 	sceneEntity = ecs::get().entity<sceneComponent>();
 	createQueries(sceneEntity);
+
 	camera = ecs::get().entity()
 		.child_of(sceneEntity)
 		.set<position3DComponent>({ { 0.f,  0.f, 20.f} })

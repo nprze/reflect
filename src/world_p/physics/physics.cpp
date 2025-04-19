@@ -18,7 +18,6 @@ namespace rfct
     static flecs::query<gravityComponent, velocityComponent, positionComponent, dynamicBoxColliderComponent, collisionCallbackComponent> gravityVelocityPositionBoxQuery;
     static flecs::query<staticBoxColliderComponent> staticBoxColliderQuery;
     static std::vector<BVHnode> BVHnodes;
-
 }
 // Queries helper
 void rfct::createQueries(entity sceneEntity) {

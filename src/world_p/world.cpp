@@ -22,7 +22,6 @@ void rfct::world::cleanWorld()
 
 void rfct::world::onUpdate(frameContext& context)
 {
-	context.scene = m_currentScene;
 	auto jobs = std::make_shared<rfct::jobTracker>();
 	jobSystem::get().KickJob([&]() {
 		RFCT_PROFILE_SCOPE("Debug Draw");

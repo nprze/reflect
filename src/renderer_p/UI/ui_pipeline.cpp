@@ -346,7 +346,6 @@ void rfct::UIPipeline::addTextVertices(glyphsRenderData* rd , const std::string&
         cursorX += g->xadvance * scale;
     }
 
-    rd->bufferOffset;
     char* mapped = (char*)rd->buffer.Map();
     mapped += rd->bufferOffset;
     memcpy(mapped, vertices.data(), vertices.size() * sizeof(vertices[0]));

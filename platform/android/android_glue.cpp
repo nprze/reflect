@@ -14,10 +14,10 @@ void resizeCallback(int width, int height){
     rfct::renderer::getRen().getDeviceWrapper().getSwapChain().framebufferResized = true;
     if (width == 0 && height == 0)
     {
-        rfct::reflectApplication::shouldRender = false;
+        rfct::reflectApplication::isAppMinimised = true;
     }
     else {
-        rfct::reflectApplication::shouldRender = true;
+        rfct::reflectApplication::isAppMinimised = false;
     }
 
 }
@@ -32,7 +32,7 @@ static jfieldID yField;
 static jfieldID timestampField;
 extern "C" JNIEXPORT void JNICALL
 Java_reflect_mobile_reflect_MainActivity_createVulkanApp(JNIEnv *env, jobject thiz, jobject surface) {
-    if (!app) {  // Only create if it doesn't exist
+    if (!app) {  // the code is also called when the app is unminimized
         eventClass = env->FindClass("reflect/mobile/reflect/MainActivity$InputEvent");
         actionField = env->GetFieldID(eventClass, "action", "I");
         xField = env->GetFieldID(eventClass, "x", "F");
@@ -82,7 +82,7 @@ Java_reflect_mobile_reflect_MainActivity_renderNative(JNIEnv*, jobject) {
         RFCT_TRACE("Event: action={}, x={}, y={}, timestamp={}", event.action, event.x, event.y,
              event.timestamp);
     }
-    app->render();
+    app->update();
     rfct::InputQueue::eventQueue.clear();
 }
 

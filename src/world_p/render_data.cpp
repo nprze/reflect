@@ -168,8 +168,3 @@ rfct::objectLocation rfct::sceneRenderData::addDynamicObject(std::vector<Vertex>
 		objLoc.vertexBufferOffset = m_VertexBufferDynamic[i]->copyData(*vertices);
 	return objLoc;
 }
-
-void rfct::sceneRenderData::preFrame()
-{
-
-}

@@ -5,12 +5,11 @@
 #include <utils\ptr.h>
 
 namespace rfct {
-	struct frameContext;
 	class framesInFlight {
 	public:
 		framesInFlight();
 		~framesInFlight();
-		frameData& getNextFrame(frameContext* ctx);
+		frameData& getNextFrame(uint32_t frame_index);
 	private:
 		uint32_t m_nextFrame = 0;
 		std::vector<unique<frameData>> m_frames;

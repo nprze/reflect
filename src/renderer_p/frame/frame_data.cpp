@@ -75,33 +75,24 @@ void rfct::frameData::resetAllFences()
 
 vk::SubmitInfo rfct::frameData::sceneSubmitInfo(const frameContext& ctx) const
 {
-    vk::PipelineStageFlags waitStages[] = { vk::PipelineStageFlagBits::eColorAttachmentOutput };
-
-
     return vk::SubmitInfo()
         .setWaitSemaphores(m_ImageAvaibleSemaphore.get())
-        .setWaitDstStageMask(waitStages)
         .setCommandBuffers(m_sceneCommandBuffer.get())
         .setSignalSemaphores(m_sceneFinishedSemaphore.get());
 }
 vk::SubmitInfo rfct::frameData::debugDrawSubmitInfo(const frameContext& ctx) const
 {
-    vk::PipelineStageFlags waitStages[] = { vk::PipelineStageFlagBits::eColorAttachmentOutput };
     RFCT_ASSERT(ctx.renderDebugDraw);
     return vk::SubmitInfo()
         .setWaitSemaphores(m_sceneFinishedSemaphore.get())
-        .setWaitDstStageMask(waitStages)
         .setCommandBuffers(m_debugDrawCommandBuffer.get())
         .setSignalSemaphores(m_debugDrawFinishedSemaphore.get());
 }
 
 vk::SubmitInfo rfct::frameData::uiSubmitInfo(const frameContext& ctx) const
 {
-    vk::PipelineStageFlags waitStages[] = { vk::PipelineStageFlagBits::eColorAttachmentOutput };
-
     return vk::SubmitInfo()
         .setWaitSemaphores((ctx.renderDebugDraw ? m_debugDrawFinishedSemaphore.get() : m_sceneFinishedSemaphore.get()))
-        .setWaitDstStageMask(waitStages)
         .setCommandBuffers(m_uiCommandBuffer.get())
         .setSignalSemaphores(m_renderFinishedSemaphore.get());
 }

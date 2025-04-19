@@ -1,33 +1,35 @@
 #include "app.h"
-#include "renderer_p\renderer.h"
-#include "assets\assets_manager.h"
 #include "world_p\world.h"
-std::string rfct::reflectApplication::AssetsDirectory;
-bool rfct::reflectApplication::shouldRender;
 
-rfct::reflectApplication::reflectApplication(RFCT_NATIVE_WINDOW_ANDROID RFCT_NATIVE_WINDOW_ANDROID_VAR):
+std::string rfct::reflectApplication::AssetsDirectory;
+bool rfct::reflectApplication::isAppMinimised;
+
+rfct::reflectApplication::reflectApplication(RFCT_APP_ARGS):
 m_AssetsManager(AssetsDirectory), m_Renderer(RFCT_RENDERER_ARGUMENTS_VAR)
 {
-	registerComponents();
-	world::getWorld().loadScene("");
-    shouldRender = true;
+	// app init
+	isAppMinimised = false;
 	input::setInput(&m_Input);
+	registerComponents();
+
+
+	world::getWorld().loadScene("");
 #ifdef WINDOWS_BUILD
     update();
-	renderer::getRen().showWindow();
+	renderer::getRen().getWindow().show();
 	while (renderer::getRen().getWindow().pollEvents())
 	{
 		update();
 	}
 #endif
 }
-void rfct::reflectApplication::updateWindow(RFCT_NATIVE_WINDOW_ANDROID RFCT_NATIVE_WINDOW_ANDROID_VAR){
+void rfct::reflectApplication::updateWindow(RFCT_APP_ARGS){
     m_Renderer.updateWindow(RFCT_NATIVE_WINDOW_ANDROID_VAR);
 };
 rfct::reflectApplication::~reflectApplication()
 {
-	renderer::getRen().getDevice().waitIdle();
 	RFCT_TRACE("app cleanup start");
+	renderer::getRen().getDevice().waitIdle();
 	world::getWorld().cleanWorld();
 }
 
@@ -40,11 +42,11 @@ void rfct::reflectApplication::update() {
 	frameContext context = {
 		.dt = deltaTime.count(),
 		.frame = currentFrame,
-		.scene = nullptr,
+		.scene = &world::getWorld().getCurrentScene(),
 	};
 
 	m_Input.pollEvents();
-	if (shouldRender) {
+	if (!isAppMinimised) {
 		updateGameplay(context);
 		renderer::getRen().render(context);
 	};

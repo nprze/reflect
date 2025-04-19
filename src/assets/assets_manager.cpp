@@ -1,11 +1,12 @@
 #include "assets_manager.h"
 #include "app.h"
-#include "stb_image\stb_image.h"
+#include "stb_image/stb_image.h"
+#include <fstream>
 
 #include "renderer_p/shader/vulkan_shader.h"
-#include "renderer_p\image\image.h"
-#include "renderer_p\UI\font\font.h"
-#include "renderer_p\mesh\mesh.h"
+#include "renderer_p/image/image.h"
+#include "renderer_p/UI/font/font.h"
+#include "renderer_p/mesh/mesh.h"
 
 namespace rfct {
     AssetsManager::AssetsManager(std::string path){
@@ -16,9 +17,11 @@ namespace rfct {
             m_Path = std::string(RFCT_ASSETS_DIR);
         }
     }
+
     AssetsManager::~AssetsManager()
     {
     }
+
     void AssetsManager::loadVulkanShader(std::string path, vulkanShader* shaderOut){
         std::string finalPath = m_Path+"/"+path;
         std::ifstream file(finalPath,std::ios::binary | std::ios::ate);
