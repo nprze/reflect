@@ -1,12 +1,12 @@
 #include "camera.h"
 
-#include "renderer_p\renderer.h"
-#include "world_p\world.h"
+#include "renderer_p/renderer.h"
+#include "world_p/world.h"
 #include "glm/gtc/matrix_transform.hpp"
 #define GLM_ENABLE_EXPERIMENTAL
 #include "glm/gtx/euler_angles.hpp"
-#include "world_p\components.h"
-#include "world_p\ecs.h"
+#include "world_p/components.h"
+#include "world_p/ecs.h"
 #include "input.h"
 namespace rfct {
 	static entity cameraEntity;

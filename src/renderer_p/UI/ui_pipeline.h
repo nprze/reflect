@@ -1,10 +1,11 @@
 #pragma once
-#include "renderer_p\shader\vulkan_shader.h"
-#include "renderer_p\frame\frame_data.h"
-#include "font\font.h"
+#include "renderer_p/shader/vulkan_shader.h"
+#include "renderer_p/frame/frame_data.h"
+#include "font/font.h"
+
 namespace rfct {
 	struct glyphsRenderData {
-		inline glyphsRenderData(uint32_t size, vk::BufferUsageFlags usage, VmaMemoryUsage memoryUsage) :buffer(size, usage, memoryUsage), bufferOffset(0), vertexCount(0) {
+		inline glyphsRenderData(uint32_t size) :buffer(size, vk::BufferUsageFlagBits::eVertexBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU), bufferOffset(0), vertexCount(0) {
  			bufferMappedMemory = buffer.Map();
 		};
 		inline ~glyphsRenderData() { buffer.Unmap(); };
@@ -22,9 +23,9 @@ namespace rfct {
 		void createPipeline();
 		void createRenderPass();
 		void createDescriptorSet();
-		void draw(frameData& fd, vk::Framebuffer framebuffer, uint32_t imageIndex);
+		void draw(frameData& fd, vk::Framebuffer framebuffer);
 		void debugText(const std::string& text, glm::vec2 startPosition, float scale);
-		void addTextVertices(glyphsRenderData* rd, const std::string& text, glm::vec2 position, float scale);
+		void addTextVertices(glyphsRenderData* rd, const std::string& text, glm::vec2 position, float scale, font* f = nullptr);
 		vk::DescriptorSetLayout getDescriptorSetLayout();
 	private:
 		vulkanShader m_vertexShader;

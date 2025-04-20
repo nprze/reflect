@@ -1,6 +1,6 @@
-#include "per_frame_descriptors.h"
-#include "renderer_p\renderer.h"
-#include "renderer_p\descriptors\camera_ubo.h"
+#include "camera_descriptors.h"
+#include "renderer_p/renderer.h"
+#include "renderer_p/descriptors/camera_ubo.h"
 
 rfct::descriptors::descriptors(uint32_t size)
 {

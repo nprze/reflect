@@ -1,6 +1,6 @@
 #include "camera_ubo.h"
-#include "vma\vk_mem_alloc.h"
-#include "renderer_p\renderer.h"
+#include "vma/vk_mem_alloc.h"
+#include "renderer_p/renderer.h"
 
 vk::DescriptorSetLayout rfct::cameraUbo::m_descriptorSetLayout;
 
@@ -41,5 +41,5 @@ vk::DescriptorSetLayout rfct::cameraUbo::getDescriptorSetLayout()
 
 void rfct::cameraUbo::destroyDescriptorSetLayout()
 {
-    //renderer::getRen().getDevice().destroyDescriptorSetLayout(m_descriptorSetLayout);
+    renderer::getRen().getDevice().destroyDescriptorSetLayout(m_descriptorSetLayout);
 }

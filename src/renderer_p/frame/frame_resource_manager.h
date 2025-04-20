@@ -1,8 +1,5 @@
 #pragma once
-#include <vulkan\vulkan.hpp>
-#include "renderer_p\frame\frame_data.h"
-#include <vma\vk_mem_alloc.h>
-#include <utils\ptr.h>
+#include "renderer_p/frame/frame_data.h"
 
 namespace rfct {
 	class framesInFlight {

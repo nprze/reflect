@@ -1,9 +1,9 @@
 #pragma once
-#include "renderer_p\shader\vulkan_shader.h"
-#include "renderer_p\frame\frame_data.h"
+#include "renderer_p/shader/vulkan_shader.h"
 #include "context.h"
 namespace rfct {
 	class sceneRenderData;
+	class frameData;
 	class vulkanRasterizerPipeline
 	{
 	public:
@@ -11,7 +11,7 @@ namespace rfct {
 		~vulkanRasterizerPipeline();
 		void createPipeline();
 		void createRenderPass();
-		void recordCommandBuffer(frameContext* ctx, const sceneRenderData& renderdata, frameData& frameData, vk::Framebuffer framebuffer, uint32_t imageIndex);
+		void recordCommandBuffer(frameContext* ctx, frameData& frameData, vk::Framebuffer framebuffer);
 		vk::RenderPass getRenderPass() { return m_renderPass.get(); }
 	private:
 		vulkanShader m_vertexShader;

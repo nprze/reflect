@@ -147,7 +147,11 @@ namespace rfct {
 	}
 
 
-	vulkanDevice::vulkanDevice() :m_physicalDevice(chooseBestPhysicalDevice()), m_device(createDevice(m_physicalDevice)), m_queueManager(m_device.get(), m_physicalDevice), m_swapChain(m_device.get(), renderer::getRen().getSurface(), m_physicalDevice, renderer::getRen().getWindow().getExtent())
+	vulkanDevice::vulkanDevice() :
+		m_physicalDevice(chooseBestPhysicalDevice()), 
+		m_device(createDevice(m_physicalDevice)), 
+		m_queueManager(m_device.get(), m_physicalDevice), 
+		m_swapChain(m_device.get(), m_physicalDevice, renderer::getRen().getWindow().getExtent())
 	{
 		std::string deviceNameStr = m_physicalDevice.getProperties().deviceName;
 		RFCT_TRACE("Physical device chosen: {}", deviceNameStr);

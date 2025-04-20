@@ -2,7 +2,7 @@
 #include "scene.h"
 #include "transform.h"
 #include "input.h"
-#include "flecs\flecs.h"
+#include "flecs/flecs.h"
 #include "ecs.h"
 namespace rfct {
 	void registerComponents()

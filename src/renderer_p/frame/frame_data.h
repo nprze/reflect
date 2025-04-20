@@ -1,10 +1,8 @@
 #pragma once
-#include <vulkan\vulkan.hpp>
-#include <vma\vk_mem_alloc.h>
-#include "renderer_p\descriptors\camera_ubo.h"
-#include "renderer_p\descriptors\per_frame_descriptors.h"
-#include "world_p\camera\camera.h"
+#include "renderer_p/descriptors/camera_ubo.h"
+#include "renderer_p/descriptors/camera_descriptors.h"
 #include "context.h"
+
 namespace rfct {
 
     class frameData {
@@ -14,19 +12,15 @@ namespace rfct {
 
 		void prepareFrame(uint32_t BufferIndex);
 
-        void waitForAllFences();
-        void resetAllFences();
+        void waitForFences();
+        void resetFences();
 		vk::DescriptorSet& getCameraUboDescSet(uint32_t BufferIndex) { return m_descriptors.getCameraDescSet(BufferIndex); }
-		vk::DescriptorSet& getUICameraUboDescSet() { return m_UIcameradescriptors.getCameraDescSet(); }
+		vk::DescriptorSet& getUICameraUboDescSet() { return m_UIcameradescriptors.getCameraDescSet(0); }
 
         vk::SubmitInfo sceneSubmitInfo(const frameContext& ctx) const;
         vk::SubmitInfo debugDrawSubmitInfo(const frameContext& ctx) const;
         vk::SubmitInfo uiSubmitInfo(const frameContext& ctx) const;
-
-
-        vk::Device m_device;
-        VmaAllocator& m_allocator;
-
+    private:
         vk::UniqueCommandPool m_sceneCommandPool;
         vk::UniqueCommandBuffer m_sceneCommandBuffer;
         vk::UniqueSemaphore m_sceneFinishedSemaphore;
@@ -47,7 +41,7 @@ namespace rfct {
 		vk::Fence m_lastFrameRenderFinishedFence;
 
 		std::array<cameraUbo, RFCT_FRAMES_IN_FLIGHT> m_cameraUbo;
-		cameraUbo m_UIcameraUbo;
+		cameraUbo m_UIcameraUbo; // one bcs when windows get resized, device waits idle anyway
 
 		descriptors m_descriptors;
 		descriptors m_UIcameradescriptors;
@@ -56,5 +50,6 @@ namespace rfct {
         friend class renderer;
         friend class debugDraw;
         friend class UIPipeline;
+        friend class vulkanRasterizerPipeline;
     };
 } // namespace rfct

@@ -1,9 +1,10 @@
 #include "frame_data.h"
-#include "renderer_p\renderer.h"
-#include "world_p\components.h"
+#include "renderer_p/renderer.h"
+#include "world_p/components.h"
 #include "glm/gtc/matrix_transform.hpp"
 #define GLM_ENABLE_EXPERIMENTAL
 #include "glm/gtx/euler_angles.hpp"
+#include "world_p/camera/camera.h"
 
 
 inline static glm::mat4 getUIMatrix() {
@@ -15,7 +16,7 @@ inline static glm::mat4 getUIMatrix() {
 }
 
 rfct::frameData::frameData(vk::Device device, VmaAllocator& allocator, vk::Fence lastFramePresentFinishedFence, vk::Fence thisFramePresentFinishedFence)
-    : m_device(device), m_allocator(allocator), m_lastFrameRenderFinishedFence(lastFramePresentFinishedFence), m_thisFrameRenderFinishedFence(thisFramePresentFinishedFence), m_descriptors(RFCT_FRAMES_IN_FLIGHT) {
+    : m_lastFrameRenderFinishedFence(lastFramePresentFinishedFence), m_thisFrameRenderFinishedFence(thisFramePresentFinishedFence), m_descriptors(RFCT_FRAMES_IN_FLIGHT) {
 
     vk::CommandPoolCreateInfo poolInfo{
         vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
@@ -51,7 +52,7 @@ rfct::frameData::frameData(vk::Device device, VmaAllocator& allocator, vk::Fence
 	{
         m_descriptors.bindCameraUbo(m_cameraUbo[i].getBuffer(), i);
 	}
-	m_UIcameradescriptors.bindCameraUbo(m_UIcameraUbo.getBuffer());
+	m_UIcameradescriptors.bindCameraUbo(m_UIcameraUbo.getBuffer(), 0);
 
 }
 
@@ -61,16 +62,16 @@ void rfct::frameData::prepareFrame(uint32_t BufferIndex)
     m_UIcameraUbo.updateViewProj(getUIMatrix());
 }
 
-void rfct::frameData::waitForAllFences()
+void rfct::frameData::waitForFences()
 {
     RFCT_PROFILE_SCOPE("fences wait");
-    RFCT_VULKAN_CHECK(m_device.waitForFences(1, &m_thisFrameRenderFinishedFence, VK_TRUE, UINT64_MAX));
+    RFCT_VULKAN_CHECK(renderer::getRen().getDevice().waitForFences(1, &m_thisFrameRenderFinishedFence, VK_TRUE, UINT64_MAX));
 }
 
-void rfct::frameData::resetAllFences()
+void rfct::frameData::resetFences()
 {
     RFCT_PROFILE_SCOPE("fences reset");
-    RFCT_VULKAN_CHECK(m_device.resetFences(1, &m_thisFrameRenderFinishedFence));
+    RFCT_VULKAN_CHECK(renderer::getRen().getDevice().resetFences(1, &m_thisFrameRenderFinishedFence));
 }
 
 vk::SubmitInfo rfct::frameData::sceneSubmitInfo(const frameContext& ctx) const

@@ -1,6 +1,7 @@
 #include "vulkan_swap_chain.h"
-#include "renderer_p\renderer.h"
-rfct::vulkanSwapChain::vulkanSwapChain(vk::Device device, vk::SurfaceKHR surface, vk::PhysicalDevice physicalDevice, vk::Extent2D windowExtent)
+#include "renderer_p/renderer.h"
+
+rfct::vulkanSwapChain::vulkanSwapChain(vk::Device device, vk::PhysicalDevice physicalDevice, vk::Extent2D windowExtent)
     : m_device(device), m_physicalDevice(physicalDevice), m_windowExtent(windowExtent)
 {
     createSwapChain();
@@ -26,12 +27,11 @@ void rfct::vulkanSwapChain::createSwapChain()
     }
     m_surfaceFormat = chosenSurfaceFormat;
     vk::PresentModeKHR  chosenPresentMode = vk::PresentModeKHR::eFifo;
-#ifdef WIN32
+#ifdef WINDOWS_BUILD
     for (vk::PresentModeKHR mode : presentModes) {
         if (mode == vk::PresentModeKHR::eMailbox)  chosenPresentMode = vk::PresentModeKHR::eMailbox;
-
     }
-#endif // WIN32
+#endif // WINDOWS_BUILD
     RFCT_TRACE("Choosen swap chain present mode: {0}", chosenPresentMode == vk::PresentModeKHR::eMailbox? "Mailbox": "Fifo");
     m_swapChainExtent = capabilities.currentExtent;
     vk::SwapchainCreateInfoKHR swapChainCreateInfo = {};
@@ -133,7 +133,6 @@ uint32_t rfct::vulkanSwapChain::acquireNextImage(const vk::Semaphore& semaphore,
     if (result.result != vk::Result::eSuccess)
     {
         RFCT_CRITICAL("Failed to acquire swap chain image!");
-        throw std::runtime_error("Failed to acquire swap chain image!");
     }
 
     return result.value;

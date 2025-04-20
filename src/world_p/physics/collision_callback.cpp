@@ -1,5 +1,5 @@
 #include "collision_callback.h"
-#include "world_p\components.h"
+#include "world_p/components.h"
 
 void rfct::onCollision_Player_StaticObj(entity player, entity collidedWith, glm::vec2 resolution)
 {

@@ -100,6 +100,6 @@ extern "C"
 JNIEXPORT void JNICALL
 Java_reflect_mobile_reflect_MainActivity_readAndCopyFile(JNIEnv *env, jobject thiz, jstring dirPath) {
     const char *cDirPath = env->GetStringUTFChars(dirPath, nullptr);
-    rfct::reflectApplication::AssetsDirectory = std::string(cDirPath);
+    AssetsManager::get().init(std::string(cDirPath));
     env->ReleaseStringUTFChars(dirPath, cDirPath);
 }

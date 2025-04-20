@@ -1,7 +1,8 @@
 #include "input.h"
-#include "renderer_p\renderer.h"
-#include "glm\glm.hpp"
+#include <glm/glm.hpp>
+#include "renderer_p/renderer.h"
 #include "android_glue.h"
+
 namespace rfct {
     struct button{
         glm::vec2 min;
@@ -9,14 +10,17 @@ namespace rfct {
     };
 
     button buttons[2];
-    input* input::s_input;
-    input::input():xAxis(0), yAxis(0), zAxis(0), cameraXAxis(0), cameraYAxis(0), cameraZAxis(0), windowExtent(renderer::getRen().getWindow().extent)
+    input input::s_input;
+    input::input():xAxis(0), yAxis(0), zAxis(0), cameraXAxis(0), cameraYAxis(0), cameraZAxis(0), windowExtent(nullptr)
     {
-        s_input = this;
-        buttons[0].min = {0,0};
-        buttons[0].max = {windowExtent.width/2,windowExtent.height};
-        buttons[1].min = {windowExtent.width/2,0};
-        buttons[1].max = {windowExtent.width,windowExtent.height};
+    }
+    void input::init() {
+        windowExtent = &(renderer::getRen().getWindow().extent);
+        vk::Extent2D ext = *windowExtent;
+        buttons[0].min = { 0,0 };
+        buttons[0].max = { ext.width / 2,ext.height };
+        buttons[1].min = { ext.width / 2,0 };
+        buttons[1].max = { ext.width,ext.height };
     }
     void input::pollEvents() {
         xAxis=0;

@@ -9,17 +9,21 @@
 #include "renderer_p/mesh/mesh.h"
 
 namespace rfct {
-    AssetsManager::AssetsManager(std::string path){
-        if (path.length()!=0) {
-            m_Path = path;
-            return;
-        }else{
-            m_Path = std::string(RFCT_ASSETS_DIR);
-        }
+    AssetsManager AssetsManager::instance;
+
+    void AssetsManager::init(std::string path)
+    {
+#ifdef WINDOWS_BUILD
+        m_Path = std::string(RFCT_ASSETS_DIR);
+#else
+        // android
+        m_Path = path;
+#endif // WINDOWS_BUILD
     }
 
-    AssetsManager::~AssetsManager()
+    void AssetsManager::cleanup()
     {
+        renderer::getRen().getDevice().destroyCommandPool(m_AssetsCommandPool);
     }
 
     void AssetsManager::loadVulkanShader(std::string path, vulkanShader* shaderOut){
@@ -91,7 +95,10 @@ namespace rfct {
         }
 
         // Allocate command buffer
-        vk::CommandBufferAllocateInfo allocInfo(renderer::getRen().getAssetsCommandPool(), vk::CommandBufferLevel::ePrimary, 1);
+        if (!m_AssetsCommandPool){
+            m_AssetsCommandPool = renderer::getRen().getDevice().createCommandPool({ {}, renderer::getRen().getDeviceWrapper().getQueueManager().getGraphicsQueueFamilyIndex() });
+        }
+        vk::CommandBufferAllocateInfo allocInfo(m_AssetsCommandPool, vk::CommandBufferLevel::ePrimary, 1);
         vk::CommandBuffer commandBuffer = renderer::getRen().getDevice().allocateCommandBuffers(allocInfo)[0];
 
         vk::CommandBufferBeginInfo beginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
@@ -110,7 +117,7 @@ namespace rfct {
         renderer::getRen().getDeviceWrapper().getQueueManager().submitGraphics(submitInfo, fence);
 		RFCT_VULKAN_CHECK(renderer::getRen().getDevice().waitForFences(fence, VK_TRUE, UINT64_MAX));
 
-        renderer::getRen().getDevice().freeCommandBuffers(renderer::getRen().getAssetsCommandPool(), commandBuffer);
+        renderer::getRen().getDevice().freeCommandBuffers(m_AssetsCommandPool, commandBuffer);
         vmaDestroyBuffer(renderer::getRen().getAllocator(), static_cast<VkBuffer>(stagingBuffer), stagingBufferAllocation);
 		renderer::getRen().getDevice().destroyFence(fence);
 
@@ -134,8 +141,8 @@ namespace rfct {
             if (line.rfind("char id=", 0) == 0) {
                 std::istringstream stream(line);
                 std::string key;
-                int id;
-                glyph g;
+                int id = -1;
+                glyph g{};
                 while (stream >> key) {
                     if (key.find("id=") == 0) id = std::stoi(key.substr(3));
                     else if (key.find("x=") == 0) g.x = std::stof(key.substr(2));

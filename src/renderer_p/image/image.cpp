@@ -1,9 +1,11 @@
 #include "image.h"
+
 #include "renderer_p/renderer.h"
+#include "assets/assets_manager.h"
 
 rfct::image::image(const std::string& path)
 {
-	renderer::getRen().getAssetsManager()->loadImage(path, this);
+    AssetsManager::get().loadImage(path, this);
 }
 
 rfct::image::~image()

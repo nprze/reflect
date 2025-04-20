@@ -1,9 +1,11 @@
 #include "debug_draw.h"
+
 #include "sizes.h"
-#include "renderer_p\renderer.h"
+#include "renderer_p/renderer.h"
+
 rfct::debugDraw* rfct::debugDraw::instance;
 
-rfct::debugDraw::debugDraw() :m_triangleBuffer(RFCT_DEBUG_DRAW_VERTEX_BUFFER_MAX_SIZE, vk::BufferUsageFlagBits::eVertexBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU), m_lineBuffer(RFCT_DEBUG_DRAW_VERTEX_BUFFER_MAX_SIZE, vk::BufferUsageFlagBits::eVertexBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU), m_vertexShader("shaders/debug_draw/dbg_draw_vert.spv"), m_fragShader("shaders/debug_draw/dbg_draw_frag.spv")
+rfct::debugDraw::debugDraw() :m_triangleBuffer(RFCT_DEBUG_DRAW_VERTEX_BUFFER_MAX_SIZE), m_lineBuffer(RFCT_DEBUG_DRAW_VERTEX_BUFFER_MAX_SIZE), m_vertexShader("shaders/debug_draw/dbg_draw_vert.spv"), m_fragShader("shaders/debug_draw/dbg_draw_frag.spv")
 {
     createPipelines();
 	instance = this;
@@ -196,9 +198,9 @@ rfct::debugDraw::~debugDraw()
 {
 }
 
-void rfct::debugDraw::draw(frameContext* ctx, frameData& fd, vk::Framebuffer framebuffer, uint32_t imageIndex)
+void rfct::debugDraw::draw(frameContext* ctx, frameData& fd, vk::Framebuffer framebuffer)
 {
-    
+    RFCT_PROFILE_FUNCTION();
 	if (m_triangleBuffer.vertexCount == 0 && m_lineBuffer.vertexCount == 0)
 	{
         ctx->renderDebugDraw = false;
@@ -206,14 +208,9 @@ void rfct::debugDraw::draw(frameContext* ctx, frameData& fd, vk::Framebuffer fra
 	}
     ctx->renderDebugDraw = true;
     vk::CommandBuffer commandBuffer = fd.m_debugDrawCommandBuffer.get();
-    {
-        RFCT_PROFILE_SCOPE("begin command buffer");
-        commandBuffer.reset({});
-        vk::CommandBufferBeginInfo beginInfo = {};
-        commandBuffer.begin(beginInfo);
-    }
-
-
+    commandBuffer.reset({});
+    vk::CommandBufferBeginInfo beginInfo = {};
+    commandBuffer.begin(beginInfo);
 
     vk::RenderPassBeginInfo renderPassInfo = {};
     renderPassInfo.renderPass = m_debugDrawRenderPass.get();
@@ -244,6 +241,7 @@ void rfct::debugDraw::draw(frameContext* ctx, frameData& fd, vk::Framebuffer fra
     // Camera Descriptor
     commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_PipelineLayout.get(), 0, fd.getCameraUboDescSet((uint32_t)(ctx->frame)), {});
 
+    // Debug trigs
     if(m_triangleBuffer.vertexCount!=0){
         commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, m_trianglePipeline.get());
 
@@ -256,6 +254,7 @@ void rfct::debugDraw::draw(frameContext* ctx, frameData& fd, vk::Framebuffer fra
     }
 
 
+    // Debug lines
     if (m_lineBuffer.vertexCount != 0) {
 
         commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, m_linePipeline.get());
@@ -270,10 +269,7 @@ void rfct::debugDraw::draw(frameContext* ctx, frameData& fd, vk::Framebuffer fra
     }
     commandBuffer.endRenderPass();
 
-    {
-        RFCT_PROFILE_SCOPE("end command buffer");
-        commandBuffer.end();
-    }
+    commandBuffer.end();
 	m_triangleBuffer.postFrame();
 	m_lineBuffer.postFrame();
 }

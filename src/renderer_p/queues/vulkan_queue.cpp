@@ -1,10 +1,7 @@
 #include "vulkan_queue.h"
-#include "vulkan/vulkan.hpp"
 #include <iostream>
 #include <sstream>
-#include <set>
-#include <string>
-#include "renderer_p\renderer.h"
+#include "renderer_p/renderer.h"
 
 // Helper function
 std::string queueFlagsToString(vk::QueueFlags queueFlags) {
@@ -25,19 +22,6 @@ std::string queueFlagsToString(vk::QueueFlags queueFlags) {
     if (queueFlags & vk::QueueFlagBits::eProtected) {
         flagNames.push_back("Protected");
     }
-#ifdef VK_ENABLE_BETA_EXTENSIONS
-    if (queueFlags & vk::QueueFlagBits::eVideoDecodeKHR) {
-        flagNames.push_back("Video Decode");
-    }
-    if (queueFlags & vk::QueueFlagBits::eVideoEncodeKHR) {
-        flagNames.push_back("Video Encode");
-    }
-#endif
-#ifdef VK_NV_OPTICAL_FLOW_EXTENSION_NAME
-    if (queueFlags & vk::QueueFlagBits::eOpticalFlowNV) {
-        flagNames.push_back("Optical Flow");
-    }
-#endif
 
     if (flagNames.empty()) {
         return "{}";
@@ -59,36 +43,37 @@ std::string queueFlagsToString(vk::QueueFlags queueFlags) {
 std::array<uint32_t, 3> rfct::selectQueueFamilies(vk::PhysicalDevice physicalDevice) {
     std::vector<vk::QueueFamilyProperties> queueFamilies = physicalDevice.getQueueFamilyProperties();
 
-    std::tuple<int, uint32_t> graphicsAndPresentFamily = { -1, 0 };
-    std::tuple<int, uint32_t> computeFamily = { -1, 0 };
-    std::tuple<int, uint32_t> transferFamily = { -1, 0 };
+    std::pair<int, uint32_t> graphicsAndPresentFamily = { -1, 0 };
+    std::pair<int, uint32_t> computeFamily = { -1, 0 };
+    std::pair<int, uint32_t> transferFamily = { -1, 0 };
 
+    // give priority to queue families with more queue count
     for (uint32_t i = 0; i < queueFamilies.size(); ++i) {
         uint32_t queueCount = queueFamilies[i].queueCount;
         vk::QueueFlags flags = queueFamilies[i].queueFlags;
         bool supportsPresent = physicalDevice.getSurfaceSupportKHR(i, renderer::getRen().getSurface());
 
         if ((flags & vk::QueueFlagBits::eGraphics) && supportsPresent) {
-            if (queueCount > std::get<1>(graphicsAndPresentFamily)) {
+            if (queueCount > (graphicsAndPresentFamily.second)) {
                 graphicsAndPresentFamily = { i, queueCount };
             }
         }
         else if ((flags & vk::QueueFlagBits::eCompute) && !(flags & vk::QueueFlagBits::eGraphics)) {
-            if (queueCount > std::get<1>(computeFamily)) {
+            if (queueCount > (computeFamily.second)) {
                 computeFamily = { i, queueCount };
             }
         }
         else if ((flags & vk::QueueFlagBits::eTransfer) && !(flags & vk::QueueFlagBits::eGraphics) && !(flags & vk::QueueFlagBits::eCompute)) {
-            if (queueCount > std::get<1>(transferFamily)) {
+            if (queueCount > (transferFamily.second)) {
                 transferFamily = { i, queueCount };
             }
         }
     }
 
     return {
-        static_cast<uint32_t>(std::get<0>(graphicsAndPresentFamily)),
-        static_cast<uint32_t>(std::get<0>(computeFamily)),
-        static_cast<uint32_t>(std::get<0>(transferFamily))
+        static_cast<uint32_t>(graphicsAndPresentFamily.first),
+        static_cast<uint32_t>(computeFamily.first),
+        static_cast<uint32_t>(transferFamily.first)
     };
 }
 
@@ -106,21 +91,17 @@ rfct::vulkanQueueManager::vulkanQueueManager(vk::Device device, vk::PhysicalDevi
 }
 
 rfct::vulkanQueueManager::~vulkanQueueManager() {
-    // No threads to stop, so nothing to do here.
 }
 
 void rfct::vulkanQueueManager::submitGraphics(const vk::SubmitInfo& submitInfo, vk::Fence fence) {
-    std::lock_guard<std::mutex> lock(m_graphicsMutex);
     m_graphicsQueue.submit(submitInfo, fence);
 }
 
 
 void rfct::vulkanQueueManager::submitCompute(const vk::SubmitInfo& submitInfo, vk::Fence fence) {
-    // Directly submit to the compute queue
     m_computeQueue.submit(submitInfo, fence);
 }
 
 void rfct::vulkanQueueManager::submitTransfer(const vk::SubmitInfo& submitInfo, vk::Fence fence) {
-    // Directly submit to the transfer queue
     m_transferQueue.submit(submitInfo, fence);
 }

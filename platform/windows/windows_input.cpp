@@ -1,12 +1,15 @@
 #include "input.h"
-#include "renderer_p\renderer.h"
+#include "renderer_p/renderer.h"
 namespace rfct {
-	input* input::s_input;
+	input input::s_input;
 	GLFWwindow* window = nullptr;
-	input::input():xAxis(0), yAxis(0), zAxis(0), cameraXAxis(0), cameraYAxis(0), cameraZAxis(0), windowExtent(renderer::getRen().getWindow().extent)
+	input::input() :xAxis(0), yAxis(0), zAxis(0), cameraXAxis(0), cameraYAxis(0), cameraZAxis(0), windowExtent(nullptr)
 	{
+	}
+	void input::init()
+	{
+		windowExtent = &(renderer::getRen().getWindow().extent);
 		window = renderer::getRen().getWindow().GetHandle();
-		s_input = this;
 	}
 	void input::pollEvents() {
 		glfwPollEvents();

@@ -1,29 +1,12 @@
-#include "renderer_p\renderer.h"
 #include "ui_pipeline.h"
 
+#include "renderer_p/renderer.h"
 
-rfct::UIPipeline::UIPipeline() : m_vertexShader("shaders/UI/text_vert.spv"), m_fragShader("shaders/UI/text_frag.spv"), m_glyphsRenderData(RFCT_DEBUG_DRAW_VERTEX_BUFFER_MAX_SIZE, vk::BufferUsageFlagBits::eVertexBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU), m_debugDrawglyphsRenderData(RFCT_DEBUG_DRAW_VERTEX_BUFFER_MAX_SIZE, vk::BufferUsageFlagBits::eVertexBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU), m_defaultFont("fonts/jetbrainsMono-medium.txt")
+
+rfct::UIPipeline::UIPipeline() : m_vertexShader("shaders/UI/text_vert.spv"), m_fragShader("shaders/UI/text_frag.spv"), m_glyphsRenderData(RFCT_DEBUG_DRAW_VERTEX_BUFFER_MAX_SIZE), m_debugDrawglyphsRenderData(RFCT_DEBUG_DRAW_VERTEX_BUFFER_MAX_SIZE), m_defaultFont("fonts/jetbrainsMono-medium.txt")
 {
     createPipeline();
     createDescriptorSet();
-    /*GlyphVertex square[] = {
-        // Bottom-left triangle
-        { {-0.5f, -0.5f}, {0.0f, 0.0f} }, // Bottom-left
-        { { 0.0f, -0.5f}, {1.0f, 0.0f} }, // Bottom-right
-        { { 0.0f,  0.0f}, {1.0f, 1.0f} }, // Top-right
-
-        // Top-right triangle
-        { {-0.5f, -0.5f}, {0.0f, 0.0f} }, // Bottom-left
-        { { 0.0f,  0.0f}, {1.0f, 1.0f} }, // Top-right
-        { {-0.5f,  0.0f}, {0.0f, 1.0f} }  // Top-left
-    };
-
-    m_glyphsRenderData.buffer.CopyData((void*)square, sizeof(GlyphVertex)*6);
-    m_glyphsRenderData.vertexCount = 6;*/
-    //std::string what = "I want to go home";
-    //addTextVertices(&m_glyphsRenderData,what, glm::vec2(0, 0), 0.3);
-    //std::string what1 = "hallo :3";
-    //addTextVertices(&m_glyphsRenderData,what1, glm::vec2(0, 25), 0.3);
 }
 
 rfct::UIPipeline::~UIPipeline()
@@ -233,22 +216,18 @@ void rfct::UIPipeline::createDescriptorSet()
 
 
 
-void rfct::UIPipeline::draw(frameData& fd, vk::Framebuffer framebuffer, uint32_t imageIndex)
+void rfct::UIPipeline::draw(frameData& fd, vk::Framebuffer framebuffer)
 {
-
+    RFCT_PROFILE_FUNCTION();
     if (m_glyphsRenderData.vertexCount == 0 && m_debugDrawglyphsRenderData.vertexCount == 0)
     {
         return;
     }
     vk::CommandBuffer commandBuffer = fd.m_uiCommandBuffer.get();
-    {
-        RFCT_PROFILE_SCOPE("begin command buffer");
-        commandBuffer.reset({});
-        vk::CommandBufferBeginInfo beginInfo = {};
-        commandBuffer.begin(beginInfo);
-    }
 
-
+    commandBuffer.reset({});
+    vk::CommandBufferBeginInfo beginInfo = {};
+    commandBuffer.begin(beginInfo);
 
     vk::RenderPassBeginInfo renderPassInfo = {};
     renderPassInfo.renderPass = m_UIRenderPass.get();
@@ -298,10 +277,7 @@ void rfct::UIPipeline::draw(frameData& fd, vk::Framebuffer framebuffer, uint32_t
     }
     commandBuffer.endRenderPass();
 
-    {
-        RFCT_PROFILE_SCOPE("end command buffer UI");
-        commandBuffer.end();
-    }
+    commandBuffer.end();
     m_debugDrawglyphsRenderData.postFrame();
 }
 
@@ -310,8 +286,10 @@ void rfct::UIPipeline::debugText(const std::string& text, glm::vec2 startPositio
     addTextVertices(&m_debugDrawglyphsRenderData, text, startPosition, scale);
 }
 
-void rfct::UIPipeline::addTextVertices(glyphsRenderData* rd , const std::string& text, glm::vec2 position, float scale)
+void rfct::UIPipeline::addTextVertices(glyphsRenderData* rd, const std::string& text, glm::vec2 position, float scale, font* f)
 {
+    RFCT_PROFILE_FUNCTION();
+    if (!f) f = &m_defaultFont;
     vk::Extent2D windowExtent = renderer::getRen().getWindow().getExtent();
 
     float cursorX = position.x;
@@ -319,7 +297,7 @@ void rfct::UIPipeline::addTextVertices(glyphsRenderData* rd , const std::string&
     std::vector<GlyphVertex> vertices;
 
     for (char c : text) {
-        const glyph* g = m_defaultFont.getGlyph(c);
+        const glyph* g = f->getGlyph(c);
 
         float y0 = cursorY + g->yoffset * scale;
         float y1 = y0 + g->height * scale;
@@ -328,8 +306,8 @@ void rfct::UIPipeline::addTextVertices(glyphsRenderData* rd , const std::string&
         float x1 = x0 + g->width * scale;
 
         size_t index = vertices.size();
-        float atlasWidth = static_cast<float>(m_defaultFont.m_TextureAtlas.m_Image.width);
-        float atlasHeight = static_cast<float>(m_defaultFont.m_TextureAtlas.m_Image.height);
+        float atlasWidth = static_cast<float>(f->m_TextureAtlas.m_Image.width);
+        float atlasHeight = static_cast<float>(f->m_TextureAtlas.m_Image.height);
 
         float u0 = g->x / atlasWidth;
         float v0 = g->y / atlasHeight;
@@ -349,7 +327,6 @@ void rfct::UIPipeline::addTextVertices(glyphsRenderData* rd , const std::string&
     char* mapped = (char*)rd->buffer.Map();
     mapped += rd->bufferOffset;
     memcpy(mapped, vertices.data(), vertices.size() * sizeof(vertices[0]));
-    //rd->buffer.CopyData(vertices.data(), vertices.size() * sizeof(vertices[0]));
 
     rd->bufferOffset += vertices.size() * sizeof(vertices[0]);
     rd->buffer.Unmap();

@@ -1,5 +1,5 @@
 #include "vulkan_instance.h"
-#include "renderer_p\renderer.h"
+#include "renderer_p/renderer.h"
 
 
 VKAPI_ATTR vk::Bool32 VKAPI_CALL debugCallback(
@@ -97,6 +97,7 @@ rfct::vulkanInstance::vulkanInstance()
         );
 
         m_instance = vk::createInstanceUnique(createInfo);
+
 #ifndef RFCT_VULKAN_DEBUG_OFF
         m_dynamicLoader = RFCT_ANDROID_VULKAN_INSTANCE_NAMESPACE DispatchLoaderDynamic(*m_instance, vkGetInstanceProcAddr);
 
@@ -107,12 +108,8 @@ rfct::vulkanInstance::vulkanInstance()
             vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral | vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation | vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance,
             reinterpret_cast<PFN_vkDebugUtilsMessengerCallbackEXT>(debugCallback)
         );
-
-
         m_debugMessenger = m_instance.get().createDebugUtilsMessengerEXTUnique(debugCreateInfo, nullptr, m_dynamicLoader);
 #endif // !RFCT_VULKAN_DEBUG_OFF
-
-        //m_surface = vk::UniqueSurfaceKHR(renderer::getRen().getWindow().createSurface(m_instance.get()), m_instance.get());
 
 		RFCT_TRACE("Vulkan instance created successfully");
 

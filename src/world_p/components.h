@@ -1,5 +1,5 @@
 #pragma once
-#include <glm\glm.hpp>
+#include <glm/glm.hpp>
 
 using collisionHandler = void(*)(entity, entity, glm::vec2);
 namespace flecs {

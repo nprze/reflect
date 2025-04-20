@@ -1,6 +1,7 @@
 #pragma once
 namespace rfct {
 	class scene;
+	// structure to be passed around as update context
 	struct frameContext {
 		float dt; // delta time
 		bool renderDebugDraw = false; // should debugdraw be rendered

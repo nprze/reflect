@@ -1,6 +1,8 @@
 #include "font.h"
-#include "renderer_p\renderer.h"
-rfct::font::font(std::string path) : m_TextureAtlas("fonts/jetbrainsMono-medium.png")
+
+#include "assets/assets_manager.h"
+
+rfct::font::font(const std::string& path) : m_TextureAtlas(std::string(path).replace(path.size() - 3, 3, "png"))
 {
-	renderer::getRen().getAssetsManager()->loadGlyphs(path, this);
+	AssetsManager::get().loadGlyphs(path, this);
 }

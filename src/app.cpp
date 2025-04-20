@@ -1,15 +1,15 @@
 #include "app.h"
-#include "world_p\world.h"
+#include "world_p/world.h"
+#include "assets/assets_manager.h"
 
-std::string rfct::reflectApplication::AssetsDirectory;
 bool rfct::reflectApplication::isAppMinimised;
 
 rfct::reflectApplication::reflectApplication(RFCT_APP_ARGS):
-m_AssetsManager(AssetsDirectory), m_Renderer(RFCT_RENDERER_ARGUMENTS_VAR)
+m_Renderer(RFCT_RENDERER_ARGUMENTS_VAR)
 {
 	// app init
+	input::getInput().init();
 	isAppMinimised = false;
-	input::setInput(&m_Input);
 	registerComponents();
 
 
@@ -38,6 +38,7 @@ void rfct::reflectApplication::update() {
 	auto currentTime = std::chrono::high_resolution_clock::now();
 	std::chrono::duration<float> deltaTime = currentTime - previousTime;
 	previousTime = currentTime;
+
 	currentFrame = (currentFrame + 1) % RFCT_FRAMES_IN_FLIGHT;
 	frameContext context = {
 		.dt = deltaTime.count(),
@@ -45,7 +46,7 @@ void rfct::reflectApplication::update() {
 		.scene = &world::getWorld().getCurrentScene(),
 	};
 
-	m_Input.pollEvents();
+	input::getInput().pollEvents();
 	if (!isAppMinimised) {
 		updateGameplay(context);
 		renderer::getRen().render(context);

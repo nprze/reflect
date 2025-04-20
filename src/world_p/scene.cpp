@@ -1,14 +1,16 @@
 #include "scene.h"
+
 #include "ecs.h"
 #include "components.h"
 #include "transform.h"
 #include "input.h"
 #include "context.h"
-#include "camera\camera.h"
-#include "renderer_p\renderer.h"
-#include "physics\physics.h"
-#include "physics\collision_callback.h"
-#include "renderer_p\mesh\mesh.h"
+#include "camera/camera.h"
+#include "renderer_p/renderer.h"
+#include "physics/physics.h"
+#include "physics/collision_callback.h"
+#include "renderer_p/mesh/mesh.h"
+#include "assets/assets_manager.h"
 
 rfct::scene::scene(world* worldArg) : m_World(worldArg)
 {
@@ -40,11 +42,10 @@ void rfct::scene::onUpdate(frameContext* context)
 	updatePhysics(context->dt);
 	updateTransformData(context, epicRotatingTriangle);
 	cameraComponentOnUpdate(context->dt, epicRotatingTriangle);
-
 }
 
 
-void rfct::scene::loadScene(std::string path)
+void rfct::scene::loadScene(const std::string& path)
 {
 	sceneEntity = ecs::get().entity<sceneComponent>();
 	createQueries(sceneEntity);
@@ -87,10 +88,9 @@ void rfct::scene::loadScene(std::string path)
 	buildBVH();
 }
 
-entity rfct::scene::createStaticMesh(std::string path, glm::vec2 size, glm::vec2 pos)
+entity rfct::scene::createStaticMesh(const std::string& path, glm::vec2 size, glm::vec2 pos)
 {
-	mesh mesh1;
-	renderer::getRen().getAssetsManager()->loadMesh(path, &mesh1);
+	mesh mesh1(path);
 	staticBoxColliderComponent collider;
 	collider.min = pos;
 	collider.max.x = pos.x + size.x;

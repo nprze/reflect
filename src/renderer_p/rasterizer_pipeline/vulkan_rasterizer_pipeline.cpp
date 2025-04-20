@@ -1,15 +1,15 @@
 #include "vulkan_rasterizer_pipeline.h"
-#include "renderer_p\renderer.h"
+
+#include "renderer_p/renderer.h"
 #include "vertex.h"
-#include "renderer_p\descriptors\camera_ubo.h"
-#include "world_p\render_data.h"
-#include "world_p\world.h"
+#include "renderer_p/frame/frame_data.h"
+#include "world_p/render_data.h"
+#include "world_p/scene.h"
 
 rfct::vulkanRasterizerPipeline::vulkanRasterizerPipeline() :m_vertexShader("shaders/cube/cube_vert.spv"), m_fragShader("shaders/cube/cube_frag.spv")
 {
     createRenderPass();
 	createPipeline();
-	RFCT_TRACE("Created Rasterizer Pipeline");
 }
 
 rfct::vulkanRasterizerPipeline::~vulkanRasterizerPipeline()
@@ -93,7 +93,7 @@ void rfct::vulkanRasterizerPipeline::createPipeline()
     // Pipeline layout
     vk::PipelineLayoutCreateInfo pipelineLayoutInfo = {};
     pipelineLayoutInfo.setLayoutCount = 2;
-    vk::DescriptorSetLayout dscSetLayouts[] = { cameraUbo::getDescriptorSetLayout(), world::getWorld().getCurrentScene().getRenderData().getDescriptorSetLayout() };
+    vk::DescriptorSetLayout dscSetLayouts[] = { cameraUbo::getDescriptorSetLayout(), sceneRenderData::getDescriptorSetLayout() };
     pipelineLayoutInfo.pSetLayouts = dscSetLayouts;
     m_pipelineLayout = renderer::getRen().getDevice().createPipelineLayoutUnique(pipelineLayoutInfo);
 
@@ -171,18 +171,15 @@ void rfct::vulkanRasterizerPipeline::createRenderPass()
 
 }
 
-void rfct::vulkanRasterizerPipeline::recordCommandBuffer(frameContext* ctx, const sceneRenderData& renderdata, frameData& frameData, vk::Framebuffer framebuffer, uint32_t imageIndex)
+void rfct::vulkanRasterizerPipeline::recordCommandBuffer(frameContext* ctx, frameData& frameData, vk::Framebuffer framebuffer)
 {
+    RFCT_PROFILE_FUNCTION();
+    const sceneRenderData& renderdata = ctx->scene->getRenderData();
     vk::CommandBuffer commandBuffer = frameData.m_sceneCommandBuffer.get();
 
-    {
-        RFCT_PROFILE_SCOPE("begin command buffer");
-        commandBuffer.reset({});
-        vk::CommandBufferBeginInfo beginInfo = {};
-        commandBuffer.begin(beginInfo);
-    }
-
-
+    commandBuffer.reset({});
+    vk::CommandBufferBeginInfo beginInfo = {};
+    commandBuffer.begin(beginInfo);
 
     std::array<vk::ClearValue, 1> clearValues = {};
     clearValues[0].color = vk::ClearColorValue(std::array<float, 4>{0.0f, 0.0f, 0.0f, 1.0f});
@@ -241,9 +238,6 @@ void rfct::vulkanRasterizerPipeline::recordCommandBuffer(frameContext* ctx, cons
     }
 
     commandBuffer.endRenderPass();
-    {
-        RFCT_PROFILE_SCOPE("end command buffer scene");
-        commandBuffer.end();
-    }
+    commandBuffer.end();
 
 }

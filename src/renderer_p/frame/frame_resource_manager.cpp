@@ -1,5 +1,8 @@
 #include "frame_resource_manager.h"
-#include "renderer_p\renderer.h"
+
+#include <vma/vk_mem_alloc.h>
+#include "renderer_p/renderer.h"
+
 namespace rfct {
 	framesInFlight::framesInFlight()
 	{

@@ -1,15 +1,13 @@
 #pragma once
-#include <vulkan/vulkan.hpp>
 namespace rfct {
 	class vulkanSwapChain
 	{
 	public:
-		vulkanSwapChain(vk::Device device, vk::SurfaceKHR surface, vk::PhysicalDevice physicalDevice, vk::Extent2D windowExtent);
-		~vulkanSwapChain();
 		void createSwapChain();
 		void recreateSwapChain();
 		void createImageViews();
 		void createFrameBuffers();
+
 		uint32_t acquireNextImage(const vk::Semaphore& semaphore, vk::Fence fence);
 		vk::SwapchainKHR getSwapChain() { return m_swapChain.get(); }
 		vk::SurfaceFormatKHR getSurfaceFormat() { return m_surfaceFormat; }
@@ -27,5 +25,9 @@ namespace rfct {
 		vk::Extent2D m_windowExtent;
 		vk::Extent2D m_swapChainExtent;
 		vk::SurfaceFormatKHR m_surfaceFormat;
+	private:
+		vulkanSwapChain(vk::Device device, vk::PhysicalDevice physicalDevice, vk::Extent2D windowExtent);
+		~vulkanSwapChain();
+		friend class vulkanDevice;
 	};
 } // namespace rfct

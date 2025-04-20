@@ -4,8 +4,7 @@ namespace rfct {
 	class bindableImage {
 	public:
 		bindableImage(const std::string& path);
-		vk::UniqueSampler m_sampler;
 		image m_Image;
-
+		vk::UniqueSampler m_sampler;
 	};
 }
