@@ -1,5 +1,5 @@
 # reflect is a small game engine
-for now reflect can only run in debug configuration
+for now reflect can only run in debug and release configurations
 
 ## before building
 

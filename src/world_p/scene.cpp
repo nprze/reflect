@@ -30,7 +30,7 @@ namespace rfct {
 		}
 		if (input::getInput().yAxis && playerState->grounded) {
 			playerState->grounded = false;
-			player.get_mut<velocityComponent>()->velocity.y -= input::getInput().yAxis * 150.f;
+			player.get_mut<velocityComponent>()->velocity.y += input::getInput().yAxis * 150.f;
 		}
 	}
 }
@@ -81,7 +81,7 @@ void rfct::scene::loadScene(const std::string& path)
 		epicRotatingTriangle = createDynamicRect(&bounds, glm::vec3(0.2f, 0.7f, 0.4f));
 		collisionCallbackComponent colCallback;
 		colCallback.handler = onCollision_Player_StaticObj;
-		epicRotatingTriangle.set<positionComponent>({ { 0.f, -6.f } }).set<gravityComponent>({}).set<velocityComponent>({ glm::vec3(0.f,0.f,0.f) }).set<collisionCallbackComponent>(colCallback).set<playerStateComponent>({});
+		epicRotatingTriangle.set<positionComponent>({ { 0.f, 6.f } }).set<gravityComponent>({}).set<velocityComponent>({ glm::vec3(0.f,0.f,0.f) }).set<collisionCallbackComponent>(colCallback).set<playerStateComponent>({});
 
 	}
 	m_RenderData.endTransferStatic();

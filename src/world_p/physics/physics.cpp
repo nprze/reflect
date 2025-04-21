@@ -241,16 +241,20 @@ void rfct::updatePhysics(float dt)
     constexpr float deltaTime = 1.f / 60.f;
     static float accululator = 0.f;
     accululator += dt;
-    drawBVH(0, BVHnodes.back());
+    //drawBVH(0, BVHnodes.back());
     while (accululator >= deltaTime){
         accululator -= deltaTime;
         gravityVelocityPositionBoxQuery.each([&](flecs::entity ent, gravityComponent& gravity, velocityComponent& velocity, positionComponent& position, dynamicBoxColliderComponent& dynamicBox, collisionCallbackComponent& callback) {
-            velocity.velocity += glm::vec2(0.f, 1.f) * gravity.gravity * 20.f * deltaTime;
-            velocity.velocity *= dumping;
+            if (gravity.gravityEnabled) {
+                velocity.velocity += glm::vec2(0.f, -1.f) * gravity.gravity * 20.f * deltaTime;
+                velocity.velocity *= dumping;
+            }
             float substepTime = (deltaTime) / (float)substepCount;
             for (uint32_t substep = 0; substep < substepCount; substep++) {
-                glm::vec2 substepVelocity = velocity.velocity / (float)substepCount;
-                position.position += substepVelocity * substepTime;
+                if (gravity.gravityEnabled) {
+                    glm::vec2 substepVelocity = velocity.velocity / (float)substepCount;
+                    position.position += substepVelocity * substepTime;
+                }
                 dynamicBoxColliderComponent finalBoundingBox = { dynamicBox.min + position.position, dynamicBox.max + position.position };
                 checkForCollision(BVHnodes.back(), finalBoundingBox, callback, ent);
             }

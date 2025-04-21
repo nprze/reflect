@@ -14,7 +14,7 @@ void rfct::onCollision_Player_StaticObj(entity player, entity collidedWith, glm:
     if (resolution.y != 0.0f) {
         vel->velocity.y = 0.0f;
     }
-	if (resolution.y < 0)
+	if (resolution.y > 0)
 	{
 		player.get_mut<playerStateComponent>()->grounded = true;
 	}

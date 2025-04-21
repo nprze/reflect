@@ -9,6 +9,7 @@
 #include <vector>
 #include <android/log.h>
 #include "android_glue.h"
+#include "assets/assets_manager.h"
 
 void resizeCallback(int width, int height){
     rfct::renderer::getRen().getDeviceWrapper().getSwapChain().framebufferResized = true;
@@ -100,6 +101,6 @@ extern "C"
 JNIEXPORT void JNICALL
 Java_reflect_mobile_reflect_MainActivity_readAndCopyFile(JNIEnv *env, jobject thiz, jstring dirPath) {
     const char *cDirPath = env->GetStringUTFChars(dirPath, nullptr);
-    AssetsManager::get().init(std::string(cDirPath));
+    rfct::AssetsManager::get().init(std::string(cDirPath));
     env->ReleaseStringUTFChars(dirPath, cDirPath);
 }

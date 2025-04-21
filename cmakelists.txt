@@ -2,24 +2,22 @@ cmake_minimum_required(VERSION 3.16)
 
 include(reflect_settings.cmake)
 
-find_library(android-lib android)
-
 if(${BUILD_FOR_PLATFORM} STREQUAL "WINDOWS")
     set(PLATFORM_WINDOWS TRUE)
 else()
     set(PLATFORM_ANDROID TRUE)
 endif()
 
-# General configuration
-if(NOT CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE Debug)
-endif()
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/build/lib CACHE PATH "Where to place compiled static libraries.")
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/build/dll CACHE PATH "Where to place compiled shared libraries.")
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/build/bin CACHE PATH "Where to place compiled executables.")
 set(BUILD_DIR "${CMAKE_CURRENT_SOURCE_DIR}/build")
+
+foreach(OUTPUTCONFIG IN LISTS CMAKE_CONFIGURATION_TYPES)
+    string(TOUPPER ${OUTPUTCONFIG} OUTPUTCONFIG_UPPER)
+    set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_${OUTPUTCONFIG_UPPER} ${CMAKE_CURRENT_SOURCE_DIR}/build/lib/${OUTPUTCONFIG})
+    set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_${OUTPUTCONFIG_UPPER} ${CMAKE_CURRENT_SOURCE_DIR}/build/dll/${OUTPUTCONFIG})
+    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_${OUTPUTCONFIG_UPPER} ${CMAKE_CURRENT_SOURCE_DIR}/build/bin/${OUTPUTCONFIG})
+endforeach()
 
 # Project name
 project(reflect)
@@ -50,6 +48,7 @@ if(PLATFORM_WINDOWS)
     add_executable(reflect  platform/windows/reflect_main.cpp)
     set_property(DIRECTORY ${CMAKE_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT reflect)
     target_compile_definitions(reflect PUBLIC RFCT_ASSETS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/assets")
+    target_compile_definitions(reflect PUBLIC WINDOWS_BUILD)
 endif()
 
 
@@ -86,8 +85,6 @@ if(PLATFORM_ANDROID)
             LIBRARY DESTINATION ${CMAKE_BINARY_DIR}/build/android/libs/${ANDROID_ABI}
     )
     set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -u ANativeActivity_onCreate")
-else()
-    target_compile_definitions(reflect PUBLIC WINDOWS_BUILD)
 endif()
 
 
@@ -102,16 +99,21 @@ target_include_directories(reflect PUBLIC
 # Settings specific configurations
 
 if(PLATFORM_WINDOWS)
+    # VLD only on debug
     if (${VLD_ENABLE} STREQUAL "y")
         target_link_libraries(reflect PUBLIC "${VLD_PATH}/lib/Win64/vld.lib")
         target_include_directories(reflect PUBLIC "${VLD_PATH}/include")
-        target_compile_definitions(reflect PUBLIC "VLD_ENABLE")
+        target_compile_definitions(reflect PUBLIC $<$<CONFIG:Debug>:VLD_ENABLE> )
     endif()
+    # NVTX only on debug
     if (${NVTX_ENABLE} STREQUAL "y")
-        target_compile_definitions(reflect PUBLIC "NVTX_ENABLE")
+        target_compile_definitions(reflect PUBLIC $<$<CONFIG:Debug>:NVTX_ENABLE>)
         include(reflect_util_scripts/reflect_nvtx_category_helper.cmake)
     endif()
-    if (${VULKAN_DEBUG_UTILS_ENABLE} STREQUAL "n")
+    # Vulkan debug utils only on debug
+    if (${VULKAN_DEBUG_UTILS_ENABLE} STREQUAL "y")
+        target_compile_definitions(reflect PUBLIC  $<$<NOT:$<CONFIG:Debug>>:RFCT_VULKAN_DEBUG_OFF>)
+    else()
         target_compile_definitions(reflect PUBLIC "RFCT_VULKAN_DEBUG_OFF")
     endif()
 endif()

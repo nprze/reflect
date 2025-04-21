@@ -39,6 +39,8 @@ namespace rfct {
         }
 
     }
+
+    const glm::mat4 flipY = glm::scale(glm::mat4(1.0f), glm::vec3(1, -1, 1));
     glm::mat4 getViewMatrix() {
         glm::mat4 model = glm::mat4(1.0f);
         const position3DComponent* position = cameraEntity.get<position3DComponent>();
@@ -47,7 +49,7 @@ namespace rfct {
 
         glm::mat4 rotationMat = glm::yawPitchRoll(rotation->rotation.x, rotation->rotation.y, 0.f);
         glm::vec3 direction = glm::vec3(rotationMat * glm::vec4(0, 0, -1, 1));
-        return glm::lookAt(position->position, position->position + direction, glm::vec3(0, 1, 0));
+        return flipY * glm::lookAt(position->position, position->position + direction, glm::vec3(0, 1, 0));
     }
     glm::mat4 getVPMatrix() {
 

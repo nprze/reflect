@@ -1,6 +1,6 @@
 # DO NOT REMOVE ANY SETTINGS FROM THIS FILE EVEN IF UNUSED. IF YOU DO NOT WANT TO USE A FEATURE, SET IT TO "n".
 
-set(BUILD_FOR_PLATFORM "WINDOWS") # WINDOWS or ANDROID
+set(BUILD_FOR_PLATFORM "ANDROID") # WINDOWS or ANDROID
 
 set(VLD_ENABLE "y") # y or n, enable or disable visual leak detector (windows only)
 set(VLD_PATH "C:/Program Files (x86)/Visual Leak Detector") # path to where visual leak detector is installed. Leave empty if VLD is disabled.

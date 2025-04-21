@@ -24,10 +24,6 @@ void rfct::AndroidWindow::destroyWind() {
     }
 }
 
-bool rfct::AndroidWindow::pollEvents() {
-    return true;
-}
-
 vk::SurfaceKHR rfct::AndroidWindow::createSurface(vk::Instance instance) {
     VkSurfaceKHR surface;
     VkAndroidSurfaceCreateInfoKHR createInfo{};
