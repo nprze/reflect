@@ -9,6 +9,7 @@
 #include "renderer_p/UI/ui_pipeline.h"
 
 namespace rfct {
+	constexpr vk::SampleCountFlagBits msaaSamples = vk::SampleCountFlagBits::e4;
 	struct SurfaceWrapper { // surface works a little bit sussy on android (this handles the calls java makes on surface holder change)
 		vk::SurfaceKHR surface;
         SurfaceWrapper(vk::SurfaceKHR surfaceArg);

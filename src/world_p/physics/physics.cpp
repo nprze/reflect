@@ -241,7 +241,7 @@ void rfct::updatePhysics(float dt)
     constexpr float deltaTime = 1.f / 60.f;
     static float accululator = 0.f;
     accululator += dt;
-    //drawBVH(0, BVHnodes.back());
+    drawBVH(0, BVHnodes.back());
     while (accululator >= deltaTime){
         accululator -= deltaTime;
         gravityVelocityPositionBoxQuery.each([&](flecs::entity ent, gravityComponent& gravity, velocityComponent& velocity, positionComponent& position, dynamicBoxColliderComponent& dynamicBox, collisionCallbackComponent& callback) {

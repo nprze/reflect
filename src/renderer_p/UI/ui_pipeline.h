@@ -20,6 +20,7 @@ namespace rfct {
 	public:
 		UIPipeline();
 		~UIPipeline();
+		vk::RenderPass& getRenderPass() { return m_UIRenderPass.get(); }
 		void createPipeline();
 		void createRenderPass();
 		void createDescriptorSet();

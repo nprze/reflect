@@ -131,8 +131,9 @@ void rfct::UIPipeline::createRenderPass()
     colorAttachment.storeOp = vk::AttachmentStoreOp::eStore;
     colorAttachment.stencilLoadOp = vk::AttachmentLoadOp::eDontCare;
     colorAttachment.stencilStoreOp = vk::AttachmentStoreOp::eDontCare;
-    colorAttachment.initialLayout = vk::ImageLayout::ePresentSrcKHR;
+    colorAttachment.initialLayout = vk::ImageLayout::eColorAttachmentOptimal;
     colorAttachment.finalLayout = vk::ImageLayout::ePresentSrcKHR;
+
 
     vk::AttachmentReference colorAttachmentRef = {};
     colorAttachmentRef.attachment = 0;
@@ -160,16 +161,19 @@ void rfct::UIPipeline::createRenderPass()
     dependency2.dstAccessMask = vk::AccessFlagBits::eNone;
     dependency2.dependencyFlags = vk::DependencyFlagBits::eByRegion;
 
-    vk::RenderPassCreateInfo tempRenderPassInfo = {};
-    tempRenderPassInfo.attachmentCount = 1;
-    tempRenderPassInfo.pAttachments = &colorAttachment;
-    tempRenderPassInfo.subpassCount = 1;
-    tempRenderPassInfo.pSubpasses = &subpass;
-    tempRenderPassInfo.dependencyCount = 2;
-    tempRenderPassInfo.pDependencies = std::array{ dependency, dependency2 }.data();;
 
-    m_UIRenderPass = renderer::getRen().getDevice().createRenderPassUnique(tempRenderPassInfo);
-}
+    vk::RenderPassCreateInfo renderPassInfo = {};
+    renderPassInfo.attachmentCount = 1;
+    renderPassInfo.pAttachments = &colorAttachment;
+    renderPassInfo.subpassCount = 1;
+    renderPassInfo.pSubpasses = &subpass;
+
+    std::array<vk::SubpassDependency, 2> dependencies = { dependency, dependency2 };
+    renderPassInfo.dependencyCount = static_cast<uint32_t>(dependencies.size());
+    renderPassInfo.pDependencies = dependencies.data();
+
+    m_UIRenderPass = renderer::getRen().getDevice().createRenderPassUnique(renderPassInfo);
+  }
 
 void rfct::UIPipeline::createDescriptorSet()
 {

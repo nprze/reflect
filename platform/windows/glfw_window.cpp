@@ -51,6 +51,11 @@ void rfct::GlfwWindow::hide() {
     glfwHideWindow(window);
 }
 
+bool rfct::GlfwWindow::pollEvents()
+{
+    return !glfwWindowShouldClose(window);
+}
+
 vk::SurfaceKHR rfct::GlfwWindow::createSurface(vk::Instance instance) {
     VkSurfaceKHR surface;
     VkResult res = glfwCreateWindowSurface(instance, window, nullptr, &surface);

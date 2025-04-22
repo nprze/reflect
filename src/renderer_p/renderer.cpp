@@ -71,8 +71,10 @@ rfct::renderer::renderer(RFCT_RENDERER_ARGUMENTS)
     m_rasterizerPipeline(), 
     m_allocator(), 
     m_framesInFlight(), 
-    m_debugDraw()
+    m_debugDraw(),
+    m_UIPipeline()
 {
+    m_device.getSwapChain().createMSAAres(msaaSamples);
     m_device.getSwapChain().createFrameBuffers();
 }
 
@@ -87,6 +89,7 @@ void rfct::renderer::updateWindow(RFCT_NATIVE_WINDOW_ANDROID RFCT_NATIVE_WINDOW_
 
 rfct::renderer::~renderer() {
     AssetsManager::get().cleanup();
+    m_device.getSwapChain().cleanupMSAAres();
 };
 
 void rfct::renderer::render(frameContext& frameContext)
@@ -114,13 +117,13 @@ void rfct::renderer::render(frameContext& frameContext)
         RFCT_PROFILE_SCOPE("command buffers record");
         auto jobs = std::make_shared<rfct::jobTracker>();
         jobSystem::get().KickJob([&]() {
-            m_rasterizerPipeline.recordCommandBuffer(&frameContext, frameData, m_device.getSwapChain().getFrameBuffer(imageIndex));
+            m_rasterizerPipeline.recordCommandBuffer(&frameContext, frameData, m_device.getSwapChain().getSceneFrameBuffer(imageIndex));
             }, *jobs);
         jobSystem::get().KickJob([&]() {
-            debugDraw::flush(&frameContext, frameData, m_device.getSwapChain().getFrameBuffer(imageIndex));
+            debugDraw::flush(&frameContext, frameData, m_device.getSwapChain().getUIFrameBuffer(imageIndex));
             }, *jobs);
         jobSystem::get().KickJob([&]() {
-            m_UIPipeline.draw(frameData, m_device.getSwapChain().getFrameBuffer(imageIndex));
+            m_UIPipeline.draw(frameData, m_device.getSwapChain().getUIFrameBuffer(imageIndex));
             }, *jobs);
         jobs->waitAll();
     }
@@ -140,7 +143,7 @@ void rfct::renderer::render(frameContext& frameContext)
 
         vk::SubmitInfo uiSubmitInfo = frameData.uiSubmitInfo(frameContext);
         uiSubmitInfo.pWaitDstStageMask = waitStages;
-        renderer::getRen().getDeviceWrapper().getQueueManager().submitGraphics(uiSubmitInfo, frameData.m_thisFrameRenderFinishedFence);
+         renderer::getRen().getDeviceWrapper().getQueueManager().submitGraphics(uiSubmitInfo, frameData.m_thisFrameRenderFinishedFence);
     }
 
 

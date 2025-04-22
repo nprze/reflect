@@ -7,6 +7,7 @@
 #include "renderer_p/image/image.h"
 #include "renderer_p/UI/font/font.h"
 #include "renderer_p/mesh/mesh.h"
+#include "renderer_p/rasterizer_pipeline/vertex.h"
 
 namespace rfct {
     AssetsManager AssetsManager::instance;

@@ -29,8 +29,8 @@ void rfct::debugDraw::createPipelines()
     std::vector<vk::PipelineShaderStageCreateInfo> shaderStages = { vertShaderStageInfo, fragShaderStageInfo };
 
     // Input
-    auto bindingDescription = Vertex::getBindingDescription();
-    auto attributeDescriptions = Vertex::getAttributeDescriptions();
+    auto bindingDescription = SmallVertex::getBindingDescription();
+    auto attributeDescriptions = SmallVertex::getAttributeDescriptions();
 
     vk::PipelineVertexInputStateCreateInfo vertexInputInfo = {};
     vertexInputInfo.vertexBindingDescriptionCount = 1;
@@ -152,8 +152,9 @@ void rfct::debugDraw::createRenderPass()
     colorAttachment.storeOp = vk::AttachmentStoreOp::eStore;
     colorAttachment.stencilLoadOp = vk::AttachmentLoadOp::eDontCare;
     colorAttachment.stencilStoreOp = vk::AttachmentStoreOp::eDontCare;
-    colorAttachment.initialLayout = vk::ImageLayout::ePresentSrcKHR;
-    colorAttachment.finalLayout = vk::ImageLayout::ePresentSrcKHR;
+    colorAttachment.initialLayout = vk::ImageLayout::eColorAttachmentOptimal;
+    colorAttachment.finalLayout = vk::ImageLayout::eColorAttachmentOptimal;
+
 
     vk::AttachmentReference colorAttachmentRef = {};
     colorAttachmentRef.attachment = 0;
@@ -181,15 +182,18 @@ void rfct::debugDraw::createRenderPass()
     dependency2.dstAccessMask = vk::AccessFlagBits::eNone;
     dependency2.dependencyFlags = vk::DependencyFlagBits::eByRegion;
 
-    vk::RenderPassCreateInfo tempRenderPassInfo = {};
-    tempRenderPassInfo.attachmentCount = 1;
-    tempRenderPassInfo.pAttachments = &colorAttachment;
-    tempRenderPassInfo.subpassCount = 1;
-    tempRenderPassInfo.pSubpasses = &subpass;
-    tempRenderPassInfo.dependencyCount = 2;
-    tempRenderPassInfo.pDependencies = std::array{ dependency, dependency2 }.data();;
 
-    m_debugDrawRenderPass = renderer::getRen().getDevice().createRenderPassUnique(tempRenderPassInfo);
+    vk::RenderPassCreateInfo renderPassInfo = {};
+    renderPassInfo.attachmentCount = 1;
+    renderPassInfo.pAttachments = &colorAttachment;
+    renderPassInfo.subpassCount = 1;
+    renderPassInfo.pSubpasses = &subpass;
+
+    std::array<vk::SubpassDependency, 2> dependencies = { dependency, dependency2 };
+    renderPassInfo.dependencyCount = static_cast<uint32_t>(dependencies.size());
+    renderPassInfo.pDependencies = dependencies.data();
+
+    m_debugDrawRenderPass = renderer::getRen().getDevice().createRenderPassUnique(renderPassInfo);
 }
 
 

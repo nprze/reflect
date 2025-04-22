@@ -6,6 +6,7 @@
 #include "world_p/render_data.h"
 #include "world_p/scene.h"
 
+
 rfct::vulkanRasterizerPipeline::vulkanRasterizerPipeline() :m_vertexShader("shaders/cube/cube_vert.spv"), m_fragShader("shaders/cube/cube_frag.spv")
 {
     createRenderPass();
@@ -15,6 +16,7 @@ rfct::vulkanRasterizerPipeline::vulkanRasterizerPipeline() :m_vertexShader("shad
 rfct::vulkanRasterizerPipeline::~vulkanRasterizerPipeline()
 {
 }
+
 void rfct::vulkanRasterizerPipeline::createPipeline()
 {
     // Shaders
@@ -56,7 +58,8 @@ void rfct::vulkanRasterizerPipeline::createPipeline()
 
     // Multisample State
     vk::PipelineMultisampleStateCreateInfo multisampling = {};
-    multisampling.rasterizationSamples = vk::SampleCountFlagBits::e1;
+    multisampling.rasterizationSamples = msaaSamples;
+    multisampling.sampleShadingEnable = VK_FALSE;
 
     // Color Blend State
     vk::PipelineColorBlendAttachmentState colorBlendAttachment = {};
@@ -125,22 +128,38 @@ void rfct::vulkanRasterizerPipeline::createRenderPass()
 {
     vk::AttachmentDescription colorAttachment = {};
     colorAttachment.format = vk::Format::eB8G8R8A8Unorm;
-    colorAttachment.samples = vk::SampleCountFlagBits::e1;
+    colorAttachment.samples = msaaSamples;
     colorAttachment.loadOp = vk::AttachmentLoadOp::eClear;
-    colorAttachment.storeOp = vk::AttachmentStoreOp::eStore;
+    colorAttachment.storeOp = vk::AttachmentStoreOp::eDontCare;
     colorAttachment.stencilLoadOp = vk::AttachmentLoadOp::eDontCare;
     colorAttachment.stencilStoreOp = vk::AttachmentStoreOp::eDontCare;
     colorAttachment.initialLayout = vk::ImageLayout::eUndefined;
-    colorAttachment.finalLayout = vk::ImageLayout::ePresentSrcKHR;
+    colorAttachment.finalLayout = vk::ImageLayout::eColorAttachmentOptimal;
+
+
+    vk::AttachmentDescription resolveAttachment = {};
+    resolveAttachment.format = vk::Format::eB8G8R8A8Unorm;
+    resolveAttachment.samples = vk::SampleCountFlagBits::e1;
+    resolveAttachment.loadOp = vk::AttachmentLoadOp::eDontCare;
+    resolveAttachment.storeOp = vk::AttachmentStoreOp::eStore;
+    resolveAttachment.stencilLoadOp = vk::AttachmentLoadOp::eDontCare;
+    resolveAttachment.stencilStoreOp = vk::AttachmentStoreOp::eDontCare;
+    resolveAttachment.initialLayout = vk::ImageLayout::eUndefined;
+    resolveAttachment.finalLayout = vk::ImageLayout::eColorAttachmentOptimal;
 
     vk::AttachmentReference colorAttachmentRef = {};
     colorAttachmentRef.attachment = 0;
     colorAttachmentRef.layout = vk::ImageLayout::eColorAttachmentOptimal;
 
+    vk::AttachmentReference resolveAttachmentRef = {};
+    resolveAttachmentRef.attachment = 1;
+    resolveAttachmentRef.layout = vk::ImageLayout::eColorAttachmentOptimal;
+
     vk::SubpassDescription subpass = {};
     subpass.pipelineBindPoint = vk::PipelineBindPoint::eGraphics;
     subpass.colorAttachmentCount = 1;
     subpass.pColorAttachments = &colorAttachmentRef;
+    subpass.pResolveAttachments = &resolveAttachmentRef;
 
     vk::SubpassDependency dependency = {};
     dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
@@ -159,15 +178,19 @@ void rfct::vulkanRasterizerPipeline::createRenderPass()
     dependency2.dstAccessMask = vk::AccessFlagBits::eNone;
     dependency2.dependencyFlags = vk::DependencyFlagBits::eByRegion;
 
-	vk::RenderPassCreateInfo tempRenderPassInfo = {};
-    tempRenderPassInfo.attachmentCount = 1;
-    tempRenderPassInfo.pAttachments = &colorAttachment;
-    tempRenderPassInfo.subpassCount = 1;
-    tempRenderPassInfo.pSubpasses = &subpass;
-    tempRenderPassInfo.dependencyCount = 2;
-    tempRenderPassInfo.pDependencies = std::array{ dependency, dependency2 }.data();;
+    std::array<vk::AttachmentDescription, 2> attachments = { colorAttachment, resolveAttachment };
 
-    m_renderPass = renderer::getRen().getDevice().createRenderPassUnique(tempRenderPassInfo);
+    vk::RenderPassCreateInfo renderPassInfo = {};
+    renderPassInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
+    renderPassInfo.pAttachments = attachments.data();
+    renderPassInfo.subpassCount = 1;
+    renderPassInfo.pSubpasses = &subpass;
+
+    std::array<vk::SubpassDependency, 2> dependencies = { dependency, dependency2 };
+    renderPassInfo.dependencyCount = static_cast<uint32_t>(dependencies.size());
+    renderPassInfo.pDependencies = dependencies.data();
+
+    m_renderPass = renderer::getRen().getDevice().createRenderPassUnique(renderPassInfo);
 
 }
 

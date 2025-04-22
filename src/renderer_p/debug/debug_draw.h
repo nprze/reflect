@@ -3,15 +3,39 @@
 #include "renderer_p/buffer/vulkan_buffer.h"
 #include "renderer_p/frame/frame_data.h"
 #include "renderer_p/shader/vulkan_shader.h"
-#include "renderer_p/rasterizer_pipeline/vertex.h"
 #include "context.h"
 namespace rfct {
+	struct SmallVertex {
+		glm::vec3 pos;
+		glm::vec3 color;
+
+		static vk::VertexInputBindingDescription getBindingDescription() {
+			vk::VertexInputBindingDescription bindingDescription{};
+			bindingDescription.binding = 0;
+			bindingDescription.stride = sizeof(SmallVertex);
+			bindingDescription.inputRate = vk::VertexInputRate::eVertex;
+			return bindingDescription;
+		}
+
+		static std::array<vk::VertexInputAttributeDescription, 2> getAttributeDescriptions() {
+			std::array<vk::VertexInputAttributeDescription, 2> attributeDescriptions{};
+			attributeDescriptions[0].binding = 0;
+			attributeDescriptions[0].location = 0;
+			attributeDescriptions[0].format = vk::Format::eR32G32B32Sfloat;
+			attributeDescriptions[0].offset = offsetof(SmallVertex, pos);
+			attributeDescriptions[1].binding = 0;
+			attributeDescriptions[1].location = 1;
+			attributeDescriptions[1].format = vk::Format::eR32G32B32Sfloat;
+			attributeDescriptions[1].offset = offsetof(SmallVertex, color);
+			return attributeDescriptions;
+		}
+	};
 	// helpers
 	struct debugTriangle {
-		Vertex vertices[3];
+		SmallVertex vertices[3];
 	};
 	struct debugLine {
-		Vertex vertices[2];
+		SmallVertex vertices[2];
 	};
 
 	struct debugDrawVertexBuffer{
