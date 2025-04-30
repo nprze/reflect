@@ -2,7 +2,9 @@
 
 set(BUILD_FOR_PLATFORM "WINDOWS") # WINDOWS or ANDROID
 
-set(VLD_ENABLE "y") # y or n, enable or disable visual leak detector (windows only)
+# utilities only for windows
+
+set(VLD_ENABLE "y") # y or n, enable or disable visual leak detector
 set(VLD_PATH "C:/Program Files (x86)/Visual Leak Detector") # path to where visual leak detector is installed. Leave empty if VLD is disabled.
 
 set(NVTX_ENABLE "y") # y or n, enable or disable nvtx in order to help profiling with Nvidia Nsight Systems

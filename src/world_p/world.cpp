@@ -22,14 +22,14 @@ void rfct::world::cleanWorld()
 
 void rfct::world::onUpdate(frameContext& context)
 {
+	debugDraw::drawText("FPS: " + std::to_string(int(1 / context.dt)), glm::vec2(0, 0), 0.2);
+	m_currentScene->onUpdate(&context);
 	auto jobs = std::make_shared<rfct::jobTracker>();
 	jobSystem::get().KickJob([&]() {
 		RFCT_PROFILE_SCOPE("Debug Draw");
-		debugDraw::drawText("FPS: " + std::to_string(int(1 / context.dt)), glm::vec2(0, 0), 0.2);
 		}, *jobs);
 	jobSystem::get().KickJob([&]() {
 		RFCT_PROFILE_SCOPE("Scene update");
-		m_currentScene->onUpdate(&context);
 		}, *jobs);
 	jobs->waitAll();
 }

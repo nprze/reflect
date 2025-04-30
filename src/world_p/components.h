@@ -71,7 +71,7 @@ namespace rfct {
 	};
 	struct gravityComponent {
 		bool gravityEnabled = true;
-		float gravity = 10.f;
+		float gravity = 300.f;
 	};
 
     struct playerStateComponent {

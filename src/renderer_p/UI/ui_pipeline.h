@@ -27,6 +27,8 @@ namespace rfct {
 		void draw(frameData& fd, vk::Framebuffer framebuffer);
 		void debugText(const std::string& text, glm::vec2 startPosition, float scale);
 		void addTextVertices(glyphsRenderData* rd, const std::string& text, glm::vec2 position, float scale, font* f = nullptr);
+		int getTextureIndex(bindableImage* image);
+		void addImage(const glm::vec2& min, const glm::vec2& max, bindableImage* image);
 		vk::DescriptorSetLayout getDescriptorSetLayout();
 	private:
 		vulkanShader m_vertexShader;
@@ -37,6 +39,8 @@ namespace rfct {
 		vk::UniqueDescriptorSetLayout m_descriptorSetLayout;
 		vk::UniqueDescriptorPool m_DescriptorPool;
 		vk::UniqueDescriptorSet m_DescriptorSet;
+		std::unordered_map<bindableImage*, int> m_textureIndexMap;
+
 		// pipeline
 		vk::UniquePipeline m_pipeline;
 

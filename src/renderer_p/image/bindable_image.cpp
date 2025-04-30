@@ -1,6 +1,6 @@
 #include "bindable_image.h"
 #include "renderer_p/renderer.h"
-rfct::bindableImage::bindableImage(const std::string& path) :m_Image(path)
+rfct::bindableImage::bindableImage(const std::string& path) :m_Image(path), name(path)
 {
     // Sampler
     vk::SamplerCreateInfo samplerCreateInfo = {};

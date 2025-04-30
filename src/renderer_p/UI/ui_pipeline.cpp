@@ -1,9 +1,10 @@
 #include "ui_pipeline.h"
 
 #include "renderer_p/renderer.h"
+#include "assets/assets_manager.h"
 
 
-rfct::UIPipeline::UIPipeline() : m_vertexShader("shaders/UI/text_vert.spv"), m_fragShader("shaders/UI/text_frag.spv"), m_glyphsRenderData(RFCT_DEBUG_DRAW_VERTEX_BUFFER_MAX_SIZE), m_debugDrawglyphsRenderData(RFCT_DEBUG_DRAW_VERTEX_BUFFER_MAX_SIZE), m_defaultFont("fonts/jetbrainsMono-medium.txt")
+rfct::UIPipeline::UIPipeline() : m_vertexShader("shaders/UI/UIimage_vert.spv"), m_fragShader("shaders/UI/UIimage_frag.spv"), m_glyphsRenderData(RFCT_DEBUG_DRAW_VERTEX_BUFFER_MAX_SIZE), m_debugDrawglyphsRenderData(RFCT_DEBUG_DRAW_VERTEX_BUFFER_MAX_SIZE), m_defaultFont("fonts/jetbrainsMono-medium.txt")
 {
     createPipeline();
     createDescriptorSet();
@@ -180,11 +181,11 @@ void rfct::UIPipeline::createDescriptorSet()
 
     vk::DescriptorPoolSize poolSize(
         vk::DescriptorType::eCombinedImageSampler,
-        1
+        RFCT_UI_TEXTURE_BINDINGS
     );
 
     vk::DescriptorPoolCreateInfo poolCreateInfo(
-        { vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet },
+        { vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet | vk::DescriptorPoolCreateFlagBits::eUpdateAfterBind },
         1,
         1,
         &poolSize
@@ -200,21 +201,8 @@ void rfct::UIPipeline::createDescriptorSet()
     );
 
     m_DescriptorSet = std::move(renderer::getRen().getDevice().allocateDescriptorSetsUnique(allocInfo)[0]);
+	m_textureIndexMap.reserve(RFCT_UI_TEXTURE_BINDINGS);
 
-    vk::DescriptorImageInfo imageInfo = {}; 
-    imageInfo.imageView = m_defaultFont.m_TextureAtlas.m_Image.m_imageView;
-    imageInfo.sampler = m_defaultFont.m_TextureAtlas.m_sampler.get();
-    imageInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
-
-    vk::WriteDescriptorSet writeDescriptorSet = {};
-    writeDescriptorSet.dstSet = m_DescriptorSet.get();
-    writeDescriptorSet.dstBinding = 0;
-    writeDescriptorSet.dstArrayElement = 0;
-    writeDescriptorSet.descriptorType = vk::DescriptorType::eCombinedImageSampler;
-    writeDescriptorSet.descriptorCount = 1;
-    writeDescriptorSet.pImageInfo = &imageInfo;
-
-    renderer::getRen().getDevice().updateDescriptorSets({ writeDescriptorSet }, nullptr);
 }
 
 
@@ -227,6 +215,8 @@ void rfct::UIPipeline::draw(frameData& fd, vk::Framebuffer framebuffer)
     {
         return;
     }
+
+
     vk::CommandBuffer commandBuffer = fd.m_uiCommandBuffer.get();
 
     commandBuffer.reset({});
@@ -264,6 +254,13 @@ void rfct::UIPipeline::draw(frameData& fd, vk::Framebuffer framebuffer)
 
     commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, m_pipeline.get());
 
+    if (m_debugDrawglyphsRenderData.vertexCount != 0) {
+        vk::Buffer vertexBuffers[] = { m_debugDrawglyphsRenderData.buffer.buffer };
+        vk::DeviceSize offsets[] = { 0 };
+        commandBuffer.bindVertexBuffers(0, 1, vertexBuffers, offsets);
+
+        commandBuffer.draw(m_debugDrawglyphsRenderData.vertexCount, 1, 0, 0);
+    }
 
     if (m_glyphsRenderData.vertexCount != 0) {
         vk::Buffer vertexBuffers[] = { m_glyphsRenderData.buffer.buffer };
@@ -272,17 +269,12 @@ void rfct::UIPipeline::draw(frameData& fd, vk::Framebuffer framebuffer)
 
         commandBuffer.draw(m_glyphsRenderData.vertexCount, 1, 0, 0);
     }
-    if (m_debugDrawglyphsRenderData.vertexCount != 0) {
-        vk::Buffer vertexBuffers[] = { m_debugDrawglyphsRenderData.buffer.buffer };
-        vk::DeviceSize offsets[] = { 0 };
-        commandBuffer.bindVertexBuffers(0, 1, vertexBuffers, offsets);
-
-        commandBuffer.draw(m_debugDrawglyphsRenderData.vertexCount, 1, 0, 0);
-    }
     commandBuffer.endRenderPass();
 
     commandBuffer.end();
+    m_glyphsRenderData.postFrame();
     m_debugDrawglyphsRenderData.postFrame();
+	m_textureIndexMap.clear();
 }
 
 void rfct::UIPipeline::debugText(const std::string& text, glm::vec2 startPosition, float scale)
@@ -290,11 +282,83 @@ void rfct::UIPipeline::debugText(const std::string& text, glm::vec2 startPositio
     addTextVertices(&m_debugDrawglyphsRenderData, text, startPosition, scale);
 }
 
+int rfct::UIPipeline::getTextureIndex(bindableImage* image)
+{
+	if (m_textureIndexMap.find(image) != m_textureIndexMap.end()) {
+		return m_textureIndexMap[image];
+	}
+	if (m_textureIndexMap.size() >= RFCT_UI_TEXTURE_BINDINGS) {
+		RFCT_CRITICAL("Too many textures bound to UI pipeline");
+	}
+	int indexInShader = m_textureIndexMap.size(); 
+	m_textureIndexMap[image] = indexInShader;
+
+    // update images
+    vk::DescriptorImageInfo imageInfo[RFCT_UI_TEXTURE_BINDINGS];
+    for (auto& [imageA, index] : m_textureIndexMap) {
+        imageInfo[index].imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;  
+        imageInfo[index].imageView = imageA->m_Image.m_imageView;
+        imageInfo[index].sampler = imageA->m_sampler.get();
+    }
+
+    vk::WriteDescriptorSet writeDescriptorSet = {};
+    writeDescriptorSet.dstSet = m_DescriptorSet.get();
+    writeDescriptorSet.dstBinding = 0;
+    writeDescriptorSet.dstArrayElement = 0;
+    writeDescriptorSet.descriptorType = vk::DescriptorType::eCombinedImageSampler;
+    writeDescriptorSet.descriptorCount = m_textureIndexMap.size();
+    writeDescriptorSet.pImageInfo = imageInfo;
+    
+    renderer::getRen().getDevice().updateDescriptorSets({ writeDescriptorSet }, nullptr);
+
+    return indexInShader;
+}
+
+
+void rfct::UIPipeline::addImage(const glm::vec2& min, const glm::vec2& max, bindableImage* image)
+{
+	GlyphVertex vertices[6];
+	vertices[0].pos = { min.x, min.y };
+	vertices[1].pos = { max.x, min.y };
+	vertices[2].pos = { max.x, max.y };
+	vertices[3].pos = { min.x, max.y };
+	vertices[4].pos = { min.x, min.y };
+	vertices[5].pos = { max.x, max.y };
+
+	vertices[0].texCoord = { 0.0f, 0.0f };
+	vertices[1].texCoord = { 1.0f, 0.0f };
+	vertices[2].texCoord = { 1.0f, 1.0f };
+	vertices[3].texCoord = { 0.0f, 1.0f };
+	vertices[4].texCoord = { 0.0f, 0.0f };
+	vertices[5].texCoord = { 1.0f, 1.0f };
+
+	int texIndex = getTextureIndex(image);
+	
+    vertices[0].texIndex = texIndex;
+	vertices[1].texIndex = texIndex;
+	vertices[2].texIndex = texIndex;
+	vertices[3].texIndex = texIndex;
+	vertices[4].texIndex = texIndex;
+    vertices[5].texIndex = texIndex;
+    
+
+    char* mapped = (char*)m_glyphsRenderData.buffer.Map();
+    mapped += m_glyphsRenderData.bufferOffset;
+    memcpy(mapped, vertices, 6 * sizeof(vertices[0]));
+
+    m_glyphsRenderData.bufferOffset += 6 * sizeof(vertices[0]);
+    m_glyphsRenderData.buffer.Unmap();
+    m_glyphsRenderData.vertexCount += 6;
+}
+
+
 void rfct::UIPipeline::addTextVertices(glyphsRenderData* rd, const std::string& text, glm::vec2 position, float scale, font* f)
 {
     RFCT_PROFILE_FUNCTION();
     if (!f) f = &m_defaultFont;
     vk::Extent2D windowExtent = renderer::getRen().getWindow().getExtent();
+    
+	int textureIndexInShader = getTextureIndex(&f->m_TextureAtlas);
 
     float cursorX = position.x;
     float cursorY = position.y;
@@ -318,10 +382,10 @@ void rfct::UIPipeline::addTextVertices(glyphsRenderData* rd, const std::string& 
         float u1 = (g->x + g->width) / atlasWidth;
         float v1 = (g->y + g->height) / atlasHeight;
 
-        vertices.push_back({ {x0, y0}, {u0, v0} });
-        vertices.push_back({ {x1, y0}, {u1, v0} });
-        vertices.push_back({ {x1, y1}, {u1, v1} });
-        vertices.push_back({ {x0, y1}, {u0, v1} });
+        vertices.push_back({ {x0, y0}, {u0, v0}, textureIndexInShader });
+        vertices.push_back({ {x1, y0}, {u1, v0}, textureIndexInShader });
+        vertices.push_back({ {x1, y1}, {u1, v1}, textureIndexInShader });
+        vertices.push_back({ {x0, y1}, {u0, v1}, textureIndexInShader });
         vertices.push_back(vertices[index]);
         vertices.push_back(vertices[index + 2]);
 
@@ -340,15 +404,24 @@ void rfct::UIPipeline::addTextVertices(glyphsRenderData* rd, const std::string& 
 vk::DescriptorSetLayout rfct::UIPipeline::getDescriptorSetLayout()
 {
     if (m_descriptorSetLayout) return m_descriptorSetLayout.get();
+
+    vk::DescriptorBindingFlagsEXT bindingFlags = vk::DescriptorBindingFlagBitsEXT::eUpdateAfterBind;
+
+    vk::DescriptorSetLayoutBindingFlagsCreateInfoEXT bindingFlagsInfo = {};
+    bindingFlagsInfo.bindingCount = 1;
+    bindingFlagsInfo.pBindingFlags = &bindingFlags;
+
     vk::DescriptorSetLayoutBinding layoutBinding = {};
     layoutBinding.binding = 0;
     layoutBinding.descriptorType = vk::DescriptorType::eCombinedImageSampler;
-    layoutBinding.descriptorCount = 1;
+    layoutBinding.descriptorCount = RFCT_UI_TEXTURE_BINDINGS;
     layoutBinding.stageFlags = vk::ShaderStageFlagBits::eFragment;
 
     vk::DescriptorSetLayoutCreateInfo layoutCreateInfo = {};
     layoutCreateInfo.bindingCount = 1;
     layoutCreateInfo.pBindings = &layoutBinding;
+    layoutCreateInfo.pNext = &bindingFlagsInfo;
+    layoutCreateInfo.flags = vk::DescriptorSetLayoutCreateFlagBits::eUpdateAfterBindPool;
 
     m_descriptorSetLayout = renderer::getRen().getDevice().createDescriptorSetLayoutUnique(layoutCreateInfo);
 

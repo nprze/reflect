@@ -1,5 +1,6 @@
 #pragma once
 #include "render_data.h"
+#include "renderer_p/image/bindable_image.h"
 
 namespace rfct {
 	class world;
@@ -10,6 +11,7 @@ namespace rfct {
 		~scene();
 
 		void onUpdate(frameContext* context);
+		void updateUI(float dt);
 		void loadScene(const std::string& path);
 		inline void unloadScene() {};
 		inline sceneRenderData& getRenderData() { return m_RenderData; };
@@ -31,6 +33,8 @@ namespace rfct {
 	private:
 		sceneRenderData m_RenderData;
 		world* m_World;
+
+		bindableImage m_Image;
 
 		entity epicRotatingTriangle;
 	};

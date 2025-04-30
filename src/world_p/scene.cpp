@@ -12,8 +12,9 @@
 #include "renderer_p/mesh/mesh.h"
 #include "assets/assets_manager.h"
 
-rfct::scene::scene(world* worldArg) : m_World(worldArg)
+rfct::scene::scene(world* worldArg) : m_World(worldArg), m_Image("dialogues/cat.png")
 {
+	
 }
 
 rfct::scene::~scene()
@@ -30,7 +31,7 @@ namespace rfct {
 		}
 		if (input::getInput().yAxis && playerState->grounded) {
 			playerState->grounded = false;
-			player.get_mut<velocityComponent>()->velocity.y += input::getInput().yAxis * 150.f;
+			player.get_mut<velocityComponent>()->velocity.y += input::getInput().yAxis * 175.f;
 		}
 	}
 }
@@ -41,7 +42,13 @@ void rfct::scene::onUpdate(frameContext* context)
 	updateGamplay(context->dt, epicRotatingTriangle);
 	updatePhysics(context->dt);
 	updateTransformData(context, epicRotatingTriangle);
+	updateUI(context->dt);
 	cameraComponentOnUpdate(context->dt, epicRotatingTriangle);
+}
+
+void rfct::scene::updateUI(float dt)
+{
+	renderer::getRen().getUIPipeline().addImage({ 0.f,20.f }, { 200.f, 100.f }, &m_Image);
 }
 
 
