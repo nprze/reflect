@@ -17,6 +17,7 @@ namespace rfct {
 		void loadImage(const std::string& path, image* imageOut);
         void loadGlyphs(const std::string& path, font* fontOut);
         void loadMesh(const std::string& path, mesh* vertxBufferOut);
+        void createDummyImage(image* imageOut);
     private:
         vk::CommandPool m_AssetsCommandPool;
         std::string m_Path;

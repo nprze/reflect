@@ -2,6 +2,10 @@
 #include <vma/vk_mem_alloc.h>
 
 namespace rfct {
+    enum imageUsage {
+		fontAtlas,
+        ui
+    };
     class image {
     public:
         image(const std::string& path);

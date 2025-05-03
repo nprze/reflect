@@ -4,7 +4,7 @@
 #include "assets/assets_manager.h"
 
 
-rfct::UIPipeline::UIPipeline() : m_vertexShader("shaders/UI/UIimage_vert.spv"), m_fragShader("shaders/UI/UIimage_frag.spv"), m_glyphsRenderData(RFCT_DEBUG_DRAW_VERTEX_BUFFER_MAX_SIZE), m_debugDrawglyphsRenderData(RFCT_DEBUG_DRAW_VERTEX_BUFFER_MAX_SIZE), m_defaultFont("fonts/jetbrainsMono-medium.txt")
+rfct::UIPipeline::UIPipeline() : m_vertexShader("shaders/UI/UIimage_vert.spv"), m_fragShader("shaders/UI/UIimage_frag.spv"), m_glyphsRenderData(RFCT_DEBUG_DRAW_VERTEX_BUFFER_MAX_SIZE*2137), m_debugDrawglyphsRenderData(RFCT_DEBUG_DRAW_VERTEX_BUFFER_MAX_SIZE), m_defaultFont("fonts/jetbrainsMono-medium.txt"), m_dummyImage("")
 {
     createPipeline();
     createDescriptorSet();
@@ -185,7 +185,7 @@ void rfct::UIPipeline::createDescriptorSet()
     );
 
     vk::DescriptorPoolCreateInfo poolCreateInfo(
-        { vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet | vk::DescriptorPoolCreateFlagBits::eUpdateAfterBind },
+        { vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet},
         1,
         1,
         &poolSize
@@ -194,6 +194,7 @@ void rfct::UIPipeline::createDescriptorSet()
     m_DescriptorPool = renderer::getRen().getDevice().createDescriptorPoolUnique(poolCreateInfo);
 
     vk::DescriptorSetLayout dsLayout = getDescriptorSetLayout();
+
     vk::DescriptorSetAllocateInfo allocInfo(
         m_DescriptorPool.get(),
         1,
@@ -202,7 +203,6 @@ void rfct::UIPipeline::createDescriptorSet()
 
     m_DescriptorSet = std::move(renderer::getRen().getDevice().allocateDescriptorSetsUnique(allocInfo)[0]);
 	m_textureIndexMap.reserve(RFCT_UI_TEXTURE_BINDINGS);
-
 }
 
 
@@ -274,7 +274,7 @@ void rfct::UIPipeline::draw(frameData& fd, vk::Framebuffer framebuffer)
     commandBuffer.end();
     m_glyphsRenderData.postFrame();
     m_debugDrawglyphsRenderData.postFrame();
-	m_textureIndexMap.clear();
+	//m_textureIndexMap.clear();
 }
 
 void rfct::UIPipeline::debugText(const std::string& text, glm::vec2 startPosition, float scale)
@@ -282,23 +282,49 @@ void rfct::UIPipeline::debugText(const std::string& text, glm::vec2 startPositio
     addTextVertices(&m_debugDrawglyphsRenderData, text, startPosition, scale);
 }
 
-int rfct::UIPipeline::getTextureIndex(bindableImage* image)
+int rfct::UIPipeline::getTextureIndex(bindableImage* image, imageUsage usage)
 {
-	if (m_textureIndexMap.find(image) != m_textureIndexMap.end()) {
-		return m_textureIndexMap[image];
-	}
+    if (m_textureIndexMap.find(image) != m_textureIndexMap.end()) {
+        return m_textureIndexMap[image];
+    }
+    // basic checks
+	RFCT_ASSERT(!(usage == imageUsage::fontAtlas && m_indexTextureMap[0] != nullptr)); // attempt to get to font atlas when it is already set
 	if (m_textureIndexMap.size() >= RFCT_UI_TEXTURE_BINDINGS) {
-		RFCT_CRITICAL("Too many textures bound to UI pipeline");
+		RFCT_CRITICAL("Attempt to add texture when the descriptor has been filled (max textures: {})", RFCT_UI_TEXTURE_BINDINGS);
 	}
-	int indexInShader = m_textureIndexMap.size(); 
+
+    // get the actual index based on usage
+    int indexInShader;
+    if (usage == imageUsage::fontAtlas) {
+		indexInShader = 0;
+	}
+	else {
+		if (m_textureIndexMap.size() == 0) {
+			indexInShader = 1;
+		}
+		else {
+			indexInShader = m_textureIndexMap.size();
+		}
+	}
 	m_textureIndexMap[image] = indexInShader;
+	m_indexTextureMap[indexInShader] = image;
 
     // update images
+
     vk::DescriptorImageInfo imageInfo[RFCT_UI_TEXTURE_BINDINGS];
-    for (auto& [imageA, index] : m_textureIndexMap) {
-        imageInfo[index].imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;  
-        imageInfo[index].imageView = imageA->m_Image.m_imageView;
-        imageInfo[index].sampler = imageA->m_sampler.get();
+
+    for (int i = 0; i < RFCT_UI_TEXTURE_BINDINGS; ++i) {
+        auto it = m_indexTextureMap.find(i);
+        if (it != m_indexTextureMap.end()) {
+            imageInfo[i].imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+            imageInfo[i].imageView = it->second->m_Image.m_imageView;
+            imageInfo[i].sampler = it->second->m_sampler.get();
+        }
+        else {
+            imageInfo[i].imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+            imageInfo[i].imageView = m_dummyImage.m_Image.m_imageView;
+            imageInfo[i].sampler = m_dummyImage.m_sampler.get();
+        }
     }
 
     vk::WriteDescriptorSet writeDescriptorSet = {};
@@ -306,7 +332,7 @@ int rfct::UIPipeline::getTextureIndex(bindableImage* image)
     writeDescriptorSet.dstBinding = 0;
     writeDescriptorSet.dstArrayElement = 0;
     writeDescriptorSet.descriptorType = vk::DescriptorType::eCombinedImageSampler;
-    writeDescriptorSet.descriptorCount = m_textureIndexMap.size();
+    writeDescriptorSet.descriptorCount = RFCT_UI_TEXTURE_BINDINGS;
     writeDescriptorSet.pImageInfo = imageInfo;
     
     renderer::getRen().getDevice().updateDescriptorSets({ writeDescriptorSet }, nullptr);
@@ -332,7 +358,7 @@ void rfct::UIPipeline::addImage(const glm::vec2& min, const glm::vec2& max, bind
 	vertices[4].texCoord = { 0.0f, 0.0f };
 	vertices[5].texCoord = { 1.0f, 1.0f };
 
-	int texIndex = getTextureIndex(image);
+	int texIndex = getTextureIndex(image, imageUsage::ui);
 	
     vertices[0].texIndex = texIndex;
 	vertices[1].texIndex = texIndex;
@@ -358,7 +384,7 @@ void rfct::UIPipeline::addTextVertices(glyphsRenderData* rd, const std::string& 
     if (!f) f = &m_defaultFont;
     vk::Extent2D windowExtent = renderer::getRen().getWindow().getExtent();
     
-	int textureIndexInShader = getTextureIndex(&f->m_TextureAtlas);
+	int textureIndexInShader = getTextureIndex(&f->m_TextureAtlas, imageUsage::fontAtlas);
 
     float cursorX = position.x;
     float cursorY = position.y;
@@ -405,12 +431,6 @@ vk::DescriptorSetLayout rfct::UIPipeline::getDescriptorSetLayout()
 {
     if (m_descriptorSetLayout) return m_descriptorSetLayout.get();
 
-    vk::DescriptorBindingFlagsEXT bindingFlags = vk::DescriptorBindingFlagBitsEXT::eUpdateAfterBind;
-
-    vk::DescriptorSetLayoutBindingFlagsCreateInfoEXT bindingFlagsInfo = {};
-    bindingFlagsInfo.bindingCount = 1;
-    bindingFlagsInfo.pBindingFlags = &bindingFlags;
-
     vk::DescriptorSetLayoutBinding layoutBinding = {};
     layoutBinding.binding = 0;
     layoutBinding.descriptorType = vk::DescriptorType::eCombinedImageSampler;
@@ -420,8 +440,6 @@ vk::DescriptorSetLayout rfct::UIPipeline::getDescriptorSetLayout()
     vk::DescriptorSetLayoutCreateInfo layoutCreateInfo = {};
     layoutCreateInfo.bindingCount = 1;
     layoutCreateInfo.pBindings = &layoutBinding;
-    layoutCreateInfo.pNext = &bindingFlagsInfo;
-    layoutCreateInfo.flags = vk::DescriptorSetLayoutCreateFlagBits::eUpdateAfterBindPool;
 
     m_descriptorSetLayout = renderer::getRen().getDevice().createDescriptorSetLayoutUnique(layoutCreateInfo);
 

@@ -5,7 +5,13 @@
 
 rfct::image::image(const std::string& path)
 {
-    AssetsManager::get().loadImage(path, this);
+	if (path.empty()) {
+		AssetsManager::get().createDummyImage(this);
+		return;
+    }
+    else {
+        AssetsManager::get().loadImage(path, this);
+    }
 }
 
 rfct::image::~image()
@@ -44,6 +50,12 @@ void rfct::image::transitionImageLayout(vk::CommandBuffer commandBuffer, vk::Ima
         barrier.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
         barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
         sourceStage = vk::PipelineStageFlagBits::eTransfer;
+        destinationStage = vk::PipelineStageFlagBits::eFragmentShader;
+    }
+    else if (oldLayout == vk::ImageLayout::eUndefined && newLayout == vk::ImageLayout::eShaderReadOnlyOptimal) {
+        barrier.srcAccessMask = vk::AccessFlags{};
+        barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
+        sourceStage = vk::PipelineStageFlagBits::eTopOfPipe;
         destinationStage = vk::PipelineStageFlagBits::eFragmentShader;
     }
     else {

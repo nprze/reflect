@@ -211,4 +211,56 @@ namespace rfct {
 
     }
 
+    void AssetsManager::createDummyImage(image* imageOut)
+    {
+
+        uint32_t widthHeight = 1;
+        vk::DeviceSize imageSize = 1;
+
+        // Create Vulkan image
+        vk::ImageCreateInfo imageInfo({}, vk::ImageType::e2D, vk::Format::eR8G8B8A8Unorm,
+            { static_cast<uint32_t>(widthHeight), static_cast<uint32_t>(widthHeight), 1 }, 1, 1,
+            vk::SampleCountFlagBits::e1, vk::ImageTiling::eOptimal,
+            vk::ImageUsageFlagBits::eSampled,
+            vk::SharingMode::eExclusive);
+
+        VmaAllocationCreateInfo imageAllocInfo{};
+        imageAllocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+
+        VkResult res = vmaCreateImage(renderer::getRen().getAllocator(), reinterpret_cast<const VkImageCreateInfo*>(&imageInfo), &imageAllocInfo,
+            reinterpret_cast<VkImage*>(&imageOut->m_image), &imageOut->m_allocation, nullptr);
+        if (res != VK_SUCCESS) {
+            RFCT_CRITICAL("Failed to create Vulkan image");
+        }
+
+        // Allocate command buffer
+        if (!m_AssetsCommandPool) {
+            m_AssetsCommandPool = renderer::getRen().getDevice().createCommandPool({ {}, renderer::getRen().getDeviceWrapper().getQueueManager().getGraphicsQueueFamilyIndex() });
+        }
+        vk::CommandBufferAllocateInfo allocInfo(m_AssetsCommandPool, vk::CommandBufferLevel::ePrimary, 1);
+        vk::CommandBuffer commandBuffer = renderer::getRen().getDevice().allocateCommandBuffers(allocInfo)[0];
+
+        vk::CommandBufferBeginInfo beginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
+        commandBuffer.begin(beginInfo);
+
+        // Transition image layout and copy buffer data
+        imageOut->transitionImageLayout(commandBuffer, vk::ImageLayout::eUndefined, vk::ImageLayout::eShaderReadOnlyOptimal);
+
+        commandBuffer.end();
+
+        vk::SubmitInfo submitInfo({}, {}, commandBuffer);
+        vk::FenceCreateInfo fenceInfo;
+        vk::Fence fence = renderer::getRen().getDevice().createFence(fenceInfo);
+        renderer::getRen().getDeviceWrapper().getQueueManager().submitGraphics(submitInfo, fence);
+        RFCT_VULKAN_CHECK(renderer::getRen().getDevice().waitForFences(fence, VK_TRUE, UINT64_MAX));
+
+        renderer::getRen().getDevice().freeCommandBuffers(m_AssetsCommandPool, commandBuffer);
+        renderer::getRen().getDevice().destroyFence(fence);
+
+        // Create Image View
+        vk::ImageViewCreateInfo viewInfo({}, imageOut->m_image, vk::ImageViewType::e2D, vk::Format::eR8G8B8A8Unorm, {},
+            { vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1 });
+        imageOut->m_imageView = renderer::getRen().getDevice().createImageView(viewInfo);
+    }
+
 }

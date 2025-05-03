@@ -12,7 +12,7 @@
 #include "renderer_p/mesh/mesh.h"
 #include "assets/assets_manager.h"
 
-rfct::scene::scene(world* worldArg) : m_World(worldArg), m_Image("dialogues/cat.png")
+rfct::scene::scene(world* worldArg) : m_World(worldArg), m_Image0("dialogues/cat.png"), m_Image1("dialogues/cat1.png")
 {
 	
 }
@@ -48,7 +48,8 @@ void rfct::scene::onUpdate(frameContext* context)
 
 void rfct::scene::updateUI(float dt)
 {
-	renderer::getRen().getUIPipeline().addImage({ 0.f,20.f }, { 200.f, 100.f }, &m_Image);
+	renderer::getRen().getUIPipeline().addImage({ 0.f,20.f }, { 200.f, 100.f }, &m_Image0);
+	renderer::getRen().getUIPipeline().addImage({ 0.f, 120.f }, { 200.f, 220.f }, &m_Image1);
 }
 
 

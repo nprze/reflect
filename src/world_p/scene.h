@@ -34,7 +34,8 @@ namespace rfct {
 		sceneRenderData m_RenderData;
 		world* m_World;
 
-		bindableImage m_Image;
+		bindableImage m_Image0;
+		bindableImage m_Image1;
 
 		entity epicRotatingTriangle;
 	};
