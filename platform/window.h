@@ -12,7 +12,7 @@ namespace rfct {
         virtual void setExtent(vk::Extent2D ext) = 0;
 		virtual vk::SurfaceKHR createSurface(vk::Instance instance) = 0;
 
-        virtual bool pollEvents() = 0;
+        virtual bool pollAndParseEvents() = 0;
 
     };
 }

@@ -11,8 +11,9 @@
 #include "physics/collision_callback.h"
 #include "renderer_p/mesh/mesh.h"
 #include "assets/assets_manager.h"
+#include "ui.h"
 
-rfct::scene::scene(world* worldArg) : m_World(worldArg), m_Image0("dialogues/cat.png"), m_Image1("dialogues/cat1.png")
+rfct::scene::scene(world* worldArg) : m_World(worldArg)
 {
 	
 }
@@ -42,14 +43,13 @@ void rfct::scene::onUpdate(frameContext* context)
 	updateGamplay(context->dt, epicRotatingTriangle);
 	updatePhysics(context->dt);
 	updateTransformData(context, epicRotatingTriangle);
-	updateUI(context->dt);
+	updateUI(context);
 	cameraComponentOnUpdate(context->dt, epicRotatingTriangle);
 }
 
-void rfct::scene::updateUI(float dt)
+void rfct::scene::updateUI(frameContext* context)
 {
-	renderer::getRen().getUIPipeline().addImage({ 0.f,20.f }, { 200.f, 100.f }, &m_Image0);
-	renderer::getRen().getUIPipeline().addImage({ 0.f, 120.f }, { 200.f, 220.f }, &m_Image1);
+	UpdateUI(context);
 }
 
 

@@ -4,10 +4,6 @@
 #include "android_glue.h"
 
 namespace rfct {
-    struct button{
-        glm::vec2 min;
-        glm::vec2 max;
-    };
 
     button buttons[3];
     input input::s_input;
@@ -25,7 +21,7 @@ namespace rfct {
         buttons[2].min = { oneThirdWindowWidth*2,0 };
         buttons[2].max = { oneThirdWindowWidth*3,ext.height };
     }
-    void input::pollEvents() {
+    void input::pollAndParseEvents(frameContext* context) {
         xAxis=0;
         yAxis=0;
         zAxis=0;

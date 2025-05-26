@@ -17,7 +17,7 @@ m_Renderer(RFCT_RENDERER_ARGUMENTS_VAR)
 #ifdef WINDOWS_BUILD
     update();
 	renderer::getRen().getWindow().show();
-	while (renderer::getRen().getWindow().pollEvents())
+	while (renderer::getRen().getWindow().pollAndParseEvents())
 	{
 		update();
 	}
@@ -44,9 +44,10 @@ void rfct::reflectApplication::update() {
 		.dt = deltaTime.count(),
 		.frame = currentFrame,
 		.scene = &world::getWorld().getCurrentScene(),
+		.state = gameState::undefined
 	};
 
-	input::getInput().pollEvents();
+	input::getInput().pollAndParseEvents(&context);
 	if (!isAppMinimised) {
 		updateGameplay(context);
 		renderer::getRen().render(context);

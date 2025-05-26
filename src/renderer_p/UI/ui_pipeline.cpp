@@ -274,7 +274,6 @@ void rfct::UIPipeline::draw(frameData& fd, vk::Framebuffer framebuffer)
     commandBuffer.end();
     m_glyphsRenderData.postFrame();
     m_debugDrawglyphsRenderData.postFrame();
-	//m_textureIndexMap.clear();
 }
 
 void rfct::UIPipeline::debugText(const std::string& text, glm::vec2 startPosition, float scale)
@@ -340,7 +339,6 @@ int rfct::UIPipeline::getTextureIndex(bindableImage* image, imageUsage usage)
     return indexInShader;
 }
 
-
 void rfct::UIPipeline::addImage(const glm::vec2& min, const glm::vec2& max, bindableImage* image)
 {
 	GlyphVertex vertices[6];
@@ -377,6 +375,26 @@ void rfct::UIPipeline::addImage(const glm::vec2& min, const glm::vec2& max, bind
     m_glyphsRenderData.vertexCount += 6;
 }
 
+void rfct::UIPipeline::removeImage(bindableImage* image)
+{
+	int texIndex = getTextureIndex(image, imageUsage::ui);
+    for (auto it = m_textureIndexMap.begin(); it != m_textureIndexMap.end(); ) {
+        if (it->second == texIndex) {
+            it = m_textureIndexMap.erase(it); 
+        }
+        else {
+            ++it;
+        }
+    }
+    for (auto it = m_indexTextureMap.begin(); it != m_indexTextureMap.end(); ) {
+        if (it->second == image) {
+            it = m_indexTextureMap.erase(it);
+        }
+        else {
+            ++it;
+        }
+    }
+}
 
 void rfct::UIPipeline::addTextVertices(glyphsRenderData* rd, const std::string& text, glm::vec2 position, float scale, font* f)
 {

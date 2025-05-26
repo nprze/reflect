@@ -29,6 +29,7 @@ namespace rfct {
 		void addTextVertices(glyphsRenderData* rd, const std::string& text, glm::vec2 position, float scale, font* f = nullptr);
 		int getTextureIndex(bindableImage* image, imageUsage usage);
 		void addImage(const glm::vec2& min, const glm::vec2& max, bindableImage* image);
+		void removeImage(bindableImage* image);
 		vk::DescriptorSetLayout getDescriptorSetLayout();
 	private:
 		vulkanShader m_vertexShader;

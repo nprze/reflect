@@ -11,7 +11,7 @@ namespace rfct {
 		~scene();
 
 		void onUpdate(frameContext* context);
-		void updateUI(float dt);
+		void updateUI(frameContext* context);
 		void loadScene(const std::string& path);
 		inline void unloadScene() {};
 		inline sceneRenderData& getRenderData() { return m_RenderData; };
@@ -33,9 +33,6 @@ namespace rfct {
 	private:
 		sceneRenderData m_RenderData;
 		world* m_World;
-
-		bindableImage m_Image0;
-		bindableImage m_Image1;
 
 		entity epicRotatingTriangle;
 	};
