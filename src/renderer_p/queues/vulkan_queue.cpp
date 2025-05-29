@@ -40,7 +40,7 @@ std::string queueFlagsToString(vk::QueueFlags queueFlags) {
     return oss.str();
 }
 
-std::array<uint32_t, 3> rfct::selectQueueFamilies(vk::PhysicalDevice physicalDevice) {
+std::array<uint32_t, 1> rfct::selectQueueFamilies(vk::PhysicalDevice physicalDevice) {
     std::vector<vk::QueueFamilyProperties> queueFamilies = physicalDevice.getQueueFamilyProperties();
 
     std::pair<int, uint32_t> graphicsAndPresentFamily = { -1, 0 };
@@ -51,6 +51,7 @@ std::array<uint32_t, 3> rfct::selectQueueFamilies(vk::PhysicalDevice physicalDev
     for (uint32_t i = 0; i < queueFamilies.size(); ++i) {
         uint32_t queueCount = queueFamilies[i].queueCount;
         vk::QueueFlags flags = queueFamilies[i].queueFlags;
+        RFCT_INFO("queue {}, flags {}", i, queueFlagsToString(flags));
         bool supportsPresent = physicalDevice.getSurfaceSupportKHR(i, renderer::getRen().getSurface());
 
         if ((flags & vk::QueueFlagBits::eGraphics) && supportsPresent) {
@@ -71,9 +72,9 @@ std::array<uint32_t, 3> rfct::selectQueueFamilies(vk::PhysicalDevice physicalDev
     }
 
     return {
-        static_cast<uint32_t>(graphicsAndPresentFamily.first),
+        static_cast<uint32_t>(graphicsAndPresentFamily.first)/*,
         static_cast<uint32_t>(computeFamily.first),
-        static_cast<uint32_t>(transferFamily.first)
+        static_cast<uint32_t>(transferFamily.first)*/
     };
 }
 
@@ -82,12 +83,12 @@ rfct::vulkanQueueManager::vulkanQueueManager(vk::Device device, vk::PhysicalDevi
     auto queueFamilies = selectQueueFamilies(physicalDevice);
 
     m_graphicsQueueFamilyIndex = queueFamilies[0];
-    m_computeQueueFamilyIndex = queueFamilies[1];
-    m_transferQueueFamilyIndex = queueFamilies[2];
+    //m_computeQueueFamilyIndex = queueFamilies[1];
+    //m_transferQueueFamilyIndex = queueFamilies[2];
 
     m_graphicsQueue = m_device.getQueue(queueFamilies[0], 0);
-    m_computeQueue = m_device.getQueue(queueFamilies[1], 0);
-    m_transferQueue = m_device.getQueue(queueFamilies[2], 0);
+    //m_computeQueue = m_device.getQueue(queueFamilies[1], 0);
+    //m_transferQueue = m_device.getQueue(queueFamilies[2], 0);
 }
 
 rfct::vulkanQueueManager::~vulkanQueueManager() {
@@ -97,11 +98,11 @@ void rfct::vulkanQueueManager::submitGraphics(const vk::SubmitInfo& submitInfo, 
     m_graphicsQueue.submit(submitInfo, fence);
 }
 
-
+/*
 void rfct::vulkanQueueManager::submitCompute(const vk::SubmitInfo& submitInfo, vk::Fence fence) {
     m_computeQueue.submit(submitInfo, fence);
 }
 
 void rfct::vulkanQueueManager::submitTransfer(const vk::SubmitInfo& submitInfo, vk::Fence fence) {
     m_transferQueue.submit(submitInfo, fence);
-}
+}*/

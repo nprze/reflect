@@ -66,8 +66,30 @@ public class MainActivity extends Activity implements Choreographer.FrameCallbac
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
+        int action = -1;
+        switch (event.getAction()){
+
+            case MotionEvent.ACTION_DOWN:
+            case MotionEvent.ACTION_POINTER_DOWN:
+                action = 0;
+                break;
+
+            case MotionEvent.ACTION_MOVE:
+                action = 2;
+                break;
+
+            case MotionEvent.ACTION_UP:
+            case MotionEvent.ACTION_POINTER_UP:
+                action = 1;
+                break;
+
+            case MotionEvent.ACTION_CANCEL:
+                return true;
+            default:
+                return true;
+        }
         synchronized (eventQueue) {
-            eventQueue.add(new InputEvent(event.getAction(), event.getX(), event.getY(), event.getEventTime()));
+            eventQueue.add(new InputEvent(action, event.getX(), event.getY(), event.getPointerId(event.getActionIndex())));
         }
         return true;
     }
@@ -117,13 +139,12 @@ public class MainActivity extends Activity implements Choreographer.FrameCallbac
     static class InputEvent {
         int action;
         float x, y;
-        long timestamp;
-
-        InputEvent(int action, float x, float y, long timestamp) {
+        int pointerID;
+        InputEvent(int action, float x, float y, int pointerid) {
             this.action = action;
             this.x = x;
             this.y = y;
-            this.timestamp = timestamp;
+            this.pointerID = pointerid;
         }
     }
 }

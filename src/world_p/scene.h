@@ -1,6 +1,7 @@
 #pragma once
 #include "render_data.h"
 #include "renderer_p/image/bindable_image.h"
+#include "player/player.h"
 
 namespace rfct {
 	class world;
@@ -35,5 +36,6 @@ namespace rfct {
 		world* m_World;
 
 		entity epicRotatingTriangle;
+		playerController m_playerStateMachine;
 	};
 };

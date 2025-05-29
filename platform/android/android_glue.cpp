@@ -30,7 +30,7 @@ static jclass eventClass;
 static jfieldID actionField;
 static jfieldID xField;
 static jfieldID yField;
-static jfieldID timestampField;
+static jfieldID pointerIDField;
 extern "C" JNIEXPORT void JNICALL
 Java_reflect_mobile_reflect_MainActivity_createVulkanApp(JNIEnv *env, jobject thiz, jobject surface) {
     if (!app) {  // the code is also called when the app is unminimized
@@ -38,7 +38,7 @@ Java_reflect_mobile_reflect_MainActivity_createVulkanApp(JNIEnv *env, jobject th
         actionField = env->GetFieldID(eventClass, "action", "I");
         xField = env->GetFieldID(eventClass, "x", "F");
         yField = env->GetFieldID(eventClass, "y", "F");
-        timestampField = env->GetFieldID(eventClass, "timestamp", "J");
+        pointerIDField = env->GetFieldID(eventClass, "pointerID", "I");
         ANativeWindow* nativeWindow = ANativeWindow_fromSurface(env, surface);
         app = std::make_unique<rfct::reflectApplication>(nativeWindow);
     }
@@ -51,7 +51,7 @@ Java_reflect_mobile_reflect_MainActivity_createVulkanApp(JNIEnv *env, jobject th
 struct InputEvent {
     int action;
     float x, y;
-    long timestamp;
+    int pointerID;
 };
 
 extern "C"
@@ -69,9 +69,9 @@ Java_reflect_mobile_reflect_MainActivity_sendEventsToNative(JNIEnv* env, jobject
         int action = env->GetIntField(eventObj, actionField);
         float x = env->GetFloatField(eventObj, xField);
         float y = env->GetFloatField(eventObj, yField);
-        long timestamp = env->GetLongField(eventObj, timestampField);
+        int pointerID = env->GetLongField(eventObj, pointerIDField);
 
-        rfct::InputQueue::eventQueue.push_back({action, x, y, timestamp});
+        rfct::InputQueue::eventQueue.push_back({action, x, y, pointerID});
         env->DeleteLocalRef(eventObj);
     }
 }
@@ -79,10 +79,6 @@ Java_reflect_mobile_reflect_MainActivity_sendEventsToNative(JNIEnv* env, jobject
 extern "C"
 JNIEXPORT void JNICALL
 Java_reflect_mobile_reflect_MainActivity_renderNative(JNIEnv*, jobject) {
-    for (const auto& event : rfct::InputQueue::eventQueue) {
-        RFCT_TRACE("Event: action={}, x={}, y={}, timestamp={}", event.action, event.x, event.y,
-             event.timestamp);
-    }
     app->update();
     rfct::InputQueue::eventQueue.clear();
 }

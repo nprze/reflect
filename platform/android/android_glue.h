@@ -4,7 +4,7 @@ namespace rfct {
     struct InputEvent {
         int action;
         float x, y;
-        long timestamp;
+        int pointerID;
     };
     class InputQueue{
     public:

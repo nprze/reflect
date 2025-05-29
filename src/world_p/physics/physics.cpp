@@ -1,8 +1,10 @@
 #include "physics.h"
 #include "world_p/components.h"
-#include "world_p\ecs.h"
-#include "renderer_p\debug\debug_draw.h"
+#include "world_p/ecs.h"
+#include "renderer_p/debug/debug_draw.h"
+#include "context.h"
 
+constexpr float physicsScale = 100.f; // to make applied forces smaller for more readability
 constexpr uint32_t substepCount = 10;
 constexpr float dumping = 0.97f;
 
@@ -169,8 +171,9 @@ namespace rfct {
 
     void checkForCollision(BVHnode& node, dynamicBoxColliderComponent& bocCollider, collisionCallbackComponent& callback, entity& dynamicEntity) {
         if (checkForCollisionAABBAABB(node.min, node.max, bocCollider.min, bocCollider.max)) {
-            if (node.right < 0)
+            if (node.right < 0) 
             {
+                // BVH leaf
                 glm::vec2 resolution = ResolveAABBCollision(bocCollider, {node.min, node.max});
                 callback.handler(dynamicEntity, node.entity, resolution);
             }
@@ -236,30 +239,24 @@ namespace rfct {
     }
 }
 
-void rfct::updatePhysics(float dt)
+void rfct::updatePhysics(const frameContext* ctx)
 {
-    constexpr float deltaTime = 1.f / 60.f;
-    static float accululator = 0.f;
-    accululator += dt;
-    //drawBVH(0, BVHnodes.back());
-    while (accululator >= deltaTime){
-        accululator -= deltaTime;
+    drawBVH(0, BVHnodes.back());
+    for (uint32_t i = 0; i < ctx->fixedUpdateTimes;++i) {
         gravityVelocityPositionBoxQuery.each([&](flecs::entity ent, gravityComponent& gravity, velocityComponent& velocity, positionComponent& position, dynamicBoxColliderComponent& dynamicBox, collisionCallbackComponent& callback) {
             if (gravity.gravityEnabled) {
-                velocity.velocity += glm::vec2(0.f, -1.f) * gravity.gravity * deltaTime;
-                velocity.velocity *= dumping;
+                velocity.velocity.y += -gravity.gravity * fixedDeltaTime;
+                velocity.velocity.y *= gravity.oneMinusAirResistance;
             }
-            float substepTime = (deltaTime) / (float)substepCount;
+            constexpr float substepTime = (fixedDeltaTime) / (float)substepCount;
             for (uint32_t substep = 0; substep < substepCount; substep++) {
-                if (gravity.gravityEnabled) {
-                    glm::vec2 substepVelocity = velocity.velocity / (float)substepCount;
-                    position.position += substepVelocity * substepTime;
-                }
+
+                glm::vec2 substepVelocity = velocity.velocity / (float)substepCount;
+                position.position += substepVelocity * physicsScale * substepTime;
                 dynamicBoxColliderComponent finalBoundingBox = { dynamicBox.min + position.position, dynamicBox.max + position.position };
                 checkForCollision(BVHnodes.back(), finalBoundingBox, callback, ent);
             }
 
             });
-
     }
 }

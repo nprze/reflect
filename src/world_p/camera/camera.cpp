@@ -23,13 +23,14 @@ namespace rfct {
     }
     void cameraComponentOnUpdate(float dt, entity player)
     {
-        
+        /*
         if (input::getInput().cameraXAxis || input::getInput().cameraYAxis) {
             cameraEntity.get_mut<positionComponent>()->position.x += dt * input::getInput().cameraXAxis;
             cameraEntity.get_mut<positionComponent>()->position.y += dt * input::getInput().cameraYAxis;
         }
-        else {
-            glm::vec2 playerPos = player.get<positionComponent>()->position;
+        else*/  {
+            glm::vec2 playerPos = { 0,5 };
+            //glm::vec2 playerPos = player.get<positionComponent>()->position;
             cameraEntity.get_mut<position3DComponent>()->position.x = playerPos.x;
             cameraEntity.get_mut<position3DComponent>()->position.y = playerPos.y;
         }

@@ -70,8 +70,9 @@ namespace rfct {
 		glm::vec2 velocity;
 	};
 	struct gravityComponent {
+        float oneMinusAirResistance = 0.97f;
 		bool gravityEnabled = true;
-		float gravity = 300.f;
+		float gravity = 5.f;
 	};
 
     struct playerStateComponent {

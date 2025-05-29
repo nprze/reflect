@@ -12,3 +12,5 @@
 #include "flecs/flecs.h"
 
 using entity = flecs::entity;
+
+constexpr float fixedDeltaTime = 1.f / 60.f;

@@ -44,6 +44,7 @@ elseif(PLATFORM_ANDROID)
     )
 endif()
 
+
 if(PLATFORM_WINDOWS)
     add_executable(reflect  platform/windows/reflect_main.cpp)
     set_property(DIRECTORY ${CMAKE_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT reflect)

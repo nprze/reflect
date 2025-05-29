@@ -39,6 +39,9 @@ void rfct::reflectApplication::update() {
 	std::chrono::duration<float> deltaTime = currentTime - previousTime;
 	previousTime = currentTime;
 
+
+
+
 	currentFrame = (currentFrame + 1) % RFCT_FRAMES_IN_FLIGHT;
 	frameContext context = {
 		.dt = deltaTime.count(),
@@ -46,6 +49,12 @@ void rfct::reflectApplication::update() {
 		.scene = &world::getWorld().getCurrentScene(),
 		.state = gameState::undefined
 	};
+	static float accululator = 0.f;
+	accululator += context.dt;
+	while (accululator >= fixedDeltaTime) {
+		accululator -= fixedDeltaTime;
+		context.fixedUpdateTimes++;
+	}
 
 	input::getInput().pollAndParseEvents(&context);
 	if (!isAppMinimised) {

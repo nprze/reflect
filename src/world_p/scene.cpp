@@ -8,11 +8,12 @@
 #include "camera/camera.h"
 #include "renderer_p/renderer.h"
 #include "physics/physics.h"
-#include "physics/collision_callback.h"
+#include "player/player.h"
 #include "renderer_p/mesh/mesh.h"
 #include "assets/assets_manager.h"
 #include "ui.h"
 
+const float maxVelocityX = 100;
 rfct::scene::scene(world* worldArg) : m_World(worldArg)
 {
 	
@@ -23,25 +24,12 @@ rfct::scene::~scene()
 	cleanupQueries();
 }
 
-namespace rfct {
-	void updateGamplay(float dt, entity player) {
-		playerStateComponent* playerState = player.get_mut<playerStateComponent>();
-		positionComponent* pos = player.get_mut<positionComponent>();
-		if (input::getInput().xAxis) {
-			pos->position.x += 3 * input::getInput().xAxis * dt;
-		}
-		if (input::getInput().yAxis && playerState->grounded) {
-			playerState->grounded = false;
-			player.get_mut<velocityComponent>()->velocity.y += input::getInput().yAxis * 175.f;
-		}
-	}
-}
 
 
 void rfct::scene::onUpdate(frameContext* context)
 {
-	updateGamplay(context->dt, epicRotatingTriangle);
-	updatePhysics(context->dt);
+	m_playerStateMachine.update(context);
+	updatePhysics(context);
 	updateTransformData(context, epicRotatingTriangle);
 	updateUI(context);
 	cameraComponentOnUpdate(context->dt, epicRotatingTriangle);
@@ -90,7 +78,7 @@ void rfct::scene::loadScene(const std::string& path)
 		collisionCallbackComponent colCallback;
 		colCallback.handler = onCollision_Player_StaticObj;
 		epicRotatingTriangle.set<positionComponent>({ { 0.f, 6.f } }).set<gravityComponent>({}).set<velocityComponent>({ glm::vec3(0.f,0.f,0.f) }).set<collisionCallbackComponent>(colCallback).set<playerStateComponent>({});
-
+		m_playerStateMachine.setPlayer(epicRotatingTriangle);
 	}
 	m_RenderData.endTransferStatic();
 	buildBVH();

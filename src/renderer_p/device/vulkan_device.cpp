@@ -12,9 +12,10 @@ namespace rfct {
 		//VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME
 	};
 	uint32_t rateDevice(vk::PhysicalDevice device) {
-		std::array<uint32_t, 3> queueFamilies = selectQueueFamilies(device);
+		std::array<uint32_t, 1> queueFamilies = selectQueueFamilies(device);
 		for (uint32_t familyIndex : queueFamilies) {
 			if (familyIndex == -1) {
+                RFCT_ERROR("not enough queue families");
 				return 0;
 			}
 		}
@@ -34,6 +35,7 @@ namespace rfct {
 		}
 
 		if (!requiredExtensions.empty()) {
+            RFCT_ERROR("required extensions not supported");
 			return 0;
 		}
 /*
@@ -101,7 +103,7 @@ namespace rfct {
 	vk::UniqueDevice createDevice(vk::PhysicalDevice physicalDevice) {
 		RFCT_PROFILE_FUNCTION();
 		
-		std::array<uint32_t, 3> queueFamilies = selectQueueFamilies(physicalDevice);
+		std::array<uint32_t, 1> queueFamilies = selectQueueFamilies(physicalDevice);
 		std::vector<vk::DeviceQueueCreateInfo> queueCreateInfos;
 		float queuePriority = 1.0f;
 		vk::DeviceQueueCreateInfo graphicsQueueCreateInfo = {};
@@ -109,7 +111,7 @@ namespace rfct {
 		graphicsQueueCreateInfo.queueCount = 1;
 		graphicsQueueCreateInfo.pQueuePriorities = &queuePriority;
 		queueCreateInfos.push_back(graphicsQueueCreateInfo);
-
+		/*
 		if (queueFamilies[1] != queueFamilies[0]) {
 			vk::DeviceQueueCreateInfo computeQueueCreateInfo = {};
 			computeQueueCreateInfo.queueFamilyIndex = queueFamilies[1];
@@ -124,7 +126,7 @@ namespace rfct {
 			transferQueueCreateInfo.queueCount = 1;
 			transferQueueCreateInfo.pQueuePriorities = &queuePriority;
 			queueCreateInfos.push_back(transferQueueCreateInfo);
-		}
+		}*/
 
 		vk::PhysicalDeviceFeatures deviceFeatures = {};
 
