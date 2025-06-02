@@ -48,7 +48,7 @@ void rfct::scene::loadScene(const std::string& path)
 
 	camera = ecs::get().entity()
 		.child_of(sceneEntity)
-		.set<position3DComponent>({ { 0.f,  0.f, 20.f} })
+		.set<position3DComponent>({ { 0.f,  0.f, 40.f} })
 		.set<rotationComponent>({ {0.f, 0.f} })
 		.set<cameraComponent>({ 45.0f, renderer::getRen().getAspectRatio(), 0.1f, 100.0f });
 	setCamera(camera);
@@ -67,14 +67,22 @@ void rfct::scene::loadScene(const std::string& path)
 		createStaticRect(&bounds);
 	}
 	{
+		staticBoxColliderComponent bounds = { { 5.f, 4.f }, { 6.f, 5.f } };
+		createStaticRect(&bounds);
+	}
+	{
+		staticBoxColliderComponent bounds = { { 3.f, 4.f }, { 4.f, 5.f } };
+		createStaticRect(&bounds);
+	}
+	{
 		createStaticMesh("building_blocks/700x70.txt", glm::vec2(10.f, 1.f), glm::vec2(8.f, 2.f));
 	}
 	{
 		createStaticMesh("building_blocks/700x70.txt", glm::vec2(10.f, 1.f), glm::vec2(-8.f, 5.f));
 	}
 	{
-		dynamicBoxColliderComponent bounds = { { -0.5f, -0.5f }, { 0.5f, 0.5f } };
-		epicRotatingTriangle = createDynamicRect(&bounds, glm::vec3(0.2f, 0.7f, 0.4f));
+		dynamicBoxColliderComponent bounds = { { -0.4f, -0.5f }, { 0.4f, 0.5f } };
+		epicRotatingTriangle = createDynamicRect(&bounds, glm::vec3(0.6f, 0.2f, 0.4f));
 		collisionCallbackComponent colCallback;
 		colCallback.handler = onCollision_Player_StaticObj;
 		epicRotatingTriangle.set<positionComponent>({ { 0.f, 6.f } }).set<gravityComponent>({}).set<velocityComponent>({ glm::vec3(0.f,0.f,0.f) }).set<collisionCallbackComponent>(colCallback).set<playerStateComponent>({});

@@ -23,9 +23,13 @@ namespace rfct {
 		float dashVerticalInput;
 		float dash45upInput;
 		float dash45downInput;
+		bool facingRight;
+		bool anyDash; // for simplicity
 
+		float timesYNotZero;
 		float changingDirectionBoost;
 		float walkVelocity;
 		glm::vec2 dashVelocity;
+		int dashCharges;
 	};
 }

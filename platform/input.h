@@ -46,11 +46,13 @@ namespace rfct {
 		float walk;
 		float jump;
 
+		float dashDefault;
 		float dashX;
 		float dash45up;
 		float dash45down;
 		float dashY;
 
+		glm::vec2 dashHelper;
 
 		gameState m_previousState;
 		float m_timeElapsedSinceStateChanged;

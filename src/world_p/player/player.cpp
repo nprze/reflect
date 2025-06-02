@@ -2,12 +2,14 @@
 #include "input.h"
 #include "world_p/components.h"
 #include "context.h"
+#include "renderer_p/debug/debug_draw.h"
 
 constexpr float maxVelocityX = 0.6f;
+constexpr float boostPureHorizontalVertical = 1.2f;
 rfct::playerController::playerController():
 	walkSpeed(.06f),
 	jumpSpeed(2.f),
-	dashSpeed(100.f),
+	dashSpeed(7.f),
 	timeSinceLastDash(0.f),
 	walkHorizontalInput(0),
 	jumpInput(0),
@@ -17,41 +19,57 @@ rfct::playerController::playerController():
 	dash45downInput(0),
 	walkVelocity(0),
 	dashVelocity(0.f,0.f),
-	changingDirectionBoost(0)
+	changingDirectionBoost(0),
+	timesYNotZero(0),
+	facingRight(true)
 
 {
 }
+namespace rfct {
+	void drawPlayervelocity(const glm::vec2 velComp, const glm::vec2 posComp, const glm::vec2 offset = {0.f, 0.f}) {
+		debugLine* line = debugDraw::requestLines(1);
+		line->vertices[0].pos = { posComp + offset, 0 };
+		line->vertices[1].pos = { posComp + (velComp) + offset, 0 };
+		line->vertices[0].color = { std::clamp((float)(glm::length(velComp) / (maxVelocityX * 2) ), 0.f, 1.f), 0.f, 1.f};
+		line->vertices[1].color = { std::clamp((float)(glm::length(velComp) / (maxVelocityX * 2)), 0.f, 1.f), 0.f, 1.f};
+	}
+}
 void rfct::playerController::update(const frameContext* ctx)
 {
+	// draw last frame velocity
+	//drawPlayervelocity(player.get<velocityComponent>()->velocity, player.get<positionComponent>()->position);
+	//drawPlayervelocity(dashVelocity, player.get<positionComponent>()->position, {2.f, 2.f});
+
 	// normal update
 	playerStateComponent* playerState = player.get_mut<playerStateComponent>();
 	walkHorizontalInput = 0;
 
-	// dash
-	if (timeSinceLastDash != 0.f) {
-		timeSinceLastDash += ctx->dt;
-		if (timeSinceLastDash > 1.f) {
-			timeSinceLastDash = 0.f;
-		}
-	}
-	if ((input::getInput().dashX || input::getInput().dashY || input::getInput().dash45up || input::getInput().dash45down) && timeSinceLastDash == 0.f) {
+	if ((input::getInput().dashX || input::getInput().dashY || input::getInput().dash45up || input::getInput().dash45down || input::getInput().dashDefault) && (timeSinceLastDash == 0.f || (timeSinceLastDash > 5.f && dashCharges>0))) {
 		timeSinceLastDash = 0.0001f;
-		dashHorizontalInput = 0.f;
-		dashVerticalInput = 0.f;
-		dash45upInput = 0.f;
-		dash45downInput = 0.f;
+		dashCharges--;
 		if (input::getInput().dashX) {
 			dashHorizontalInput = input::getInput().dashX;
+			anyDash = true;
 		}
 		else if (input::getInput().dash45up) {
 			dash45upInput = input::getInput().dash45up;
+			anyDash = true;
 		}
 		else if (input::getInput().dash45down) {
 			dash45downInput = input::getInput().dash45down;
+			anyDash = true;
 		}
 		else if (input::getInput().dashY) {
 			dashVerticalInput = input::getInput().dashY;
+			anyDash = true;
 		}
+		else if (input::getInput().dashDefault) {
+			if (facingRight) dashHorizontalInput = 1;
+			else dashHorizontalInput = -1;
+			anyDash = true;
+				
+		}
+		
 	}
 
 	// walk
@@ -67,9 +85,41 @@ void rfct::playerController::update(const frameContext* ctx)
 		playerState->grounded = false;
 		jumpInput = input::getInput().jump;
 	}
+
+
 	// fixedUpdate
 	for (uint32_t i = 0; i < ctx->fixedUpdateTimes; ++i) {
+		// dash calculate
+		if (timeSinceLastDash != 0.f) {
+			timeSinceLastDash += fixedDeltaTime;
+			if (timeSinceLastDash >= 1.f) {
+				timeSinceLastDash = 0.f;
+			}
+		}
+
+		// calculate if player is midair
 		velocityComponent* pos = player.get_mut<velocityComponent>();
+		if (pos->velocity.y != 0) {
+			timesYNotZero += fixedDeltaTime;
+			if (timesYNotZero > fixedDeltaTime * 4) {
+				playerStateComponent* ps = player.get_mut<playerStateComponent>();
+				ps->grounded = false;
+			}
+		}
+		else {
+			timesYNotZero = 0;
+			dashCharges = 1;
+		}
+
+		// calculate direction
+		if (pos->velocity.x > 0) {
+			facingRight = true;
+		}
+		else if (pos->velocity.x<0) {
+			facingRight = false;
+		}
+
+		// jump apply
 		pos->velocity.y += jumpInput * jumpSpeed;
 		jumpInput = 0;
 		walkVelocity += walkSpeed * walkHorizontalInput;
@@ -77,11 +127,36 @@ void rfct::playerController::update(const frameContext* ctx)
 		walkVelocity += (changingDirectionBoost * changingDirectionBoost * 10) * walkSpeed * walkHorizontalInput;
 		changingDirectionBoost = std::clamp(changingDirectionBoost - fixedDeltaTime, 0.f, 0.5f);
 
+		// walk apply
 		walkVelocity *= 0.90f;
 		pos->velocity.x = walkVelocity;
-		/*
-		pos->velocity.x += dashVerticalInput * dashSpeed;
-		pos->velocity.y += dashHorizontalInput * dashSpeed;*/
+
+		// dash apply
+		if (anyDash) {
+			player.get_mut<velocityComponent>()->velocity = { 0.f,0.f };
+			dashVelocity = { 0, 0 };
+			dashVelocity.y += dashVerticalInput * dashSpeed * boostPureHorizontalVertical;
+			dashVelocity.x += dashHorizontalInput * dashSpeed * boostPureHorizontalVertical;
+			dashVelocity.x += (dash45upInput + dash45downInput) * ((float)1 / std::sqrt(2)) * dashSpeed;
+			dashVelocity.y += (dash45upInput - dash45downInput) * ((float)1 / std::sqrt(2)) * dashSpeed;
+		}
+		if (timeSinceLastDash != 0 && timeSinceLastDash<0.2f) {
+			player.get_mut<gravityComponent>()->gravityEnabled = false;
+		}
+		else {
+			player.get_mut<gravityComponent>()->gravityEnabled = true;
+		}
+		dashVelocity *= 0.9f - std::clamp(timeSinceLastDash * 2.f, 0.f, 0.9f);
+		if (glm::length(dashVelocity) >= 0.1f) {
+			pos->velocity = dashVelocity;
+		}
+
+		// reset after applying
+		dashHorizontalInput = 0.f;
+		dashVerticalInput = 0.f;
+		dash45upInput = 0.f;
+		dash45downInput = 0.f;
+		anyDash = false;
 	}
 }
 

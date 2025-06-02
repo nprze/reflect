@@ -15,8 +15,17 @@ namespace rfct {
 		window = renderer::getRen().getWindow().GetHandle();
 	}
 	void input::pollAndParseEvents(frameContext* context) {
+		// reset
 		walk = 0;
 		jump = 0;
+
+		dashX = 0;
+		dashY = 0;
+		dash45up = 0;
+		dash45down = 0;
+		dashDefault = 0;
+		
+	
 
 		glfwPollEvents();
 		
@@ -39,6 +48,46 @@ namespace rfct {
 		if (glfwGetKey(window, keyBindings::jump) == GLFW_PRESS)
 		{
 			jump += 1;
+		}
+		if (glfwGetKey(window, keyBindings::dash) == GLFW_PRESS) {
+			dashHelper.x = 0;
+			dashHelper.y = 0;
+			if (glfwGetKey(window, keyBindings::dash_dir_right) == GLFW_PRESS) {
+				++dashHelper.x;
+			}
+			if (glfwGetKey(window, keyBindings::dash_dir_left) == GLFW_PRESS) {
+				--dashHelper.x;
+			}
+			if (glfwGetKey(window, keyBindings::dash_dir_top) == GLFW_PRESS) {
+				++dashHelper.y;
+			}
+			if (glfwGetKey(window, keyBindings::dash_dir_bottom) == GLFW_PRESS) {
+				--dashHelper.y;
+			}
+
+			if (dashHelper.x != 0 && dashHelper.y == 0) { // horizontal
+				dashX = dashHelper.x;
+			}
+			else if (dashHelper.y != 0 && dashHelper.x == 0) { // vertical
+				dashY = dashHelper.y;
+			}
+			else if (dashHelper.x != 0 && dashHelper.y != 0) { // diagonal
+				if (dashHelper.x > 0 && dashHelper.y > 0) {
+					dash45up = 1;
+				}
+				else if (dashHelper.x > 0 && dashHelper.y < 0) {
+					dash45down = 1;
+				}
+				else if (dashHelper.x < 0 && dashHelper.y > 0) {
+					dash45down = -1;
+				}
+				else if (dashHelper.x< 0 && dashHelper.y < 0) {
+					dash45up = -1;
+				}
+			}
+			else { // default
+				dashDefault = 1;
+			}
 		}
 
 	}
