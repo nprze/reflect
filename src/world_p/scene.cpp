@@ -48,7 +48,7 @@ void rfct::scene::loadScene(const std::string& path)
 
 	camera = ecs::get().entity()
 		.child_of(sceneEntity)
-		.set<position3DComponent>({ { 0.f,  0.f, 40.f} })
+		.set<position3DComponent>({ { 0.f,  0.f, 20.f} })
 		.set<rotationComponent>({ {0.f, 0.f} })
 		.set<cameraComponent>({ 45.0f, renderer::getRen().getAspectRatio(), 0.1f, 100.0f });
 	setCamera(camera);

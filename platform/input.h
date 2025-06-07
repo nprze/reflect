@@ -1,36 +1,49 @@
 #pragma once
 #include <glm/glm.hpp>
 #include "context.h"
+#include <unordered_set>
+
 namespace rfct {
 	class bindableImage;
-	struct button {
-		glm::vec2 min;
-		glm::vec2 max;
-		bindableImage* image;
-		bool isClicked;
-        int pointerID = -1;
-		inline void updateIsClicked(const glm::vec2& point, const int& action, const int& pointer) {
-            if (pointerID == pointer || pointerID == -1) {
-                if (point.x >= this->min.x && point.x <= this->max.x &&
-                    point.y >= this->min.y && point.y <= this->max.y) {
-                    if (action == 0) {
-                        isClicked = true;
-                        pointerID = pointer;
-                    } else if (action == 1) {
-                        isClicked = false;
-                        pointerID = -1;
-                    } else if (action == 2) {
-                        isClicked = true;
-                        pointerID = pointer;
+
+    struct button {
+        glm::vec2 min;
+        glm::vec2 max;
+        bindableImage* image;
+        std::unordered_set<int> activePointers;  // Track all pointers pressing this button
+        glm::vec2 lastTouchPos = { -1, -1 };
+
+        inline void updateIsClicked(const glm::vec2& point, const int& action, const int& pointer) {
+            // action: 0 = down, 1 = up, 2 = move (assuming these are the mappings)
+
+            bool inside = (point.x >= this->min.x && point.x <= this->max.x &&
+                           point.y >= this->min.y && point.y <= this->max.y);
+
+            if (action == 0) {  // Pointer down
+                if (inside) {
+                    activePointers.insert(pointer);
+                }
+            } else if (action == 1) {  // Pointer up
+                activePointers.erase(pointer);
+            } else if (action == 2) {  // Pointer move
+                // If pointer was pressing and now moved outside, remove it
+                if (activePointers.count(pointer)) {
+                    if (!inside) {
+                        activePointers.erase(pointer);
                     }
-                } else if (pointerID != -1 && action == 2) {
-                    isClicked = false;
-                    pointerID = -1;
+                    // If still inside, do nothing, keep pressed
+                }
+                else if (inside) {
+                    activePointers.insert(pointer);
                 }
             }
-		}
-	
-	};
+
+            // Update isClicked based on whether any pointers are pressing
+            isClicked = !activePointers.empty();
+        }
+
+        bool isClicked = false;  // Now reflects "pressed" state based on active pointers
+    };
 	class input {
 		
         vk::Extent2D* windowExtent;

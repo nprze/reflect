@@ -7,6 +7,9 @@ import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.Choreographer;
+import android.view.View;
+import android.view.WindowInsets;
+import android.view.WindowInsetsController;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -62,35 +65,60 @@ public class MainActivity extends Activity implements Choreographer.FrameCallbac
 
         FileHelper.copyAssetsToInternalStorage(this);
         readAndCopyFile(getFilesDir().getAbsolutePath());
+
+        getWindow().setDecorFitsSystemWindows(false);
+        final WindowInsetsController insetsController = getWindow().getInsetsController();
+        if (insetsController != null) {
+            insetsController.hide(WindowInsets.Type.statusBars() | WindowInsets.Type.navigationBars());
+            insetsController.setSystemBarsBehavior(
+                    WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            );
+        }
     }
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        int action = -1;
-        switch (event.getAction()){
+        int actionMasked = event.getActionMasked(); // Properly handle multi-touch actions
+        int pointerIndex = event.getActionIndex();  // The index of the pointer that caused the event
+        int pointerId = event.getPointerId(pointerIndex);
+        int action;
 
+        switch (actionMasked) {
             case MotionEvent.ACTION_DOWN:
             case MotionEvent.ACTION_POINTER_DOWN:
-                action = 0;
+                action = 0; // DOWN
+                synchronized (eventQueue) {
+                    eventQueue.add(new InputEvent(action, event.getX(pointerIndex), event.getY(pointerIndex), pointerId));
+                }
                 break;
 
             case MotionEvent.ACTION_MOVE:
-                action = 2;
+                action = 2; // MOVE
+                synchronized (eventQueue) {
+                    for (int i = 0; i < event.getPointerCount(); i++) {
+                        int id = event.getPointerId(i);
+                        float x = event.getX(i);
+                        float y = event.getY(i);
+                        eventQueue.add(new InputEvent(action, x, y, id));
+                    }
+                }
                 break;
 
             case MotionEvent.ACTION_UP:
             case MotionEvent.ACTION_POINTER_UP:
-                action = 1;
+                action = 1; // UP
+                synchronized (eventQueue) {
+                    eventQueue.add(new InputEvent(action, event.getX(pointerIndex), event.getY(pointerIndex), pointerId));
+                }
                 break;
 
             case MotionEvent.ACTION_CANCEL:
                 return true;
+
             default:
                 return true;
         }
-        synchronized (eventQueue) {
-            eventQueue.add(new InputEvent(action, event.getX(), event.getY(), event.getPointerId(event.getActionIndex())));
-        }
+
         return true;
     }
 

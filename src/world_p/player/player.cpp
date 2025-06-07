@@ -128,7 +128,7 @@ void rfct::playerController::update(const frameContext* ctx)
 		changingDirectionBoost = std::clamp(changingDirectionBoost - fixedDeltaTime, 0.f, 0.5f);
 
 		// walk apply
-		walkVelocity *= 0.90f;
+		walkVelocity *= 0.80f;
 		pos->velocity.x = walkVelocity;
 
 		// dash apply

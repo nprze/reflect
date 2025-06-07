@@ -81,9 +81,15 @@ rfct::renderer::renderer(RFCT_RENDERER_ARGUMENTS)
 void rfct::renderer::updateWindow(RFCT_NATIVE_WINDOW_ANDROID RFCT_NATIVE_WINDOW_ANDROID_VAR){ 
 // surface holder change on android
 #ifdef ANDROID_BUILD
+    m_device.getDevice().waitIdle();
+    if (m_surface.surface){
+        m_instance.getInstance().destroySurfaceKHR(m_surface.surface);
+        m_surface.surface = VK_NULL_HANDLE;
+    }
     m_window.destroyWind();
     m_window = AndroidWindow(RFCT_NATIVE_WINDOW_ANDROID_VAR);
     m_surface.newSurface(m_window.createSurface(getInstance()));
+    RFCT_WARN("destroying widnow and surface. creating new surface with width, hwight: ({}, {})", m_window.getExtent().width, m_window.getExtent().height);
 #endif // ANDROID_BUILD
 };
 
@@ -165,7 +171,9 @@ void rfct::renderer::render(frameContext& frameContext)
         presentInfo.pSwapchains = &sc;
         presentInfo.pImageIndices = &imageIndex;
         presentInfo.pResults = nullptr;
-        RFCT_VULKAN_CHECK(m_device.getQueueManager().getPresentQueue().presentKHR(&presentInfo));
+
+        m_device.getQueueManager().getPresentQueue().presentKHR(&presentInfo);
+        
     }
 }
 
