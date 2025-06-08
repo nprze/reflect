@@ -16,11 +16,9 @@ namespace rfct {
         gameplayButtonBindings::buttonBindings.drawButtons();
     }
     void input::pollAndParseEvents(frameContext* context) {
-        gameplayButtonBindings::buttonBindings.startEventParse();
-
         for (InputEvent event : InputQueue::eventQueue) {
             glm::vec2 point = {event.x, event.y};
-            gameplayButtonBindings::buttonBindings.clickCheck(point, event.action, event.pointerID);
+            gameplayButtonBindings::buttonBindings.clickCheck(point, event.action, event.pointerID, context);
         }
         gameplayButtonBindings::buttonBindings.updateInput(s_input);
     }

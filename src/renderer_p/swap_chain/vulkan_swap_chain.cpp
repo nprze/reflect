@@ -42,14 +42,26 @@ void rfct::vulkanSwapChain::createSwapChain()
         swapChainCreateInfo.oldSwapchain = m_swapChain.get();
     }
 #endif // WINDOWS_BUILD
+
+    if (capabilities.supportedCompositeAlpha & vk::CompositeAlphaFlagBitsKHR::eOpaque) {
+        swapChainCreateInfo.compositeAlpha = vk::CompositeAlphaFlagBitsKHR::eOpaque;
+    }
+    else if (capabilities.supportedCompositeAlpha & vk::CompositeAlphaFlagBitsKHR::eInherit) {
+        swapChainCreateInfo.compositeAlpha = vk::CompositeAlphaFlagBitsKHR::eInherit;
+    }
+    else {
+        // Pick any available supported option
+        swapChainCreateInfo.compositeAlpha = static_cast<vk::CompositeAlphaFlagBitsKHR>(
+            __builtin_ctz(static_cast<uint32_t>(capabilities.supportedCompositeAlpha))
+            );
+    }
     swapChainCreateInfo.minImageCount = RFCT_FRAMES_IN_FLIGHT + 1;
     swapChainCreateInfo.imageFormat = chosenSurfaceFormat.format;
     swapChainCreateInfo.imageColorSpace = chosenSurfaceFormat.colorSpace;
     swapChainCreateInfo.imageExtent = capabilities.currentExtent;
     swapChainCreateInfo.imageArrayLayers = 1;
-    swapChainCreateInfo.imageUsage = vk::ImageUsageFlagBits::eColorAttachment;
+    swapChainCreateInfo.imageUsage = vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferDst;
     swapChainCreateInfo.preTransform = vk::SurfaceTransformFlagBitsKHR::eIdentity;
-    swapChainCreateInfo.compositeAlpha = vk::CompositeAlphaFlagBitsKHR::eOpaque;
     swapChainCreateInfo.presentMode = chosenPresentMode;
     swapChainCreateInfo.clipped = VK_TRUE;
 

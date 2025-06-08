@@ -65,6 +65,8 @@ namespace rfct {
 		float dash45down;
 		float dashY;
 
+        bool hold;
+
 		glm::vec2 dashHelper;
 
 		gameState m_previousState;

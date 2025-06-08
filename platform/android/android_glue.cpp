@@ -70,11 +70,9 @@ Java_reflect_mobile_reflect_MainActivity_sendEventsToNative(JNIEnv* env, jobject
         float x = env->GetFloatField(eventObj, xField);
         float y = env->GetFloatField(eventObj, yField);
         int pointerID = env->GetIntField(eventObj, pointerIDField);
-        RFCT_WARN("event no {}: act: {}, ({}, {}), ptrID: {}", i, action, x,y,pointerID);
         rfct::InputQueue::eventQueue.push_back({action, x, y, pointerID});
         env->DeleteLocalRef(eventObj);
     }
-    RFCT_WARN("----end of events this frame-----");
 }
 
 extern "C"

@@ -160,7 +160,7 @@ void rfct::renderer::render(frameContext& frameContext)
         vk::PresentInfoKHR presentInfo{};
         presentInfo.sType = vk::StructureType::ePresentInfoKHR;
 
-        RFCT_VULKAN_CHECK(m_device.getDevice().waitForFences(1, &frameData.m_lastFrameRenderFinishedFence, VK_TRUE, UINT64_MAX));
+        RFCT_VULKAN_CHECK(m_device.getDevice().waitForFences(1, &frameData.m_thisFrameRenderFinishedFence, VK_TRUE, UINT64_MAX));
 
         presentInfo.waitSemaphoreCount = 1;
         const vk::Semaphore& sem = frameData.m_renderFinishedSemaphore.get();
@@ -173,6 +173,7 @@ void rfct::renderer::render(frameContext& frameContext)
         presentInfo.pResults = nullptr;
 
         m_device.getQueueManager().getPresentQueue().presentKHR(&presentInfo);
+        // RFCT_VULKAN_CHECK();
         
     }
 }
