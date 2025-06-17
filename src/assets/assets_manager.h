@@ -1,4 +1,5 @@
 #pragma once
+#include "scene_serialize_data.h"
 namespace rfct {
     class vulkanShader;
     class image;
@@ -17,6 +18,7 @@ namespace rfct {
 		void loadImage(const std::string& path, image* imageOut);
         void loadGlyphs(const std::string& path, font* fontOut);
         void loadMesh(const std::string& path, mesh* vertxBufferOut);
+        void loadScene(const std::string& path, sceneSerializedData* sceneSerializedDataOut);
         void createDummyImage(image* imageOut);
     private:
         vk::CommandPool m_AssetsCommandPool;

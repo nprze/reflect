@@ -29,8 +29,8 @@ namespace rfct {
             cameraEntity.get_mut<positionComponent>()->position.y += dt * input::getInput().cameraYAxis;
         }
         else*/  {
-            glm::vec2 playerPos = { 2,7 };
-            //glm::vec2 playerPos = player.get<positionComponent>()->position;
+            //glm::vec2 playerPos = { 2,7 };
+            glm::vec2 playerPos = player.get<positionComponent>()->position;
             cameraEntity.get_mut<position3DComponent>()->position.x = playerPos.x;
             cameraEntity.get_mut<position3DComponent>()->position.y = playerPos.y;
         }

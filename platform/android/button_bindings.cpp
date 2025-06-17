@@ -125,7 +125,6 @@ void rfct::gameplayButtonBindings::updateInput(rfct::input &input) const{
         default:
             break;
         }
-        RFCT_WARN("input done its part x: {}, y: {}, 45up: {}, 45down: {}", input.dashX, input.dashY, input.dash45up, input.dash45down);
     }
     
 }
@@ -155,7 +154,7 @@ void rfct::gameplayButtonBindings::init() {
     menu.max = menu.min + glm::vec2(tenPercentHeight, tenPercentHeight);
    
     dash.position = { (hold.min + hold.max) * 0.5f };
-    dash.radius = tenPercentHeight * 5;
+    dash.radius = tenPercentHeight * 2.5;
     dash.button = (hold.max.x - hold.min.x) * 0.5f;
 
     gameplayButtonRenderInfo::buttonRenderInfo.bindImages();
@@ -167,11 +166,53 @@ void rfct::gameplayButtonBindings::drawButtons() {
     renderer::getRen().getUIPipeline().addImage(jump.min, jump.max, jump.image);
     renderer::getRen().getUIPipeline().addImage(menu.min, menu.max, menu.image);
     renderer::getRen().getUIPipeline().addImage(hold.min, hold.max, hold.image);
+    if (dash.timeBasicButtonActivated != 0.f) {
+        float widthAndHeight = dash.radius - dash.button;
+        // right
+        renderer::getRen().getUIPipeline().addImage({ dash.position.x + dash.button, dash.position.y - (widthAndHeight * 0.5f) }, { dash.position.x + dash.radius, dash.position.y + (widthAndHeight * 0.5f) }, dash.image);
+        // left
+        renderer::getRen().getUIPipeline().addImage({ dash.position.x - dash.button, dash.position.y - (widthAndHeight * 0.5f) }, { dash.position.x - dash.radius, dash.position.y + (widthAndHeight * 0.5f) }, dash.image);
+        // up
+        renderer::getRen().getUIPipeline().addImage(
+                { dash.position.x - (widthAndHeight * 0.5f), dash.position.y - dash.radius },
+                { dash.position.x + (widthAndHeight * 0.5f), dash.position.y - dash.button },
+                dash.imageUp
+        );
+        // down
+        renderer::getRen().getUIPipeline().addImage(
+                { dash.position.x - (widthAndHeight * 0.5f), dash.position.y + dash.radius },
+                { dash.position.x + (widthAndHeight * 0.5f), dash.position.y + dash.button },
+                dash.imageUp
+        );
+        float offset = dash.button  * (1/std::sqrt(2.0f));
+        float offsetMax = dash.radius * 0.9f;
+        // top-right (45°)
+        renderer::getRen().getUIPipeline().addImage(
+                { dash.position.x + offset, dash.position.y - offsetMax },
+                { dash.position.x + offsetMax, dash.position.y - offset },
+                dash.image45
+        );
+        renderer::getRen().getUIPipeline().addImage(
+                { dash.position.x + offset, dash.position.y + offset },      // min
+                { dash.position.x + offsetMax, dash.position.y + offsetMax },// max
+                dash.image45
+        );
+        renderer::getRen().getUIPipeline().addImage(
+                { dash.position.x - offsetMax, dash.position.y - offset },   // min
+                { dash.position.x - offset, dash.position.y - offsetMax },   // max
+                dash.image45down
+        );
+        renderer::getRen().getUIPipeline().addImage(
+                { dash.position.x - offsetMax, dash.position.y + offset },   // min
+                { dash.position.x - offset, dash.position.y + offsetMax },   // max
+                dash.image45down
+        );
+    }
 }
 
 void rfct::gameplayButtonRenderInfo::bindImages() {
     // init images
-    Images.reserve(5);
+    Images.reserve(9);
     Images.push_back(std::make_unique<bindableImage>("UI/left.png"));
     gameplayButtonBindings::buttonBindings.walkLeft.image = Images.back().get();
     Images.push_back(std::make_unique<bindableImage>("UI/right.png"));
@@ -182,6 +223,15 @@ void rfct::gameplayButtonRenderInfo::bindImages() {
     gameplayButtonBindings::buttonBindings.menu.image = Images.back().get();
     Images.push_back(std::make_unique<bindableImage>("UI/hold.png"));
     gameplayButtonBindings::buttonBindings.hold.image = Images.back().get();
+    Images.push_back(std::make_unique<bindableImage>("UI/dash.png"));
+    gameplayButtonBindings::buttonBindings.dash.image = Images.back().get();
+    Images.push_back(std::make_unique<bindableImage>("UI/dash45.png"));
+    gameplayButtonBindings::buttonBindings.dash.image45 = Images.back().get();
+    Images.push_back(std::make_unique<bindableImage>("UI/dashUp.png"));
+    gameplayButtonBindings::buttonBindings.dash.imageUp = Images.back().get();
+    Images.push_back(std::make_unique<bindableImage>("UI/dash45down.png"));
+    gameplayButtonBindings::buttonBindings.dash.image45down = Images.back().get();
+
 }
 
 

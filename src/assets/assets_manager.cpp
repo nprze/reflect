@@ -211,6 +211,78 @@ namespace rfct {
 
     }
 
+    void AssetsManager::loadScene(const std::string& path, sceneSerializedData* sceneSerializedDataOut)
+    {
+        std::string finalPath = m_Path + "/" + path;
+        std::ifstream file(finalPath);
+
+        if (!file.is_open()) {
+            RFCT_CRITICAL("Failed to open scene file: {}", finalPath);
+        }
+
+        std::string line;
+        bool rectFullyOk = false;
+        rectangle current;
+        int minx, miny;
+        int maxx, maxy;
+        while (std::getline(file, line)) {
+            if (line.find("Rect") != std::string::npos) {
+                if (rectFullyOk) {
+                    sceneSerializedDataOut->rectangles.push_back(current);
+                }
+                rectFullyOk = false;
+                current = {};
+            }
+            else if (line.find("color:") != std::string::npos) {
+                current.color = line.substr(line.find(":") + 2);
+            }
+            else if (line.find("min:") != std::string::npos) {
+                
+                sscanf(line.c_str(), "  min: (%d, %d)", &minx, &miny);
+                current.min.x = minx;
+                current.min.y = miny;
+            }
+            else if (line.find("max:") != std::string::npos) {
+                sscanf(line.c_str(), "  max: (%d, %d)", &maxx, &maxy);
+                current.max.x = maxx;
+                current.max.y = maxy;
+            }
+            else if (line.find("cutoff:") != std::string::npos) {
+                current.cutoff = line.back();
+            }
+            else if (line.find("file:") != std::string::npos) {
+                current.file = line.substr(line.find(":") + 2);
+                rectFullyOk = true;
+            }
+            else if (line.find("SceneWidth:") != std::string::npos) {
+                sscanf(line.c_str(), "SceneWidth: %d", &sceneSerializedDataOut->width);
+            }
+            else if (line.find("SceneHeight:") != std::string::npos) {
+                sscanf(line.c_str(), "SceneHeight: %d", &sceneSerializedDataOut->height);
+
+            }
+            else if (line.find("RectCount:") != std::string::npos) {
+                int rectCount = 0;
+                sscanf(line.c_str(), "RectCount: %d", &rectCount);
+                sceneSerializedDataOut->rectangles.reserve(rectCount);
+            }
+        }
+        if (rectFullyOk) {
+            sceneSerializedDataOut->rectangles.push_back(current);
+        }
+
+        // Output parsed rectangles
+        for (size_t i = 0; i < sceneSerializedDataOut->rectangles.size(); ++i) {
+            const auto& r = sceneSerializedDataOut->rectangles[i];
+            std::cout << "Rectangle " << i << ":\n";
+            std::cout << "  Color: " << r.color << "\n";
+            std::cout << "  AABB Min: (" << r.min.x << ", " << r.min.y << ")\n";
+            std::cout << "  AABB Max: (" << r.max.x << ", " << r.max.y << ")\n";
+            std::cout << "  cutoff: " << r.cutoff << "\n";
+            std::cout << "  exists file: " << r.file << "\n\n";
+        }
+    }
+
     void AssetsManager::createDummyImage(image* imageOut)
     {
 

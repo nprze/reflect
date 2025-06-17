@@ -46,6 +46,7 @@ void rfct::vulkanSwapChain::createSwapChain()
     if (capabilities.supportedCompositeAlpha & vk::CompositeAlphaFlagBitsKHR::eOpaque) {
         swapChainCreateInfo.compositeAlpha = vk::CompositeAlphaFlagBitsKHR::eOpaque;
     }
+#ifdef ANDROID_BUILD
     else if (capabilities.supportedCompositeAlpha & vk::CompositeAlphaFlagBitsKHR::eInherit) {
         swapChainCreateInfo.compositeAlpha = vk::CompositeAlphaFlagBitsKHR::eInherit;
     }
@@ -55,6 +56,7 @@ void rfct::vulkanSwapChain::createSwapChain()
             __builtin_ctz(static_cast<uint32_t>(capabilities.supportedCompositeAlpha))
             );
     }
+#endif
     swapChainCreateInfo.minImageCount = RFCT_FRAMES_IN_FLIGHT + 1;
     swapChainCreateInfo.imageFormat = chosenSurfaceFormat.format;
     swapChainCreateInfo.imageColorSpace = chosenSurfaceFormat.colorSpace;

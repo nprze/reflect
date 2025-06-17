@@ -12,6 +12,7 @@
 #include "renderer_p/mesh/mesh.h"
 #include "assets/assets_manager.h"
 #include "ui.h"
+#include <stb_image/stb_image.h>
 
 const float maxVelocityX = 100;
 rfct::scene::scene(world* worldArg) : m_World(worldArg)
@@ -40,9 +41,11 @@ void rfct::scene::updateUI(frameContext* context)
 	UpdateUI(context);
 }
 
-
 void rfct::scene::loadScene(const std::string& path)
 {
+	sceneSerializedData sc;
+	AssetsManager::get().loadScene(path, &sc);
+
 	sceneEntity = ecs::get().entity<sceneComponent>();
 	createQueries(sceneEntity);
 
@@ -53,6 +56,14 @@ void rfct::scene::loadScene(const std::string& path)
 		.set<cameraComponent>({ 45.0f, renderer::getRen().getAspectRatio(), 0.1f, 100.0f });
 	setCamera(camera);
 	m_RenderData.startTransferStatic();
+	for (rectangle r : sc.rectangles) {
+		glm::vec2 min = r.min;
+		min.x -= 1;
+		min.y -= 1;
+		glm::vec2 size = r.max - min;
+		createStaticMesh("building_blocks/" + r.color + "/" + r.file, size, r.min);
+	}
+	/*
 	{
 		staticBoxColliderComponent bounds = { { 8.f, -2.f }, { 9.f, -1.f } };
 		createStaticRect(&bounds, glm::vec3(0.2f, 0.7f, 0.9f));
@@ -79,13 +90,13 @@ void rfct::scene::loadScene(const std::string& path)
 	}
 	{
 		createStaticMesh("building_blocks/700x70.txt", glm::vec2(10.f, 1.f), glm::vec2(-8.f, 5.f));
-	}
+	}*/
 	{
 		dynamicBoxColliderComponent bounds = { { -0.4f, -0.5f }, { 0.4f, 0.5f } };
 		epicRotatingTriangle = createDynamicRect(&bounds, glm::vec3(0.6f, 0.2f, 0.4f));
 		collisionCallbackComponent colCallback;
 		colCallback.handler = onCollision_Player_StaticObj;
-		epicRotatingTriangle.set<positionComponent>({ { 0.f, 6.f } }).set<gravityComponent>({}).set<velocityComponent>({ glm::vec3(0.f,0.f,0.f) }).set<collisionCallbackComponent>(colCallback).set<playerStateComponent>({});
+		epicRotatingTriangle.set<positionComponent>({ { 3.f, 10.f } }).set<gravityComponent>({}).set<velocityComponent>({ glm::vec3(0.f,0.f,0.f) }).set<collisionCallbackComponent>(colCallback).set<playerStateComponent>({});
 		m_playerStateMachine.setPlayer(epicRotatingTriangle);
 	}
 	m_RenderData.endTransferStatic();

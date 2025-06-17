@@ -241,7 +241,7 @@ namespace rfct {
 
 void rfct::updatePhysics(const frameContext* ctx)
 {
-    //drawBVH(0, BVHnodes.back());
+    drawBVH(0, BVHnodes.back());
     for (uint32_t i = 0; i < ctx->fixedUpdateTimes;++i) {
         gravityVelocityPositionBoxQuery.each([&](flecs::entity ent, gravityComponent& gravity, velocityComponent& velocity, positionComponent& position, dynamicBoxColliderComponent& dynamicBox, collisionCallbackComponent& callback) {
             if (gravity.gravityEnabled) {

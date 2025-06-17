@@ -15,6 +15,10 @@ namespace rfct {
         rightBottom
     };
     struct theWierdButton {
+        bindableImage* image;
+        bindableImage* image45;
+        bindableImage* image45down;
+        bindableImage* imageUp;
         float timeBasicButtonActivated = 0.f;
         float timePossibleDash = 0.f;
         glm::vec2 position;
