@@ -13,7 +13,7 @@ m_Renderer(RFCT_RENDERER_ARGUMENTS_VAR)
 	registerComponents();
 
 
-	world::getWorld().loadScene("scenes/scene01layout.txt");
+	world::getWorld().loadScene("scenes/scene03layout.txt");
 #ifdef WINDOWS_BUILD
     update();
 	renderer::getRen().getWindow().show();

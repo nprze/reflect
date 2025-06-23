@@ -159,7 +159,7 @@ namespace rfct {
         }
     }
 
-    void AssetsManager::loadMesh(const std::string& path, mesh* meshOut)
+    void AssetsManager::loadMesh(const std::string& path, mesh* meshOut, const glm::vec3& color)
     {
         std::string finalPath = m_Path + "/" + path;
         std::ifstream file(finalPath);
@@ -187,14 +187,15 @@ namespace rfct {
                 coords.emplace_back(values[0], values[1]);
 
             }
-            else if (values.size() == 3) {
+            else if (values.size() == 1) {
                 if (coords.size() == 3 || coords.size() == 6) {
-                    glm::vec3 color = glm::vec3(values[0] / 255.0f, values[1] / 255.0f, values[2] / 255.0f);
+                    constexpr float one255 = 1.f / 255.f;
+                    glm::vec3 color_fin = glm::vec3(color[0] * values[0] * one255, color[1] * values[0] * one255, color[2] * values[0] * one255);
 
                     for (size_t i = 0; i < coords.size(); i++) {
                         Vertex vtx{};
                         vtx.pos = glm::vec3(coords[i], 0.0f);
-                        vtx.color = color;
+                        vtx.color = color_fin;
                         meshOut->m_Vertices.push_back(vtx);
                     }
 
@@ -213,6 +214,7 @@ namespace rfct {
 
     void AssetsManager::loadScene(const std::string& path, sceneSerializedData* sceneSerializedDataOut)
     {
+        // IO only here
         std::string finalPath = m_Path + "/" + path;
         std::ifstream file(finalPath);
 
@@ -238,32 +240,32 @@ namespace rfct {
             }
             else if (line.find("min:") != std::string::npos) {
                 
-                sscanf(line.c_str(), "  min: (%d, %d)", &minx, &miny);
+                RFCT_ASSERT(sscanf(line.c_str(), "  min: (%d, %d)", &minx, &miny) == 2);
                 current.min.x = minx;
                 current.min.y = miny;
             }
             else if (line.find("max:") != std::string::npos) {
-                sscanf(line.c_str(), "  max: (%d, %d)", &maxx, &maxy);
+                RFCT_ASSERT(sscanf(line.c_str(), "  max: (%d, %d)", &maxx, &maxy) == 2);
                 current.max.x = maxx;
                 current.max.y = maxy;
             }
             else if (line.find("cutoff:") != std::string::npos) {
-                current.cutoff = line.back();
+                RFCT_ASSERT(sscanf(line.c_str(), "  cutoff: %d", &current.cutoff) == 1);
             }
             else if (line.find("file:") != std::string::npos) {
                 current.file = line.substr(line.find(":") + 2);
                 rectFullyOk = true;
             }
             else if (line.find("SceneWidth:") != std::string::npos) {
-                sscanf(line.c_str(), "SceneWidth: %d", &sceneSerializedDataOut->width);
+                RFCT_ASSERT(sscanf(line.c_str(), "SceneWidth: %d", &sceneSerializedDataOut->width) == 1);
             }
             else if (line.find("SceneHeight:") != std::string::npos) {
-                sscanf(line.c_str(), "SceneHeight: %d", &sceneSerializedDataOut->height);
+                RFCT_ASSERT(sscanf(line.c_str(), "SceneHeight: %d", &sceneSerializedDataOut->height) == 1);
 
             }
             else if (line.find("RectCount:") != std::string::npos) {
                 int rectCount = 0;
-                sscanf(line.c_str(), "RectCount: %d", &rectCount);
+                RFCT_ASSERT(sscanf(line.c_str(), "RectCount: %d", &rectCount) == 1);
                 sceneSerializedDataOut->rectangles.reserve(rectCount);
             }
         }
@@ -274,12 +276,13 @@ namespace rfct {
         // Output parsed rectangles
         for (size_t i = 0; i < sceneSerializedDataOut->rectangles.size(); ++i) {
             const auto& r = sceneSerializedDataOut->rectangles[i];
-            std::cout << "Rectangle " << i << ":\n";
-            std::cout << "  Color: " << r.color << "\n";
-            std::cout << "  AABB Min: (" << r.min.x << ", " << r.min.y << ")\n";
-            std::cout << "  AABB Max: (" << r.max.x << ", " << r.max.y << ")\n";
-            std::cout << "  cutoff: " << r.cutoff << "\n";
-            std::cout << "  exists file: " << r.file << "\n\n";
+            RFCT_INFO("Rectangle {}", i);
+            RFCT_INFO("  Color: {}", r.color);
+            RFCT_INFO("  AABB Min: ({}, {})", r.min.x, r.min.y);
+            RFCT_INFO("  AABB Max: ({}, {})", r.max.x, r.max.y);
+            RFCT_INFO("  cutoff: {}", r.cutoff);
+            RFCT_INFO("  cutoff_top: {}", (r.cutoff & cutoffValues::top) ? "true" : "false");
+            RFCT_INFO("  exists file: {}", r.file);
         }
     }
 

@@ -17,7 +17,7 @@ namespace rfct {
         void loadVulkanShader(std::string path, vulkanShader* shaderOut);
 		void loadImage(const std::string& path, image* imageOut);
         void loadGlyphs(const std::string& path, font* fontOut);
-        void loadMesh(const std::string& path, mesh* vertxBufferOut);
+        void loadMesh(const std::string& path, mesh* vertxBufferOut, const glm::vec3& color);
         void loadScene(const std::string& path, sceneSerializedData* sceneSerializedDataOut);
         void createDummyImage(image* imageOut);
     private:

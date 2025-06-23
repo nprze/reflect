@@ -13,6 +13,7 @@
 #include "assets/assets_manager.h"
 #include "ui.h"
 #include <stb_image/stb_image.h>
+#include "scene_loader.h"
 
 const float maxVelocityX = 100;
 rfct::scene::scene(world* worldArg) : m_World(worldArg)
@@ -24,8 +25,43 @@ rfct::scene::~scene()
 {
 	cleanupQueries();
 }
+namespace rfct{
+	void drawGridLines(int n, int start_from = 0, const glm::vec3 colorPositive = { 0.6f,0.6f,0.6f }, const glm::vec3 colorNegative = { 0.4f,0.4f,0.4f }) {
+		const float z_coord = 0.0f;
 
+		// We need (n + 1) vertical + (n + 1) horizontal lines
+		int totalLines = 2 * (n + 1);
+		debugLine* lines = debugDraw::requestLines(totalLines);
 
+		int lineIndex = 0;
+
+		// Draw vertical lines (parallel to Y-axis)
+		for (int i = 0; i <= n; ++i) {
+			float x = start_from + i;
+			glm::vec3 color = (x < 0) ? colorNegative : colorPositive;
+
+			lines[lineIndex].vertices[0].pos = { x, start_from, z_coord };
+			lines[lineIndex].vertices[1].pos = { x,  start_from+n, z_coord };
+			lines[lineIndex].vertices[0].color = color;
+			lines[lineIndex].vertices[1].color = color;
+
+			++lineIndex;
+		}
+
+		// Draw horizontal lines (parallel to X-axis)
+		for (int i = 0; i <= n; ++i) {
+			float y = start_from + i;
+			glm::vec3 color = (y < 0) ? colorNegative : colorPositive;
+
+			lines[lineIndex].vertices[0].pos = { start_from, y, z_coord };
+			lines[lineIndex].vertices[1].pos = { start_from+n, y, z_coord };
+			lines[lineIndex].vertices[0].color = color;
+			lines[lineIndex].vertices[1].color = color;
+
+			++lineIndex;
+		}
+	}
+}
 
 void rfct::scene::onUpdate(frameContext* context)
 {
@@ -34,6 +70,7 @@ void rfct::scene::onUpdate(frameContext* context)
 	updateTransformData(context, epicRotatingTriangle);
 	updateUI(context);
 	cameraComponentOnUpdate(context->dt, epicRotatingTriangle);
+	//drawGridLines(20);
 }
 
 void rfct::scene::updateUI(frameContext* context)
@@ -61,51 +98,32 @@ void rfct::scene::loadScene(const std::string& path)
 		min.x -= 1;
 		min.y -= 1;
 		glm::vec2 size = r.max - min;
-		createStaticMesh("building_blocks/" + r.color + "/" + r.file, size, r.min);
+		glm::vec3 color{0.f};
+		color.r = std::stoi(r.color.substr(0, 2), nullptr, 16);
+		color.g = std::stoi(r.color.substr(2, 2), nullptr, 16);
+		color.b = std::stoi(r.color.substr(4, 2), nullptr, 16);
+		createStaticMesh("building_blocks/" + r.file, size, r.min, color, r.cutoff);
 	}
-	/*
-	{
-		staticBoxColliderComponent bounds = { { 8.f, -2.f }, { 9.f, -1.f } };
-		createStaticRect(&bounds, glm::vec3(0.2f, 0.7f, 0.9f));
-	}
-	{
-		staticBoxColliderComponent bounds = { { -5.f, -3.f }, { -2.f, -2.5f } };
-		createStaticRect(&bounds, glm::vec3(0.7f, 0.2f, 0.9f));
-
-	}
-	{
-		staticBoxColliderComponent bounds = { { -7.f, 0.f }, { 7.f, 1.f } };
-		createStaticRect(&bounds);
-	}
-	{
-		staticBoxColliderComponent bounds = { { 5.f, 4.f }, { 6.f, 5.f } };
-		createStaticRect(&bounds);
-	}
-	{
-		staticBoxColliderComponent bounds = { { 3.f, 4.f }, { 4.f, 5.f } };
-		createStaticRect(&bounds);
-	}
-	{
-		createStaticMesh("building_blocks/700x70.txt", glm::vec2(10.f, 1.f), glm::vec2(8.f, 2.f));
-	}
-	{
-		createStaticMesh("building_blocks/700x70.txt", glm::vec2(10.f, 1.f), glm::vec2(-8.f, 5.f));
-	}*/
 	{
 		dynamicBoxColliderComponent bounds = { { -0.4f, -0.5f }, { 0.4f, 0.5f } };
 		epicRotatingTriangle = createDynamicRect(&bounds, glm::vec3(0.6f, 0.2f, 0.4f));
 		collisionCallbackComponent colCallback;
 		colCallback.handler = onCollision_Player_StaticObj;
-		epicRotatingTriangle.set<positionComponent>({ { 3.f, 10.f } }).set<gravityComponent>({}).set<velocityComponent>({ glm::vec3(0.f,0.f,0.f) }).set<collisionCallbackComponent>(colCallback).set<playerStateComponent>({});
+		epicRotatingTriangle.set<positionComponent>({ { 7.f, 12.f } }).set<gravityComponent>({}).set<velocityComponent>({ glm::vec3(0.f,0.f,0.f) }).set<collisionCallbackComponent>(colCallback).set<playerStateComponent>({});
 		m_playerStateMachine.setPlayer(epicRotatingTriangle);
 	}
 	m_RenderData.endTransferStatic();
 	buildBVH();
 }
 
-entity rfct::scene::createStaticMesh(const std::string& path, glm::vec2 size, glm::vec2 pos)
+
+
+entity rfct::scene::createStaticMesh(const std::string& path, glm::vec2 size, glm::vec2 pos, const glm::vec3& color, int cutoff)
 {
-	mesh mesh1(path);
+	mesh mesh1(path, color);
+
+	//cutoffMesh(mesh1, 4095, size.x, size.y);
+
 	staticBoxColliderComponent collider;
 	collider.min = pos;
 	collider.max.x = pos.x + size.x;

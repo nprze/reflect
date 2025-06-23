@@ -5,8 +5,9 @@
 
 namespace rfct {
 	struct mesh {
-		mesh(const std::string& path) { m_Vertices.reserve(500);
-		AssetsManager::get().loadMesh(path, this);
+		mesh(const std::string& path, const glm::vec3& color) { 
+			m_Vertices.reserve(500);
+			AssetsManager::get().loadMesh(path, this, color);
 		};
 		std::vector<Vertex> m_Vertices;
 	private:

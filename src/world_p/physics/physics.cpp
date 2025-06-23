@@ -219,7 +219,7 @@ namespace rfct {
             }
             break;
         }
-        case 2: {
+        case 2: { 
             const glm::vec3 blue = { 0.f,0.f,1.f };
             for (uint32_t i = 0; i < 4; i++) {
                 lines[i].vertices[0].color = blue;
@@ -241,7 +241,7 @@ namespace rfct {
 
 void rfct::updatePhysics(const frameContext* ctx)
 {
-    drawBVH(0, BVHnodes.back());
+    //drawBVH(0, BVHnodes.back());
     for (uint32_t i = 0; i < ctx->fixedUpdateTimes;++i) {
         gravityVelocityPositionBoxQuery.each([&](flecs::entity ent, gravityComponent& gravity, velocityComponent& velocity, positionComponent& position, dynamicBoxColliderComponent& dynamicBox, collisionCallbackComponent& callback) {
             if (gravity.gravityEnabled) {

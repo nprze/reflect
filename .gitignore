@@ -59,6 +59,8 @@ ipch/
 *.rar
 
 # Reflect specific
+assets/building_blocks
+assets/scenes
 build/
 !deps/
 src/utils/reflect_directories.h
