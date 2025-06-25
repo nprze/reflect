@@ -5,7 +5,7 @@
 
 void framebufferResizeCallback(GLFWwindow* window, int width, int height) {
 
-	rfct::renderer::getRen().getDeviceWrapper().getSwapChain().framebufferResized = true;
+	rfct::renderer::getRen().getRenderImagesManager().getSwapChain().framebufferResized = true;
     vk::Extent2D newExtent = { static_cast<uint32_t>(width), static_cast<uint32_t>(height) };
     rfct::renderer::getRen().getWindow().setExtent(newExtent);
     if (width == 0 && height == 0)

@@ -3,6 +3,7 @@
 #include "device/vulkan_instance.h"
 #include "device/vulkan_device.h"
 #include "renderer_p/frame/frame_resource_manager.h"
+#include "renderer_p/frame/render_target_manager.h"
 
 #include "renderer_p/rasterizer_pipeline/vulkan_rasterizer_pipeline.h"
 #include "renderer_p/debug/debug_draw.h"
@@ -23,16 +24,17 @@ namespace rfct {
 		~allocator();
 	};
 	class renderer {
-    private:
+	private:
 		static renderer* ren;
-    public:
-        static renderer& getRen() {return *ren;};
+	public:
+		static renderer& getRen() { return *ren; };
 	public:
 		inline vk::Device& getDevice() { return m_device.getDevice(); }
 		inline vulkanDevice& getDeviceWrapper() { return m_device; }
 		inline vk::Instance& getInstance() { return m_instance.getInstance(); }
 		inline RFCT_PLATFORM_WINDOW& getWindow() { return m_window; }
 		inline vulkanInstance& getInstanceWrapper() { return m_instance; }
+		inline renderImagesManager& getRenderImagesManager() { return m_renderImages; }
 		inline vulkanRasterizerPipeline& getRasterizerPipeline() { return m_rasterizerPipeline; }
 		inline VmaAllocator& getAllocator() { return m_allocator.m_allocator; }
 		inline vk::SurfaceKHR& getSurface() { return m_surface.surface; }
@@ -51,8 +53,9 @@ namespace rfct {
 		vulkanInstance m_instance;
 		SurfaceWrapper m_surface; // here for simpler access when surface holder changes (android)
 		vulkanDevice m_device;
-		vulkanRasterizerPipeline m_rasterizerPipeline;
 		allocator m_allocator;
+		renderImagesManager m_renderImages;
+		vulkanRasterizerPipeline m_rasterizerPipeline;
 		framesInFlight m_framesInFlight;
 		debugDraw m_debugDraw;
 		UIPipeline m_UIPipeline;

@@ -7,17 +7,14 @@ namespace rfct {
 	class vulkanRasterizerPipeline
 	{
 	public:
-		vulkanRasterizerPipeline();
+		vulkanRasterizerPipeline(vk::RenderPass renderPass);
 		~vulkanRasterizerPipeline();
-		void createPipeline();
-		void createRenderPass();
-		void recordCommandBuffer(frameContext* ctx, frameData& frameData, vk::Framebuffer framebuffer);
-		vk::RenderPass getRenderPass() { return m_renderPass.get(); }
+		void createPipeline(vk::RenderPass renderPass);
+		void recordCommandBuffer(frameContext* ctx, frameData& frameData, vk::Framebuffer framebuffer, vk::RenderPass renderPass);
 	private:
 		vulkanShader m_vertexShader;
 		vulkanShader m_fragShader;
 		vk::UniquePipelineLayout m_pipelineLayout;
 		vk::UniquePipeline m_graphicsPipeline;
-		vk::UniqueRenderPass m_renderPass;
 	};
 }

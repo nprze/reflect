@@ -7,17 +7,16 @@
 #include "world_p/scene.h"
 
 
-rfct::vulkanRasterizerPipeline::vulkanRasterizerPipeline() :m_vertexShader("shaders/cube/cube_vert.spv"), m_fragShader("shaders/cube/cube_frag.spv")
+rfct::vulkanRasterizerPipeline::vulkanRasterizerPipeline(vk::RenderPass renderPass) :m_vertexShader("shaders/cube/cube_vert.spv"), m_fragShader("shaders/cube/cube_frag.spv")
 {
-    createRenderPass();
-	createPipeline();
+	createPipeline(renderPass);
 }
 
 rfct::vulkanRasterizerPipeline::~vulkanRasterizerPipeline()
 {
 }
 
-void rfct::vulkanRasterizerPipeline::createPipeline()
+void rfct::vulkanRasterizerPipeline::createPipeline(vk::RenderPass renderPass)
 {
     // Shaders
     vk::PipelineShaderStageCreateInfo vertShaderStageInfo = {};
@@ -117,84 +116,15 @@ void rfct::vulkanRasterizerPipeline::createPipeline()
     pipelineInfo.pDynamicState = &dynamicState;
     pipelineInfo.pViewportState = &viewportState;
     pipelineInfo.layout = m_pipelineLayout.get();
-    pipelineInfo.renderPass = m_renderPass.get();
+    pipelineInfo.renderPass = renderPass;
     pipelineInfo.subpass = 0;
 
     m_graphicsPipeline = renderer::getRen().getDevice().createGraphicsPipelineUnique({}, pipelineInfo).value;
 }
 
 
-void rfct::vulkanRasterizerPipeline::createRenderPass()
-{
-    vk::AttachmentDescription colorAttachment = {};
-    colorAttachment.format = vk::Format::eB8G8R8A8Unorm;
-    colorAttachment.samples = msaaSamples;
-    colorAttachment.loadOp = vk::AttachmentLoadOp::eClear;
-    colorAttachment.storeOp = vk::AttachmentStoreOp::eDontCare;
-    colorAttachment.stencilLoadOp = vk::AttachmentLoadOp::eDontCare;
-    colorAttachment.stencilStoreOp = vk::AttachmentStoreOp::eDontCare;
-    colorAttachment.initialLayout = vk::ImageLayout::eUndefined;
-    colorAttachment.finalLayout = vk::ImageLayout::eColorAttachmentOptimal;
 
-
-    vk::AttachmentDescription resolveAttachment = {};
-    resolveAttachment.format = vk::Format::eB8G8R8A8Unorm;
-    resolveAttachment.samples = vk::SampleCountFlagBits::e1;
-    resolveAttachment.loadOp = vk::AttachmentLoadOp::eDontCare;
-    resolveAttachment.storeOp = vk::AttachmentStoreOp::eStore;
-    resolveAttachment.stencilLoadOp = vk::AttachmentLoadOp::eDontCare;
-    resolveAttachment.stencilStoreOp = vk::AttachmentStoreOp::eDontCare;
-    resolveAttachment.initialLayout = vk::ImageLayout::eUndefined;
-    resolveAttachment.finalLayout = vk::ImageLayout::eColorAttachmentOptimal;
-
-    vk::AttachmentReference colorAttachmentRef = {};
-    colorAttachmentRef.attachment = 0;
-    colorAttachmentRef.layout = vk::ImageLayout::eColorAttachmentOptimal;
-
-    vk::AttachmentReference resolveAttachmentRef = {};
-    resolveAttachmentRef.attachment = 1;
-    resolveAttachmentRef.layout = vk::ImageLayout::eColorAttachmentOptimal;
-
-    vk::SubpassDescription subpass = {};
-    subpass.pipelineBindPoint = vk::PipelineBindPoint::eGraphics;
-    subpass.colorAttachmentCount = 1;
-    subpass.pColorAttachments = &colorAttachmentRef;
-    subpass.pResolveAttachments = &resolveAttachmentRef;
-
-    vk::SubpassDependency dependency = {};
-    dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
-    dependency.dstSubpass = 0;
-    dependency.srcStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput;
-    dependency.dstStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput;
-    dependency.srcAccessMask = vk::AccessFlagBits::eNone;
-    dependency.dstAccessMask = vk::AccessFlagBits::eColorAttachmentWrite;
-
-    vk::SubpassDependency dependency2 = {};
-    dependency2.srcSubpass = 0;
-    dependency2.dstSubpass = VK_SUBPASS_EXTERNAL;
-    dependency2.srcStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput;
-    dependency2.dstStageMask = vk::PipelineStageFlagBits::eBottomOfPipe;
-    dependency2.srcAccessMask = vk::AccessFlagBits::eColorAttachmentWrite;
-    dependency2.dstAccessMask = vk::AccessFlagBits::eNone;
-    dependency2.dependencyFlags = vk::DependencyFlagBits::eByRegion;
-
-    std::array<vk::AttachmentDescription, 2> attachments = { colorAttachment, resolveAttachment };
-
-    vk::RenderPassCreateInfo renderPassInfo = {};
-    renderPassInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
-    renderPassInfo.pAttachments = attachments.data();
-    renderPassInfo.subpassCount = 1;
-    renderPassInfo.pSubpasses = &subpass;
-
-    std::array<vk::SubpassDependency, 2> dependencies = { dependency, dependency2 };
-    renderPassInfo.dependencyCount = static_cast<uint32_t>(dependencies.size());
-    renderPassInfo.pDependencies = dependencies.data();
-
-    m_renderPass = renderer::getRen().getDevice().createRenderPassUnique(renderPassInfo);
-
-}
-
-void rfct::vulkanRasterizerPipeline::recordCommandBuffer(frameContext* ctx, frameData& frameData, vk::Framebuffer framebuffer)
+void rfct::vulkanRasterizerPipeline::recordCommandBuffer(frameContext* ctx, frameData& frameData, vk::Framebuffer framebuffer, vk::RenderPass renderPass)
 {
     RFCT_PROFILE_FUNCTION();
     const sceneRenderData& renderdata = ctx->scene->getRenderData();
@@ -208,10 +138,10 @@ void rfct::vulkanRasterizerPipeline::recordCommandBuffer(frameContext* ctx, fram
     clearValues[0].color = vk::ClearColorValue(std::array<float, 4>{0.0f, 0.0f, 0.0f, 1.0f});
 
     vk::RenderPassBeginInfo renderPassInfo = {};
-    renderPassInfo.renderPass = m_renderPass.get();
+    renderPassInfo.renderPass = renderPass;
     renderPassInfo.framebuffer = framebuffer;
     renderPassInfo.renderArea.offset = vk::Offset2D{ 0, 0 };
-    renderPassInfo.renderArea.extent = renderer::getRen().getDeviceWrapper().getSwapChain().getExtent();
+    renderPassInfo.renderArea.extent = rfct::renderer::getRen().getRenderImagesManager().getSwapChain().getExtent();
     renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
     renderPassInfo.pClearValues = clearValues.data();
 

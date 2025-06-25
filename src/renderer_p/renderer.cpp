@@ -64,18 +64,17 @@ namespace rfct {
 // LET THIS CODE COOK. IT DOES COOK FRFR
 rfct::renderer::renderer(RFCT_RENDERER_ARGUMENTS)
 	: m_uselessBool(setStaticRenderer(this)), 
-    m_window(RFCT_WINDOWS_WINDOW_ARGUMENTS RFCT_NATIVE_WINDOW_ANDROID_VAR), 
+    m_window(RFCT_WINDOWS_WINDOW_ARGUMENTS RFCT_NATIVE_WINDOW_ANDROID_VAR),
     m_instance(), 
     m_surface(m_window.createSurface(getInstance())), 
     m_device(), 
-    m_rasterizerPipeline(), 
-    m_allocator(), 
+    m_allocator(),
+    m_renderImages(),
+    m_rasterizerPipeline(m_renderImages.getSceneRenderPass()), 
     m_framesInFlight(), 
-    m_debugDraw(),
-    m_UIPipeline()
+    m_debugDraw(m_renderImages.getUIRenderPass()),
+    m_UIPipeline(m_renderImages.getUIRenderPass())
 {
-    m_device.getSwapChain().createMSAAres(msaaSamples);
-    m_device.getSwapChain().createFrameBuffers();
 }
 
 void rfct::renderer::updateWindow(RFCT_NATIVE_WINDOW_ANDROID RFCT_NATIVE_WINDOW_ANDROID_VAR){ 
@@ -95,7 +94,6 @@ void rfct::renderer::updateWindow(RFCT_NATIVE_WINDOW_ANDROID RFCT_NATIVE_WINDOW_
 
 rfct::renderer::~renderer() {
     AssetsManager::get().cleanup();
-    m_device.getSwapChain().cleanupMSAAres();
 };
 
 void rfct::renderer::render(frameContext& frameContext)
@@ -110,7 +108,7 @@ void rfct::renderer::render(frameContext& frameContext)
     uint32_t imageIndex;
     {
         RFCT_PROFILE_SCOPE("get sawpchain image");
-        imageIndex = m_device.getSwapChain().acquireNextImage(frameData.m_ImageAvaibleSemaphore.get(), VK_NULL_HANDLE);
+        imageIndex = m_renderImages.getSwapChain().acquireNextImage(frameData.m_ImageAvaibleSemaphore.get(), VK_NULL_HANDLE);
 
         if (imageIndex == -1)
         {
@@ -123,13 +121,13 @@ void rfct::renderer::render(frameContext& frameContext)
         RFCT_PROFILE_SCOPE("command buffers record");
         auto jobs = std::make_shared<rfct::jobTracker>();
         jobSystem::get().KickJob([&]() {
-            m_rasterizerPipeline.recordCommandBuffer(&frameContext, frameData, m_device.getSwapChain().getSceneFrameBuffer(imageIndex));
+            m_rasterizerPipeline.recordCommandBuffer(&frameContext, frameData,  m_renderImages.getSceneFrameBuffer(imageIndex), m_renderImages.getSceneRenderPass());
             }, *jobs);
         jobSystem::get().KickJob([&]() {
-            debugDraw::flush(&frameContext, frameData, m_device.getSwapChain().getUIFrameBuffer(imageIndex));
+            debugDraw::flush(&frameContext, frameData,  m_renderImages.getUIFrameBuffer(imageIndex), m_renderImages.getUIRenderPass());
             }, *jobs);
         jobSystem::get().KickJob([&]() {
-            m_UIPipeline.draw(frameData, m_device.getSwapChain().getUIFrameBuffer(imageIndex));
+            m_UIPipeline.draw(frameData,  m_renderImages.getUIFrameBuffer(imageIndex), m_renderImages.getUIRenderPass());
             }, *jobs);
         jobs->waitAll();
     }
@@ -167,7 +165,7 @@ void rfct::renderer::render(frameContext& frameContext)
         presentInfo.pWaitSemaphores = &sem;
 
         presentInfo.swapchainCount = 1;
-        vk::SwapchainKHR sc = m_device.getSwapChain().getSwapChain();
+        vk::SwapchainKHR sc =  m_renderImages.getSwapChain().getSwapChain();
         presentInfo.pSwapchains = &sc;
         presentInfo.pImageIndices = &imageIndex;
         presentInfo.pResults = nullptr;

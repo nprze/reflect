@@ -18,13 +18,11 @@ namespace rfct {
 	};
 	class UIPipeline {
 	public:
-		UIPipeline();
+		UIPipeline(vk::RenderPass renderPass);
 		~UIPipeline();
-		vk::RenderPass& getRenderPass() { return m_UIRenderPass.get(); }
-		void createPipeline();
-		void createRenderPass();
+		void createPipeline(vk::RenderPass renderPass);
 		void createDescriptorSet();
-		void draw(frameData& fd, vk::Framebuffer framebuffer);
+		void draw(frameData& fd, vk::Framebuffer framebuffer, vk::RenderPass renderPass);
 		void debugText(const std::string& text, glm::vec2 startPosition, float scale);
 		void addTextVertices(glyphsRenderData* rd, const std::string& text, glm::vec2 position, float scale, font* f = nullptr);
 		int getTextureIndex(bindableImage* image, imageUsage usage);
@@ -36,7 +34,6 @@ namespace rfct {
 		vulkanShader m_fragShader;
 
 		vk::UniquePipelineLayout m_PipelineLayout;
-		vk::UniqueRenderPass m_UIRenderPass;
 		vk::UniqueDescriptorSetLayout m_descriptorSetLayout;
 		vk::UniqueDescriptorPool m_DescriptorPool;
 		vk::UniqueDescriptorSet m_DescriptorSet;

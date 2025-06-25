@@ -57,11 +57,11 @@ namespace rfct {
 		static debugTriangle* requestTriangles(uint32_t count) { return instance->requestNTriangles(count); };
 		static debugLine* requestLines(uint32_t count) { return instance->requestNLines(count); };
 		static void drawText(const std::string& text, glm::vec2 startPosition, float scale) { instance->text(text, startPosition, scale); }
-		static void flush(frameContext* ctx, frameData& fd, vk::Framebuffer framebuffer) { instance->draw(ctx, fd, framebuffer); };
+		static void flush(frameContext* ctx, frameData& fd, vk::Framebuffer framebuffer, vk::RenderPass renderPass) { instance->draw(ctx, fd, framebuffer, renderPass); };
 	private:
-		debugDraw();
+		debugDraw(vk::RenderPass renderPass);
 		~debugDraw();
-		void draw(frameContext* ctx, frameData& fd, vk::Framebuffer framebuffer);
+		void draw(frameContext* ctx, frameData& fd, vk::Framebuffer framebuffer, vk::RenderPass renderPass);
 		debugTriangle* requestNTriangles(uint32_t count);
 		debugLine* requestNLines(uint32_t count);
 		void text(const std::string& text, glm::vec2 startPosition, float scale);
@@ -73,11 +73,9 @@ namespace rfct {
 		vulkanShader m_fragShader;
 
 		// Pipelines
-		void createPipelines();
-		void createRenderPass();
+		void createPipelines(vk::RenderPass renderPass);
 
 		vk::UniquePipelineLayout m_PipelineLayout;
-		vk::UniqueRenderPass m_debugDrawRenderPass;
 
 		// Triangle pipeline
 		vk::UniquePipeline m_trianglePipeline;

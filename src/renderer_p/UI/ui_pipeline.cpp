@@ -4,9 +4,9 @@
 #include "assets/assets_manager.h"
 
 
-rfct::UIPipeline::UIPipeline() : m_vertexShader("shaders/UI/UIimage_vert.spv"), m_fragShader("shaders/UI/UIimage_frag.spv"), m_glyphsRenderData(RFCT_DEBUG_DRAW_VERTEX_BUFFER_MAX_SIZE*2137), m_debugDrawglyphsRenderData(RFCT_DEBUG_DRAW_VERTEX_BUFFER_MAX_SIZE), m_defaultFont("fonts/jetbrainsMono-medium.txt"), m_dummyImage("")
+rfct::UIPipeline::UIPipeline(vk::RenderPass renderPass) : m_vertexShader("shaders/UI/UIimage_vert.spv"), m_fragShader("shaders/UI/UIimage_frag.spv"), m_glyphsRenderData(RFCT_DEBUG_DRAW_VERTEX_BUFFER_MAX_SIZE), m_debugDrawglyphsRenderData(RFCT_DEBUG_DRAW_VERTEX_BUFFER_MAX_SIZE), m_defaultFont("fonts/jetbrainsMono-medium.txt"), m_dummyImage("")
 {
-    createPipeline();
+    createPipeline(renderPass);
     createDescriptorSet();
 }
 
@@ -14,9 +14,8 @@ rfct::UIPipeline::~UIPipeline()
 {
 }
 
-void rfct::UIPipeline::createPipeline()
+void rfct::UIPipeline::createPipeline(vk::RenderPass renderPass)
 {
-    createRenderPass();
     // Shaders
     vk::PipelineShaderStageCreateInfo vertShaderStageInfo = {};
     vertShaderStageInfo.stage = vk::ShaderStageFlagBits::eVertex;
@@ -116,65 +115,12 @@ void rfct::UIPipeline::createPipeline()
     pipelineInfo.pDynamicState = &dynamicState;
     pipelineInfo.pViewportState = &viewportState;
     pipelineInfo.layout = m_PipelineLayout.get();
-    pipelineInfo.renderPass = m_UIRenderPass.get();
+    pipelineInfo.renderPass = renderPass;
     pipelineInfo.subpass = 0;
 
     m_pipeline = renderer::getRen().getDevice().createGraphicsPipelineUnique({}, pipelineInfo).value;
 
 }
-
-void rfct::UIPipeline::createRenderPass()
-{
-    vk::AttachmentDescription colorAttachment = {};
-    colorAttachment.format = vk::Format::eB8G8R8A8Unorm;
-    colorAttachment.samples = vk::SampleCountFlagBits::e1;
-    colorAttachment.loadOp = vk::AttachmentLoadOp::eLoad;
-    colorAttachment.storeOp = vk::AttachmentStoreOp::eStore;
-    colorAttachment.stencilLoadOp = vk::AttachmentLoadOp::eDontCare;
-    colorAttachment.stencilStoreOp = vk::AttachmentStoreOp::eDontCare;
-    colorAttachment.initialLayout = vk::ImageLayout::eColorAttachmentOptimal;
-    colorAttachment.finalLayout = vk::ImageLayout::ePresentSrcKHR;
-
-
-    vk::AttachmentReference colorAttachmentRef = {};
-    colorAttachmentRef.attachment = 0;
-    colorAttachmentRef.layout = vk::ImageLayout::eColorAttachmentOptimal;
-
-    vk::SubpassDescription subpass = {};
-    subpass.pipelineBindPoint = vk::PipelineBindPoint::eGraphics;
-    subpass.colorAttachmentCount = 1;
-    subpass.pColorAttachments = &colorAttachmentRef;
-
-    vk::SubpassDependency dependency = {};
-    dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
-    dependency.dstSubpass = 0;
-    dependency.srcStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput;
-    dependency.dstStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput;
-    dependency.srcAccessMask = vk::AccessFlagBits::eNone;
-    dependency.dstAccessMask = vk::AccessFlagBits::eColorAttachmentWrite;
-
-    vk::SubpassDependency dependency2 = {};
-    dependency2.srcSubpass = 0;
-    dependency2.dstSubpass = VK_SUBPASS_EXTERNAL;
-    dependency2.srcStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput;
-    dependency2.dstStageMask = vk::PipelineStageFlagBits::eBottomOfPipe;
-    dependency2.srcAccessMask = vk::AccessFlagBits::eColorAttachmentWrite;
-    dependency2.dstAccessMask = vk::AccessFlagBits::eNone;
-    dependency2.dependencyFlags = vk::DependencyFlagBits::eByRegion;
-
-
-    vk::RenderPassCreateInfo renderPassInfo = {};
-    renderPassInfo.attachmentCount = 1;
-    renderPassInfo.pAttachments = &colorAttachment;
-    renderPassInfo.subpassCount = 1;
-    renderPassInfo.pSubpasses = &subpass;
-
-    std::array<vk::SubpassDependency, 2> dependencies = { dependency, dependency2 };
-    renderPassInfo.dependencyCount = static_cast<uint32_t>(dependencies.size());
-    renderPassInfo.pDependencies = dependencies.data();
-
-    m_UIRenderPass = renderer::getRen().getDevice().createRenderPassUnique(renderPassInfo);
-  }
 
 void rfct::UIPipeline::createDescriptorSet()
 {
@@ -208,7 +154,7 @@ void rfct::UIPipeline::createDescriptorSet()
 
 
 
-void rfct::UIPipeline::draw(frameData& fd, vk::Framebuffer framebuffer)
+void rfct::UIPipeline::draw(frameData& fd, vk::Framebuffer framebuffer, vk::RenderPass renderPass)
 {
     RFCT_PROFILE_FUNCTION();
     if (m_glyphsRenderData.vertexCount == 0 && m_debugDrawglyphsRenderData.vertexCount == 0)
@@ -224,10 +170,10 @@ void rfct::UIPipeline::draw(frameData& fd, vk::Framebuffer framebuffer)
     commandBuffer.begin(beginInfo);
 
     vk::RenderPassBeginInfo renderPassInfo = {};
-    renderPassInfo.renderPass = m_UIRenderPass.get();
+    renderPassInfo.renderPass = renderPass;
     renderPassInfo.framebuffer = framebuffer;
     renderPassInfo.renderArea.offset = vk::Offset2D{ 0, 0 };
-    renderPassInfo.renderArea.extent = renderer::getRen().getDeviceWrapper().getSwapChain().getExtent();
+    renderPassInfo.renderArea.extent = rfct::renderer::getRen().getRenderImagesManager().getSwapChain().getExtent();
     renderPassInfo.clearValueCount = 0;
     renderPassInfo.pClearValues = VK_NULL_HANDLE;
 
@@ -236,15 +182,15 @@ void rfct::UIPipeline::draw(frameData& fd, vk::Framebuffer framebuffer)
     vk::Viewport viewport = {};
     viewport.x = 0.0f;
     viewport.y = 0.0f;
-    viewport.width = static_cast<float>(renderer::getRen().getDeviceWrapper().getSwapChain().getExtent().width);
-    viewport.height = static_cast<float>(renderer::getRen().getDeviceWrapper().getSwapChain().getExtent().height);
+    viewport.width = static_cast<float>(rfct::renderer::getRen().getRenderImagesManager().getSwapChain().getExtent().width);
+    viewport.height = static_cast<float>(rfct::renderer::getRen().getRenderImagesManager().getSwapChain().getExtent().height);
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
     commandBuffer.setViewport(0, viewport);
 
     vk::Rect2D scissor = {};
     scissor.offset = vk::Offset2D{ 0, 0 };
-    scissor.extent = renderer::getRen().getDeviceWrapper().getSwapChain().getExtent();
+    scissor.extent = rfct::renderer::getRen().getRenderImagesManager().getSwapChain().getExtent();
     commandBuffer.setScissor(0, scissor);
 
 

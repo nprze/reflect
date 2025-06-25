@@ -34,7 +34,7 @@ namespace rfct {
             cameraEntity.get_mut<position3DComponent>()->position.x = playerPos.x;
             cameraEntity.get_mut<position3DComponent>()->position.y = playerPos.y;
         }
-        if (renderer::getRen().getDeviceWrapper().getSwapChain().framebufferResized) {
+        if (rfct::renderer::getRen().getRenderImagesManager().getSwapChain().framebufferResized) {
             cameraEntity.get_mut<cameraComponent>()->aspectRatio = renderer::getRen().getAspectRatio();
 			recalculateProjectionMatrix(cameraEntity.get<cameraComponent>());
         }
