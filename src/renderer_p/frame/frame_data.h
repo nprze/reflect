@@ -18,6 +18,7 @@ namespace rfct {
 		vk::DescriptorSet& getUICameraUboDescSet() { return m_UIcameradescriptors.getCameraDescSet(0); }
 
         vk::SubmitInfo sceneSubmitInfo(const frameContext& ctx) const;
+        vk::SubmitInfo bloomSubmitInfo(const frameContext& ctx) const;
         vk::SubmitInfo debugDrawSubmitInfo(const frameContext& ctx) const;
         vk::SubmitInfo uiSubmitInfo(const frameContext& ctx) const;
     private:
@@ -26,6 +27,10 @@ namespace rfct {
         vk::UniqueSemaphore m_sceneFinishedSemaphore;
 
         vk::UniqueSemaphore m_ImageAvaibleSemaphore;
+
+        vk::UniqueCommandPool m_bloomCommandPool;
+        vk::UniqueCommandBuffer m_bloomCommandBuffer;
+        vk::UniqueSemaphore m_bloomFinishedSemaphore;
 
         vk::UniqueCommandPool m_debugDrawCommandPool;
         vk::UniqueCommandBuffer m_debugDrawCommandBuffer;
@@ -51,5 +56,6 @@ namespace rfct {
         friend class debugDraw;
         friend class UIPipeline;
         friend class vulkanRasterizerPipeline;
+        friend class bloomResurcesHolder;
     };
 } // namespace rfct

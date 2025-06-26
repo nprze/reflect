@@ -73,7 +73,7 @@ void rfct::vulkanSwapChain::recreateSwapChain()
     renderer::getRen().getDevice().waitIdle();
     vk::SurfaceCapabilitiesKHR capabilities = renderer::getRen().getDeviceWrapper().getPhysicalDevice().getSurfaceCapabilitiesKHR(renderer::getRen().getSurface());
     if (capabilities.currentExtent.width == 0 || capabilities.currentExtent.height == 0) return;
-	createSwapChain();
+    createSwapChain();
 }
 
 uint32_t rfct::vulkanSwapChain::acquireNextImage(const vk::Semaphore& semaphore, vk::Fence fence)

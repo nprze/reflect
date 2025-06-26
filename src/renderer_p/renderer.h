@@ -8,6 +8,7 @@
 #include "renderer_p/rasterizer_pipeline/vulkan_rasterizer_pipeline.h"
 #include "renderer_p/debug/debug_draw.h"
 #include "renderer_p/UI/ui_pipeline.h"
+#include "renderer_p/post_process/bloom.h"
 
 namespace rfct {
 	constexpr vk::SampleCountFlagBits msaaSamples = vk::SampleCountFlagBits::e4;
@@ -36,6 +37,7 @@ namespace rfct {
 		inline vulkanInstance& getInstanceWrapper() { return m_instance; }
 		inline renderImagesManager& getRenderImagesManager() { return m_renderImages; }
 		inline vulkanRasterizerPipeline& getRasterizerPipeline() { return m_rasterizerPipeline; }
+		inline bloomResurcesHolder& getBloomRes() { return m_bloomRes; }
 		inline VmaAllocator& getAllocator() { return m_allocator.m_allocator; }
 		inline vk::SurfaceKHR& getSurface() { return m_surface.surface; }
 		inline float getAspectRatio() { return m_window.getAspectRatio(); }
@@ -54,9 +56,12 @@ namespace rfct {
 		SurfaceWrapper m_surface; // here for simpler access when surface holder changes (android)
 		vulkanDevice m_device;
 		allocator m_allocator;
+		
 		renderImagesManager m_renderImages;
-		vulkanRasterizerPipeline m_rasterizerPipeline;
 		framesInFlight m_framesInFlight;
+
+		vulkanRasterizerPipeline m_rasterizerPipeline;
+		bloomResurcesHolder m_bloomRes;
 		debugDraw m_debugDraw;
 		UIPipeline m_UIPipeline;
     private:

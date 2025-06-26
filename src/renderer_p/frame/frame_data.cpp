@@ -25,6 +25,7 @@ rfct::frameData::frameData(vk::Device device, VmaAllocator& allocator, vk::Fence
     m_sceneCommandPool = device.createCommandPoolUnique(poolInfo);
     m_debugDrawCommandPool = device.createCommandPoolUnique(poolInfo);
     m_uiCommandPool = device.createCommandPoolUnique(poolInfo);
+    m_bloomCommandPool = device.createCommandPoolUnique(poolInfo);
 
     vk::CommandBufferAllocateInfo allocInfoScene{*m_sceneCommandPool, vk::CommandBufferLevel::ePrimary, 1};
     auto commandBuffersScene = device.allocateCommandBuffersUnique(allocInfoScene);
@@ -38,6 +39,10 @@ rfct::frameData::frameData(vk::Device device, VmaAllocator& allocator, vk::Fence
     auto commandBuffersui = device.allocateCommandBuffersUnique(allocInfoUI);
     m_uiCommandBuffer = std::move(commandBuffersui[0]);
 
+    vk::CommandBufferAllocateInfo allocInfoBloom{ *m_bloomCommandPool, vk::CommandBufferLevel::ePrimary, 1 };
+    auto commandBuffersbloom = device.allocateCommandBuffersUnique(allocInfoBloom);
+    m_bloomCommandBuffer = std::move(commandBuffersbloom[0]);
+
     vk::FenceCreateInfo fenceInfo{ vk::FenceCreateFlagBits::eSignaled };
     m_renderingFence = device.createFenceUnique(fenceInfo);
 
@@ -45,6 +50,7 @@ rfct::frameData::frameData(vk::Device device, VmaAllocator& allocator, vk::Fence
     m_ImageAvaibleSemaphore = device.createSemaphoreUnique(semaphoreInfo);
 
     m_sceneFinishedSemaphore = device.createSemaphoreUnique(semaphoreInfo);
+    m_bloomFinishedSemaphore = device.createSemaphoreUnique(semaphoreInfo);
     m_debugDrawFinishedSemaphore = device.createSemaphoreUnique(semaphoreInfo);
     m_renderFinishedSemaphore = device.createSemaphoreUnique(semaphoreInfo);
 
@@ -81,11 +87,18 @@ vk::SubmitInfo rfct::frameData::sceneSubmitInfo(const frameContext& ctx) const
         .setCommandBuffers(m_sceneCommandBuffer.get())
         .setSignalSemaphores(m_sceneFinishedSemaphore.get());
 }
+vk::SubmitInfo rfct::frameData::bloomSubmitInfo(const frameContext& ctx) const
+{
+    return vk::SubmitInfo()
+        .setWaitSemaphores(m_sceneFinishedSemaphore.get())
+        .setCommandBuffers(m_bloomCommandBuffer.get())
+        .setSignalSemaphores(m_bloomFinishedSemaphore.get());
+}
 vk::SubmitInfo rfct::frameData::debugDrawSubmitInfo(const frameContext& ctx) const
 {
     RFCT_ASSERT(ctx.renderDebugDraw);
     return vk::SubmitInfo()
-        .setWaitSemaphores(m_sceneFinishedSemaphore.get())
+        .setWaitSemaphores(m_bloomFinishedSemaphore.get())
         .setCommandBuffers(m_debugDrawCommandBuffer.get())
         .setSignalSemaphores(m_debugDrawFinishedSemaphore.get());
 }
@@ -93,7 +106,7 @@ vk::SubmitInfo rfct::frameData::debugDrawSubmitInfo(const frameContext& ctx) con
 vk::SubmitInfo rfct::frameData::uiSubmitInfo(const frameContext& ctx) const
 {
     return vk::SubmitInfo()
-        .setWaitSemaphores((ctx.renderDebugDraw ? m_debugDrawFinishedSemaphore.get() : m_sceneFinishedSemaphore.get()))
+        .setWaitSemaphores((ctx.renderDebugDraw ? m_debugDrawFinishedSemaphore.get() : m_bloomFinishedSemaphore.get()))
         .setCommandBuffers(m_uiCommandBuffer.get())
         .setSignalSemaphores(m_renderFinishedSemaphore.get());
 }

@@ -14,7 +14,7 @@ rfct::UIPipeline::~UIPipeline()
 {
 }
 
-void rfct::UIPipeline::createPipeline(vk::RenderPass renderPass)
+void rfct::UIPipeline::createPipeline(vk::RenderPass renderPass) 
 {
     // Shaders
     vk::PipelineShaderStageCreateInfo vertShaderStageInfo = {};

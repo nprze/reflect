@@ -72,7 +72,8 @@ rfct::renderer::renderer(RFCT_RENDERER_ARGUMENTS)
     m_renderImages(),
     m_rasterizerPipeline(m_renderImages.getSceneRenderPass()), 
     m_framesInFlight(), 
-    m_debugDraw(m_renderImages.getUIRenderPass()),
+    m_bloomRes(m_renderImages.getIntermediateRenderPass()),
+    m_debugDraw(m_renderImages.getIntermediateRenderPass()),
     m_UIPipeline(m_renderImages.getUIRenderPass())
 {
 }
@@ -108,7 +109,7 @@ void rfct::renderer::render(frameContext& frameContext)
     uint32_t imageIndex;
     {
         RFCT_PROFILE_SCOPE("get sawpchain image");
-        imageIndex = m_renderImages.getSwapChain().acquireNextImage(frameData.m_ImageAvaibleSemaphore.get(), VK_NULL_HANDLE);
+        imageIndex = m_renderImages.acquireNextImage(frameData.m_ImageAvaibleSemaphore.get(), VK_NULL_HANDLE);
 
         if (imageIndex == -1)
         {
@@ -120,14 +121,17 @@ void rfct::renderer::render(frameContext& frameContext)
     {
         RFCT_PROFILE_SCOPE("command buffers record");
         auto jobs = std::make_shared<rfct::jobTracker>();
-        jobSystem::get().KickJob([&]() {
             m_rasterizerPipeline.recordCommandBuffer(&frameContext, frameData,  m_renderImages.getSceneFrameBuffer(imageIndex), m_renderImages.getSceneRenderPass());
+            m_bloomRes.blum(&frameContext, frameData, m_renderImages.getpresentToColorAttachmentRenderPass(), imageIndex);
+            debugDraw::flush(&frameContext, frameData,  m_renderImages.getSwapChainFrameBuffer(imageIndex), m_renderImages.getIntermediateRenderPass());
+            m_UIPipeline.draw(frameData,  m_renderImages.getSwapChainFrameBuffer(imageIndex), m_renderImages.getUIRenderPass());
+        jobSystem::get().KickJob([&]() {
             }, *jobs);
         jobSystem::get().KickJob([&]() {
-            debugDraw::flush(&frameContext, frameData,  m_renderImages.getUIFrameBuffer(imageIndex), m_renderImages.getUIRenderPass());
             }, *jobs);
         jobSystem::get().KickJob([&]() {
-            m_UIPipeline.draw(frameData,  m_renderImages.getUIFrameBuffer(imageIndex), m_renderImages.getUIRenderPass());
+            }, *jobs);
+        jobSystem::get().KickJob([&]() {
             }, *jobs);
         jobs->waitAll();
     }
@@ -138,6 +142,10 @@ void rfct::renderer::render(frameContext& frameContext)
         vk::SubmitInfo sceneSubmitInfo = frameData.sceneSubmitInfo(frameContext);
         sceneSubmitInfo.pWaitDstStageMask = waitStages;
         renderer::getRen().getDeviceWrapper().getQueueManager().submitGraphics(sceneSubmitInfo);
+
+        vk::SubmitInfo bloomSubmitInfo = frameData.bloomSubmitInfo(frameContext);
+        bloomSubmitInfo.pWaitDstStageMask = waitStages;
+        renderer::getRen().getDeviceWrapper().getQueueManager().submitGraphics(bloomSubmitInfo);
 
         if (frameContext.renderDebugDraw) {
             vk::SubmitInfo debugDrawSubmitInfo = frameData.debugDrawSubmitInfo(frameContext);

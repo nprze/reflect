@@ -20,6 +20,7 @@ namespace rfct {
         void loadMesh(const std::string& path, mesh* vertxBufferOut, const glm::vec3& color);
         void loadScene(const std::string& path, sceneSerializedData* sceneSerializedDataOut);
         void createDummyImage(image* imageOut);
+        vk::CommandPool& getCommandPool();
     private:
         vk::CommandPool m_AssetsCommandPool;
         std::string m_Path;

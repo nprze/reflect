@@ -338,4 +338,12 @@ namespace rfct {
         imageOut->m_imageView = renderer::getRen().getDevice().createImageView(viewInfo);
     }
 
+    vk::CommandPool& AssetsManager::getCommandPool()
+    {
+        if (!m_AssetsCommandPool) {
+            m_AssetsCommandPool = renderer::getRen().getDevice().createCommandPool({ {}, renderer::getRen().getDeviceWrapper().getQueueManager().getGraphicsQueueFamilyIndex() });
+        }
+        return m_AssetsCommandPool;
+    }
+
 }
