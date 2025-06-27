@@ -383,7 +383,7 @@ namespace rfct {
 
             vk::RenderPassBeginInfo renderPassInfo = {};
             renderPassInfo.renderPass = renderPass;
-            renderPassInfo.framebuffer = renderer::getRen().getRenderImagesManager().getSwapChainFrameBuffer(imageIndex);
+            renderPassInfo.framebuffer = renderer::getRen().getRenderImagesManager().getBloom1FrameBuffer(imageIndex);
             renderPassInfo.renderArea.offset = vk::Offset2D{ 0, 0 };
             renderPassInfo.renderArea.extent = rfct::renderer::getRen().getRenderImagesManager().getSwapChain().getExtent();
             renderPassInfo.clearValueCount = 1; 
@@ -414,11 +414,11 @@ namespace rfct {
 
             commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, m_tresholdPipeline.m_pipeline.get());
 
-            commandBuffer.draw(3, 1, 0, 0);
+            commandBuffer.draw(6, 1, 0, 0);
 
             commandBuffer.endRenderPass();
         }
-        /*
+        
         {
             // bloom 0 pipeline
             transitionImageLayout(commandBuffer, renderer::getRen().getRenderImagesManager().getBloom1Image(imageIndex), vk::ImageLayout::eColorAttachmentOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);
@@ -428,8 +428,11 @@ namespace rfct {
             renderPassInfo.framebuffer = renderer::getRen().getRenderImagesManager().getBloom2FrameBuffer(imageIndex);
             renderPassInfo.renderArea.offset = vk::Offset2D{ 0, 0 };
             renderPassInfo.renderArea.extent = rfct::renderer::getRen().getRenderImagesManager().getSwapChain().getExtent();
-            renderPassInfo.clearValueCount = 0;
-            renderPassInfo.pClearValues = VK_NULL_HANDLE;
+            renderPassInfo.clearValueCount = 1;
+            vk::ClearValue clearColor = {};
+            clearColor.color = vk::ClearColorValue(std::array<float, 4>({ 0.0f, 0.0f, 0.0f, 1.0f }));
+            renderPassInfo.pClearValues = &clearColor;
+
 
             commandBuffer.beginRenderPass(renderPassInfo, vk::SubpassContents::eInline);
 
@@ -466,7 +469,7 @@ namespace rfct {
 
             commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, m_gaussianPipeline.m_pipeline.get());
 
-            commandBuffer.draw(3, 1, 0, 0);
+            commandBuffer.draw(6, 1, 0, 0);
 
             commandBuffer.endRenderPass();
         }
@@ -480,8 +483,11 @@ namespace rfct {
             renderPassInfo.framebuffer = renderer::getRen().getRenderImagesManager().getBloom1FrameBuffer(imageIndex);
             renderPassInfo.renderArea.offset = vk::Offset2D{ 0, 0 };
             renderPassInfo.renderArea.extent = rfct::renderer::getRen().getRenderImagesManager().getSwapChain().getExtent();
-            renderPassInfo.clearValueCount = 0;
-            renderPassInfo.pClearValues = VK_NULL_HANDLE;
+            renderPassInfo.clearValueCount = 1;
+            vk::ClearValue clearColor = {};
+            clearColor.color = vk::ClearColorValue(std::array<float, 4>({ 0.0f, 0.0f, 0.0f, 1.0f }));
+            renderPassInfo.pClearValues = &clearColor;
+
 
             commandBuffer.beginRenderPass(renderPassInfo, vk::SubpassContents::eInline);
 
@@ -518,7 +524,7 @@ namespace rfct {
 
             commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, m_gaussianPipeline.m_pipeline.get());
 
-            commandBuffer.draw(3, 1, 0, 0);
+            commandBuffer.draw(6, 1, 0, 0);
 
             commandBuffer.endRenderPass();
         }
@@ -531,8 +537,11 @@ namespace rfct {
             renderPassInfo.framebuffer = renderer::getRen().getRenderImagesManager().getSwapChainFrameBuffer(imageIndex);
             renderPassInfo.renderArea.offset = vk::Offset2D{ 0, 0 };
             renderPassInfo.renderArea.extent = rfct::renderer::getRen().getRenderImagesManager().getSwapChain().getExtent();
-            renderPassInfo.clearValueCount = 0;
-            renderPassInfo.pClearValues = VK_NULL_HANDLE;
+            renderPassInfo.clearValueCount = 1;
+            vk::ClearValue clearColor = {};
+            clearColor.color = vk::ClearColorValue(std::array<float, 4>({ 0.0f, 0.0f, 0.0f, 1.0f }));
+            renderPassInfo.pClearValues = &clearColor;
+
 
             commandBuffer.beginRenderPass(renderPassInfo, vk::SubpassContents::eInline);
 
@@ -557,15 +566,15 @@ namespace rfct {
 
             commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, m_compositePipeline.m_pipeline.get());
 
-            commandBuffer.draw(3, 1, 0, 0);
+            commandBuffer.draw(6, 1, 0, 0);
 
             commandBuffer.endRenderPass();
-        }*/
+        }
 
 
         transitionImageLayout(commandBuffer, renderer::getRen().getRenderImagesManager().getSceneImage(imageIndex), vk::ImageLayout::eShaderReadOnlyOptimal, vk::ImageLayout::eColorAttachmentOptimal);
-        //transitionImageLayout(commandBuffer, renderer::getRen().getRenderImagesManager().getBloom1Image(imageIndex), vk::ImageLayout::eShaderReadOnlyOptimal, vk::ImageLayout::eColorAttachmentOptimal);
-        //transitionImageLayout(commandBuffer, renderer::getRen().getRenderImagesManager().getBloom2Image(imageIndex), vk::ImageLayout::eShaderReadOnlyOptimal, vk::ImageLayout::eColorAttachmentOptimal);
+        transitionImageLayout(commandBuffer, renderer::getRen().getRenderImagesManager().getBloom1Image(imageIndex), vk::ImageLayout::eShaderReadOnlyOptimal, vk::ImageLayout::eColorAttachmentOptimal);
+        transitionImageLayout(commandBuffer, renderer::getRen().getRenderImagesManager().getBloom2Image(imageIndex), vk::ImageLayout::eShaderReadOnlyOptimal, vk::ImageLayout::eColorAttachmentOptimal);
 
         commandBuffer.end();
     }
@@ -616,7 +625,7 @@ namespace rfct {
         multisampling.rasterizationSamples = vk::SampleCountFlagBits::e1;
 
         vk::PipelineColorBlendAttachmentState colorBlendAttachment = {};
-        colorBlendAttachment.blendEnable = VK_FALSE;/*
+        colorBlendAttachment.blendEnable = VK_TRUE;
         colorBlendAttachment.srcColorBlendFactor = vk::BlendFactor::eSrcAlpha;
         colorBlendAttachment.dstColorBlendFactor = vk::BlendFactor::eOneMinusSrcAlpha;
         colorBlendAttachment.colorBlendOp = vk::BlendOp::eAdd;
@@ -626,7 +635,7 @@ namespace rfct {
         colorBlendAttachment.colorWriteMask = vk::ColorComponentFlagBits::eR |
             vk::ColorComponentFlagBits::eG |
             vk::ColorComponentFlagBits::eB |
-            vk::ColorComponentFlagBits::eA;*/
+            vk::ColorComponentFlagBits::eA;
 
         vk::PipelineColorBlendStateCreateInfo colorBlending = {};
         colorBlending.logicOpEnable = VK_FALSE;

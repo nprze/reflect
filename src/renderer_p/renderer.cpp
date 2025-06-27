@@ -122,7 +122,7 @@ void rfct::renderer::render(frameContext& frameContext)
         RFCT_PROFILE_SCOPE("command buffers record");
         auto jobs = std::make_shared<rfct::jobTracker>();
             m_rasterizerPipeline.recordCommandBuffer(&frameContext, frameData,  m_renderImages.getSceneFrameBuffer(imageIndex), m_renderImages.getSceneRenderPass());
-            m_bloomRes.blum(&frameContext, frameData, m_renderImages.getpresentToColorAttachmentRenderPass(), imageIndex);
+            m_bloomRes.blum(&frameContext, frameData, m_renderImages.getIntermediateClearRenderPass(), imageIndex);
             debugDraw::flush(&frameContext, frameData,  m_renderImages.getSwapChainFrameBuffer(imageIndex), m_renderImages.getIntermediateRenderPass());
             m_UIPipeline.draw(frameData,  m_renderImages.getSwapChainFrameBuffer(imageIndex), m_renderImages.getUIRenderPass());
         jobSystem::get().KickJob([&]() {

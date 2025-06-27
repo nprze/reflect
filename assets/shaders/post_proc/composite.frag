@@ -10,6 +10,6 @@ void main() {
     vec3 sceneColor = texture(sceneTex, uv).rgb;
     vec3 bloomColor = texture(bloomTex, uv).rgb;
 
-    vec3 finalColor = bloomColor;// + bloomColor * 0.7;
+    vec3 finalColor = sceneColor + bloomColor * 0.7;
     outColor = vec4(finalColor, 1.0);
 }
