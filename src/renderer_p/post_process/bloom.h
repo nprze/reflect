@@ -37,18 +37,21 @@ namespace rfct {
 		bloomResurcesHolder(vk::RenderPass renderPass);
 		void updateDescSets();
 		void blum(frameContext* ctx, frameData& fd, vk::RenderPass renderPass, uint32_t imageIndex);
+		void recordCommandBuffer(vk::CommandBuffer commandBuffer, vk::RenderPass renderPass, uint32_t imageIndex);
 	private:
 		vulkanShader vertexShader;
 		bloomSamplerHolder m_imageSampler;
-		postprocPipeline m_tresholdPipeline;
 		postprocPipeline m_gaussianPipeline;
 		postprocPipeline m_compositePipeline;
 
 		vk::UniqueDescriptorPool m_descriptorPool;
 
-		std::vector<vk::UniqueDescriptorSet> m_tresholdSceneImageDescriptorSet; // image 0
-		std::vector<vk::UniqueDescriptorSet> m_gaussian1SceneImageDescriptorSet; // image 1
+		std::vector<vk::UniqueDescriptorSet> m_gaussian1SceneImageDescriptorSet; // image 0
 		std::vector<vk::UniqueDescriptorSet> m_gaussian2SceneImageDescriptorSet; // image 2
-		std::vector<vk::UniqueDescriptorSet> m_compositeImageDescriptorSet; // image 2
+		std::vector<vk::UniqueDescriptorSet> m_compositeImageDescriptorSet; // image 0 and 1
+
+		// using prebaked command buffers bcs literally nothing changes frame to frame in this  
+		vk::UniqueCommandPool m_bloomCommandPool;
+		std::vector<vk::UniqueCommandBuffer> m_bloomCommandBuffer;
 	};
 }

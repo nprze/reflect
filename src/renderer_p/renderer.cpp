@@ -121,17 +121,17 @@ void rfct::renderer::render(frameContext& frameContext)
     {
         RFCT_PROFILE_SCOPE("command buffers record");
         auto jobs = std::make_shared<rfct::jobTracker>();
-            m_rasterizerPipeline.recordCommandBuffer(&frameContext, frameData,  m_renderImages.getSceneFrameBuffer(imageIndex), m_renderImages.getSceneRenderPass());
+        jobSystem::get().KickJob([&]() {
+            m_rasterizerPipeline.recordCommandBuffer(&frameContext, frameData, m_renderImages.getSceneFrameBuffer(imageIndex), m_renderImages.getSceneRenderPass());
+            }, *jobs);
+        jobSystem::get().KickJob([&]() {
             m_bloomRes.blum(&frameContext, frameData, m_renderImages.getIntermediateClearRenderPass(), imageIndex);
-            debugDraw::flush(&frameContext, frameData,  m_renderImages.getSwapChainFrameBuffer(imageIndex), m_renderImages.getIntermediateRenderPass());
-            m_UIPipeline.draw(frameData,  m_renderImages.getSwapChainFrameBuffer(imageIndex), m_renderImages.getUIRenderPass());
-        jobSystem::get().KickJob([&]() {
             }, *jobs);
         jobSystem::get().KickJob([&]() {
+            debugDraw::flush(&frameContext, frameData, m_renderImages.getSwapChainFrameBuffer(imageIndex), m_renderImages.getIntermediateRenderPass());
             }, *jobs);
         jobSystem::get().KickJob([&]() {
-            }, *jobs);
-        jobSystem::get().KickJob([&]() {
+            m_UIPipeline.draw(frameData, m_renderImages.getSwapChainFrameBuffer(imageIndex), m_renderImages.getUIRenderPass());
             }, *jobs);
         jobs->waitAll();
     }

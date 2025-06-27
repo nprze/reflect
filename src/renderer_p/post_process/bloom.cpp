@@ -4,7 +4,7 @@
 
 namespace rfct {
     constexpr uint32_t count = RFCT_FRAMES_IN_FLIGHT + 1;
-
+    constexpr uint32_t bloomMultiply = 3;
     // helper function
     void transitionImageLayout(vk::CommandBuffer commandBuffer, vk::Image image, vk::ImageLayout oldLayout, vk::ImageLayout newLayout) {
 
@@ -189,7 +189,6 @@ namespace rfct {
     bloomResurcesHolder::bloomResurcesHolder(vk::RenderPass renderPass) :
         vertexShader("shaders/post_proc/fullscreen_vert.spv"),
         m_imageSampler(),
-        m_tresholdPipeline(renderPass, &vertexShader, "shaders/post_proc/treshold_frag.spv", TresholdPipelineLayout()),
         m_gaussianPipeline(renderPass, &vertexShader, "shaders/post_proc/gaussian_blur_frag.spv", GaussianBlurPipelineLayout()),
         m_compositePipeline(renderPass, &vertexShader, "shaders/post_proc/composite_frag.spv", CompositePipelineLayout())
     {
@@ -206,22 +205,6 @@ namespace rfct {
 
         m_descriptorPool = renderer::getRen().getDevice().createDescriptorPoolUnique(poolInfo);
 
-        // allocate descriptor sets
-        {
-            vk::DescriptorSetLayout dsLayout = m_tresholdPipeline.m_descSetLayout;
-            std::array<vk::DescriptorSetLayout, count> sets = {};
-
-            for (uint32_t i = 0; i < count; ++i) {
-                sets[i] = dsLayout;
-            }
-            vk::DescriptorSetAllocateInfo allocInfo(
-                m_descriptorPool.get(),
-                count,
-                sets.data()
-            );
-
-            m_tresholdSceneImageDescriptorSet = std::move(renderer::getRen().getDevice().allocateDescriptorSetsUnique(allocInfo));
-        }
 
         {
             vk::DescriptorSetLayout dsLayout = m_gaussianPipeline.m_descSetLayout;
@@ -273,6 +256,24 @@ namespace rfct {
         }
 
         updateDescSets();
+
+
+        // create command buffers
+        vk::CommandPoolCreateInfo cmdpoolInfo {
+            vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
+            renderer::getRen().getDeviceWrapper().getQueueManager().getGraphicsQueueFamilyIndex()
+        };
+        m_bloomCommandPool = renderer::getRen().getDevice().createCommandPoolUnique(cmdpoolInfo);
+
+        vk::CommandBufferAllocateInfo allocInfoBloom{ *m_bloomCommandPool, vk::CommandBufferLevel::ePrimary, RFCT_FRAMES_IN_FLIGHT+1 };
+        m_bloomCommandBuffer = std::move(renderer::getRen().getDevice().allocateCommandBuffersUnique(allocInfoBloom));
+
+
+        vk::SemaphoreCreateInfo semaphoreInfo{};
+
+        for (uint32_t i = 0; i < RFCT_FRAMES_IN_FLIGHT + 1; ++i) {
+            recordCommandBuffer(m_bloomCommandBuffer[i].get(), renderer::getRen().getRenderImagesManager().getIntermediateClearRenderPass(), i);
+        }
     }
 
     void bloomResurcesHolder::updateDescSets()
@@ -280,29 +281,11 @@ namespace rfct {
         // update descriptor sets
         for (size_t i = 0; i < count; ++i) {
             {
-                // treshold
-                vk::DescriptorImageInfo imageInfo;
-
-                imageInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
-                imageInfo.imageView = renderer::getRen().getRenderImagesManager().getSceneImageView(i);
-                imageInfo.sampler = m_imageSampler.m_sampler.get();
-
-                vk::WriteDescriptorSet writeDescriptorSet = {};
-                writeDescriptorSet.dstSet = m_tresholdSceneImageDescriptorSet[i].get();
-                writeDescriptorSet.dstBinding = 0;
-                writeDescriptorSet.dstArrayElement = 0;
-                writeDescriptorSet.descriptorType = vk::DescriptorType::eCombinedImageSampler;
-                writeDescriptorSet.descriptorCount = 1;
-                writeDescriptorSet.pImageInfo = &imageInfo;
-
-                renderer::getRen().getDevice().updateDescriptorSets({ writeDescriptorSet }, nullptr);
-            }
-            {
                 // blur 1
                 vk::DescriptorImageInfo imageInfo;
 
                 imageInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
-                imageInfo.imageView = renderer::getRen().getRenderImagesManager().getBloom1ImageView(i);
+                imageInfo.imageView = renderer::getRen().getRenderImagesManager().getSceneImageView(i);
                 imageInfo.sampler = m_imageSampler.m_sampler.get();
 
                 vk::WriteDescriptorSet writeDescriptorSet = {};
@@ -371,57 +354,20 @@ namespace rfct {
     {
         RFCT_PROFILE_FUNCTION();
 
+        fd.m_BloomCommandBuffer = m_bloomCommandBuffer[imageIndex].get();
 
-        vk::CommandBuffer commandBuffer = fd.m_bloomCommandBuffer.get();
+        
+    }
 
+    void bloomResurcesHolder::recordCommandBuffer(vk::CommandBuffer commandBuffer, vk::RenderPass renderPass, uint32_t imageIndex)
+    {
         commandBuffer.reset({});
         vk::CommandBufferBeginInfo beginInfo = {};
         commandBuffer.begin(beginInfo);
-        {
-            // treshold pipeline
-            transitionImageLayout(commandBuffer, renderer::getRen().getRenderImagesManager().getSceneImage(imageIndex), vk::ImageLayout::eColorAttachmentOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);
+        transitionImageLayout(commandBuffer, renderer::getRen().getRenderImagesManager().getSceneImage(imageIndex), vk::ImageLayout::eColorAttachmentOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);
 
-            vk::RenderPassBeginInfo renderPassInfo = {};
-            renderPassInfo.renderPass = renderPass;
-            renderPassInfo.framebuffer = renderer::getRen().getRenderImagesManager().getBloom1FrameBuffer(imageIndex);
-            renderPassInfo.renderArea.offset = vk::Offset2D{ 0, 0 };
-            renderPassInfo.renderArea.extent = rfct::renderer::getRen().getRenderImagesManager().getSwapChain().getExtent();
-            renderPassInfo.clearValueCount = 1; 
-            vk::ClearValue clearColor = {};
-            clearColor.color = vk::ClearColorValue(std::array<float, 4>({ 0.0f, 0.0f, 0.0f, 1.0f }));
-            renderPassInfo.pClearValues = &clearColor;
-
-            commandBuffer.beginRenderPass(renderPassInfo, vk::SubpassContents::eInline);
-
-            vk::Viewport viewport = {};
-            viewport.x = 0.0f;
-            viewport.y = 0.0f;
-            viewport.width = static_cast<float>(rfct::renderer::getRen().getRenderImagesManager().getSwapChain().getExtent().width);
-            viewport.height = static_cast<float>(rfct::renderer::getRen().getRenderImagesManager().getSwapChain().getExtent().height);
-            viewport.minDepth = 0.0f;
-            viewport.maxDepth = 1.0f;
-            commandBuffer.setViewport(0, viewport);
-
-            vk::Rect2D scissor = {};
-            scissor.offset = vk::Offset2D{ 0, 0 };
-            scissor.extent = rfct::renderer::getRen().getRenderImagesManager().getSwapChain().getExtent();
-            commandBuffer.setScissor(0, scissor);
-
-
-            // Descriptors
-            vk::DescriptorSet descSets[] = { m_tresholdSceneImageDescriptorSet[imageIndex].get() };
-            commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_tresholdPipeline.m_pipelineLayout, 0, descSets, {});
-
-            commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, m_tresholdPipeline.m_pipeline.get());
-
-            commandBuffer.draw(6, 1, 0, 0);
-
-            commandBuffer.endRenderPass();
-        }
-        
         {
             // bloom 0 pipeline
-            transitionImageLayout(commandBuffer, renderer::getRen().getRenderImagesManager().getBloom1Image(imageIndex), vk::ImageLayout::eColorAttachmentOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);
 
             vk::RenderPassBeginInfo renderPassInfo = {};
             renderPassInfo.renderPass = renderPass;
@@ -457,26 +403,26 @@ namespace rfct {
 
             gaussianPushConstants pc;
             pc.dir = glm::vec2(1.f, 0.f);
-            pc.res = rfct::renderer::getRen().getRenderImagesManager().getSwapChain().getExtent().width;
+            pc.res = rfct::renderer::getRen().getRenderImagesManager().getSwapChain().getExtent().width / bloomMultiply;
 
             commandBuffer.pushConstants(
                 m_gaussianPipeline.m_pipelineLayout,
-                vk::ShaderStageFlagBits::eFragment, 
-                0,                                  
-                sizeof(gaussianPushConstants),      
-                &pc                                 
+                vk::ShaderStageFlagBits::eFragment,
+                0,
+                sizeof(gaussianPushConstants),
+                &pc
             );
 
             commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, m_gaussianPipeline.m_pipeline.get());
 
-            commandBuffer.draw(6, 1, 0, 0);
+            commandBuffer.draw(3, 1, 0, 0);
 
             commandBuffer.endRenderPass();
         }
         {
             // bloom 1 pipeline
             transitionImageLayout(commandBuffer, renderer::getRen().getRenderImagesManager().getBloom2Image(imageIndex), vk::ImageLayout::eColorAttachmentOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);
-            transitionImageLayout(commandBuffer, renderer::getRen().getRenderImagesManager().getBloom1Image(imageIndex), vk::ImageLayout::eShaderReadOnlyOptimal, vk::ImageLayout::eColorAttachmentOptimal);
+            //transitionImageLayout(commandBuffer, renderer::getRen().getRenderImagesManager().getBloom1Image(imageIndex), vk::ImageLayout::eShaderReadOnlyOptimal, vk::ImageLayout::eColorAttachmentOptimal);
 
             vk::RenderPassBeginInfo renderPassInfo = {};
             renderPassInfo.renderPass = renderPass;
@@ -512,19 +458,19 @@ namespace rfct {
 
             gaussianPushConstants pc;
             pc.dir = glm::vec2(0.f, 1.f);
-            pc.res = rfct::renderer::getRen().getRenderImagesManager().getSwapChain().getExtent().height;
+            pc.res = rfct::renderer::getRen().getRenderImagesManager().getSwapChain().getExtent().height / bloomMultiply;
 
             commandBuffer.pushConstants(
                 m_gaussianPipeline.m_pipelineLayout,
-                vk::ShaderStageFlagBits::eFragment, 
-                0,                                  
-                sizeof(gaussianPushConstants),      
-                &pc                                 
+                vk::ShaderStageFlagBits::eFragment,
+                0,
+                sizeof(gaussianPushConstants),
+                &pc
             );
 
             commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, m_gaussianPipeline.m_pipeline.get());
 
-            commandBuffer.draw(6, 1, 0, 0);
+            commandBuffer.draw(3, 1, 0, 0);
 
             commandBuffer.endRenderPass();
         }
@@ -566,7 +512,7 @@ namespace rfct {
 
             commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, m_compositePipeline.m_pipeline.get());
 
-            commandBuffer.draw(6, 1, 0, 0);
+            commandBuffer.draw(3, 1, 0, 0);
 
             commandBuffer.endRenderPass();
         }

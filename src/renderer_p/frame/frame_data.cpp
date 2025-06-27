@@ -25,7 +25,6 @@ rfct::frameData::frameData(vk::Device device, VmaAllocator& allocator, vk::Fence
     m_sceneCommandPool = device.createCommandPoolUnique(poolInfo);
     m_debugDrawCommandPool = device.createCommandPoolUnique(poolInfo);
     m_uiCommandPool = device.createCommandPoolUnique(poolInfo);
-    m_bloomCommandPool = device.createCommandPoolUnique(poolInfo);
 
     vk::CommandBufferAllocateInfo allocInfoScene{*m_sceneCommandPool, vk::CommandBufferLevel::ePrimary, 1};
     auto commandBuffersScene = device.allocateCommandBuffersUnique(allocInfoScene);
@@ -39,9 +38,6 @@ rfct::frameData::frameData(vk::Device device, VmaAllocator& allocator, vk::Fence
     auto commandBuffersui = device.allocateCommandBuffersUnique(allocInfoUI);
     m_uiCommandBuffer = std::move(commandBuffersui[0]);
 
-    vk::CommandBufferAllocateInfo allocInfoBloom{ *m_bloomCommandPool, vk::CommandBufferLevel::ePrimary, 1 };
-    auto commandBuffersbloom = device.allocateCommandBuffersUnique(allocInfoBloom);
-    m_bloomCommandBuffer = std::move(commandBuffersbloom[0]);
 
     vk::FenceCreateInfo fenceInfo{ vk::FenceCreateFlagBits::eSignaled };
     m_renderingFence = device.createFenceUnique(fenceInfo);
@@ -50,8 +46,8 @@ rfct::frameData::frameData(vk::Device device, VmaAllocator& allocator, vk::Fence
     m_ImageAvaibleSemaphore = device.createSemaphoreUnique(semaphoreInfo);
 
     m_sceneFinishedSemaphore = device.createSemaphoreUnique(semaphoreInfo);
-    m_bloomFinishedSemaphore = device.createSemaphoreUnique(semaphoreInfo);
     m_debugDrawFinishedSemaphore = device.createSemaphoreUnique(semaphoreInfo);
+    m_bloomFinishedSemaphore = renderer::getRen().getDevice().createSemaphoreUnique(semaphoreInfo);
     m_renderFinishedSemaphore = device.createSemaphoreUnique(semaphoreInfo);
 
 	for (size_t i = 0; i < RFCT_FRAMES_IN_FLIGHT; i++)
@@ -91,7 +87,7 @@ vk::SubmitInfo rfct::frameData::bloomSubmitInfo(const frameContext& ctx) const
 {
     return vk::SubmitInfo()
         .setWaitSemaphores(m_sceneFinishedSemaphore.get())
-        .setCommandBuffers(m_bloomCommandBuffer.get())
+        .setCommandBuffers(m_BloomCommandBuffer)
         .setSignalSemaphores(m_bloomFinishedSemaphore.get());
 }
 vk::SubmitInfo rfct::frameData::debugDrawSubmitInfo(const frameContext& ctx) const

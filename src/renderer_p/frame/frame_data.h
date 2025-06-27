@@ -28,8 +28,7 @@ namespace rfct {
 
         vk::UniqueSemaphore m_ImageAvaibleSemaphore;
 
-        vk::UniqueCommandPool m_bloomCommandPool;
-        vk::UniqueCommandBuffer m_bloomCommandBuffer;
+        vk::CommandBuffer m_BloomCommandBuffer;
         vk::UniqueSemaphore m_bloomFinishedSemaphore;
 
         vk::UniqueCommandPool m_debugDrawCommandPool;
