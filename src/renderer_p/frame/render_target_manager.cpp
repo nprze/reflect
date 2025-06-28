@@ -547,13 +547,13 @@ namespace rfct {
         if (m_swapChain.framebufferResized) {
             m_swapChain.recreateSwapChain();
             createResources();
-            renderer::getRen().getBloomRes().updateDescSets();
+            renderer::getRen().getBloomRes().onSwapchainExtentChanged();
             m_swapChain.framebufferResized = false;
         }
         uint32_t res = m_swapChain.acquireNextImage(sem, fence);
         if (res == -1) {
             createResources();
-            renderer::getRen().getBloomRes().updateDescSets();
+            renderer::getRen().getBloomRes().onSwapchainExtentChanged();
         }
         return res;
     }

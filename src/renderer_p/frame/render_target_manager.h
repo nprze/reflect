@@ -20,6 +20,7 @@ namespace rfct {
 		void cleanupImages();
 		void getSwapChainImages();
 		void createRenderPasses();
+
 	public:
 
 		vk::Image getSceneImage(uint32_t index) { return m_sceneImages[index]; }

@@ -164,9 +164,9 @@ namespace rfct {
         samplerInfo.magFilter = vk::Filter::eLinear;
         samplerInfo.minFilter = vk::Filter::eLinear;
 
-        samplerInfo.addressModeU = vk::SamplerAddressMode::eRepeat;
-        samplerInfo.addressModeV = vk::SamplerAddressMode::eRepeat;
-        samplerInfo.addressModeW = vk::SamplerAddressMode::eRepeat;
+        samplerInfo.addressModeU = vk::SamplerAddressMode::eClampToEdge;
+        samplerInfo.addressModeV = vk::SamplerAddressMode::eClampToEdge;
+        samplerInfo.addressModeW = vk::SamplerAddressMode::eClampToEdge;
 
         samplerInfo.anisotropyEnable = VK_FALSE;
         samplerInfo.maxAnisotropy = 1.0f;
@@ -268,8 +268,6 @@ namespace rfct {
         vk::CommandBufferAllocateInfo allocInfoBloom{ *m_bloomCommandPool, vk::CommandBufferLevel::ePrimary, RFCT_FRAMES_IN_FLIGHT+1 };
         m_bloomCommandBuffer = std::move(renderer::getRen().getDevice().allocateCommandBuffersUnique(allocInfoBloom));
 
-
-        vk::SemaphoreCreateInfo semaphoreInfo{};
 
         for (uint32_t i = 0; i < RFCT_FRAMES_IN_FLIGHT + 1; ++i) {
             recordCommandBuffer(m_bloomCommandBuffer[i].get(), renderer::getRen().getRenderImagesManager().getIntermediateClearRenderPass(), i);
@@ -523,6 +521,14 @@ namespace rfct {
         transitionImageLayout(commandBuffer, renderer::getRen().getRenderImagesManager().getBloom2Image(imageIndex), vk::ImageLayout::eShaderReadOnlyOptimal, vk::ImageLayout::eColorAttachmentOptimal);
 
         commandBuffer.end();
+    }
+
+    void bloomResurcesHolder::onSwapchainExtentChanged()
+    {
+        updateDescSets();
+        for (uint32_t i = 0; i < RFCT_FRAMES_IN_FLIGHT + 1; ++i) {
+            recordCommandBuffer(m_bloomCommandBuffer[i].get(), renderer::getRen().getRenderImagesManager().getIntermediateClearRenderPass(), i);
+        }
     }
 
     postprocPipeline::postprocPipeline(vk::RenderPass renderPass, vulkanShader* shaderRef, const std::string& fragmentShaderPath, layoutTemporaryHolder pipelineLayoutStuff):

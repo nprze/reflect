@@ -38,6 +38,7 @@ namespace rfct {
 		void updateDescSets();
 		void blum(frameContext* ctx, frameData& fd, vk::RenderPass renderPass, uint32_t imageIndex);
 		void recordCommandBuffer(vk::CommandBuffer commandBuffer, vk::RenderPass renderPass, uint32_t imageIndex);
+		void onSwapchainExtentChanged();
 	private:
 		vulkanShader vertexShader;
 		bloomSamplerHolder m_imageSampler;
