@@ -106,9 +106,10 @@ void rfct::scene::loadScene(const std::string& path)
 	}
 	{
 		dynamicBoxColliderComponent bounds = { { -0.4f, -0.5f }, { 0.4f, 0.5f } };
-		epicRotatingTriangle = createDynamicRect(&bounds, glm::vec3(0.6f, 0.2f, 0.4f));
+		epicRotatingTriangle = createDynamicObject(&bounds, "player/player.txt");
 		collisionCallbackComponent colCallback;
 		colCallback.handler = onCollision_Player_StaticObj;
+
 		epicRotatingTriangle.set<positionComponent>({ { 7.f, 12.f } }).set<gravityComponent>({}).set<velocityComponent>({ glm::vec3(0.f,0.f,0.f) }).set<collisionCallbackComponent>(colCallback).set<playerStateComponent>({});
 		m_playerStateMachine.setPlayer(epicRotatingTriangle);
 	}
@@ -120,7 +121,7 @@ void rfct::scene::loadScene(const std::string& path)
 
 entity rfct::scene::createStaticMesh(const std::string& path, glm::vec2 size, glm::vec2 pos, const glm::vec3& color, int cutoff)
 {
-	mesh mesh1(path, color);
+	buildingBlockMesh mesh1(path, color);
 
 	//cutoffMesh(mesh1, 4095, size.x, size.y);
 
@@ -176,6 +177,20 @@ entity rfct::scene::createDynamicRect(dynamicBoxColliderComponent* bounds, glm::
 	return createDynamicRenderingEntity(&vertices, &model).set<dynamicBoxColliderComponent>(*bounds);
 }
 
+entity rfct::scene::createDynamicObject(dynamicBoxColliderComponent* bounds, const std::string& path)
+{
+	mesh mesh1(path);
+
+	transform trans = {};
+
+	constexpr float oneSeventieth = 1.f / 440.f;
+	trans.scale = scaleComponent{};
+	trans.scale.scale.x = oneSeventieth;
+	trans.scale.scale.y = oneSeventieth;
+	glm::mat4 model = getModelMatrixFromTransform(trans);
+	return createDynamicRenderingEntity(&mesh1.m_Vertices, &model).set<dynamicBoxColliderComponent>(*bounds);
+}
+
 entity rfct::scene::createStaticRenderingEntity(std::vector<Vertex>* vertices, glm::mat4* model)
 {
 	objectLocation ol = m_RenderData.addStaticObject(vertices, model); 
@@ -193,13 +208,18 @@ entity rfct::scene::createDynamicRenderingEntity(std::vector<Vertex>* vertices, 
 {
 	objectLocation ol = m_RenderData.addDynamicObject(vertices, model);
 	dynamicSSBOIndexComponent ssboIndex = { ol.indexInSSBO };
+
+	constexpr float oneSeventieth = 1.f / 70.f;
+	scaleComponent scale = scaleComponent{};
+	scale.scale.x = oneSeventieth;
+	scale.scale.y = oneSeventieth;
 	return ecs::get().entity<>()
 		.child_of(sceneEntity)
 		.set<dynamicSSBOIndexComponent>({ ol.indexInSSBO })
 		.set<vertexRenderInfoComponent>({ ol.verticesCount, ol.vertexBufferOffset })
 		.set<positionComponent>({})
 		.set<rotationComponent>({})
-		.set<scaleComponent>({});
+		.set<scaleComponent>(scale);
 }
 
 void rfct::scene::updateTransformData(frameContext* ctx, entity e)

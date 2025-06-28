@@ -1,10 +1,12 @@
 #pragma once
 #include "scene_serialize_data.h"
+#include "renderer_p/rasterizer_pipeline/vertex.h"
+
 namespace rfct {
     class vulkanShader;
     class image;
     class font;
-    struct mesh;
+    struct buildingBlockMesh;
 
     // this class exist because the path for assets waries by platform.
     // in java android app code, the data from assets folder is copied to the app local data folder where the data can be freely read/modified.
@@ -17,7 +19,8 @@ namespace rfct {
         void loadVulkanShader(std::string path, vulkanShader* shaderOut);
 		void loadImage(const std::string& path, image* imageOut);
         void loadGlyphs(const std::string& path, font* fontOut);
-        void loadMesh(const std::string& path, mesh* vertxBufferOut, const glm::vec3& color);
+        void loadBuildingBlockMesh(const std::string& path, std::vector<Vertex>* vertxBufferOut, const glm::vec3& color);
+        void loadCharacterMesh(const std::string& path, std::vector<Vertex>* meshOut);
         void loadScene(const std::string& path, sceneSerializedData* sceneSerializedDataOut);
         void createDummyImage(image* imageOut);
         vk::CommandPool& getCommandPool();

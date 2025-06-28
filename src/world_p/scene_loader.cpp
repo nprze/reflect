@@ -8,7 +8,7 @@ bool isInsideRect(const glm::vec3& point, const glm::vec2& rectMin, const glm::v
 		(point.y >= rectMin.y && point.y <= rectMax.y);
 }
 
-void rfct::cutoffMesh(mesh& meshOut, int cutoff, int width, int height)
+void rfct::cutoffMesh(buildingBlockMesh& meshOut, int cutoff, int width, int height)
 {
 	glm::vec2 min_top = { 0,0 };
 	glm::vec2 max_top = { 0,0 };

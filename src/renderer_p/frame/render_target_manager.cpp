@@ -108,7 +108,6 @@ namespace rfct {
             }
             transformImage(m_bloom2Images[i], vk::ImageLayout::eColorAttachmentOptimal);
         }
-
     }
 
     void renderImagesManager::createImageViews()

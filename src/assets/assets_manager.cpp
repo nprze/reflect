@@ -159,7 +159,7 @@ namespace rfct {
         }
     }
 
-    void AssetsManager::loadMesh(const std::string& path, mesh* meshOut, const glm::vec3& color)
+    void AssetsManager::loadBuildingBlockMesh(const std::string& path, std::vector<Vertex>* meshOut, const glm::vec3& color)
     {
         std::string finalPath = m_Path + "/" + path;
         std::ifstream file(finalPath);
@@ -196,7 +196,7 @@ namespace rfct {
                         Vertex vtx{};
                         vtx.pos = glm::vec3(coords[i], 0.0f);
                         vtx.color = color_fin;
-                        meshOut->m_Vertices.push_back(vtx);
+                        meshOut->push_back(vtx);
                     }
 
                     coords.clear();
@@ -210,6 +210,54 @@ namespace rfct {
             }
         }
 
+    }
+
+    void AssetsManager::loadCharacterMesh(const std::string& path, std::vector<Vertex>* meshOut)
+    {
+        std::string finalPath = m_Path + "/" + path;
+        std::ifstream file(finalPath);
+
+        if (!file.is_open()) {
+            RFCT_CRITICAL("Failed to open mesh file: {}", finalPath);
+        }
+
+        std::vector<glm::vec2> coords;
+        std::string line;
+
+        while (std::getline(file, line)) {
+            std::istringstream iss(line);
+            std::vector<float> values;
+
+            double number;
+
+            while (iss >> number) {
+                values.push_back(static_cast<float>(number));
+            }
+
+
+
+            if (values.size() == 2) {
+                coords.emplace_back(values[0], values[1]);
+
+            }
+            else if (values.size() == 3) {
+                glm::vec3 color = { values[0], values[1], values[2] };
+                constexpr float one255 = 1.f / 255.f;
+                glm::vec3 color_fin = glm::vec3(color[0] * one255, color[1] * one255, color[2] * one255);
+
+                for (size_t i = 0; i < coords.size(); i++) {
+                    Vertex vtx{};
+                    vtx.pos = glm::vec3(coords[i], 0.0f);
+                    vtx.color = color_fin;
+                    meshOut->push_back(vtx);
+                }
+
+                coords.clear();
+            }
+            else {
+                RFCT_CRITICAL("Invalid line {} of file {}", line, finalPath);
+            }
+        }
     }
 
     void AssetsManager::loadScene(const std::string& path, sceneSerializedData* sceneSerializedDataOut)
