@@ -27,6 +27,11 @@ rfct::VulkanBuffer::VulkanBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage
 
 rfct::VulkanBuffer::~VulkanBuffer()
 {
+    cleanup();
+}
+
+void rfct::VulkanBuffer::cleanup()
+{
     VmaAllocator allocator = renderer::getRen().getAllocator();
 
     if (allocation) {

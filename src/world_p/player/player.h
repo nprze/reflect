@@ -9,7 +9,7 @@ namespace rfct {
 	public:
 		playerController();
 		void setPlayer(entity playerEntity) { player = playerEntity; }
-		void update(const frameContext* ctx);
+		void update(frameContext* ctx);
 	private:
 		entity player;
 		float walkSpeed;

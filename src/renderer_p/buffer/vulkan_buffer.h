@@ -6,8 +6,15 @@ namespace rfct {
         VulkanBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, VmaMemoryUsage memoryUsage, VkMemoryPropertyFlags requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, VmaAllocationCreateFlags allocFlags = VMA_ALLOCATION_CREATE_MAPPED_BIT);
         VulkanBuffer() = default;
         ~VulkanBuffer();
+        void cleanup();
 
-
+        // move constructor
+        VulkanBuffer(VulkanBuffer&& bffr) noexcept
+            : buffer(bffr.buffer), allocation(bffr.allocation)
+        {
+            bffr.buffer = nullptr;
+            bffr.allocation = nullptr;
+        }
         VulkanBuffer& operator=(VulkanBuffer&& bffr) noexcept {
             buffer = bffr.buffer;
 			allocation = bffr.allocation;

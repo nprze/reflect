@@ -1,0 +1,12 @@
+KeyframeCount: 8
+CycleTime: 2
+AllTrianglesCount: 502
+File: walkTrigs.txt
+TriangleCount: 60
+TriangleCount: 59
+TriangleCount: 59
+TriangleCount: 66
+TriangleCount: 69
+TriangleCount: 63
+TriangleCount: 64
+TriangleCount: 62

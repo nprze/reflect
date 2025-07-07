@@ -3,6 +3,7 @@
 #include "world_p/components.h"
 #include "context.h"
 #include "renderer_p/debug/debug_draw.h"
+#include "world_p/scene.h"
 
 constexpr float maxVelocityX = 0.6f;
 constexpr float boostPureHorizontalVertical = 1.2f;
@@ -34,7 +35,7 @@ namespace rfct {
 		line->vertices[1].color = { std::clamp((float)(glm::length(velComp) / (maxVelocityX * 2)), 0.f, 1.f), 0.f, 1.f};
 	}
 }
-void rfct::playerController::update(const frameContext* ctx)
+void rfct::playerController::update(frameContext* ctx)
 {
 	// draw last frame velocity
 	//drawPlayervelocity(player.get<velocityComponent>()->velocity, player.get<positionComponent>()->position);
@@ -158,6 +159,7 @@ void rfct::playerController::update(const frameContext* ctx)
 		dash45downInput = 0.f;
 		anyDash = false;
 	}
+	ctx->scene->updateDirection(facingRight);
 }
 
 void rfct::onCollision_Player_StaticObj(entity player, entity collidedWith, glm::vec2 resolution)

@@ -1,0 +1,75 @@
+#include "player_animations.h"
+#include "renderer_p/rasterizer_pipeline/vertex.h"
+#include "renderer_p/buffer/vulkan_buffer.h"
+#include "assets/assets_manager.h"
+#include <vma/vk_mem_alloc.h>
+
+
+#define RFCT_PLAYER_ANIMATIONS_VERTEX_BUFFER_COUNT 1
+#define RFCT_PLAYER_ANIMATIONS_VERTEX_BUFFER_TRIANGLE_COUNT 1000
+
+
+rfct::playerAnimations rfct::playerAnimations::instance;
+
+rfct::vulkanBufferLocation rfct::playerAnimations::requestVulkanBuffer(uint32_t triangleCount)
+{
+	for (uint32_t i = 0; i < RFCT_PLAYER_ANIMATIONS_VERTEX_BUFFER_COUNT; ++i) {
+		if (trianglesLeftInBuffer[i] >= triangleCount) {
+			uint32_t val = static_cast<uint32_t>(((RFCT_PLAYER_ANIMATIONS_VERTEX_BUFFER_TRIANGLE_COUNT * 3 * sizeof(Vertex)) - (trianglesLeftInBuffer[i]) * 3 * sizeof(Vertex)));
+			trianglesLeftInBuffer[i] -= triangleCount;
+			return {&vulkanBuffers[i], val };
+		}
+	}
+	RFCT_CRITICAL("cannot find vertex buffer to accomodate needs for animtaion");
+}
+void rfct::playerAnimations::loadAnimations()
+{
+	vulkanBuffers = (VulkanBuffer*)malloc(RFCT_PLAYER_ANIMATIONS_VERTEX_BUFFER_COUNT * sizeof(VulkanBuffer));
+	trianglesLeftInBuffer.reserve(RFCT_PLAYER_ANIMATIONS_VERTEX_BUFFER_COUNT);
+	for (uint32_t i = 0; i < RFCT_PLAYER_ANIMATIONS_VERTEX_BUFFER_COUNT; ++i) {
+		new (&vulkanBuffers[i]) VulkanBuffer(RFCT_PLAYER_ANIMATIONS_VERTEX_BUFFER_TRIANGLE_COUNT * 3 * sizeof(Vertex), vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eTransferDst, VMA_MEMORY_USAGE_GPU_ONLY);
+		trianglesLeftInBuffer.push_back(RFCT_PLAYER_ANIMATIONS_VERTEX_BUFFER_TRIANGLE_COUNT);
+	}
+	m_walking = AssetsManager::get().loadAnimation("player/walkAnim/walk.txt");
+	m_currentAnimation = &m_walking;
+}
+
+void rfct::playerAnimations::unloadAnimations()
+{
+	for (uint32_t i = 0; i < RFCT_PLAYER_ANIMATIONS_VERTEX_BUFFER_COUNT; ++i) {
+		vulkanBuffers[i].cleanup();
+	}
+	free(vulkanBuffers);
+	vulkanBuffers = nullptr;
+}
+
+void rfct::playerAnimations::update(float dt)
+{
+	m_timeSinceFrameChanged += dt;
+	if (m_timeSinceFrameChanged > m_currentAnimation->timePerFrame) {
+		m_timeSinceFrameChanged = std::fmod(m_timeSinceFrameChanged, m_currentAnimation->timePerFrame);
+
+		m_bufferOffset += m_currentAnimation->trianglesPerFrame[m_currentFrame] * 3 * sizeof(Vertex);
+		m_currentFrame += 1;
+		if (m_currentFrame > m_currentAnimation->frameCount - 1) {
+			m_currentFrame = 0;
+			m_bufferOffset = 0;
+		}
+	}
+}
+
+void rfct::playerAnimations::changeAnimation(animation* newAnim)
+{
+	m_currentAnimation = newAnim;
+	m_timeSinceFrameChanged = 0.f;
+	m_bufferOffset = 0;
+}
+
+void rfct::playerAnimations::drawPlayer(vk::CommandBuffer& cmdBffr)
+{
+
+	vk::Buffer vertexBuffers[] = { m_currentAnimation->buffer->buffer  };
+	vk::DeviceSize offsets[] = { m_currentAnimation->bufferOffsetInBytes + m_bufferOffset };
+	cmdBffr.bindVertexBuffers(0,1, vertexBuffers, offsets);
+	cmdBffr.draw(m_currentAnimation->trianglesPerFrame[m_currentFrame] * 3, 1, 0, 0);
+}

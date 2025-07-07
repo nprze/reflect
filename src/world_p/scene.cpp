@@ -14,6 +14,7 @@
 #include "ui.h"
 #include <stb_image/stb_image.h>
 #include "scene_loader.h"
+#include "player/player_animations.h"
 
 const float maxVelocityX = 100;
 rfct::scene::scene(world* worldArg) : m_World(worldArg)
@@ -69,6 +70,7 @@ void rfct::scene::onUpdate(frameContext* context)
 	updatePhysics(context);
 	updateTransformData(context, epicRotatingTriangle);
 	updateUI(context);
+	playerAnimations::get().update(context->dt);
 	cameraComponentOnUpdate(context->dt, epicRotatingTriangle);
 	//drawGridLines(20);
 }
@@ -104,15 +106,9 @@ void rfct::scene::loadScene(const std::string& path)
 		color.b = std::stoi(r.color.substr(4, 2), nullptr, 16);
 		createStaticMesh("building_blocks/" + r.file, size, r.min, color, r.cutoff);
 	}
-	{
-		dynamicBoxColliderComponent bounds = { { -0.4f, -0.5f }, { 0.4f, 0.5f } };
-		epicRotatingTriangle = createDynamicObject(&bounds, "player/player.txt");
-		collisionCallbackComponent colCallback;
-		colCallback.handler = onCollision_Player_StaticObj;
+	// the first dynamic object must be the player (the player is unique, uses frame animation; the frame animation uses the model matrix from dynamic objects ubo, with the 0 index)
+	createPlayerEntity();
 
-		epicRotatingTriangle.set<positionComponent>({ { 7.f, 12.f } }).set<gravityComponent>({}).set<velocityComponent>({ glm::vec3(0.f,0.f,0.f) }).set<collisionCallbackComponent>(colCallback).set<playerStateComponent>({});
-		m_playerStateMachine.setPlayer(epicRotatingTriangle);
-	}
 	m_RenderData.endTransferStatic();
 	buildBVH();
 }
@@ -177,16 +173,12 @@ entity rfct::scene::createDynamicRect(dynamicBoxColliderComponent* bounds, glm::
 	return createDynamicRenderingEntity(&vertices, &model).set<dynamicBoxColliderComponent>(*bounds);
 }
 
-entity rfct::scene::createDynamicObject(dynamicBoxColliderComponent* bounds, const std::string& path)
+entity rfct::scene::createDynamicMesh(dynamicBoxColliderComponent* bounds, const std::string& path)
 {
 	mesh mesh1(path);
 
 	transform trans = {};
 
-	constexpr float oneSeventieth = 1.f / 440.f;
-	trans.scale = scaleComponent{};
-	trans.scale.scale.x = oneSeventieth;
-	trans.scale.scale.y = oneSeventieth;
 	glm::mat4 model = getModelMatrixFromTransform(trans);
 	return createDynamicRenderingEntity(&mesh1.m_Vertices, &model).set<dynamicBoxColliderComponent>(*bounds);
 }
@@ -226,4 +218,43 @@ void rfct::scene::updateTransformData(frameContext* ctx, entity e)
 {
 	glm::mat4 model = getModelMatrixFromEntity(e);
 	m_RenderData.updateMat(ctx, e.get<dynamicSSBOIndexComponent>()->indexInSSBO, &model);
+}
+
+void rfct::scene::createPlayerEntity()
+{
+	dynamicBoxColliderComponent bounds = { { -0.25f, -0.475f }, { 0.25, 0.5f } };
+
+	transform trans = {};
+
+	constexpr float oneSeventieth = 1.f / 70.f;
+	trans.scale = scaleComponent{};
+	trans.scale.scale.x = oneSeventieth;
+	trans.scale.scale.y = oneSeventieth;
+	glm::mat4 model = getModelMatrixFromTransform(trans);
+	frameContext noCtx{};
+	uint32_t loc = m_RenderData.addDynamicMat(&noCtx, &model);
+	RFCT_ASSERT(loc == 0);
+
+	collisionCallbackComponent colCallback;
+	colCallback.handler = onCollision_Player_StaticObj;
+	epicRotatingTriangle = ecs::get().entity<>()
+		.child_of(sceneEntity)
+		.set<dynamicSSBOIndexComponent>({ 0 })
+		.set<rotationComponent>({})
+		.set<scaleComponent>(trans.scale)
+		.set<positionComponent>({ { 7.f, 9.f } })
+		.set<gravityComponent>({})
+		.set<velocityComponent>({ glm::vec3(0.f,0.f,0.f) })
+		.set<collisionCallbackComponent>(colCallback)
+		.set<dynamicBoxColliderComponent>(bounds)
+		.set<playerStateComponent>({});
+
+	m_playerStateMachine.setPlayer(epicRotatingTriangle);
+}
+
+void rfct::scene::updateDirection(bool facingRight)
+{
+	scaleComponent* scale = epicRotatingTriangle.get_mut<scaleComponent>();
+	scale->scale.x = scale->scale.x* (facingRight? (scale->scale.x < 0 ? -1 : 1) :(scale->scale.x>0?-1:1));
+	epicRotatingTriangle.set<scaleComponent>(*scale);
 }

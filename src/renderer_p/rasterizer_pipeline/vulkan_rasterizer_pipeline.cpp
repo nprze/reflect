@@ -5,6 +5,7 @@
 #include "renderer_p/frame/frame_data.h"
 #include "world_p/render_data.h"
 #include "world_p/scene.h"
+#include "world_p/player/player_animations.h"
 
 
 rfct::vulkanRasterizerPipeline::vulkanRasterizerPipeline(vk::RenderPass renderPass) :m_vertexShader("shaders/cube/cube_vert.spv"), m_fragShader("shaders/cube/cube_frag.spv")
@@ -178,6 +179,7 @@ void rfct::vulkanRasterizerPipeline::recordCommandBuffer(frameContext* ctx, fram
 
         commandBuffer.draw(renderdata.m_verticesCountStaticObj, 1, 0, 0);
     }
+    /*
     if (renderdata.m_verticesCountDynamicObj) {
 
         vk::Buffer vertexBuffers[] = { renderdata.m_VertexBufferDynamic[ctx->frame]->m_Buffer.buffer};
@@ -189,6 +191,11 @@ void rfct::vulkanRasterizerPipeline::recordCommandBuffer(frameContext* ctx, fram
 
         commandBuffer.draw(renderdata.m_verticesCountDynamicObj, 1, 0, 0);
     }
+    */
+
+    vk::DescriptorSet sets[] = { frameData.getCameraUboDescSet(ctx->frame), renderdata.m_DescriptorSetsDynamic[ctx->frame].get() };
+    commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_pipelineLayout.get(), 0, sets, {});
+    playerAnimations::get().drawPlayer(commandBuffer);
 
     commandBuffer.endRenderPass();
     commandBuffer.end();

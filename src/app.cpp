@@ -1,6 +1,7 @@
 #include "app.h"
 #include "world_p/world.h"
 #include "assets/assets_manager.h"
+#include "world_p/player/player_animations.h"
 
 bool rfct::reflectApplication::isAppMinimised;
 
@@ -9,6 +10,7 @@ m_Renderer(RFCT_RENDERER_ARGUMENTS_VAR)
 {
 	// app init
 	input::getInput().init();
+	playerAnimations::get().loadAnimations();
 	isAppMinimised = false;
 	registerComponents();
 
@@ -31,6 +33,7 @@ rfct::reflectApplication::~reflectApplication()
 	RFCT_TRACE("app cleanup start");
 	renderer::getRen().getDevice().waitIdle();
 	world::getWorld().cleanWorld();
+	playerAnimations::get().unloadAnimations();
 }
 
 void rfct::reflectApplication::update() {

@@ -8,8 +8,86 @@
 #include "renderer_p/UI/font/font.h"
 #include "renderer_p/mesh/mesh.h"
 #include "renderer_p/rasterizer_pipeline/vertex.h"
+#include "assets/frame_animation.h"
+#include "world_p/player/player_animations.h"
+#include "renderer_p/buffer/vulkan_buffer.h"
 
 namespace rfct {
+    void AssetsManager::uploadVertices(const std::vector<Vertex>& vertices, VulkanBuffer* buffer, vk::DeviceSize offset)
+    {
+        vk::DeviceSize bufferSize = vertices.size() * sizeof(Vertex);
+
+        // 1. Create a staging buffer
+        VkBufferCreateInfo stagingBufferInfo = {
+            .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+            .size = bufferSize,
+            .usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+            .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+        };
+
+        VmaAllocationCreateInfo stagingAllocInfo = {};
+        stagingAllocInfo.usage = VMA_MEMORY_USAGE_CPU_ONLY;
+
+        VkBuffer stagingBuffer;
+        VmaAllocation stagingBufferAllocation;
+
+        if (vmaCreateBuffer(
+            renderer::getRen().getAllocator(),
+            &stagingBufferInfo,
+            &stagingAllocInfo,
+            &stagingBuffer,
+            &stagingBufferAllocation,
+            nullptr) != VK_SUCCESS)
+        {
+            RFCT_CRITICAL("Failed to create staging buffer!");
+        }
+
+        // 2. Copy data to the staging buffer
+        void* data;
+        vmaMapMemory(renderer::getRen().getAllocator(), stagingBufferAllocation, &data);
+        memcpy(data, vertices.data(), (size_t)bufferSize);
+        vmaUnmapMemory(renderer::getRen().getAllocator(), stagingBufferAllocation);
+
+        // 3. Record command buffer to copy from staging to vertex buffer (with offset)
+        vk::CommandBufferAllocateInfo allocInfo;
+        allocInfo.commandPool = m_AssetsCommandPool;
+        allocInfo.level = vk::CommandBufferLevel::ePrimary;
+        allocInfo.commandBufferCount = 1;
+
+        vk::CommandBuffer commandBuffer;
+        RFCT_VULKAN_CHECK(renderer::getRen().getDevice().allocateCommandBuffers(&allocInfo, &commandBuffer));
+
+        vk::CommandBufferBeginInfo beginInfo;
+        beginInfo.flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit;
+
+        commandBuffer.begin(beginInfo);
+
+        vk::BufferCopy copyRegion;
+        copyRegion.srcOffset = 0;
+        copyRegion.dstOffset = offset;
+        copyRegion.size = bufferSize;
+
+        commandBuffer.copyBuffer(
+            vk::Buffer(stagingBuffer),
+            buffer->buffer,
+            copyRegion);
+
+        commandBuffer.end();
+
+        // 4. Submit the command buffer
+        vk::SubmitInfo submitInfo;
+        submitInfo.commandBufferCount = 1;
+        submitInfo.pCommandBuffers = &commandBuffer;
+
+        renderer::getRen().getDeviceWrapper().getQueueManager().getPresentQueue().submit(submitInfo);
+        renderer::getRen().getDeviceWrapper().getQueueManager().getPresentQueue().waitIdle();
+
+        // 5. Cleanup staging buffer
+        vmaDestroyBuffer(renderer::getRen().getAllocator(), stagingBuffer, stagingBufferAllocation);
+        renderer::getRen().getDevice().freeCommandBuffers(m_AssetsCommandPool, commandBuffer);
+    }
+
+
     AssetsManager AssetsManager::instance;
 
     void AssetsManager::init(std::string path)
@@ -238,7 +316,6 @@ namespace rfct {
 
             if (values.size() == 2) {
                 coords.emplace_back(values[0], values[1]);
-
             }
             else if (values.size() == 3) {
                 glm::vec3 color = { values[0], values[1], values[2] };
@@ -332,6 +409,81 @@ namespace rfct {
             RFCT_INFO("  cutoff_top: {}", (r.cutoff & cutoffValues::top) ? "true" : "false");
             RFCT_INFO("  exists file: {}", r.file);
         }
+    }
+
+    animation AssetsManager::loadAnimation(const std::string& path)
+    {
+        std::string finalPath = m_Path + "/" + path;
+        std::ifstream file(finalPath);
+
+        if (!file.is_open()) {
+            RFCT_CRITICAL("Failed to open animation file: {}", finalPath);
+        }
+
+        std::string line = "";
+        uint32_t keyFrameCount = 0;
+        float cycleTime = 0;
+        uint32_t allTrianglesCount = 0;
+        std::string filename;
+        std::vector<uint32_t> trianglesCount;
+        char buffer[256];
+        while (std::getline(file, line)) {
+            if (line.find("KeyframeCount:") != std::string::npos) {
+                RFCT_ASSERT(sscanf(line.c_str(), "KeyframeCount: %d", &keyFrameCount) == 1);
+                trianglesCount.reserve(keyFrameCount);
+            }
+            else if (line.find("CycleTime:") != std::string::npos) {
+                RFCT_ASSERT(sscanf(line.c_str(), "CycleTime: %f ", &cycleTime) == 1);
+            }
+            else if (line.find("AllTrianglesCount:") != std::string::npos) {
+                RFCT_ASSERT(sscanf(line.c_str(), "AllTrianglesCount: %d ", &allTrianglesCount) == 1);
+            }
+            else if (line.find("File:") != std::string::npos) {
+                RFCT_ASSERT(sscanf(line.c_str(), "  File: %s", buffer) == 1);
+                filename = buffer;
+            }
+            else if (line.find("TriangleCount:") != std::string::npos) {
+                uint32_t temporaryHolder;
+                RFCT_ASSERT(sscanf(line.c_str(), "TriangleCount: %d", &temporaryHolder) == 1);
+                trianglesCount.push_back(temporaryHolder);
+            }
+            else {
+                RFCT_CRITICAL("Invalid animation format. unknown line: {}", line);
+            }
+        }
+        std::vector<Vertex> vertices;
+        vertices.reserve(allTrianglesCount * 3);
+
+        size_t slashPos = finalPath.find_last_of("/\\");
+        std::string folderPath;
+
+        if (slashPos != std::string::npos) {
+            folderPath = finalPath.substr(0, slashPos + 1);
+
+            std::string keyword = "assets/";
+            size_t pos = folderPath.find(keyword);
+            if (pos != std::string::npos) {
+                folderPath = folderPath.substr(pos + keyword.length());
+            }
+        }
+
+        std::string newPath = folderPath + filename;
+
+        loadCharacterMesh(newPath, &vertices);
+        
+
+        vulkanBufferLocation loc = playerAnimations::get().requestVulkanBuffer(allTrianglesCount);
+
+        uploadVertices(vertices, loc.buffer, loc.offsetInBytes);
+        
+
+        animation anim;
+        anim.init(loc.buffer, loc.offsetInBytes);
+        anim.cycleTime = cycleTime;
+        anim.frameCount = keyFrameCount;
+        anim.trianglesPerFrame = std::move(trianglesCount);
+        anim.timePerFrame = cycleTime / keyFrameCount;
+        return anim;
     }
 
     void AssetsManager::createDummyImage(image* imageOut)
