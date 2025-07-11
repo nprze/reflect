@@ -70,7 +70,7 @@ void rfct::scene::onUpdate(frameContext* context)
 	updatePhysics(context);
 	updateTransformData(context, epicRotatingTriangle);
 	updateUI(context);
-	playerAnimations::get().update(context->dt);
+	playerAnimations::get().update(epicRotatingTriangle.get<velocityComponent>()->velocity, epicRotatingTriangle.get<positionComponent>()->position, *context);
 	cameraComponentOnUpdate(context->dt, epicRotatingTriangle);
 	//drawGridLines(20);
 }
@@ -108,6 +108,11 @@ void rfct::scene::loadScene(const std::string& path)
 	}
 	// the first dynamic object must be the player (the player is unique, uses frame animation; the frame animation uses the model matrix from dynamic objects ubo, with the 0 index)
 	createPlayerEntity();
+
+	// init player hair anim
+
+	const dynamicBoxColliderComponent* bounds = epicRotatingTriangle.get<dynamicBoxColliderComponent>();
+	playerAnimations::get().initHairAnim(bounds->max.x - bounds->min.x, bounds->max.y - bounds->min.y);
 
 	m_RenderData.endTransferStatic();
 	buildBVH();

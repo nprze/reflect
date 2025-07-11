@@ -2,11 +2,7 @@
 #include "world_p/components.h"
 #include "renderer_p/buffer/vulkan_buffer.h"
 namespace rfct {
-	struct animation {
-		inline void init(VulkanBuffer* vb, uint32_t offset) {
-			buffer = vb;
-			bufferOffsetInBytes = offset;
-		};
+	struct frameAnimation {
 
 		uint32_t frameCount;
 		float cycleTime;

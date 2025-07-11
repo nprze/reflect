@@ -8,7 +8,7 @@ namespace rfct {
     class image;
     class font;
     struct buildingBlockMesh;
-    struct animation;
+    struct frameAnimation;
     class VulkanBuffer;
 
     // this class exist because the path for assets waries by platform.
@@ -28,7 +28,7 @@ namespace rfct {
 
         void uploadVertices(const std::vector<Vertex>& vertices, VulkanBuffer* buffer, vk::DeviceSize offset); // helper function
 
-        animation loadAnimation(const std::string& path);
+        frameAnimation loadAnimation(const std::string& path);
         void createDummyImage(image* imageOut);
         vk::CommandPool& getCommandPool();
     private:

@@ -5,6 +5,7 @@
 #include <vma/vk_mem_alloc.h>
 
 
+
 #define RFCT_PLAYER_ANIMATIONS_VERTEX_BUFFER_COUNT 1
 #define RFCT_PLAYER_ANIMATIONS_VERTEX_BUFFER_TRIANGLE_COUNT 1000
 
@@ -17,7 +18,7 @@ rfct::vulkanBufferLocation rfct::playerAnimations::requestVulkanBuffer(uint32_t 
 		if (trianglesLeftInBuffer[i] >= triangleCount) {
 			uint32_t val = static_cast<uint32_t>(((RFCT_PLAYER_ANIMATIONS_VERTEX_BUFFER_TRIANGLE_COUNT * 3 * sizeof(Vertex)) - (trianglesLeftInBuffer[i]) * 3 * sizeof(Vertex)));
 			trianglesLeftInBuffer[i] -= triangleCount;
-			return {&vulkanBuffers[i], val };
+ 			return {&vulkanBuffers[i], val };
 		}
 	}
 	RFCT_CRITICAL("cannot find vertex buffer to accomodate needs for animtaion");
@@ -43,9 +44,9 @@ void rfct::playerAnimations::unloadAnimations()
 	vulkanBuffers = nullptr;
 }
 
-void rfct::playerAnimations::update(float dt)
+void rfct::playerAnimations::update(const glm::vec2& playerVel, const glm::vec2& playerPos, frameContext& ctx)
 {
-	m_timeSinceFrameChanged += dt;
+	m_timeSinceFrameChanged += ctx.dt;
 	if (m_timeSinceFrameChanged > m_currentAnimation->timePerFrame) {
 		m_timeSinceFrameChanged = std::fmod(m_timeSinceFrameChanged, m_currentAnimation->timePerFrame);
 
@@ -56,9 +57,13 @@ void rfct::playerAnimations::update(float dt)
 			m_bufferOffset = 0;
 		}
 	}
+	m_rightHairAnim.update(playerVel, ctx.fixedUpdateTimes);
+	m_leftHairAnim.update(playerVel, ctx.fixedUpdateTimes);
+	m_rightHairAnim.draw(playerPos);
+	m_leftHairAnim.draw(playerPos);
 }
 
-void rfct::playerAnimations::changeAnimation(animation* newAnim)
+void rfct::playerAnimations::changeAnimation(frameAnimation* newAnim)
 {
 	m_currentAnimation = newAnim;
 	m_timeSinceFrameChanged = 0.f;
@@ -72,4 +77,11 @@ void rfct::playerAnimations::drawPlayer(vk::CommandBuffer& cmdBffr)
 	vk::DeviceSize offsets[] = { m_currentAnimation->bufferOffsetInBytes + m_bufferOffset };
 	cmdBffr.bindVertexBuffers(0,1, vertexBuffers, offsets);
 	cmdBffr.draw(m_currentAnimation->trianglesPerFrame[m_currentFrame] * 3, 1, 0, 0);
+}
+
+void rfct::playerAnimations::initHairAnim(float playerWidth, float playerHeight)
+{
+
+	m_rightHairAnim.init(glm::vec2{ playerWidth * 0.4f, 0.4f * playerHeight }, 0.9f * playerHeight, 4);
+	m_leftHairAnim.init(glm::vec2{ playerWidth * -0.4f, 0.4f * playerHeight }, 0.9f * playerHeight, 4);
 }

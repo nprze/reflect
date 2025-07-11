@@ -411,13 +411,13 @@ namespace rfct {
         }
     }
 
-    animation AssetsManager::loadAnimation(const std::string& path)
+    frameAnimation AssetsManager::loadAnimation(const std::string& path)
     {
         std::string finalPath = m_Path + "/" + path;
         std::ifstream file(finalPath);
 
         if (!file.is_open()) {
-            RFCT_CRITICAL("Failed to open animation file: {}", finalPath);
+            RFCT_CRITICAL("Failed to open frameAnimation file: {}", finalPath);
         }
 
         std::string line = "";
@@ -448,7 +448,7 @@ namespace rfct {
                 trianglesCount.push_back(temporaryHolder);
             }
             else {
-                RFCT_CRITICAL("Invalid animation format. unknown line: {}", line);
+                RFCT_CRITICAL("Invalid frameAnimation format. unknown line: {}", line);
             }
         }
         std::vector<Vertex> vertices;
@@ -477,8 +477,9 @@ namespace rfct {
         uploadVertices(vertices, loc.buffer, loc.offsetInBytes);
         
 
-        animation anim;
-        anim.init(loc.buffer, loc.offsetInBytes);
+        frameAnimation anim;
+        anim.buffer = loc.buffer;
+        anim.bufferOffsetInBytes = loc.offsetInBytes;
         anim.cycleTime = cycleTime;
         anim.frameCount = keyFrameCount;
         anim.trianglesPerFrame = std::move(trianglesCount);

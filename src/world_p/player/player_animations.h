@@ -1,5 +1,8 @@
 #pragma once
 #include "assets/frame_animation.h"
+#include "hair_anim.h"
+#include "context.h"
+
 namespace rfct {
 	struct vulkanBufferLocation {
 		VulkanBuffer* buffer;
@@ -18,14 +21,18 @@ namespace rfct {
 		vulkanBufferLocation requestVulkanBuffer(uint32_t triangleCount);
 		void loadAnimations();
 		void unloadAnimations();
-		void update(float dt);
-		void changeAnimation(animation* newAnim);
+		void update(const glm::vec2& playerVel, const glm::vec2& playerPos, frameContext& ctx);
+		void changeAnimation(frameAnimation* newAnim);
 		void drawPlayer(vk::CommandBuffer& cmdBffr);
+		void initHairAnim(float playerWidth, float playerHeight);
 	private:
 		uint32_t m_currentFrame;
 		float m_timeSinceFrameChanged;
 		uint32_t m_bufferOffset;
-		animation m_walking;
-		animation* m_currentAnimation;
+		frameAnimation m_walking;
+		frameAnimation* m_currentAnimation;
+
+		hairAnimation m_rightHairAnim;
+		hairAnimation m_leftHairAnim;
 	};
 }
