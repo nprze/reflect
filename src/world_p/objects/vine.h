@@ -4,6 +4,7 @@
 #include "world_p/components.h"
 
 namespace rfct {
+	glm::vec2 getNearestEdgePos(const glm::vec2& PlayerPos, entity vine);
 	class vine {
 	public:
 		vine(const glm::vec2& start, const glm::vec2& end, const int numEdges, scene* parentScene);

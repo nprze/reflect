@@ -15,6 +15,7 @@ namespace rfct{
 	void cleanupQueries();
 	void buildStaticObjBVH();
 	void buildDynamicObjBVH();
+	entity findTheNearestVineToPlayer(entity player);
 	template<typename T>
 	void buildBVH(flecs::query<T> qr, std::vector<BVHnode>* BVHnodes);
 

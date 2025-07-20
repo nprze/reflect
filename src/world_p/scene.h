@@ -31,12 +31,14 @@ namespace rfct {
 		void updateDirection(bool facingRight);
 
 
+		objectsHolder& getObjectHolder() { return m_dynamicObjects; }
 		world* getWorld() { return m_World; }
 
 		entity camera;
 		entity sceneEntity; // root of all objects in this scene. 
 		sceneRenderData m_RenderData;
 	private:
+		bool hasVines = false; 
 		world* m_World;
 
 		objectsHolder m_dynamicObjects;

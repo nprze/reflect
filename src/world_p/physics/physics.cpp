@@ -3,6 +3,11 @@
 #include "renderer_p/debug/debug_draw.h"
 #include "context.h"
 
+#include <stack>
+#include <limits>
+#include <functional>
+#include <algorithm>
+
 constexpr float physicsScale = 100.f; // to make applied forces smaller for more readability
 constexpr uint32_t substepCount = 10;
 constexpr float dumping = 0.97f;
@@ -54,8 +59,15 @@ void rfct::buildDynamicObjBVH()
 }
 
 
+
 // BVH build helper functions
 namespace rfct {
+    float SquaredDistanceToAABB(const glm::vec2& point, const glm::vec2& min, const glm::vec2& max) {
+        float dx = std::max(std::max(min.x - point.x, 0.0f), point.x - max.x);
+        float dy = std::max(std::max(min.y - point.y, 0.0f), point.y - max.y);
+        return dx * dx + dy * dy;
+    }
+
     uint32_t expandBits(uint16_t v) {
         uint32_t x = v;
         x = (x | (x << 8)) & 0x00FF00FF;
@@ -150,7 +162,6 @@ void rfct::buildBVH(flecs::query<T> qr, std::vector<BVHnode>* BVHnodes)
 
     createSubTree(entries, 0, entries.size()-1, BVHnodes);
 }
-
 
 void rfct::buildDynamicBVH(flecs::query<dynamicBoxColliderComponent, positionComponent>& qr, std::vector<BVHnode>* BVHnodes)
 {
@@ -333,4 +344,61 @@ void rfct::updatePhysics(const frameContext* ctx)
 
             });
     }
+}
+
+
+entity rfct::findTheNearestVineToPlayer(entity player)
+{
+    glm::vec2 point = player.get<positionComponent>()->position;
+    std::vector<BVHnode>& bvh = DynamicObjsBVHnodes;
+    entity nearestEntity{};
+    float nearestDistSq = std::numeric_limits<float>::max();
+
+    std::stack<int> stack;
+    stack.push(static_cast<int>(bvh.size()) - 1); // Root
+
+    while (!stack.empty()) {
+        int nodeIndex = stack.top();
+        stack.pop();
+        const BVHnode& node = bvh[nodeIndex];
+
+        float distSq = SquaredDistanceToAABB(point, node.min, node.max);
+        if (distSq >= nearestDistSq) continue; // This node can’t improve
+
+        if (node.left == -1 && node.right == -1) {
+            if (node.entity.get<dynamicObjectTypeComponent>()->type == dynamicObjectType::Vine) {
+                float entityDistSq = 0.0f;
+                entityDistSq = distSq;
+
+                if (entityDistSq < nearestDistSq) {
+                    nearestDistSq = entityDistSq;
+                    nearestEntity = node.entity;
+                }
+            }
+        }
+        else {
+            int left = node.left;
+            int right = node.right;
+
+            if (left != -1 && right != -1) {
+                float leftDist = SquaredDistanceToAABB(point, bvh[left].min, bvh[left].max);
+                float rightDist = SquaredDistanceToAABB(point, bvh[right].min, bvh[right].max);
+
+                if (leftDist < rightDist) {
+                    if (rightDist < nearestDistSq) stack.push(right);
+                    if (leftDist < nearestDistSq) stack.push(left);
+                }
+                else {
+                    if (leftDist < nearestDistSq) stack.push(left);
+                    if (rightDist < nearestDistSq) stack.push(right);
+                }
+            }
+            else {
+                if (left != -1 && SquaredDistanceToAABB(point, bvh[left].min, bvh[left].max) < nearestDistSq)
+                    stack.push(left);
+                if (right != -1 && SquaredDistanceToAABB(point, bvh[right].min, bvh[right].max) < nearestDistSq)
+                    stack.push(right);
+            }
+        }
+    }return nearestEntity;
 }
