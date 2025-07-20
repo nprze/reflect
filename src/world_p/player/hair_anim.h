@@ -16,6 +16,9 @@ namespace rfct {
 		glm::vec2 m_offsetFromPlayerOrigin;
 		glm::vec2 m_gravity = { 0.f, -5.f };
 
+		glm::mat4 m_right;
+		glm::mat4 m_left;
+
 		std::vector<edge> m_edges;
 	};
 }

@@ -1,5 +1,4 @@
 #include "physics.h"
-#include "world_p/components.h"
 #include "world_p/ecs.h"
 #include "renderer_p/debug/debug_draw.h"
 #include "context.h"
@@ -10,33 +9,50 @@ constexpr float dumping = 0.97f;
 
 namespace rfct
 {
-    struct BVHnode {
-        glm::vec2 min;
-        glm::vec2 max;
-        int left = -1;
-        int right = -1;
-        entity entity;
-    };
-    static flecs::query<gravityComponent, velocityComponent, positionComponent, dynamicBoxColliderComponent, collisionCallbackComponent> gravityVelocityPositionBoxQuery;
+    static flecs::query<gravityComponent, velocityComponent, positionComponent, dynamicBoxColliderComponent, staticObjCollisionCallbackComponent> gravityVelocityPositionBoxQuery;
+    static flecs::query<positionComponent, dynamicBoxColliderComponent, dynamicObjCollisionCallbackComponent> dynamicObjectsQuery;
     static flecs::query<staticBoxColliderComponent> staticBoxColliderQuery;
-    static std::vector<BVHnode> BVHnodes;
+    static flecs::query<dynamicBoxColliderComponent, positionComponent> dynamicBoxColliderQuery;
+    static std::vector<BVHnode> StaticObjsBVHnodes;
+    static std::vector<BVHnode> DynamicObjsBVHnodes;
 }
 // Queries helper
 void rfct::createQueries(entity sceneEntity) {
     gravityVelocityPositionBoxQuery =
-        ecs::get().query_builder<gravityComponent, velocityComponent, positionComponent, dynamicBoxColliderComponent, collisionCallbackComponent>()
+        ecs::get().query_builder<gravityComponent, velocityComponent, positionComponent, dynamicBoxColliderComponent, staticObjCollisionCallbackComponent>()
+        .with(flecs::ChildOf, sceneEntity)
+        .build();
+    dynamicObjectsQuery =
+        ecs::get().query_builder<positionComponent, dynamicBoxColliderComponent, dynamicObjCollisionCallbackComponent>()
         .with(flecs::ChildOf, sceneEntity)
         .build();
     staticBoxColliderQuery =
         ecs::get().query_builder<staticBoxColliderComponent>()
         .with(flecs::ChildOf, sceneEntity)
         .build();
+    dynamicBoxColliderQuery =
+        ecs::get().query_builder<dynamicBoxColliderComponent, positionComponent>()
+        .with(flecs::ChildOf, sceneEntity)
+        .build();
 }
 
 void rfct::cleanupQueries() {
     gravityVelocityPositionBoxQuery.~query();
+    dynamicObjectsQuery.~query();
     staticBoxColliderQuery.~query();
+    dynamicBoxColliderQuery.~query();
 }
+
+void rfct::buildStaticObjBVH()
+{
+    buildBVH<staticBoxColliderComponent>(staticBoxColliderQuery, &StaticObjsBVHnodes);
+}
+
+void rfct::buildDynamicObjBVH()
+{
+    buildDynamicBVH(dynamicBoxColliderQuery, &DynamicObjsBVHnodes);
+}
+
 
 // BVH build helper functions
 namespace rfct {
@@ -72,7 +88,7 @@ namespace rfct {
         flecs::entity entity;
     };
 
-    int createSubTree(std::vector<Entry> entries, uint32_t start, uint32_t end) { // returns the index to the BVHnodes vector
+    int createSubTree(std::vector<Entry> entries, uint32_t start, uint32_t end, std::vector<BVHnode>* BVHnodes) { // returns the index to the BVHnodes vector
         if (start == end) {
             // leaf
             BVHnode node{
@@ -81,14 +97,14 @@ namespace rfct {
                 -1, -1,
                 entries[start].entity
             };
-            BVHnodes.push_back(node);
-            return BVHnodes.size() - 1;
+            BVHnodes->push_back(node);
+            return BVHnodes->size() - 1;
         }
         else {
             uint32_t middle = (start + end) / 2;
-            int left = createSubTree(entries,start, middle);
-            int right = createSubTree(entries, middle+1, end);
-            std::array<glm::vec2, 2> nodeMinMax = getMinMax(BVHnodes[left].min, BVHnodes[left].max, BVHnodes[right].min, BVHnodes[right].max);
+            int left = createSubTree(entries,start, middle, BVHnodes);
+            int right = createSubTree(entries, middle+1, end, BVHnodes);
+            std::array<glm::vec2, 2> nodeMinMax = getMinMax((*BVHnodes)[left].min, (*BVHnodes)[left].max, (*BVHnodes)[right].min, (*BVHnodes)[right].max);
             BVHnode node{
                 nodeMinMax[0],
                 nodeMinMax[1],
@@ -96,19 +112,19 @@ namespace rfct {
                 right,
                 entity()
             };
-            BVHnodes.push_back(node);
-            return BVHnodes.size() - 1;
+            BVHnodes->push_back(node);
+            return BVHnodes->size() - 1;
         }
     }
 }
-
-void rfct::buildBVH()
+template<typename T>
+void rfct::buildBVH(flecs::query<T> qr, std::vector<BVHnode>* BVHnodes)
 {
-
+    BVHnodes->clear();
     glm::vec2 globalMin(FLT_MAX);
     glm::vec2 globalMax(-FLT_MAX);
 
-    staticBoxColliderQuery.each([&](flecs::entity e, staticBoxColliderComponent& box) {
+    qr.each([&](flecs::entity e, T& box) {
         globalMin = glm::min(globalMin, box.min);
         globalMax = glm::max(globalMax, box.max);
         });
@@ -117,7 +133,7 @@ void rfct::buildBVH()
 
     std::vector<Entry> entries;
 
-    staticBoxColliderQuery.each([&](flecs::entity e, staticBoxColliderComponent& box) {
+    qr.each([&](flecs::entity e, T& box) {
         glm::vec2 center = (box.min + box.max) * 0.5f;
         glm::vec2 normalized = (center - globalMin) / extent;
         uint32_t morton = getMortonCode(normalized.x, normalized.y);
@@ -130,9 +146,43 @@ void rfct::buildBVH()
         });
 
 
-    BVHnodes.reserve(entries.size() * 2 - 1);
+    BVHnodes->reserve(entries.size() * 2 - 1);
 
-    createSubTree(entries, 0, entries.size()-1);
+    createSubTree(entries, 0, entries.size()-1, BVHnodes);
+}
+
+
+void rfct::buildDynamicBVH(flecs::query<dynamicBoxColliderComponent, positionComponent>& qr, std::vector<BVHnode>* BVHnodes)
+{
+    BVHnodes->clear();
+    glm::vec2 globalMin(FLT_MAX);
+    glm::vec2 globalMax(-FLT_MAX);
+
+    qr.each([&](flecs::entity e, dynamicBoxColliderComponent& box, positionComponent& pos) {
+        globalMin = glm::min(globalMin, box.min + pos.position);
+        globalMax = glm::max(globalMax, box.max + pos.position);
+        });
+
+    glm::vec2 extent = globalMax - globalMin;
+
+    std::vector<Entry> entries;
+
+    qr.each([&](flecs::entity e, dynamicBoxColliderComponent& box, positionComponent& pos) {
+        glm::vec2 center = (box.min + box.max) * 0.5f + pos.position;
+        glm::vec2 normalized = (center - globalMin) / extent;
+        uint32_t morton = getMortonCode(normalized.x, normalized.y);
+
+        entries.push_back({ morton, box.min + pos.position, box.max + pos.position, e });
+        });
+
+    std::sort(entries.begin(), entries.end(), [](const Entry& a, const Entry& b) {
+        return a.mortonCode < b.mortonCode;
+        });
+
+
+    BVHnodes->reserve(entries.size() * 2 - 1);
+
+    createSubTree(entries, 0, entries.size() - 1, BVHnodes);
 }
 
 // collision functions
@@ -169,7 +219,7 @@ namespace rfct {
         }
     }
 
-    void checkForCollision(BVHnode& node, dynamicBoxColliderComponent& bocCollider, collisionCallbackComponent& callback, entity& dynamicEntity) {
+    void checkForCollision(BVHnode& node, dynamicBoxColliderComponent& bocCollider, staticObjCollisionCallbackComponent& callback, entity& dynamicEntity) {
         if (checkForCollisionAABBAABB(node.min, node.max, bocCollider.min, bocCollider.max)) {
             if (node.right < 0) 
             {
@@ -178,8 +228,22 @@ namespace rfct {
                 callback.handler(dynamicEntity, node.entity, resolution);
             }
             else {
-                checkForCollision(BVHnodes[node.right], bocCollider, callback, dynamicEntity);
-                checkForCollision(BVHnodes[node.left], bocCollider, callback, dynamicEntity);
+                checkForCollision(StaticObjsBVHnodes[node.right], bocCollider, callback, dynamicEntity);
+                checkForCollision(StaticObjsBVHnodes[node.left], bocCollider, callback, dynamicEntity);
+            }
+        }
+    }
+
+    void checkForCollision(BVHnode& node, dynamicBoxColliderComponent& bocCollider, dynamicObjCollisionCallbackComponent& callback, entity& collidingEntity) {
+        if (checkForCollisionAABBAABB(node.min, node.max, bocCollider.min, bocCollider.max)) {
+            if (node.right < 0) 
+            {
+                // BVH leaf
+                if (collidingEntity != node.entity) callback.handler(collidingEntity, node.entity);
+            }
+            else {
+                checkForCollision(DynamicObjsBVHnodes[node.right], bocCollider, callback, collidingEntity);
+                checkForCollision(DynamicObjsBVHnodes[node.left], bocCollider, callback, collidingEntity);
             }
         }
     }
@@ -230,20 +294,20 @@ namespace rfct {
         }
 
     }
-    void drawBVH(uint32_t depth, const BVHnode& start) {
+    void drawBVH(uint32_t depth, const BVHnode& start, std::vector<BVHnode>* nodes) {
         drawAABB(start.min, start.max, depth);
         if (!(start.right<0)) {
-            drawBVH(depth+1, BVHnodes[start.left]);
-            drawBVH(depth+1, BVHnodes[start.right]);
+            drawBVH(depth+1, (*nodes)[start.left], nodes);
+            drawBVH(depth+1, (*nodes)[start.right], nodes);
         }
     }
 }
 
 void rfct::updatePhysics(const frameContext* ctx)
 {
-    //drawBVH(0, BVHnodes.back());
+    //drawBVH(0, DynamicObjsBVHnodes.back(), &DynamicObjsBVHnodes);
     for (uint32_t i = 0; i < ctx->fixedUpdateTimes;++i) {
-        gravityVelocityPositionBoxQuery.each([&](flecs::entity ent, gravityComponent& gravity, velocityComponent& velocity, positionComponent& position, dynamicBoxColliderComponent& dynamicBox, collisionCallbackComponent& callback) {
+        gravityVelocityPositionBoxQuery.each([&](flecs::entity ent, gravityComponent& gravity, velocityComponent& velocity, positionComponent& position, dynamicBoxColliderComponent& dynamicBox, staticObjCollisionCallbackComponent& callback) {
             if (gravity.gravityEnabled) {
                 velocity.velocity.y += -gravity.gravity * fixedDeltaTime;
                 velocity.velocity.y *= gravity.oneMinusAirResistance;
@@ -254,7 +318,17 @@ void rfct::updatePhysics(const frameContext* ctx)
                 glm::vec2 substepVelocity = velocity.velocity / (float)substepCount;
                 position.position += substepVelocity * physicsScale * substepTime;
                 dynamicBoxColliderComponent finalBoundingBox = { dynamicBox.min + position.position, dynamicBox.max + position.position };
-                checkForCollision(BVHnodes.back(), finalBoundingBox, callback, ent);
+                checkForCollision(StaticObjsBVHnodes.back(), finalBoundingBox, callback, ent);
+            }
+
+            });
+
+        // on dynamic objects do not update velocities
+        dynamicObjectsQuery.each([&](flecs::entity ent, positionComponent& position, dynamicBoxColliderComponent& dynamicBox, dynamicObjCollisionCallbackComponent& callback) {
+            constexpr float substepTime = (fixedDeltaTime) / (float)substepCount;
+            for (uint32_t substep = 0; substep < substepCount; substep++) {
+                dynamicBoxColliderComponent finalBoundingBox = { dynamicBox.min + position.position, dynamicBox.max + position.position };
+                checkForCollision(DynamicObjsBVHnodes.back(), finalBoundingBox, callback, ent);
             }
 
             });

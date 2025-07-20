@@ -2,6 +2,7 @@
 #include <glm/glm.hpp>
 
 using collisionHandler = void(*)(entity, entity, glm::vec2);
+using dynamicCollisionHandler = void(*)(entity, entity);
 namespace flecs {
 	class world;
 	class entity;
@@ -9,6 +10,12 @@ namespace flecs {
 namespace rfct {
     class scene;
 	struct frameContext;
+
+    enum class dynamicObjectType : uint8_t {
+        Player = 0,
+        Vine
+    };
+
 
 
     struct objectLocation {
@@ -20,7 +27,9 @@ namespace rfct {
     void registerComponents();
 
 
-
+    struct dynamicObjectTypeComponent {
+        dynamicObjectType type;
+    };
 	struct sceneComponent {
 		std::string name;
 	};
@@ -79,8 +88,17 @@ namespace rfct {
         bool grounded = false;
     };
 
-    struct collisionCallbackComponent {
+    struct staticObjCollisionCallbackComponent {
         collisionHandler handler;
+    };
+
+    struct dynamicObjCollisionCallbackComponent {
+        dynamicCollisionHandler handler;
+    };
+
+    struct vinePositionsComponent {
+        std::vector<glm::vec2> previousPosition;
+        std::vector<glm::vec2> positions;
     };
 
 

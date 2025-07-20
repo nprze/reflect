@@ -13,7 +13,6 @@
 #include "assets/assets_manager.h"
 #include "ui.h"
 #include <stb_image/stb_image.h>
-#include "scene_loader.h"
 #include "player/player_animations.h"
 
 const float maxVelocityX = 100;
@@ -66,8 +65,10 @@ namespace rfct{
 
 void rfct::scene::onUpdate(frameContext* context)
 {
-	m_playerStateMachine.update(context);
+	m_playerController.update(context);
+	buildDynamicObjBVH();
 	updatePhysics(context);
+	m_dynamicObjects.update(context);
 	updateTransformData(context, epicRotatingTriangle);
 	updateUI(context);
 	playerAnimations::get().update(epicRotatingTriangle.get<velocityComponent>()->velocity, epicRotatingTriangle.get<positionComponent>()->position, *context);
@@ -104,10 +105,12 @@ void rfct::scene::loadScene(const std::string& path)
 		color.r = std::stoi(r.color.substr(0, 2), nullptr, 16);
 		color.g = std::stoi(r.color.substr(2, 2), nullptr, 16);
 		color.b = std::stoi(r.color.substr(4, 2), nullptr, 16);
-		createStaticMesh("building_blocks/" + r.file, size, r.min, color, r.cutoff);
+		createStaticMesh("building_blocks/" + r.file, size, r.min, color);
 	}
 	// the first dynamic object must be the player (the player is unique, uses frame animation; the frame animation uses the model matrix from dynamic objects ubo, with the 0 index)
 	createPlayerEntity();
+
+	m_dynamicObjects.init(&sc, this);
 
 	// init player hair anim
 
@@ -115,16 +118,15 @@ void rfct::scene::loadScene(const std::string& path)
 	playerAnimations::get().initHairAnim(bounds->max.x - bounds->min.x, bounds->max.y - bounds->min.y);
 
 	m_RenderData.endTransferStatic();
-	buildBVH();
+	buildStaticObjBVH();
+	buildDynamicObjBVH();
 }
 
 
 
-entity rfct::scene::createStaticMesh(const std::string& path, glm::vec2 size, glm::vec2 pos, const glm::vec3& color, int cutoff)
+entity rfct::scene::createStaticMesh(const std::string& path, glm::vec2 size, glm::vec2 pos, const glm::vec3& color)
 {
 	buildingBlockMesh mesh1(path, color);
-
-	//cutoffMesh(mesh1, 4095, size.x, size.y);
 
 	staticBoxColliderComponent collider;
 	collider.min = pos;
@@ -240,7 +242,7 @@ void rfct::scene::createPlayerEntity()
 	uint32_t loc = m_RenderData.addDynamicMat(&noCtx, &model);
 	RFCT_ASSERT(loc == 0);
 
-	collisionCallbackComponent colCallback;
+	staticObjCollisionCallbackComponent colCallback;
 	colCallback.handler = onCollision_Player_StaticObj;
 	epicRotatingTriangle = ecs::get().entity<>()
 		.child_of(sceneEntity)
@@ -250,11 +252,12 @@ void rfct::scene::createPlayerEntity()
 		.set<positionComponent>({ { 7.f, 9.f } })
 		.set<gravityComponent>({})
 		.set<velocityComponent>({ glm::vec3(0.f,0.f,0.f) })
-		.set<collisionCallbackComponent>(colCallback)
+		.set<staticObjCollisionCallbackComponent>(colCallback)
 		.set<dynamicBoxColliderComponent>(bounds)
-		.set<playerStateComponent>({});
+		.set<playerStateComponent>({})
+		.set<dynamicObjectTypeComponent>({dynamicObjectType::Player});
 
-	m_playerStateMachine.setPlayer(epicRotatingTriangle);
+	m_playerController.setPlayer(epicRotatingTriangle);
 }
 
 void rfct::scene::updateDirection(bool facingRight)

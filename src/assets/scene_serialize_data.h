@@ -6,12 +6,17 @@ namespace rfct {
         std::string color;
         glm::vec2 min;
         glm::vec2 max;
-        int cutoff;
         std::string file;
+    };
+    struct vineInfo {
+        glm::vec2 start;
+        glm::vec2 end;
+        int numEdges;
     };
 	struct sceneSerializedData {
         int width, height;
         std::vector<rectangle> rectangles;
+        std::vector<vineInfo> vines;
 	};
     enum cutoffValues {
         top                             = 1 << 0,

@@ -6,6 +6,11 @@
 
 rfct::world rfct::world::currentWorld;
 
+void rfct::world::initWorld(const std::string& path)
+{
+	loadScene("scenes/scene04layout.txt");
+}
+
 void rfct::world::loadScene(const std::string& path)
 {
 	RFCT_PROFILE_FUNCTION();

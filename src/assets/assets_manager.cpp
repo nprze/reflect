@@ -352,52 +352,81 @@ namespace rfct {
         rectangle current;
         int minx, miny;
         int maxx, maxy;
+
+        float xin, yin;
+
+
+        bool vineFullyOk = false;
+        vineInfo vn = {};
+
         while (std::getline(file, line)) {
-            if (line.find("Rect") != std::string::npos) {
-                if (rectFullyOk) {
-                    sceneSerializedDataOut->rectangles.push_back(current);
-                }
+            if (line.find("Rect:") != std::string::npos) {
                 rectFullyOk = false;
                 current = {};
+                while (!rectFullyOk) {
+                    std::getline(file, line); 
+                    if (line.find("color:") != std::string::npos) {
+                        current.color = line.substr(line.find(":") + 2);
+                    }
+                    else if (line.find("min:") != std::string::npos) {
+
+                        RFCT_ASSERT(sscanf(line.c_str(), "  min: (%d, %d)", &minx, &miny) == 2);
+                        current.min.x = minx;
+                        current.min.y = miny;
+                    }
+                    else if (line.find("max:") != std::string::npos) {
+                        RFCT_ASSERT(sscanf(line.c_str(), "  max: (%d, %d)", &maxx, &maxy) == 2);
+                        current.max.x = maxx;
+                        current.max.y = maxy;
+                    }
+                    else if (line.find("file:") != std::string::npos) {
+                        current.file = line.substr(line.find(":") + 2);
+                        rectFullyOk = true;
+                    }
+                }
+                sceneSerializedDataOut->rectangles.push_back(current);
             }
-            else if (line.find("color:") != std::string::npos) {
-                current.color = line.substr(line.find(":") + 2);
-            }
-            else if (line.find("min:") != std::string::npos) {
-                
-                RFCT_ASSERT(sscanf(line.c_str(), "  min: (%d, %d)", &minx, &miny) == 2);
-                current.min.x = minx;
-                current.min.y = miny;
-            }
-            else if (line.find("max:") != std::string::npos) {
-                RFCT_ASSERT(sscanf(line.c_str(), "  max: (%d, %d)", &maxx, &maxy) == 2);
-                current.max.x = maxx;
-                current.max.y = maxy;
-            }
-            else if (line.find("cutoff:") != std::string::npos) {
-                RFCT_ASSERT(sscanf(line.c_str(), "  cutoff: %d", &current.cutoff) == 1);
-            }
-            else if (line.find("file:") != std::string::npos) {
-                current.file = line.substr(line.find(":") + 2);
-                rectFullyOk = true;
+            else if (line.find("Vine:") != std::string::npos) {
+                vn = {};
+                vineFullyOk = false;
+                while (!vineFullyOk) {
+                    std::getline(file, line);
+                    if (line.find("start:") != std::string::npos) {
+
+                        RFCT_ASSERT(sscanf(line.c_str(), "  start: (%f, %f)", &xin, &yin) == 2);
+                        vn.start.x = xin;
+                        vn.start.y = yin;
+                    }
+                    else if (line.find("end:") != std::string::npos) {
+                        RFCT_ASSERT(sscanf(line.c_str(), "  end: (%f, %f)", &xin, &yin) == 2);
+                        vn.end.x = xin;
+                        vn.end.y = yin;
+                    }
+                    else if (line.find("edges:") != std::string::npos) {
+                        RFCT_ASSERT(sscanf(line.c_str(), "  edges: %d", &vn.numEdges) == 1);
+                        vineFullyOk = true;
+                    }
+                }
+                sceneSerializedDataOut->vines.push_back(vn);
             }
             else if (line.find("SceneWidth:") != std::string::npos) {
                 RFCT_ASSERT(sscanf(line.c_str(), "SceneWidth: %d", &sceneSerializedDataOut->width) == 1);
             }
             else if (line.find("SceneHeight:") != std::string::npos) {
                 RFCT_ASSERT(sscanf(line.c_str(), "SceneHeight: %d", &sceneSerializedDataOut->height) == 1);
-
             }
             else if (line.find("RectCount:") != std::string::npos) {
                 int rectCount = 0;
                 RFCT_ASSERT(sscanf(line.c_str(), "RectCount: %d", &rectCount) == 1);
                 sceneSerializedDataOut->rectangles.reserve(rectCount);
             }
+            else if (line.find("VineCount:") != std::string::npos) {
+                int vinesCount = 0;
+                RFCT_ASSERT(sscanf(line.c_str(), "VineCount: %d", &vinesCount) == 1);
+                sceneSerializedDataOut->vines.reserve(vinesCount);
+            }
         }
-        if (rectFullyOk) {
-            sceneSerializedDataOut->rectangles.push_back(current);
-        }
-
+        /*
         // Output parsed rectangles
         for (size_t i = 0; i < sceneSerializedDataOut->rectangles.size(); ++i) {
             const auto& r = sceneSerializedDataOut->rectangles[i];
@@ -408,7 +437,7 @@ namespace rfct {
             RFCT_INFO("  cutoff: {}", r.cutoff);
             RFCT_INFO("  cutoff_top: {}", (r.cutoff & cutoffValues::top) ? "true" : "false");
             RFCT_INFO("  exists file: {}", r.file);
-        }
+        }*/
     }
 
     frameAnimation AssetsManager::loadAnimation(const std::string& path)
