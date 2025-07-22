@@ -3,6 +3,7 @@
 namespace rfct {
 	struct keyBindings {
 		static int menu;
+		static int hold;
 		static int walk_right;
 		static int walk_left;
 		static int jump;

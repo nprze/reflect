@@ -16,6 +16,7 @@ namespace rfct {
 	}
 	void input::pollAndParseEvents(frameContext* context) {
 		// reset
+		hold = false;
 		walk = 0;
 		jump = 0;
 
@@ -39,6 +40,9 @@ namespace rfct {
 		/*if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
 			glfwSetWindowShouldClose(window, true);
 		}*/
+		if (glfwGetKey(window, keyBindings::hold) == GLFW_PRESS) {
+			hold = true;
+		}
 		if (glfwGetKey(window, keyBindings::walk_right) == GLFW_PRESS) {
 			walk += 1;
 		}

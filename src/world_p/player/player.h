@@ -26,6 +26,10 @@ namespace rfct {
 		bool facingRight;
 		bool anyDash; // for simplicity
 
+		bool hold;
+		
+		float notHoldingTime;
+
 		float timesYNotZero;
 		float changingDirectionBoost;
 		float walkVelocity;

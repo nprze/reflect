@@ -86,6 +86,7 @@ namespace rfct {
 
     struct playerStateComponent {
         bool grounded = false;
+        bool holding = false;
     };
 
     struct staticObjCollisionCallbackComponent {
@@ -99,6 +100,9 @@ namespace rfct {
     struct vinePositionsComponent {
         std::vector<glm::vec2> previousPosition;
         std::vector<glm::vec2> positions;
+    };
+    struct vineStateComponent {
+        bool holdingToThis = false;
     };
 
 

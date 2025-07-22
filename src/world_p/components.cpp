@@ -25,6 +25,7 @@ namespace rfct {
 		ecs::get().component<staticObjCollisionCallbackComponent>();
 		ecs::get().component<vinePositionsComponent>();
 		ecs::get().component<dynamicObjectTypeComponent>();
+		ecs::get().component<vineStateComponent>();
 
 		
 

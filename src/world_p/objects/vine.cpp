@@ -52,6 +52,7 @@ namespace rfct {
 	void onCollision_Vine_DynamicObj(entity vineEntity, entity collidedWith) {
 		// narrow phase
 		if(collidedWith.get<dynamicObjectTypeComponent>()->type != dynamicObjectType::Player)return;
+		if (vineEntity.get<vineStateComponent>()->holdingToThis) return; // update separately
 		glm::vec2 playerMin = collidedWith.get_mut<dynamicBoxColliderComponent>()->min + collidedWith.get<positionComponent>()->position;
 		glm::vec2 playerMax = collidedWith.get_mut<dynamicBoxColliderComponent>()->max + collidedWith.get<positionComponent>()->position;
 
@@ -90,17 +91,26 @@ namespace rfct {
 			}
 		}
 	}
-	glm::vec2 getNearestEdgePos(const glm::vec2& PlayerPos, entity vine)
+	std::pair<glm::vec2, int> getNearestEdgePos(const glm::vec2& PlayerPos, entity vine)
 	{
 		glm::vec2 posMin = glm::vec2(FLT_MAX);
 		float distMin = FLT_MAX;
+		int curVine = 0;
+		int vineIndex = 0;
 		for (const glm::vec2& edgePos : vine.get<vinePositionsComponent>()->positions) {
 			if (len(PlayerPos - (edgePos + vine.get<positionComponent>()->position)) < distMin) {
 				posMin = edgePos + vine.get<positionComponent>()->position;
 				distMin = len(PlayerPos - (edgePos + vine.get<positionComponent>()->position));
+				vineIndex = curVine;
 			}
+			curVine++;
 		}
-		return posMin;
+		return { posMin, vineIndex };
+	}
+
+	glm::vec2 simulateVinePlayerIsHolding(entity vineEntity, int vineEdgeIndex)
+	{
+		return vineEntity.get<vinePositionsComponent>()->positions.at(vineEdgeIndex) + vineEntity.get<positionComponent>()->position;
 	}
 }
 rfct::vine::vine(const glm::vec2& startArg, const glm::vec2& endArg, const int numEdges, scene* parentScene)
@@ -137,28 +147,13 @@ rfct::vine::vine(const glm::vec2& startArg, const glm::vec2& endArg, const int n
 		.set<staticObjCollisionCallbackComponent>(colCallback)
 		.set<dynamicObjCollisionCallbackComponent>(dynColCallback)
 		.set<dynamicBoxColliderComponent>({})
-		.set<dynamicObjectTypeComponent>({ dynamicObjectType::Vine });
+		.set<dynamicObjectTypeComponent>({ dynamicObjectType::Vine })
+		.set<vineStateComponent>({ false });
 	constructBoundingBox();
 }
 
 void rfct::vine::update(const frameContext* fc)
 {
-	glm::vec2 start = m_vineEntity.get<positionComponent>()->position;
-	glm::vec3 white = { 1.f,1.f,1.f };
-	glm::vec3 blue = { 0.f,0.f,1.f };
-	debugLine* lines = debugDraw::requestLines(m_vineEntity.get<vinePositionsComponent>()->positions.size() - 1);
-	for (uint32_t i = 0; i < m_vineEntity.get<vinePositionsComponent>()->positions.size() - 1;i++) {
-		lines[i].vertices[0].pos = glm::vec3({ start + m_vineEntity.get<vinePositionsComponent>()->positions[i], 0.f });
-		lines[i].vertices[1].pos = glm::vec3({ start + m_vineEntity.get<vinePositionsComponent>()->positions[i + 1], 0.f });
-		if (i % 2) {
-			lines[i].vertices[0].color = white;
-			lines[i].vertices[1].color = white;
-		}
-		else {
-			lines[i].vertices[0].color = blue;
-			lines[i].vertices[1].color = blue;
-		}
-	}
 	if (fc->fixedUpdateTimes) {
 		std::vector<glm::vec2>& positions = m_vineEntity.get_mut<vinePositionsComponent>()->positions;
 		std::vector<glm::vec2>& previousPositions = m_vineEntity.get_mut<vinePositionsComponent>()->previousPosition;
@@ -189,6 +184,26 @@ void rfct::vine::update(const frameContext* fc)
 
 		}
 		constructBoundingBox();
+	}
+}
+
+void rfct::vine::draw()
+{
+	glm::vec2 start = m_vineEntity.get<positionComponent>()->position;
+	glm::vec3 white = { 1.f,1.f,1.f };
+	glm::vec3 blue = { 0.f,0.f,1.f };
+	debugLine* lines = debugDraw::requestLines(m_vineEntity.get<vinePositionsComponent>()->positions.size() - 1);
+	for (uint32_t i = 0; i < m_vineEntity.get<vinePositionsComponent>()->positions.size() - 1; i++) {
+		lines[i].vertices[0].pos = glm::vec3({ start + m_vineEntity.get<vinePositionsComponent>()->positions[i], 0.f });
+		lines[i].vertices[1].pos = glm::vec3({ start + m_vineEntity.get<vinePositionsComponent>()->positions[i + 1], 0.f });
+		if (i % 2) {
+			lines[i].vertices[0].color = white;
+			lines[i].vertices[1].color = white;
+		}
+		else {
+			lines[i].vertices[0].color = blue;
+			lines[i].vertices[1].color = blue;
+		}
 	}
 }
 

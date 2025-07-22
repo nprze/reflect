@@ -4,6 +4,7 @@
 #include "context.h"
 #include "renderer_p/debug/debug_draw.h"
 #include "world_p/scene.h"
+#include "world_p/physics/physics.h"
 
 constexpr float maxVelocityX = 0.6f;
 constexpr float boostPureHorizontalVertical = 1.2f;
@@ -34,12 +35,19 @@ namespace rfct {
 		line->vertices[0].color = { std::clamp((float)(glm::length(velComp) / (maxVelocityX * 2) ), 0.f, 1.f), 0.f, 1.f};
 		line->vertices[1].color = { std::clamp((float)(glm::length(velComp) / (maxVelocityX * 2)), 0.f, 1.f), 0.f, 1.f};
 	}
+	float len(const glm::vec2& vec) {
+		return std::sqrt((vec.x * vec.x) + (vec.y * vec.y));
+	}
 }
 void rfct::playerController::update(frameContext* ctx)
 {
 	// draw last frame velocity
 	//drawPlayervelocity(player.get<velocityComponent>()->velocity, player.get<positionComponent>()->position);
 	//drawPlayervelocity(dashVelocity, player.get<positionComponent>()->position, {2.f, 2.f});
+
+	if (input::getInput().hold) {
+		hold = true;
+	}
 
 	// normal update
 	playerStateComponent* playerState = player.get_mut<playerStateComponent>();
@@ -70,7 +78,6 @@ void rfct::playerController::update(frameContext* ctx)
 			anyDash = true;
 				
 		}
-		
 	}
 
 	// walk
@@ -90,7 +97,47 @@ void rfct::playerController::update(frameContext* ctx)
 
 	// fixedUpdate
 	for (uint32_t i = 0; i < ctx->fixedUpdateTimes; ++i) {
-		// dash calculate
+		// find object to hold
+
+		if (hold) {
+			notHoldingTime = 0.f;
+			if (ctx->scene->getObjectHolder().nearestVineEdgeToPlayerIndex == -1) {
+				// proritize vines
+				glm::vec3 red = glm::vec3(1.f, 0.f, 0.f);
+				ctx->scene->getObjectHolder().vineClosestToPlayer = findTheNearestVineToPlayer(player);
+				debugLine* line = debugDraw::requestLines(1);
+				std::pair<glm::vec2, int> vineEdgePos = getNearestEdgePos((player.get<positionComponent>()->position), ctx->scene->getObjectHolder().vineClosestToPlayer);
+				line->vertices[0].pos = { vineEdgePos.first, 0.f };
+				line->vertices[1].pos = { player.get<positionComponent>()->position, 0.f };
+				line->vertices[0].color = red;
+				line->vertices[1].color = red;
+				if (len(vineEdgePos.first - player.get<positionComponent>()->position) < 0.8) {
+					playerState->holding = true;
+					ctx->scene->getObjectHolder().vineClosestToPlayer.get_mut<vineStateComponent>()->holdingToThis = true;
+					ctx->scene->getObjectHolder().nearestVineEdgeToPlayerIndex = vineEdgePos.second;
+					player.get_mut<positionComponent>()->position = simulateVinePlayerIsHolding(ctx->scene->getObjectHolder().vineClosestToPlayer, ctx->scene->getObjectHolder().nearestVineEdgeToPlayerIndex);
+				}
+				else {
+					playerState->holding = false;
+					ctx->scene->getObjectHolder().vineClosestToPlayer.get_mut<vineStateComponent>()->holdingToThis = false;
+					ctx->scene->getObjectHolder().nearestVineEdgeToPlayerIndex = -1;
+				}
+			}
+			else {
+				player.get_mut<positionComponent>()->position = simulateVinePlayerIsHolding(ctx->scene->getObjectHolder().vineClosestToPlayer, ctx->scene->getObjectHolder().nearestVineEdgeToPlayerIndex);
+				player.get_mut<velocityComponent>()->velocity.y = 0.f;
+			}
+		}
+		else {
+			notHoldingTime += fixedDeltaTime;
+			if (notHoldingTime > fixedDeltaTime * 10) {
+				playerState->holding = false;
+				ctx->scene->getObjectHolder().vineClosestToPlayer.get_mut<vineStateComponent>()->holdingToThis = false;
+				ctx->scene->getObjectHolder().nearestVineEdgeToPlayerIndex = -1;
+			}
+		}
+
+		// dash last time calculate
 		if (timeSinceLastDash != 0.f) {
 			timeSinceLastDash += fixedDeltaTime;
 			if (timeSinceLastDash >= 1.f) {
@@ -98,11 +145,11 @@ void rfct::playerController::update(frameContext* ctx)
 			}
 		}
 
-		// calculate if player is midair
+		// calculate if player is midair (forgive 
 		velocityComponent* pos = player.get_mut<velocityComponent>();
 		if (pos->velocity.y != 0) {
 			timesYNotZero += fixedDeltaTime;
-			if (timesYNotZero > fixedDeltaTime * 4) {
+			if (timesYNotZero > fixedDeltaTime * 3) {
 				playerStateComponent* ps = player.get_mut<playerStateComponent>();
 				ps->grounded = false;
 			}
@@ -129,8 +176,10 @@ void rfct::playerController::update(frameContext* ctx)
 		changingDirectionBoost = std::clamp(changingDirectionBoost - fixedDeltaTime, 0.f, 0.5f);
 
 		// walk apply
-		walkVelocity *= 0.80f;
-		pos->velocity.x = walkVelocity;
+		if (!playerState->holding) {
+			walkVelocity *= 0.80f;
+			pos->velocity.x = walkVelocity;
+		}
 
 		// dash apply
 		if (anyDash) {
@@ -158,6 +207,7 @@ void rfct::playerController::update(frameContext* ctx)
 		dash45upInput = 0.f;
 		dash45downInput = 0.f;
 		anyDash = false;
+		hold = false;
 	}
 	ctx->scene->updateDirection(facingRight);
 }

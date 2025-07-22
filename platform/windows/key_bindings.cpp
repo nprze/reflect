@@ -3,6 +3,7 @@
 namespace rfct {
 #if DEFAULT_KEY_SETUP == 0
 	int keyBindings::menu = GLFW_KEY_ESCAPE;
+	int keyBindings::hold = GLFW_KEY_C;
 	int keyBindings::walk_right = GLFW_KEY_D;
 	int keyBindings::walk_left = GLFW_KEY_A;
 	int keyBindings::jump = GLFW_KEY_SPACE;
@@ -13,6 +14,7 @@ namespace rfct {
 	int keyBindings::dash_dir_bottom = GLFW_KEY_S;
 #else
 	int keyBindings::menu = GLFW_KEY_ESCAPE;
+	int keyBindings::hold = GLFW_KEY_C;
 	int keyBindings::walk_right = GLFW_KEY_RIGHT;
 	int keyBindings::walk_left = GLFW_KEY_LEFT;
 	int keyBindings::jump = GLFW_KEY_SPACE;

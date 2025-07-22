@@ -74,15 +74,6 @@ void rfct::scene::onUpdate(frameContext* context)
 	playerAnimations::get().update(epicRotatingTriangle.get<velocityComponent>()->velocity, epicRotatingTriangle.get<positionComponent>()->position, *context);
 	cameraComponentOnUpdate(context->dt, epicRotatingTriangle);
 
-	if (hasVines) {
-		glm::vec3 red = glm::vec3(1.f, 0.f, 0.f);
-		m_dynamicObjects.vineClosestToPlayer = findTheNearestVineToPlayer(epicRotatingTriangle);
-		debugLine* line = debugDraw::requestLines(1);
-		line->vertices[0].pos = { getNearestEdgePos((epicRotatingTriangle.get<positionComponent>()->position), m_dynamicObjects.vineClosestToPlayer) , 0.f};
-		line->vertices[1].pos = { epicRotatingTriangle.get<positionComponent>()->position, 0.f};
-		line->vertices[0].color = red;
-		line->vertices[1].color = red;
-	}
 	//drawGridLines(20);
 }
 

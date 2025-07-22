@@ -60,7 +60,7 @@ void rfct::buildDynamicObjBVH()
 
 
 
-// BVH build helper functions
+// helper functions
 namespace rfct {
     float SquaredDistanceToAABB(const glm::vec2& point, const glm::vec2& min, const glm::vec2& max) {
         float dx = std::max(std::max(min.x - point.x, 0.0f), point.x - max.x);
