@@ -30,6 +30,7 @@ namespace rfct {
 		void createPlayerEntity();
 		void updateDirection(bool facingRight);
 
+		entity getPlayer() { return epicRotatingTriangle; }
 
 		objectsHolder& getObjectHolder() { return m_dynamicObjects; }
 		world* getWorld() { return m_World; }

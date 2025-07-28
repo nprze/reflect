@@ -42,7 +42,7 @@ namespace rfct {
 void rfct::playerController::update(frameContext* ctx)
 {
 	// draw last frame velocity
-	//drawPlayervelocity(player.get<velocityComponent>()->velocity, player.get<positionComponent>()->position);
+	//drawPlayervelocity(player.get<inputVelocityComponent>()->velocity, player.get<positionComponent>()->position);
 	//drawPlayervelocity(dashVelocity, player.get<positionComponent>()->position, {2.f, 2.f});
 
 	if (input::getInput().hold) {
@@ -97,6 +97,9 @@ void rfct::playerController::update(frameContext* ctx)
 
 	// fixedUpdate
 	for (uint32_t i = 0; i < ctx->fixedUpdateTimes; ++i) {
+		glm::vec2& inputVel = player.get_mut<inputVelocityComponent>()->velocity;
+		inputVel = glm::vec2(0.f, 0.f);
+
 		// find object to hold
 
 		if (hold) {
@@ -105,35 +108,26 @@ void rfct::playerController::update(frameContext* ctx)
 				// proritize vines
 				glm::vec3 red = glm::vec3(1.f, 0.f, 0.f);
 				ctx->scene->getObjectHolder().vineClosestToPlayer = findTheNearestVineToPlayer(player);
-				debugLine* line = debugDraw::requestLines(1);
 				std::pair<glm::vec2, int> vineEdgePos = getNearestEdgePos((player.get<positionComponent>()->position), ctx->scene->getObjectHolder().vineClosestToPlayer);
-				line->vertices[0].pos = { vineEdgePos.first, 0.f };
-				line->vertices[1].pos = { player.get<positionComponent>()->position, 0.f };
-				line->vertices[0].color = red;
-				line->vertices[1].color = red;
 				if (len(vineEdgePos.first - player.get<positionComponent>()->position) < 0.8) {
-					playerState->holding = true;
+					// close enough to start holding
 					ctx->scene->getObjectHolder().vineClosestToPlayer.get_mut<vineStateComponent>()->holdingToThis = true;
 					ctx->scene->getObjectHolder().nearestVineEdgeToPlayerIndex = vineEdgePos.second;
-					player.get_mut<positionComponent>()->position = simulateVinePlayerIsHolding(ctx->scene->getObjectHolder().vineClosestToPlayer, ctx->scene->getObjectHolder().nearestVineEdgeToPlayerIndex);
+
+					playerState->holding = true;
+					player.get_mut<gravityComponent>()->gravityEnabled = false;
+					player.get_mut <velocityComponent>()->velocity.y = 0.f;
 				}
-				else {
-					playerState->holding = false;
-					ctx->scene->getObjectHolder().vineClosestToPlayer.get_mut<vineStateComponent>()->holdingToThis = false;
-					ctx->scene->getObjectHolder().nearestVineEdgeToPlayerIndex = -1;
-				}
-			}
-			else {
-				player.get_mut<positionComponent>()->position = simulateVinePlayerIsHolding(ctx->scene->getObjectHolder().vineClosestToPlayer, ctx->scene->getObjectHolder().nearestVineEdgeToPlayerIndex);
-				player.get_mut<velocityComponent>()->velocity.y = 0.f;
 			}
 		}
 		else {
 			notHoldingTime += fixedDeltaTime;
-			if (notHoldingTime > fixedDeltaTime * 10) {
-				playerState->holding = false;
+			if (notHoldingTime > fixedDeltaTime * 10 ) { // will hold on to 1/6 seconds after letting go (input sometimes acts up)
 				ctx->scene->getObjectHolder().vineClosestToPlayer.get_mut<vineStateComponent>()->holdingToThis = false;
 				ctx->scene->getObjectHolder().nearestVineEdgeToPlayerIndex = -1;
+
+				playerState->holding = false;
+				player.get_mut<gravityComponent>()->gravityEnabled = true;
 			}
 		}
 
@@ -145,7 +139,7 @@ void rfct::playerController::update(frameContext* ctx)
 			}
 		}
 
-		// calculate if player is midair (forgive 
+		// calculate if player is midair (forgive 50 ms)
 		velocityComponent* pos = player.get_mut<velocityComponent>();
 		if (pos->velocity.y != 0) {
 			timesYNotZero += fixedDeltaTime;
@@ -169,17 +163,18 @@ void rfct::playerController::update(frameContext* ctx)
 
 		// jump apply
 		pos->velocity.y += jumpInput * jumpSpeed;
-		jumpInput = 0;
+		inputVel.y += jumpInput * jumpSpeed;
+
 		walkVelocity += walkSpeed * walkHorizontalInput;
 		walkVelocity = std::clamp(walkVelocity, -maxVelocityX, maxVelocityX);
 		walkVelocity += (changingDirectionBoost * changingDirectionBoost * 10) * walkSpeed * walkHorizontalInput;
 		changingDirectionBoost = std::clamp(changingDirectionBoost - fixedDeltaTime, 0.f, 0.5f);
 
+
 		// walk apply
-		if (!playerState->holding) {
-			walkVelocity *= 0.80f;
-			pos->velocity.x = walkVelocity;
-		}
+		walkVelocity *= 0.80f;
+		inputVel.x += walkVelocity;
+		pos->velocity.x = walkVelocity;
 
 		// dash apply
 		if (anyDash) {
@@ -194,14 +189,18 @@ void rfct::playerController::update(frameContext* ctx)
 			player.get_mut<gravityComponent>()->gravityEnabled = false;
 		}
 		else {
-			player.get_mut<gravityComponent>()->gravityEnabled = true;
+			if (!player.get<playerStateComponent>()->holding) {
+				player.get_mut<gravityComponent>()->gravityEnabled = true;
+			}
 		}
 		dashVelocity *= 0.9f - std::clamp(timeSinceLastDash * 2.f, 0.f, 0.9f);
 		if (glm::length(dashVelocity) >= 0.1f) {
 			pos->velocity = dashVelocity;
+			inputVel = dashVelocity;
 		}
 
 		// reset after applying
+		jumpInput = 0;
 		dashHorizontalInput = 0.f;
 		dashVerticalInput = 0.f;
 		dash45upInput = 0.f;
@@ -212,6 +211,14 @@ void rfct::playerController::update(frameContext* ctx)
 	ctx->scene->updateDirection(facingRight);
 }
 
+void rfct::playerController::startHoldingToVine()
+{
+}
+
+void rfct::playerController::endHoldingToVine()
+{
+}
+
 void rfct::onCollision_Player_StaticObj(entity player, entity collidedWith, glm::vec2 resolution)
 {
 	positionComponent* pos = player.get_mut<positionComponent>();
@@ -219,11 +226,14 @@ void rfct::onCollision_Player_StaticObj(entity player, entity collidedWith, glm:
 
 
 	velocityComponent* vel = player.get_mut<velocityComponent>();
+	inputVelocityComponent* ivel = player.get_mut<inputVelocityComponent>();
 	if (resolution.x != 0.0f) {
 		vel->velocity.x = 0.0f;
+		ivel->velocity.x = 0.0f;
 	}
 	if (resolution.y != 0.0f) {
 		vel->velocity.y = 0.0f;
+		ivel->velocity.y = 0.0f;
 	}
 	if (resolution.y > 0)
 	{

@@ -4,6 +4,8 @@
 #include "world_p/transform.h"
 #include "renderer_p/debug/debug_draw.h"
 
+#define RFCT_VINE_CONSTRAINS_ITERATIONS 10
+
 float len(const glm::vec2& vector) {
 	return std::sqrt((vector.x * vector.x) + (vector.y * vector.y));
 }
@@ -51,7 +53,7 @@ namespace rfct {
 	}
 	void onCollision_Vine_DynamicObj(entity vineEntity, entity collidedWith) {
 		// narrow phase
-		if(collidedWith.get<dynamicObjectTypeComponent>()->type != dynamicObjectType::Player)return;
+		if(collidedWith.get<dynamicObjectTypeComponent>()->type != dynamicObjectType::Player) return;
 		if (vineEntity.get<vineStateComponent>()->holdingToThis) return; // update separately
 		glm::vec2 playerMin = collidedWith.get_mut<dynamicBoxColliderComponent>()->min + collidedWith.get<positionComponent>()->position;
 		glm::vec2 playerMax = collidedWith.get_mut<dynamicBoxColliderComponent>()->max + collidedWith.get<positionComponent>()->position;
@@ -108,9 +110,48 @@ namespace rfct {
 		return { posMin, vineIndex };
 	}
 
-	glm::vec2 simulateVinePlayerIsHolding(entity vineEntity, int vineEdgeIndex)
+	glm::vec2 simulateVinePlayerIsHolding(entity player,entity vineEntity, int vineEdgeIndex, const frameContext* fc)
 	{
-		return vineEntity.get<vinePositionsComponent>()->positions.at(vineEdgeIndex) + vineEntity.get<positionComponent>()->position;
+		auto vinePosCom = vineEntity.get_mut<vinePositionsComponent>();
+		auto vineBasePos = vineEntity.get<positionComponent>()->position;
+
+		std::vector<glm::vec2>& positions = vineEntity.get_mut<vinePositionsComponent>()->positions;
+		std::vector<glm::vec2>& previousPositions = vineEntity.get_mut<vinePositionsComponent>()->previousPosition;
+
+		glm::vec2 playerVel = glm::vec2(player.get<inputVelocityComponent>()->velocity);
+		glm::vec2 desiredMove = playerVel * fixedDeltaTime;
+		desiredMove.x *= 2.f;
+		desiredMove.y = -.01f;
+
+		for (uint8_t i = 0; i < fc->fixedUpdateTimes; ++i) {
+
+			positions[vineEdgeIndex] += desiredMove * 1.2f;
+
+			for (uint32_t j = 0; j < positions.size(); ++j) {
+				glm::vec2 vel = positions[j] - previousPositions[j];
+				previousPositions[j] = positions[j];
+				vel *= 0.99f;
+				positions[j] += vel;
+				positions[j] += glm::vec2{ 0.f,-15.f } *fixedDeltaTime * fixedDeltaTime;
+			}
+
+			positions[0] = { 0.f,-.01f };
+			previousPositions[0] = { 0.f,-0.01f };
+
+			for (int iter = 0; iter < RFCT_VINE_CONSTRAINS_ITERATIONS; ++iter) {
+				for (uint32_t i = 1; i < positions.size(); ++i) {
+
+					glm::vec2 dir = positions[i] - positions[i - 1];
+					float dist = glm::length(dir);
+					float diff = (dist - vineEntity.get<vineLenghtComponent>()->oneBoneLenght) / dist;
+
+					positions[i - 1] += dir * 0.5f * diff;
+					positions[i] -= dir * 0.5f * diff;
+				}
+				positions[0] = glm::vec2(0.f, -.01f);
+			}
+		}
+		return positions[vineEdgeIndex] + vineBasePos;
 	}
 }
 rfct::vine::vine(const glm::vec2& startArg, const glm::vec2& endArg, const int numEdges, scene* parentScene)
@@ -142,26 +183,28 @@ rfct::vine::vine(const glm::vec2& startArg, const glm::vec2& endArg, const int n
 		//.set<rotationComponent>({})
 		.set<vinePositionsComponent>(vpCom)
 		.set<positionComponent>({ startArg })
-		.set<gravityComponent>({0.f,false,0.f})
+		.set<gravityComponent>({ 0.f,false,0.f })
 		.set<velocityComponent>({ glm::vec3(0.f,0.f,0.f) })
 		.set<staticObjCollisionCallbackComponent>(colCallback)
 		.set<dynamicObjCollisionCallbackComponent>(dynColCallback)
 		.set<dynamicBoxColliderComponent>({})
 		.set<dynamicObjectTypeComponent>({ dynamicObjectType::Vine })
-		.set<vineStateComponent>({ false });
+		.set<vineStateComponent>({ false })
+		.set<vineLenghtComponent>({ oneBoneLenght });
 	constructBoundingBox();
 }
 
 void rfct::vine::update(const frameContext* fc)
 {
 	if (fc->fixedUpdateTimes) {
+		if (m_vineEntity.get<vineStateComponent>()->holdingToThis)return;
 		std::vector<glm::vec2>& positions = m_vineEntity.get_mut<vinePositionsComponent>()->positions;
 		std::vector<glm::vec2>& previousPositions = m_vineEntity.get_mut<vinePositionsComponent>()->previousPosition;
 		for (uint8_t i = 0; i < fc->fixedUpdateTimes; ++i) {
 			for (uint32_t j = 0; j < positions.size();++j) {
 				glm::vec2 vel = positions[j] - previousPositions[j];
 				previousPositions[j] = positions[j];
-				vel *= 0.97f;
+				vel *= 0.99f;
 				positions[j] += vel;
 				positions[j] += m_gravity * fixedDeltaTime * fixedDeltaTime;
 			}
@@ -169,7 +212,7 @@ void rfct::vine::update(const frameContext* fc)
 			positions[0] = { 0.f,-.01f };
 			previousPositions[0] = { 0.f,-0.01f };
 
-			for (int iter = 0; iter < 10; ++iter) {
+			for (int iter = 0; iter < RFCT_VINE_CONSTRAINS_ITERATIONS; ++iter) {
 				for (uint32_t i = 1; i < positions.size(); ++i) {
 
 					glm::vec2 dir = positions[i] - positions[i - 1];

@@ -10,6 +10,8 @@ namespace rfct {
 		playerController();
 		void setPlayer(entity playerEntity) { player = playerEntity; }
 		void update(frameContext* ctx);
+		void startHoldingToVine();
+		void endHoldingToVine();
 	private:
 		entity player;
 		float walkSpeed;

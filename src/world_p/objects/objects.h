@@ -9,7 +9,7 @@ namespace rfct{
 		void update(const frameContext* fc);
 		std::vector<vine> vines;
 		entity vineClosestToPlayer;
-		int nearestVineEdgeToPlayerIndex ;
+		int nearestVineEdgeToPlayerIndex;
 		glm::vec2 nearestVineEdgeToPlayerPosition;
 	};
 }

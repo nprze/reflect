@@ -77,15 +77,14 @@ void drawToPoints(rfct::debugTriangle* triangle, const std::vector<rfct::edge>& 
 
 void rfct::hairAnimation::draw(const glm::vec2& playerPos)
 {
-    /*
     debugLine* lines = debugDraw::requestLines(m_numEdges - 1);
     for (uint32_t i = 1; i < m_edges.size(); ++i) {
         lines[i - 1].vertices[0].pos = { m_edges[i - 1].pos + playerPos, 0.f };
         lines[i - 1].vertices[1].pos = { m_edges[i].pos + playerPos, 0.f };
 
-        lines[i - 1].vertices[0].color = glm::vec3{ 1.f,1.f,1.f };
-        lines[i - 1].vertices[1].color = glm::vec3{ 1.f,1.f,1.f };
-    }*/
+        lines[i - 1].vertices[0].color = glm::vec3{ 1.f,0.f,0.f };
+        lines[i - 1].vertices[1].color = glm::vec3{ 1.f,0.f,0.f };
+    }
 
 
     debugTriangle* triangles = debugDraw::requestTriangles(6);

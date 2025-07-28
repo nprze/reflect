@@ -78,6 +78,10 @@ namespace rfct {
 	struct velocityComponent {
 		glm::vec2 velocity;
 	};
+
+    struct inputVelocityComponent {
+        glm::vec2 velocity;
+    };
 	struct gravityComponent {
         float oneMinusAirResistance = 0.97f;
 		bool gravityEnabled = true;
@@ -103,6 +107,9 @@ namespace rfct {
     };
     struct vineStateComponent {
         bool holdingToThis = false;
+    };
+    struct vineLenghtComponent {
+        float oneBoneLenght;
     };
 
 
