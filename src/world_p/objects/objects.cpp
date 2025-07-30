@@ -24,7 +24,7 @@ void rfct::objectsHolder::update(const frameContext* fc)
 		}
 	}
 	for (vine& v : vines) {
-		v.draw();
+		v.draw(fc);
 	}
 }
 

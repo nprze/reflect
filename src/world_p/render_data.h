@@ -13,6 +13,7 @@ namespace rfct {
 		sceneRenderData();
 		~sceneRenderData();
 		void updateMat(frameContext* ctx, const uint32_t& objIndexInSSBO, glm::mat4* mat);
+		void updateDynamicVertices(const frameContext* ctx, const size_t objBufferOffset, void* vertices, const size_t size);
 		uint32_t addStaticMat(void* data);
 		uint32_t addDynamicMat(frameContext* ctx, void* data);
 		objectLocation addStaticObject(std::vector<Vertex>* vertices, glm::mat4* matrix);
@@ -30,7 +31,8 @@ namespace rfct {
 		std::array<unique<vulkanVertexBuffer>, RFCT_FRAMES_IN_FLIGHT> m_VertexBufferDynamic;
 		std::array<VulkanBuffer, RFCT_FRAMES_IN_FLIGHT> m_DynamicModelMatsBuffers;
 		std::array<vk::UniqueDescriptorSet, RFCT_FRAMES_IN_FLIGHT> m_DescriptorSetsDynamic;
-		std::array<void*, RFCT_FRAMES_IN_FLIGHT> m_mappedDataDynamic;
+		std::array<void*, RFCT_FRAMES_IN_FLIGHT> m_mappedMatsDataDynamic;
+		std::array<void*, RFCT_FRAMES_IN_FLIGHT> m_mappedVerticesDataDynamic;
 
 		size_t m_verticesCountStaticObj;
 		size_t m_verticesCountDynamicObj;

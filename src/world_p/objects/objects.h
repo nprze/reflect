@@ -11,5 +11,7 @@ namespace rfct{
 		entity vineClosestToPlayer;
 		int nearestVineEdgeToPlayerIndex;
 		glm::vec2 nearestVineEdgeToPlayerPosition;
+
+
 	};
 }

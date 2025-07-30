@@ -162,8 +162,10 @@ void rfct::playerController::update(frameContext* ctx)
 		}
 
 		// jump apply
-		pos->velocity.y += jumpInput * jumpSpeed;
-		inputVel.y += jumpInput * jumpSpeed;
+		if (!playerState->holding) {
+			pos->velocity.y += jumpInput * jumpSpeed;
+			inputVel.y += jumpInput * jumpSpeed;
+		}
 
 		walkVelocity += walkSpeed * walkHorizontalInput;
 		walkVelocity = std::clamp(walkVelocity, -maxVelocityX, maxVelocityX);

@@ -3,6 +3,8 @@
 #include "world_p/ecs.h"
 #include "world_p/transform.h"
 #include "renderer_p/debug/debug_draw.h"
+#include "world_p/components.h"
+#include <random>
 
 #define RFCT_VINE_CONSTRAINS_ITERATIONS 10
 
@@ -119,8 +121,8 @@ namespace rfct {
 		std::vector<glm::vec2>& previousPositions = vineEntity.get_mut<vinePositionsComponent>()->previousPosition;
 
 		glm::vec2 playerVel = glm::vec2(player.get<inputVelocityComponent>()->velocity);
-		glm::vec2 desiredMove = playerVel * fixedDeltaTime;
-		desiredMove.y = -.02f;
+		glm::vec2 desiredMove = playerVel * 0.1f * fixedDeltaTime;
+		desiredMove.y = -.1f;
 
 		glm::vec2 playerPos = player.get<positionComponent>()->position;
 		glm::vec2 whereWeWantTheEdgeIndexToBeAtTheEnd = playerPos + desiredMove;
@@ -158,7 +160,14 @@ namespace rfct {
 		return positions[vineEdgeIndex] + vineBasePos;
 	}
 }
-rfct::vine::vine(const glm::vec2& startArg, const glm::vec2& endArg, const int numEdges, scene* parentScene)
+glm::vec3 getColorWithFluctuate(float maxFluct = 0.2f, const glm::vec3& basicColor = glm::vec3(0.7098f, 0.9020f, 0.1137f)) {
+	static std::mt19937 gen(std::random_device{}());
+	std::uniform_real_distribution<float> dist(-maxFluct * 0.5f, maxFluct * 0.5f);
+	float fluc = dist(gen);
+	return basicColor + glm::vec3{ fluc, fluc, fluc };
+}
+
+rfct::vine::vine(const glm::vec2& startArg, const glm::vec2& endArg, const int numEdges, scene* parentScene):m_vertices((numEdges-1) * 3 * 4, Vertex())
 {
 	vinePositionsComponent vpCom = {};
 	vpCom.positions.reserve(numEdges);
@@ -167,7 +176,6 @@ rfct::vine::vine(const glm::vec2& startArg, const glm::vec2& endArg, const int n
 	glm::vec2 end = endArg - startArg;
 	glm::vec2 dir = glm::normalize(end);
 	float oneLineLen = len(end) / (numEdges - 1);
-	oneBoneLenght = oneLineLen;
 	for (uint32_t i = 0; i < numEdges; i++) {
 		vpCom.positions.push_back((i * oneLineLen) * dir);
 		vpCom.previousPosition.push_back((i * oneLineLen) * dir);
@@ -179,22 +187,43 @@ rfct::vine::vine(const glm::vec2& startArg, const glm::vec2& endArg, const int n
 	dynColCallback.handler = onCollision_Vine_DynamicObj;
 
 
+	// set vertices colors
+	for (uint32_t i = 0; i < (numEdges - 1); ++i) {
+		glm::vec3 black = { 0.f,0.f,0.f };
+		m_vertices[i * 12 + 0].color = black;
+		m_vertices[i * 12 + 1].color = black;
+		m_vertices[i * 12 + 2].color = black;
+		m_vertices[i * 12 + 3].color = black;
+		m_vertices[i * 12 + 4].color = black;
+		m_vertices[i * 12 + 5].color = black;
+
+		glm::vec3 fluctuate = getColorWithFluctuate();
+		m_vertices[i * 12 + 6].color = fluctuate;
+		m_vertices[i * 12 + 7].color = fluctuate;
+		m_vertices[i * 12 + 8].color = fluctuate;
+
+		fluctuate = getColorWithFluctuate();
+		m_vertices[i * 12 + 9].color = fluctuate;
+		m_vertices[i * 12 + 10].color = fluctuate;
+		m_vertices[i * 12 + 11].color = fluctuate;
+	}
+	glm::mat4 transform = glm::translate(glm::mat4(1.f), { startArg, 0.f});
+	objectLocation ol = parentScene->m_RenderData.addDynamicObject(&m_vertices, &transform);
 
 
 	m_vineEntity = ecs::get().entity<>()
 		.child_of(parentScene->sceneEntity)
-		//.set<dynamicSSBOIndexComponent>({ 0 })
-		//.set<rotationComponent>({})
+		.set<dynamicSSBOIndexComponent>({ ol.indexInSSBO })
+		.set<vertexRenderInfoComponent>({ ol.verticesCount, ol.vertexBufferOffset })
 		.set<vinePositionsComponent>(vpCom)
 		.set<positionComponent>({ startArg })
 		.set<gravityComponent>({ 0.f,false,0.f })
-		.set<velocityComponent>({ glm::vec3(0.f,0.f,0.f) })
 		.set<staticObjCollisionCallbackComponent>(colCallback)
 		.set<dynamicObjCollisionCallbackComponent>(dynColCallback)
 		.set<dynamicBoxColliderComponent>({})
 		.set<dynamicObjectTypeComponent>({ dynamicObjectType::Vine })
 		.set<vineStateComponent>({ false })
-		.set<vineLenghtComponent>({ oneBoneLenght });
+		.set<vineLenghtComponent>({ oneLineLen });
 	constructBoundingBox();
 }
 
@@ -204,6 +233,7 @@ void rfct::vine::update(const frameContext* fc)
 		if (m_vineEntity.get<vineStateComponent>()->holdingToThis)return;
 		std::vector<glm::vec2>& positions = m_vineEntity.get_mut<vinePositionsComponent>()->positions;
 		std::vector<glm::vec2>& previousPositions = m_vineEntity.get_mut<vinePositionsComponent>()->previousPosition;
+		float oneBoneLenght = m_vineEntity.get<vineLenghtComponent>()->oneBoneLenght;
 		for (uint8_t i = 0; i < fc->fixedUpdateTimes; ++i) {
 			for (uint32_t j = 0; j < positions.size();++j) {
 				glm::vec2 vel = positions[j] - previousPositions[j];
@@ -234,8 +264,8 @@ void rfct::vine::update(const frameContext* fc)
 	}
 }
 
-void rfct::vine::draw()
-{
+void rfct::vine::draw(const frameContext* fc)
+{/*
 	glm::vec2 start = m_vineEntity.get<positionComponent>()->position;
 	glm::vec3 white = { 1.f,1.f,1.f };
 	glm::vec3 blue = { 0.f,0.f,1.f };
@@ -251,6 +281,144 @@ void rfct::vine::draw()
 			lines[i].vertices[0].color = blue;
 			lines[i].vertices[1].color = blue;
 		}
+	}*/
+
+	glm::vec2 start = m_vineEntity.get<positionComponent>()->position;
+	glm::vec3 white = { 1.f,1.f,1.f };
+	glm::vec3 blue = { 0.f,0.f,1.f };
+	glm::vec3 yellow = { 1.f,1.f,0.f };
+
+	auto& positions = m_vineEntity.get<vinePositionsComponent>()->positions;
+	uint32_t segmentCount = positions.size() - 1;
+
+	debugTriangle* tris = debugDraw::requestTriangles(segmentCount * 4);
+
+	float thickness = 0.1f; // adjust to desired vine width
+
+	// debug
+	/*
+	for (uint32_t i = 0; i < segmentCount; i++) {
+		glm::vec2 p0 = start + positions[i];
+		glm::vec2 p1 = start + positions[i + 1];
+
+		// Direction vector
+		glm::vec2 dir = glm::normalize(p1 - p0);
+
+		// Perpendicular vector
+		glm::vec2 normal = glm::vec2(-dir.y, dir.x) * thickness * 0.5f;
+		float lenNormal = glm::length(normal);
+
+		// Rectangle corners
+		constexpr float between = 0.75f;
+		constexpr float oneMinusBetween = (float)(1.f - between);
+
+
+		// background triangles
+		glm::vec3 bg0 = glm::vec3(p0 - (normal * (1 + oneMinusBetween)) - dir * lenNormal * oneMinusBetween, 0.f);
+		glm::vec3 bg1 = glm::vec3(p0 + (normal * (1 + oneMinusBetween)) - dir * lenNormal * oneMinusBetween, 0.f);
+		glm::vec3 bg2 = glm::vec3(p1 - (normal * (1 + oneMinusBetween)) + dir * lenNormal * oneMinusBetween, 0.f);
+		glm::vec3 bg3 = glm::vec3(p1 + (normal * (1 + oneMinusBetween)) + dir * lenNormal * oneMinusBetween, 0.f);
+
+
+		tris[i * 4].vertices[0].pos = bg0;
+		tris[i * 4].vertices[1].pos = bg1;
+		tris[i * 4].vertices[2].pos = bg2;
+
+		tris[i * 4].vertices[0].color = yellow;
+		tris[i * 4].vertices[1].color = yellow;
+		tris[i * 4].vertices[2].color = yellow;
+
+		tris[i * 4 + 1].vertices[0].pos = bg1;
+		tris[i * 4 + 1].vertices[1].pos = bg2;
+		tris[i * 4 + 1].vertices[2].pos = bg3;
+
+		tris[i * 4 + 1].vertices[0].color = yellow;
+		tris[i * 4 + 1].vertices[1].color = yellow;
+		tris[i * 4 + 1].vertices[2].color = yellow;
+
+
+
+		// color triangles
+		glm::vec3 v0 = glm::vec3(p0 - normal, 0.f);
+		glm::vec3 v1 = glm::vec3(p0 + normal * between, 0.f);
+		glm::vec3 v2 = glm::vec3(p0 + normal, 0.f);
+		glm::vec3 v3 = glm::vec3(p1 - normal, 0.f);
+		glm::vec3 v4 = glm::vec3(p1 - normal * between, 0.f);
+		glm::vec3 v5 = glm::vec3(p1 + normal, 0.f);
+
+		glm::vec3 color = (i % 2) ? white : blue;
+
+
+		tris[i * 4 + 2].vertices[0].pos = v2;
+		tris[i * 4 + 2].vertices[1].pos = v4;
+		tris[i * 4 + 2].vertices[2].pos = v5;
+
+		tris[i * 4 + 2].vertices[0].color = color;
+		tris[i * 4 + 2].vertices[1].color = color;
+		tris[i * 4 + 2].vertices[2].color = color;
+
+		tris[i * 4 + 3].vertices[0].pos = v0;
+		tris[i * 4 + 3].vertices[1].pos = v1;
+		tris[i * 4 + 3].vertices[2].pos = v3;
+
+		tris[i * 4 + 3].vertices[0].color = color;
+		tris[i * 4 + 3].vertices[1].color = color;
+		tris[i * 4 + 3].vertices[2].color = color;
+	}*/
+
+	// official
+	for (uint32_t i = 0; i < segmentCount; i++) {
+		glm::vec2 p0 = positions[i];
+		glm::vec2 p1 = positions[i + 1];
+
+		// Direction vector
+		glm::vec2 dir = glm::normalize(p1 - p0);
+
+		// Perpendicular vector
+		glm::vec2 normal = glm::vec2(-dir.y, dir.x) * thickness * 0.5f;
+		float lenNormal = glm::length(normal);
+
+		// Rectangle corners
+		constexpr float between = 0.75f;
+		constexpr float oneMinusBetween = (float)(1.f - between);
+
+
+		// background triangles
+		glm::vec3 bg0 = glm::vec3(p0 - (normal * (1 + oneMinusBetween)) - dir * lenNormal * oneMinusBetween, 0.f);
+		glm::vec3 bg1 = glm::vec3(p0 + (normal * (1 + oneMinusBetween)) - dir * lenNormal * oneMinusBetween, 0.f);
+		glm::vec3 bg2 = glm::vec3(p1 - (normal * (1 + oneMinusBetween)) + dir * lenNormal * oneMinusBetween, 0.f);
+		glm::vec3 bg3 = glm::vec3(p1 + (normal * (1 + oneMinusBetween)) + dir * lenNormal * oneMinusBetween, 0.f);
+
+
+		m_vertices[i * 12 + 0].pos = bg0;
+		m_vertices[i * 12 + 1].pos = bg1;
+		m_vertices[i * 12 + 2].pos = bg2;
+
+		m_vertices[i * 12 + 3].pos = bg1;
+		m_vertices[i * 12 + 4].pos = bg2;
+		m_vertices[i * 12 + 5].pos = bg3;
+
+
+
+		// color triangles
+		glm::vec3 v0 = glm::vec3(p0 - normal, 0.f);
+		glm::vec3 v1 = glm::vec3(p0 + normal * between, 0.f);
+		glm::vec3 v2 = glm::vec3(p0 + normal, 0.f);
+		glm::vec3 v3 = glm::vec3(p1 - normal, 0.f);
+		glm::vec3 v4 = glm::vec3(p1 - normal * between, 0.f);
+		glm::vec3 v5 = glm::vec3(p1 + normal, 0.f);
+
+
+		m_vertices[i * 12 + 6].pos = v2;
+		m_vertices[i * 12 + 7].pos = v4;
+		m_vertices[i * 12 + 8].pos = v5;
+
+		m_vertices[i * 12 + 9].pos= v0;
+		m_vertices[i * 12 + 10].pos = v1;
+		m_vertices[i * 12 + 11].pos = v3;
+
+		fc->scene->getRenderData().updateDynamicVertices(fc, m_vineEntity.get<vertexRenderInfoComponent>()->vertexBufferOffset, m_vertices.data(), m_vertices.size() * sizeof(Vertex));
+
 	}
 }
 

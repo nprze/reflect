@@ -33,7 +33,7 @@ rfct::sceneRenderData::sceneRenderData() : m_VertexBufferStatic(RFCT_DEBUG_DRAW_
  	for (uint32_t i = 0; i < RFCT_FRAMES_IN_FLIGHT; ++i) {
 		m_VertexBufferDynamic[i] = std::make_unique<vulkanVertexBuffer>(RFCT_DEBUG_DRAW_VERTEX_BUFFER_MAX_SIZE * 100);
 		m_DynamicModelMatsBuffers[i] = std::move(VulkanBuffer(sizeof(glm::mat4) * 20, vk::BufferUsageFlagBits::eStorageBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU));
-		m_mappedDataDynamic[i] = nullptr;
+		m_mappedMatsDataDynamic[i] = nullptr;
 	}
 	m_verticesCountDynamicObj = 0;
 	m_matsCounterDynamic = 0;
@@ -105,8 +105,8 @@ rfct::sceneRenderData::sceneRenderData() : m_VertexBufferStatic(RFCT_DEBUG_DRAW_
 
 		renderer::getRen().getDevice().updateDescriptorSets(1, &write, 0, nullptr);
 
-		// Map buffer immediately if desired
-		m_mappedDataDynamic[i] = m_DynamicModelMatsBuffers[i].Map();
+		m_mappedMatsDataDynamic[i] = m_DynamicModelMatsBuffers[i].Map();
+		m_mappedVerticesDataDynamic[i] = m_VertexBufferDynamic[i]->m_Buffer.Map();
 	}
 }
 
@@ -114,6 +114,7 @@ rfct::sceneRenderData::~sceneRenderData()
 {
 	for (size_t i = 0; i < RFCT_FRAMES_IN_FLIGHT; i++) {
 		m_DynamicModelMatsBuffers[i].Unmap();
+		m_VertexBufferDynamic[i]->m_Buffer.Unmap();
 
 	}
 	destroyDescriptorSetLayout();
@@ -121,8 +122,14 @@ rfct::sceneRenderData::~sceneRenderData()
 
 void rfct::sceneRenderData::updateMat(frameContext* ctx, const uint32_t& objIndexInSSBO, glm::mat4* mat)
 {
-	char* finalPtr = (char*)m_mappedDataDynamic[ctx->frame] + objIndexInSSBO * sizeof(glm::mat4);
+	char* finalPtr = (char*)m_mappedMatsDataDynamic[ctx->frame] + objIndexInSSBO * sizeof(glm::mat4);
 	memcpy(finalPtr, mat, sizeof(glm::mat4));
+}
+
+void rfct::sceneRenderData::updateDynamicVertices(const frameContext* ctx, const size_t objBufferOffset, void* vertices, const size_t size)
+{
+	char* finalPtr = (char*)m_mappedVerticesDataDynamic[ctx->frame] + objBufferOffset;
+	memcpy(finalPtr, vertices, size);
 }
 
 uint32_t rfct::sceneRenderData::addStaticMat(void* data)
@@ -134,7 +141,7 @@ uint32_t rfct::sceneRenderData::addStaticMat(void* data)
 }
 uint32_t rfct::sceneRenderData::addDynamicMat(frameContext* ctx, void* data)
 {
-	char* finalPtr = ((char*)m_mappedDataDynamic[ctx->frame]) + (m_matsCounterDynamic * sizeof(glm::mat4));
+	char* finalPtr = ((char*)m_mappedMatsDataDynamic[ctx->frame]) + (m_matsCounterDynamic * sizeof(glm::mat4));
 	memcpy(finalPtr, data, sizeof(glm::mat4));
 	return m_matsCounterDynamic++;
 }
