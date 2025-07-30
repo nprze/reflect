@@ -66,9 +66,9 @@ namespace rfct{
 void rfct::scene::onUpdate(frameContext* context)
 {
 	m_playerController.update(context);
+	m_dynamicObjects.update(context);
 	buildDynamicObjBVH();
 	updatePhysics(context);
-	m_dynamicObjects.update(context);
 	updateTransformData(context, epicRotatingTriangle);
 	updateUI(context);
 	playerAnimations::get().update(epicRotatingTriangle.get<velocityComponent>()->velocity, epicRotatingTriangle.get<positionComponent>()->position, *context);

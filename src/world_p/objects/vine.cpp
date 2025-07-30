@@ -15,7 +15,7 @@ namespace rfct {
 
 		auto vinePosCom = vineEntity.get_mut<vinePositionsComponent>();
 		auto vineBasePos = vineEntity.get<positionComponent>()->position;
-
+		 
 		const glm::vec2& objectMin = collidedWith.get<staticBoxColliderComponent>()->min;
 		const glm::vec2& objectMax = collidedWith.get<staticBoxColliderComponent>()->max;
 
@@ -120,12 +120,16 @@ namespace rfct {
 
 		glm::vec2 playerVel = glm::vec2(player.get<inputVelocityComponent>()->velocity);
 		glm::vec2 desiredMove = playerVel * fixedDeltaTime;
-		desiredMove.x *= 2.f;
-		desiredMove.y = -.01f;
+		desiredMove.y = -.02f;
+
+		glm::vec2 playerPos = player.get<positionComponent>()->position;
+		glm::vec2 whereWeWantTheEdgeIndexToBeAtTheEnd = playerPos + desiredMove;
+		glm::vec2 generalDirection = whereWeWantTheEdgeIndexToBeAtTheEnd - (positions[vineEdgeIndex] + vineBasePos);
+
 
 		for (uint8_t i = 0; i < fc->fixedUpdateTimes; ++i) {
 
-			positions[vineEdgeIndex] += desiredMove * 1.2f;
+			positions[vineEdgeIndex] += generalDirection * 0.2f;
 
 			for (uint32_t j = 0; j < positions.size(); ++j) {
 				glm::vec2 vel = positions[j] - previousPositions[j];

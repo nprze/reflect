@@ -211,14 +211,6 @@ void rfct::playerController::update(frameContext* ctx)
 	ctx->scene->updateDirection(facingRight);
 }
 
-void rfct::playerController::startHoldingToVine()
-{
-}
-
-void rfct::playerController::endHoldingToVine()
-{
-}
-
 void rfct::onCollision_Player_StaticObj(entity player, entity collidedWith, glm::vec2 resolution)
 {
 	positionComponent* pos = player.get_mut<positionComponent>();

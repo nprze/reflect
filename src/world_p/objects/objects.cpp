@@ -12,19 +12,19 @@ void rfct::objectsHolder::init(sceneSerializedData* serializeData, scene* parent
 }
 void rfct::objectsHolder::update(const frameContext* fc)
 {
-	if (nearestVineEdgeToPlayerIndex != -1) {
-		if (vineClosestToPlayer.get<vineStateComponent>()->holdingToThis) {
-			fc->scene->getPlayer().get_mut<positionComponent>()->position = simulateVinePlayerIsHolding(fc->scene->getPlayer(), vineClosestToPlayer, nearestVineEdgeToPlayerIndex, fc);
-		}
-
-	}
-	for (vine& v : vines) {
-		v.draw();
-	}
 	if (fc->fixedUpdateTimes) {
+		if (nearestVineEdgeToPlayerIndex != -1) {
+			if (vineClosestToPlayer.get<vineStateComponent>()->holdingToThis) {
+				fc->scene->getPlayer().get_mut<positionComponent>()->position = simulateVinePlayerIsHolding(fc->scene->getPlayer(), vineClosestToPlayer, nearestVineEdgeToPlayerIndex, fc);
+			}
+
+		}
 		for (vine& v : vines) {
 			v.update(fc);
 		}
+	}
+	for (vine& v : vines) {
+		v.draw();
 	}
 }
 

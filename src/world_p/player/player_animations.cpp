@@ -59,8 +59,8 @@ void rfct::playerAnimations::update(const glm::vec2& playerVel, const glm::vec2&
 	}
 	m_rightHairAnim.update(playerVel, ctx.fixedUpdateTimes);
 	m_leftHairAnim.update(playerVel, ctx.fixedUpdateTimes);
-	m_rightHairAnim.draw(playerPos);
-	m_leftHairAnim.draw(playerPos);
+	//m_rightHairAnim.draw(playerPos);
+	//m_leftHairAnim.draw(playerPos);
 }
 
 void rfct::playerAnimations::changeAnimation(frameAnimation* newAnim)
