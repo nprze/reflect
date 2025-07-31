@@ -2,6 +2,8 @@
 #include "renderer_p\buffer\vulkan_buffer.h"
 #include "renderer_p\buffer\vulkan_vertex_buffer.h"
 #include "world_p\components.h"
+#include "context.h"
+
 namespace rfct {
 	struct frameContext;
 	class sceneRenderData {
@@ -12,12 +14,12 @@ namespace rfct {
 	public:
 		sceneRenderData();
 		~sceneRenderData();
-		void updateMat(frameContext* ctx, const uint32_t& objIndexInSSBO, glm::mat4* mat);
+		void updateMat(const frameContext* ctx, const uint32_t& objIndexInSSBO, glm::mat4* mat);
 		void updateDynamicVertices(const frameContext* ctx, const size_t objBufferOffset, void* vertices, const size_t size);
 		uint32_t addStaticMat(void* data);
-		uint32_t addDynamicMat(frameContext* ctx, void* data);
+		uint32_t addDynamicMat(const frameContext* ctx, void* data);
 		objectLocation addStaticObject(std::vector<Vertex>* vertices, glm::mat4* matrix);
-		objectLocation addDynamicObject(std::vector<Vertex>* vertices, glm::mat4* matrix);
+		objectLocation addDynamicObject(std::vector<Vertex>* vertices, glm::mat4* matrix, const frameContext fc = {});
 
 		vk::UniqueDescriptorPool m_DescriptorPool;
 

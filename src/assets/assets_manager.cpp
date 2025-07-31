@@ -237,7 +237,7 @@ namespace rfct {
         }
     }
 
-    void AssetsManager::loadBuildingBlockMesh(const std::string& path, std::vector<Vertex>* meshOut, const glm::vec3& color)
+    void AssetsManager::loadBuildingBlockMesh(const std::string& path, std::vector<Vertex>* meshOut, const glm::vec3& color, const glm::vec2& size)
     {
         std::string finalPath = m_Path + "/" + path;
         std::ifstream file(finalPath);
@@ -249,6 +249,18 @@ namespace rfct {
         std::vector<glm::vec2> coords;
         std::string line;
 
+        Vertex black[6];
+        black[0].pos = { 0.f,0.f, 0.f };
+        black[1].pos = { size.x,0.f, 0.f };
+        black[2].pos = { 0.f,size.y, 0.f };
+        black[3].pos = { size.x,size.y, 0.f };
+        black[4].pos = { size.x,0.f, 0.f };
+        black[5].pos = { 0.f,size.y, 0.f };
+
+        for (uint32_t i = 0; i < 6; ++i) {
+            black[i].color = { 0.f, 0.f, 0.f };
+            meshOut->push_back(black[i]);
+        }
         while (std::getline(file, line)) {
             std::istringstream iss(line);
             std::vector<float> values;
@@ -288,6 +300,50 @@ namespace rfct {
             }
         }
 
+    }
+
+    void AssetsManager::loadBackgroundMesh(const std::string& path, std::vector<Vertex>* vertxBufferOut, const glm::vec3& color, const float zMin, const float zMax)
+    {
+
+        std::string finalPath = m_Path + "/" + path;
+        std::ifstream file(finalPath);
+
+        if (!file.is_open()) {
+            RFCT_CRITICAL("Failed to open mesh file: {}", finalPath);
+        }
+
+        std::vector<glm::vec2> coords;
+        std::string line;
+
+        while (std::getline(file, line)) {
+            std::istringstream iss(line);
+            std::vector<float> values;
+
+            double number;
+
+            while (iss >> number) {
+                values.push_back(static_cast<float>(number));
+            }
+
+
+
+            if (values.size() == 2) {
+                coords.emplace_back(values[0], values[1]);
+
+            }
+            if (coords.size()==4) {
+                glm::vec3 color_fin = glm::vec3(color[0] * coords[3].x, color[1] * coords[3].x, color[2] * coords[3].x);
+
+                for (size_t i = 0; i < 3; i++) {
+                    Vertex vtx{};
+                    vtx.pos = glm::vec3(coords[i], coords[3].y * (zMax - zMin) + zMin);
+                    vtx.color = color_fin;
+                    vertxBufferOut->push_back(vtx);
+                }
+
+                coords.clear();
+            }
+        }
     }
 
     void AssetsManager::loadCharacterMesh(const std::string& path, std::vector<Vertex>* meshOut)

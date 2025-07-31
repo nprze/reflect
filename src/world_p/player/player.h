@@ -35,5 +35,6 @@ namespace rfct {
 		float walkVelocity;
 		glm::vec2 dashVelocity;
 		int dashCharges;
+
 	};
 }

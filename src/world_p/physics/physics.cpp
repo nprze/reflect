@@ -250,7 +250,9 @@ namespace rfct {
             if (node.right < 0) 
             {
                 // BVH leaf
-                if (collidingEntity != node.entity) callback.handler(collidingEntity, node.entity);
+                if (collidingEntity != node.entity) {
+                    callback.handler(collidingEntity, node.entity);
+                }
             }
             else {
                 checkForCollision(DynamicObjsBVHnodes[node.right], bocCollider, callback, collidingEntity);
@@ -316,7 +318,7 @@ namespace rfct {
 
 void rfct::updatePhysics(const frameContext* ctx)
 {
-    //drawBVH(0, DynamicObjsBVHnodes.back(), &DynamicObjsBVHnodes);
+    // drawBVH(0, DynamicObjsBVHnodes.back(), &DynamicObjsBVHnodes);
     for (uint32_t i = 0; i < ctx->fixedUpdateTimes;++i) {
         gravityVelocityPositionBoxQuery.each([&](flecs::entity ent, gravityComponent& gravity, velocityComponent& velocity, positionComponent& position, dynamicBoxColliderComponent& dynamicBox, staticObjCollisionCallbackComponent& callback) {
             if (gravity.gravityEnabled) {

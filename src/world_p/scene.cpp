@@ -97,6 +97,7 @@ void rfct::scene::loadScene(const std::string& path)
 		.set<cameraComponent>({ 45.0f, renderer::getRen().getAspectRatio(), 0.1f, 100.0f });
 	setCamera(camera);
 	m_RenderData.startTransferStatic();
+	//createStaticBackgroundMesh("background/20x20-0.txt", { 0.06f, 0.04f,0.04f });
 	for (rectangle r : sc.rectangles) {
 		glm::vec2 min = r.min;
 		min.x -= 1;
@@ -129,7 +130,7 @@ void rfct::scene::loadScene(const std::string& path)
 
 entity rfct::scene::createStaticMesh(const std::string& path, glm::vec2 size, glm::vec2 pos, const glm::vec3& color)
 {
-	buildingBlockMesh mesh1(path, color);
+	buildingBlockMesh mesh1(path, color, size * 70.f);
 
 	staticBoxColliderComponent collider;
 	collider.min = pos;
@@ -151,6 +152,21 @@ entity rfct::scene::createStaticMesh(const std::string& path, glm::vec2 size, gl
 		.set<rotationComponent>({})
 		.set<scaleComponent>(transform1.scale)
 		.set<staticBoxColliderComponent>(collider);
+}
+
+entity rfct::scene::createStaticBackgroundMesh(const std::string& path, const glm::vec3& color, const float zMin, const float zMax)
+{
+	backgroundMesh mesh1(path, color, zMin, zMax);
+
+
+	glm::mat4 model = glm::mat4(1.f);
+	objectLocation ol = m_RenderData.addStaticObject(&mesh1.m_Vertices, &model);
+	staticSSBOIndexComponent ssboIndex = { ol.indexInSSBO };
+	return ecs::get().entity<>()
+		.child_of(sceneEntity)
+		.set<staticSSBOIndexComponent>({ ol.indexInSSBO })
+		.set<vertexRenderInfoComponent>({ ol.verticesCount, ol.vertexBufferOffset })
+		.set<positionComponent>({});
 }
 
 entity rfct::scene::createStaticRect(staticBoxColliderComponent* bounds, glm::vec3 color)
@@ -211,17 +227,12 @@ entity rfct::scene::createDynamicRenderingEntity(std::vector<Vertex>* vertices, 
 	objectLocation ol = m_RenderData.addDynamicObject(vertices, model);
 	dynamicSSBOIndexComponent ssboIndex = { ol.indexInSSBO };
 
-	constexpr float oneSeventieth = 1.f / 70.f;
-	scaleComponent scale = scaleComponent{};
-	scale.scale.x = oneSeventieth;
-	scale.scale.y = oneSeventieth;
 	return ecs::get().entity<>()
 		.child_of(sceneEntity)
 		.set<dynamicSSBOIndexComponent>({ ol.indexInSSBO })
 		.set<vertexRenderInfoComponent>({ ol.verticesCount, ol.vertexBufferOffset })
 		.set<positionComponent>({})
-		.set<rotationComponent>({})
-		.set<scaleComponent>(scale);
+		.set<rotationComponent>({});
 }
 
 void rfct::scene::updateTransformData(frameContext* ctx, entity e)

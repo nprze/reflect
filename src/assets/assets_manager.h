@@ -22,7 +22,8 @@ namespace rfct {
         void loadVulkanShader(std::string path, vulkanShader* shaderOut);
 		void loadImage(const std::string& path, image* imageOut);
         void loadGlyphs(const std::string& path, font* fontOut);
-        void loadBuildingBlockMesh(const std::string& path, std::vector<Vertex>* vertxBufferOut, const glm::vec3& color);
+        void loadBuildingBlockMesh(const std::string& path, std::vector<Vertex>* vertxBufferOut, const glm::vec3& color, const glm::vec2& size);
+        void loadBackgroundMesh(const std::string& path, std::vector<Vertex>* vertxBufferOut, const glm::vec3& color, const float zMin, const float zMax);
         void loadCharacterMesh(const std::string& path, std::vector<Vertex>* meshOut);
         void loadScene(const std::string& path, sceneSerializedData* sceneSerializedDataOut);
 

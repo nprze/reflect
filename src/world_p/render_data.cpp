@@ -120,7 +120,7 @@ rfct::sceneRenderData::~sceneRenderData()
 	destroyDescriptorSetLayout();
 }
 
-void rfct::sceneRenderData::updateMat(frameContext* ctx, const uint32_t& objIndexInSSBO, glm::mat4* mat)
+void rfct::sceneRenderData::updateMat(const frameContext* ctx, const uint32_t& objIndexInSSBO, glm::mat4* mat)
 {
 	char* finalPtr = (char*)m_mappedMatsDataDynamic[ctx->frame] + objIndexInSSBO * sizeof(glm::mat4);
 	memcpy(finalPtr, mat, sizeof(glm::mat4));
@@ -139,7 +139,7 @@ uint32_t rfct::sceneRenderData::addStaticMat(void* data)
 	memcpy(finalPtr, data, sizeof(glm::mat4));
 	return m_matsCounterStatic++;
 }
-uint32_t rfct::sceneRenderData::addDynamicMat(frameContext* ctx, void* data)
+uint32_t rfct::sceneRenderData::addDynamicMat(const frameContext* ctx, void* data)
 {
 	char* finalPtr = ((char*)m_mappedMatsDataDynamic[ctx->frame]) + (m_matsCounterDynamic * sizeof(glm::mat4));
 	memcpy(finalPtr, data, sizeof(glm::mat4));
@@ -160,11 +160,10 @@ rfct::objectLocation rfct::sceneRenderData::addStaticObject(std::vector<Vertex>*
 	return objLoc;
 }
 
-rfct::objectLocation rfct::sceneRenderData::addDynamicObject(std::vector<Vertex>* vertices, glm::mat4* matrix)
+rfct::objectLocation rfct::sceneRenderData::addDynamicObject(std::vector<Vertex>* vertices, glm::mat4* matrix, const frameContext fc)
 {
 	objectLocation objLoc{};
-	frameContext noCtx{};
-	uint32_t matLocation = addDynamicMat(&noCtx, matrix);
+	uint32_t matLocation = addDynamicMat(&fc, matrix);
 	objLoc.indexInSSBO = matLocation;
 	for (Vertex& ver : *vertices) {
 		ver.objectIndex = matLocation;

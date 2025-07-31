@@ -13,7 +13,8 @@ namespace rfct {
 
     enum class dynamicObjectType : uint8_t {
         Player = 0,
-        Vine
+        Vine,
+        Cigarette
     };
 
 
@@ -25,7 +26,6 @@ namespace rfct {
     };
 
     void registerComponents();
-
 
     struct dynamicObjectTypeComponent {
         dynamicObjectType type;

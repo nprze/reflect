@@ -1,4 +1,4 @@
-#include "player.h"
+﻿#include "player.h"
 #include "input.h"
 #include "world_p/components.h"
 #include "context.h"
@@ -41,9 +41,10 @@ namespace rfct {
 }
 void rfct::playerController::update(frameContext* ctx)
 {
+
 	// draw last frame velocity
 	//drawPlayervelocity(player.get<inputVelocityComponent>()->velocity, player.get<positionComponent>()->position);
-	//drawPlayervelocity(dashVelocity, player.get<positionComponent>()->position, {2.f, 2.f});
+	//drawPlayervelocity(player.get<velocityComponent>()->velocity, player.get<positionComponent>()->position);
 
 	if (input::getInput().hold) {
 		hold = true;
@@ -117,17 +118,25 @@ void rfct::playerController::update(frameContext* ctx)
 					playerState->holding = true;
 					player.get_mut<gravityComponent>()->gravityEnabled = false;
 					player.get_mut <velocityComponent>()->velocity.y = 0.f;
+
 				}
 			}
 		}
 		else {
 			notHoldingTime += fixedDeltaTime;
-			if (notHoldingTime > fixedDeltaTime * 10 ) { // will hold on to 1/6 seconds after letting go (input sometimes acts up)
+			if (notHoldingTime > fixedDeltaTime * 10 && playerState->holding) {
 				ctx->scene->getObjectHolder().vineClosestToPlayer.get_mut<vineStateComponent>()->holdingToThis = false;
 				ctx->scene->getObjectHolder().nearestVineEdgeToPlayerIndex = -1;
 
 				playerState->holding = false;
 				player.get_mut<gravityComponent>()->gravityEnabled = true;
+
+				glm::vec2 launchDir = glm::vec2(0.f);
+
+				launchDir.x = facingRight ? 1.f : -1.f;
+
+				launchDir.y = 0.2f;
+				player.get_mut<velocityComponent>()->velocity += launchDir * 10.f;
 			}
 		}
 
@@ -140,8 +149,8 @@ void rfct::playerController::update(frameContext* ctx)
 		}
 
 		// calculate if player is midair (forgive 50 ms)
-		velocityComponent* pos = player.get_mut<velocityComponent>();
-		if (pos->velocity.y != 0) {
+		velocityComponent* vel = player.get_mut<velocityComponent>();
+		if (vel->velocity.y != 0) {
 			timesYNotZero += fixedDeltaTime;
 			if (timesYNotZero > fixedDeltaTime * 3) {
 				playerStateComponent* ps = player.get_mut<playerStateComponent>();
@@ -154,16 +163,16 @@ void rfct::playerController::update(frameContext* ctx)
 		}
 
 		// calculate direction
-		if (pos->velocity.x > 0) {
+		if (vel->velocity.x > 0) {
 			facingRight = true;
 		}
-		else if (pos->velocity.x<0) {
+		else if (vel->velocity.x<0) {
 			facingRight = false;
 		}
 
 		// jump apply
 		if (!playerState->holding) {
-			pos->velocity.y += jumpInput * jumpSpeed;
+			vel->velocity.y += jumpInput * jumpSpeed;
 			inputVel.y += jumpInput * jumpSpeed;
 		}
 
@@ -176,7 +185,7 @@ void rfct::playerController::update(frameContext* ctx)
 		// walk apply
 		walkVelocity *= 0.80f;
 		inputVel.x += walkVelocity;
-		pos->velocity.x = walkVelocity;
+		vel->velocity.x = walkVelocity;
 
 		// dash apply
 		if (anyDash) {
@@ -186,6 +195,8 @@ void rfct::playerController::update(frameContext* ctx)
 			dashVelocity.x += dashHorizontalInput * dashSpeed * boostPureHorizontalVertical;
 			dashVelocity.x += (dash45upInput + dash45downInput) * ((float)1 / std::sqrt(2)) * dashSpeed;
 			dashVelocity.y += (dash45upInput - dash45downInput) * ((float)1 / std::sqrt(2)) * dashSpeed;
+
+			ctx->scene->getObjectHolder().onPlayerDash(ctx, player, facingRight);
 		}
 		if (timeSinceLastDash != 0 && timeSinceLastDash<0.2f) {
 			player.get_mut<gravityComponent>()->gravityEnabled = false;
@@ -197,7 +208,7 @@ void rfct::playerController::update(frameContext* ctx)
 		}
 		dashVelocity *= 0.9f - std::clamp(timeSinceLastDash * 2.f, 0.f, 0.9f);
 		if (glm::length(dashVelocity) >= 0.1f) {
-			pos->velocity = dashVelocity;
+			vel->velocity = dashVelocity;
 			inputVel = dashVelocity;
 		}
 

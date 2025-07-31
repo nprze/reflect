@@ -15,7 +15,7 @@ namespace rfct {
 	void onCollision_Vine_StaticObj(entity vineEntity, entity collidedWith, glm::vec2 resolution) {
 		// narrow phase
 
-		auto vinePosCom = vineEntity.get_mut<vinePositionsComponent>();
+ 		auto vinePosCom = vineEntity.get_mut<vinePositionsComponent>();
 		auto vineBasePos = vineEntity.get<positionComponent>()->position;
 		 
 		const glm::vec2& objectMin = collidedWith.get<staticBoxColliderComponent>()->min;
@@ -157,7 +157,21 @@ namespace rfct {
 				positions[0] = glm::vec2(0.f, -.01f);
 			}
 		}
+		constructBoundingBox(vineEntity);
 		return positions[vineEdgeIndex] + vineBasePos;
+	}
+	void constructBoundingBox(entity vineEntity)
+	{
+		dynamicBoxColliderComponent* boundingBox = vineEntity.get_mut<dynamicBoxColliderComponent>();
+		boundingBox->min = { FLT_MAX, FLT_MAX };
+		boundingBox->max = { FLT_MIN, FLT_MIN };
+		for (const glm::vec2& pos : vineEntity.get<vinePositionsComponent>()->positions) {
+			boundingBox->max.x = std::max(pos.x, boundingBox->max.x);
+			boundingBox->max.y = std::max(pos.y, boundingBox->max.y);
+
+			boundingBox->min.x = std::min(pos.x, boundingBox->min.x);
+			boundingBox->min.y = std::min(pos.y, boundingBox->min.y);
+		}
 	}
 }
 glm::vec3 getColorWithFluctuate(float maxFluct = 0.2f, const glm::vec3& basicColor = glm::vec3(0.7098f, 0.9020f, 0.1137f)) {
@@ -218,13 +232,14 @@ rfct::vine::vine(const glm::vec2& startArg, const glm::vec2& endArg, const int n
 		.set<vinePositionsComponent>(vpCom)
 		.set<positionComponent>({ startArg })
 		.set<gravityComponent>({ 0.f,false,0.f })
+		.set<velocityComponent>({ {0.f, 0.f} })
 		.set<staticObjCollisionCallbackComponent>(colCallback)
 		.set<dynamicObjCollisionCallbackComponent>(dynColCallback)
 		.set<dynamicBoxColliderComponent>({})
 		.set<dynamicObjectTypeComponent>({ dynamicObjectType::Vine })
 		.set<vineStateComponent>({ false })
 		.set<vineLenghtComponent>({ oneLineLen });
-	constructBoundingBox();
+	constructBoundingBox(m_vineEntity);
 }
 
 void rfct::vine::update(const frameContext* fc)
@@ -260,28 +275,12 @@ void rfct::vine::update(const frameContext* fc)
 			}
 
 		}
-		constructBoundingBox();
+		constructBoundingBox(m_vineEntity);
 	}
 }
 
 void rfct::vine::draw(const frameContext* fc)
-{/*
-	glm::vec2 start = m_vineEntity.get<positionComponent>()->position;
-	glm::vec3 white = { 1.f,1.f,1.f };
-	glm::vec3 blue = { 0.f,0.f,1.f };
-	debugLine* lines = debugDraw::requestLines(m_vineEntity.get<vinePositionsComponent>()->positions.size() - 1);
-	for (uint32_t i = 0; i < m_vineEntity.get<vinePositionsComponent>()->positions.size() - 1; i++) {
-		lines[i].vertices[0].pos = glm::vec3({ start + m_vineEntity.get<vinePositionsComponent>()->positions[i], 0.f });
-		lines[i].vertices[1].pos = glm::vec3({ start + m_vineEntity.get<vinePositionsComponent>()->positions[i + 1], 0.f });
-		if (i % 2) {
-			lines[i].vertices[0].color = white;
-			lines[i].vertices[1].color = white;
-		}
-		else {
-			lines[i].vertices[0].color = blue;
-			lines[i].vertices[1].color = blue;
-		}
-	}*/
+{
 
 	glm::vec2 start = m_vineEntity.get<positionComponent>()->position;
 	glm::vec3 white = { 1.f,1.f,1.f };
@@ -293,101 +292,27 @@ void rfct::vine::draw(const frameContext* fc)
 
 	debugTriangle* tris = debugDraw::requestTriangles(segmentCount * 4);
 
-	float thickness = 0.1f; // adjust to desired vine width
-
-	// debug
-	/*
-	for (uint32_t i = 0; i < segmentCount; i++) {
-		glm::vec2 p0 = start + positions[i];
-		glm::vec2 p1 = start + positions[i + 1];
-
-		// Direction vector
-		glm::vec2 dir = glm::normalize(p1 - p0);
-
-		// Perpendicular vector
-		glm::vec2 normal = glm::vec2(-dir.y, dir.x) * thickness * 0.5f;
-		float lenNormal = glm::length(normal);
-
-		// Rectangle corners
-		constexpr float between = 0.75f;
-		constexpr float oneMinusBetween = (float)(1.f - between);
-
-
-		// background triangles
-		glm::vec3 bg0 = glm::vec3(p0 - (normal * (1 + oneMinusBetween)) - dir * lenNormal * oneMinusBetween, 0.f);
-		glm::vec3 bg1 = glm::vec3(p0 + (normal * (1 + oneMinusBetween)) - dir * lenNormal * oneMinusBetween, 0.f);
-		glm::vec3 bg2 = glm::vec3(p1 - (normal * (1 + oneMinusBetween)) + dir * lenNormal * oneMinusBetween, 0.f);
-		glm::vec3 bg3 = glm::vec3(p1 + (normal * (1 + oneMinusBetween)) + dir * lenNormal * oneMinusBetween, 0.f);
-
-
-		tris[i * 4].vertices[0].pos = bg0;
-		tris[i * 4].vertices[1].pos = bg1;
-		tris[i * 4].vertices[2].pos = bg2;
-
-		tris[i * 4].vertices[0].color = yellow;
-		tris[i * 4].vertices[1].color = yellow;
-		tris[i * 4].vertices[2].color = yellow;
-
-		tris[i * 4 + 1].vertices[0].pos = bg1;
-		tris[i * 4 + 1].vertices[1].pos = bg2;
-		tris[i * 4 + 1].vertices[2].pos = bg3;
-
-		tris[i * 4 + 1].vertices[0].color = yellow;
-		tris[i * 4 + 1].vertices[1].color = yellow;
-		tris[i * 4 + 1].vertices[2].color = yellow;
-
-
-
-		// color triangles
-		glm::vec3 v0 = glm::vec3(p0 - normal, 0.f);
-		glm::vec3 v1 = glm::vec3(p0 + normal * between, 0.f);
-		glm::vec3 v2 = glm::vec3(p0 + normal, 0.f);
-		glm::vec3 v3 = glm::vec3(p1 - normal, 0.f);
-		glm::vec3 v4 = glm::vec3(p1 - normal * between, 0.f);
-		glm::vec3 v5 = glm::vec3(p1 + normal, 0.f);
-
-		glm::vec3 color = (i % 2) ? white : blue;
-
-
-		tris[i * 4 + 2].vertices[0].pos = v2;
-		tris[i * 4 + 2].vertices[1].pos = v4;
-		tris[i * 4 + 2].vertices[2].pos = v5;
-
-		tris[i * 4 + 2].vertices[0].color = color;
-		tris[i * 4 + 2].vertices[1].color = color;
-		tris[i * 4 + 2].vertices[2].color = color;
-
-		tris[i * 4 + 3].vertices[0].pos = v0;
-		tris[i * 4 + 3].vertices[1].pos = v1;
-		tris[i * 4 + 3].vertices[2].pos = v3;
-
-		tris[i * 4 + 3].vertices[0].color = color;
-		tris[i * 4 + 3].vertices[1].color = color;
-		tris[i * 4 + 3].vertices[2].color = color;
-	}*/
-
+	float thickness = 0.1f; 
+	
 	// official
 	for (uint32_t i = 0; i < segmentCount; i++) {
 		glm::vec2 p0 = positions[i];
 		glm::vec2 p1 = positions[i + 1];
 
-		// Direction vector
 		glm::vec2 dir = glm::normalize(p1 - p0);
 
-		// Perpendicular vector
 		glm::vec2 normal = glm::vec2(-dir.y, dir.x) * thickness * 0.5f;
 		float lenNormal = glm::length(normal);
 
-		// Rectangle corners
 		constexpr float between = 0.75f;
 		constexpr float oneMinusBetween = (float)(1.f - between);
 
 
 		// background triangles
-		glm::vec3 bg0 = glm::vec3(p0 - (normal * (1 + oneMinusBetween)) - dir * lenNormal * oneMinusBetween, 0.f);
-		glm::vec3 bg1 = glm::vec3(p0 + (normal * (1 + oneMinusBetween)) - dir * lenNormal * oneMinusBetween, 0.f);
-		glm::vec3 bg2 = glm::vec3(p1 - (normal * (1 + oneMinusBetween)) + dir * lenNormal * oneMinusBetween, 0.f);
-		glm::vec3 bg3 = glm::vec3(p1 + (normal * (1 + oneMinusBetween)) + dir * lenNormal * oneMinusBetween, 0.f);
+		glm::vec3 bg0 = glm::vec3(p0 - (normal * (1 + oneMinusBetween)) - dir * lenNormal * oneMinusBetween, 0.1f);
+		glm::vec3 bg1 = glm::vec3(p0 + (normal * (1 + oneMinusBetween)) - dir * lenNormal * oneMinusBetween, 0.1f);
+		glm::vec3 bg2 = glm::vec3(p1 - (normal * (1 + oneMinusBetween)) + dir * lenNormal * oneMinusBetween, 0.1f);
+		glm::vec3 bg3 = glm::vec3(p1 + (normal * (1 + oneMinusBetween)) + dir * lenNormal * oneMinusBetween, 0.1f);
 
 
 		m_vertices[i * 12 + 0].pos = bg0;
@@ -401,12 +326,12 @@ void rfct::vine::draw(const frameContext* fc)
 
 
 		// color triangles
-		glm::vec3 v0 = glm::vec3(p0 - normal, 0.f);
-		glm::vec3 v1 = glm::vec3(p0 + normal * between, 0.f);
-		glm::vec3 v2 = glm::vec3(p0 + normal, 0.f);
-		glm::vec3 v3 = glm::vec3(p1 - normal, 0.f);
-		glm::vec3 v4 = glm::vec3(p1 - normal * between, 0.f);
-		glm::vec3 v5 = glm::vec3(p1 + normal, 0.f);
+		glm::vec3 v0 = glm::vec3(p0 - normal, 0.1f);
+		glm::vec3 v1 = glm::vec3(p0 + normal * between, 0.1f);
+		glm::vec3 v2 = glm::vec3(p0 + normal, 0.1f);
+		glm::vec3 v3 = glm::vec3(p1 - normal, 0.1f);
+		glm::vec3 v4 = glm::vec3(p1 - normal * between, 0.1f);
+		glm::vec3 v5 = glm::vec3(p1 + normal, 0.1f);
 
 
 		m_vertices[i * 12 + 6].pos = v2;
@@ -419,19 +344,5 @@ void rfct::vine::draw(const frameContext* fc)
 
 		fc->scene->getRenderData().updateDynamicVertices(fc, m_vineEntity.get<vertexRenderInfoComponent>()->vertexBufferOffset, m_vertices.data(), m_vertices.size() * sizeof(Vertex));
 
-	}
-}
-
-void rfct::vine::constructBoundingBox()
-{
-	dynamicBoxColliderComponent* boundingBox = m_vineEntity.get_mut<dynamicBoxColliderComponent>();
-	boundingBox->min = { FLT_MAX, FLT_MAX };
-	boundingBox->max = { FLT_MIN, FLT_MIN };
-	for (const glm::vec2& pos : m_vineEntity.get<vinePositionsComponent>()->positions) {
-		boundingBox->max.x = std::max(pos.x, boundingBox->max.x);
-		boundingBox->max.y = std::max(pos.y, boundingBox->max.y);
-
-		boundingBox->min.x = std::min(pos.x, boundingBox->min.x);
-		boundingBox->min.y = std::min(pos.y, boundingBox->min.y);
 	}
 }
