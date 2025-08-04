@@ -100,6 +100,8 @@ rfct::renderer::~renderer() {
 void rfct::renderer::render(frameContext& frameContext)
 {
     RFCT_PROFILE_FUNCTION(); 
+    debugDraw::requestLines(1);
+    debugDraw::requestTriangles(3);
 	frameData& frameData = m_framesInFlight.getNextFrame(frameContext.frame);
     {
         RFCT_PROFILE_SCOPE("fences wait");

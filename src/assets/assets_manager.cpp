@@ -437,6 +437,9 @@ namespace rfct {
                     }
                     else if (line.find("file:") != std::string::npos) {
                         current.file = line.substr(line.find(":") + 2);
+                        if (current.file.back() == '\r') {
+                            current.file.pop_back();
+                        }
                         rectFullyOk = true;
                     }
                 }
@@ -544,8 +547,8 @@ namespace rfct {
 
         if (slashPos != std::string::npos) {
             folderPath = finalPath.substr(0, slashPos + 1);
-
-            std::string keyword = "assets/";
+            //std::string keyword = "assets/";
+            std::string keyword = "files/";
             size_t pos = folderPath.find(keyword);
             if (pos != std::string::npos) {
                 folderPath = folderPath.substr(pos + keyword.length());

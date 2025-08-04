@@ -26,6 +26,7 @@ namespace rfct {
         void loadBackgroundMesh(const std::string& path, std::vector<Vertex>* vertxBufferOut, const glm::vec3& color, const float zMin, const float zMax);
         void loadCharacterMesh(const std::string& path, std::vector<Vertex>* meshOut);
         void loadScene(const std::string& path, sceneSerializedData* sceneSerializedDataOut);
+        void loadDialogue(const std::string& path, sceneSerializedData* sceneSerializedDataOut);
 
         void uploadVertices(const std::vector<Vertex>& vertices, VulkanBuffer* buffer, vk::DeviceSize offset); // helper function
 

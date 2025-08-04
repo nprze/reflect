@@ -124,7 +124,7 @@ void rfct::playerController::update(frameContext* ctx)
 		}
 		else {
 			notHoldingTime += fixedDeltaTime;
-			if (notHoldingTime > fixedDeltaTime * 10 && playerState->holding) {
+			if (notHoldingTime > fixedDeltaTime * 0 && playerState->holding) {
 				ctx->scene->getObjectHolder().vineClosestToPlayer.get_mut<vineStateComponent>()->holdingToThis = false;
 				ctx->scene->getObjectHolder().nearestVineEdgeToPlayerIndex = -1;
 

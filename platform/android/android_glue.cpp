@@ -12,7 +12,7 @@
 #include "assets/assets_manager.h"
 
 void resizeCallback(int width, int height){
-    rfct::renderer::getRen().getDeviceWrapper().getSwapChain().framebufferResized = true;
+    rfct::renderer::getRen().getRenderImagesManager().getSwapChain().framebufferResized = true;
     if (width == 0 && height == 0)
     {
         rfct::reflectApplication::isAppMinimised = true;
