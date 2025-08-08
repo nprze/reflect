@@ -29,7 +29,7 @@ namespace rfct {
 		vk::Image getswapchainImage(uint32_t index) { return m_swapchainImages[index]; }
 
 		vk::Framebuffer getSceneFrameBuffer(uint32_t index) { return m_sceneFramebuffers[index].get(); }
-		vk::Framebuffer getSwapChainFrameBuffer(uint32_t index) { return m_swapchainFramebuffers[index].get(); }
+		vk::Framebuffer getSwapChainFrameBuffer(uint32_t index) {  return m_swapchainFramebuffers[index].get(); }
 		vk::Framebuffer getBloom1FrameBuffer(uint32_t index) { return m_bloom1Framebuffers[index].get(); }
 		vk::Framebuffer getBloom2FrameBuffer(uint32_t index) { return m_bloom2Framebuffers[index].get(); }
 

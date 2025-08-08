@@ -71,13 +71,13 @@ void rfct::objectsHolder::update(const frameContext* fc)
 		for (vine& v : vines) {
 			v.update(fc);
 		}
-		for (vine& v : vines) {
-			v.draw(fc);
-		}
 		for (entity& cigarette : cigarettes) {
 			if (cigarette == entity()) return;
 			updateCigarette(cigarette, fc);
 		}
+	}
+	for (vine& v : vines) {
+		v.draw(fc);
 	}
 }
 

@@ -265,13 +265,10 @@ namespace rfct {
         };
         m_bloomCommandPool = renderer::getRen().getDevice().createCommandPoolUnique(cmdpoolInfo);
 
-        vk::CommandBufferAllocateInfo allocInfoBloom{ *m_bloomCommandPool, vk::CommandBufferLevel::ePrimary, RFCT_FRAMES_IN_FLIGHT+1 };
+        vk::CommandBufferAllocateInfo allocInfoBloom{ *m_bloomCommandPool, vk::CommandBufferLevel::ePrimary, RFCT_FRAMES_IN_FLIGHT };
         m_bloomCommandBuffer = std::move(renderer::getRen().getDevice().allocateCommandBuffersUnique(allocInfoBloom));
 
 
-        for (uint32_t i = 0; i < RFCT_FRAMES_IN_FLIGHT + 1; ++i) {
-            recordCommandBuffer(m_bloomCommandBuffer[i].get(), renderer::getRen().getRenderImagesManager().getIntermediateClearRenderPass(), i);
-        }
     }
 
     void bloomResurcesHolder::updateDescSets()
@@ -352,12 +349,13 @@ namespace rfct {
     {
         RFCT_PROFILE_FUNCTION();
 
-        fd.m_BloomCommandBuffer = m_bloomCommandBuffer[imageIndex].get();
+        recordCommandBuffer(m_bloomCommandBuffer[ctx->frame].get(), renderer::getRen().getRenderImagesManager().getIntermediateClearRenderPass(), ctx->frame, imageIndex);
+        fd.m_BloomCommandBuffer = m_bloomCommandBuffer[ctx->frame].get();
 
         
     }
 
-    void bloomResurcesHolder::recordCommandBuffer(vk::CommandBuffer commandBuffer, vk::RenderPass renderPass, uint32_t imageIndex)
+    void bloomResurcesHolder::recordCommandBuffer(vk::CommandBuffer commandBuffer, vk::RenderPass renderPass, uint32_t imageIndex, uint32_t swapchainImage)
     {
         commandBuffer.reset({});
         vk::CommandBufferBeginInfo beginInfo = {};
@@ -478,7 +476,7 @@ namespace rfct {
 
             vk::RenderPassBeginInfo renderPassInfo = {};
             renderPassInfo.renderPass = renderer::getRen().getRenderImagesManager().getpresentToColorAttachmentRenderPass();
-            renderPassInfo.framebuffer = renderer::getRen().getRenderImagesManager().getSwapChainFrameBuffer(imageIndex);
+            renderPassInfo.framebuffer = renderer::getRen().getRenderImagesManager().getSwapChainFrameBuffer(swapchainImage);
             renderPassInfo.renderArea.offset = vk::Offset2D{ 0, 0 };
             renderPassInfo.renderArea.extent = rfct::renderer::getRen().getRenderImagesManager().getSwapChain().getExtent();
             renderPassInfo.clearValueCount = 1;
@@ -526,9 +524,6 @@ namespace rfct {
     void bloomResurcesHolder::onSwapchainExtentChanged()
     {
         updateDescSets();
-        for (uint32_t i = 0; i < RFCT_FRAMES_IN_FLIGHT + 1; ++i) {
-            recordCommandBuffer(m_bloomCommandBuffer[i].get(), renderer::getRen().getRenderImagesManager().getIntermediateClearRenderPass(), i);
-        }
     }
 
     postprocPipeline::postprocPipeline(vk::RenderPass renderPass, vulkanShader* shaderRef, const std::string& fragmentShaderPath, layoutTemporaryHolder pipelineLayoutStuff):

@@ -224,6 +224,12 @@ rfct::vine::vine(const glm::vec2& startArg, const glm::vec2& endArg, const int n
 	glm::mat4 transform = glm::translate(glm::mat4(1.f), { startArg, 0.f});
 	objectLocation ol = parentScene->m_RenderData.addDynamicObject(&m_vertices, &transform);
 
+	frameContext simpleCtx = {};
+	for (uint8_t i = 1; i < RFCT_FRAMES_IN_FLIGHT; i++) {
+		simpleCtx.frame = i;
+		parentScene->m_RenderData.updateMat(&simpleCtx, ol.indexInSSBO, &transform);
+	}
+
 
 	m_vineEntity = ecs::get().entity<>()
 		.child_of(parentScene->sceneEntity)
@@ -290,7 +296,6 @@ void rfct::vine::draw(const frameContext* fc)
 	auto& positions = m_vineEntity.get<vinePositionsComponent>()->positions;
 	uint32_t segmentCount = positions.size() - 1;
 
-	debugTriangle* tris = debugDraw::requestTriangles(segmentCount * 4);
 
 	float thickness = 0.1f; 
 	

@@ -99,9 +99,7 @@ rfct::renderer::~renderer() {
 
 void rfct::renderer::render(frameContext& frameContext)
 {
-    RFCT_PROFILE_FUNCTION(); 
-    debugDraw::requestLines(1);
-    debugDraw::requestTriangles(3);
+    RFCT_PROFILE_FUNCTION();
 	frameData& frameData = m_framesInFlight.getNextFrame(frameContext.frame);
     {
         RFCT_PROFILE_SCOPE("fences wait");
@@ -124,7 +122,7 @@ void rfct::renderer::render(frameContext& frameContext)
         RFCT_PROFILE_SCOPE("command buffers record");
         auto jobs = std::make_shared<rfct::jobTracker>();
         jobSystem::get().KickJob([&]() {
-            m_rasterizerPipeline.recordCommandBuffer(&frameContext, frameData, m_renderImages.getSceneFrameBuffer(imageIndex), m_renderImages.getSceneRenderPass());
+            m_rasterizerPipeline.recordCommandBuffer(&frameContext, frameData, m_renderImages.getSceneFrameBuffer(frameContext.frame), m_renderImages.getSceneRenderPass());
             }, *jobs);
         jobSystem::get().KickJob([&]() {
             m_bloomRes.blum(&frameContext, frameData, m_renderImages.getIntermediateClearRenderPass(), imageIndex);

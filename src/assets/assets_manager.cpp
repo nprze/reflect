@@ -547,8 +547,12 @@ namespace rfct {
 
         if (slashPos != std::string::npos) {
             folderPath = finalPath.substr(0, slashPos + 1);
-            //std::string keyword = "assets/";
+#ifdef ANDROID_BUILD
             std::string keyword = "files/";
+#else
+            std::string keyword = "assets/";
+#endif // ANDROID_BUILD
+
             size_t pos = folderPath.find(keyword);
             if (pos != std::string::npos) {
                 folderPath = folderPath.substr(pos + keyword.length());
