@@ -1,0 +1,23 @@
+to create a character:
+	- do into characters/ and create a folder with the name of character
+	- add a .png with the character sprites.
+	- create a .txt describing that sprites:
+		ColumnCount: number of columns of images
+		RowCount: number of rows of images
+
+		CycleName: name a cycle that will be further referenced, 
+			cycle must contain:
+			Images: tuples of coorinates (row, column) separated via space, that make up the cycle
+
+			cycle might contain:
+			Repeat: how many times should the cycle be repeated (0 for the app to deterimne)
+			CycleTime: cycle time in seconds
+			Fallback: once finished, go to that cycle
+	- the png and txt must have the same filename if they describe the same cycles
+
+to create a dialogue:
+	- create a dialogue .txt file
+	- define the participants and their sprite files
+	- define lines as follows: 
+		in each line in {} put values: name of participant, name of sprite, name of cycle, time cycle repeated (auto if the app should determine).
+		then optionally specify the style of text in []. [=] for auto.

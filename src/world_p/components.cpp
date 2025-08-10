@@ -4,6 +4,7 @@
 #include "input.h"
 #include "flecs/flecs.h"
 #include "ecs.h"
+#include "object_components.h"
 namespace rfct {
 	void registerComponents()
 	{
@@ -28,5 +29,7 @@ namespace rfct {
 		ecs::get().component<dynamicObjectTypeComponent>();
 		ecs::get().component<vineStateComponent>();
 		ecs::get().component<vineLenghtComponent>();
+		ecs::get().component<interactionDistanceComponent>();
+		ecs::get().component<dialoguePathComponent>();
 	}
 }

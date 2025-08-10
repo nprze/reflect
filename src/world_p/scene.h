@@ -7,6 +7,7 @@
 namespace rfct {
 	class world;
 	struct frameContext;
+	class dialogue;
 	class scene {
 	public:
 		scene(world* worldArg);
@@ -28,8 +29,10 @@ namespace rfct {
 		entity createDynamicMesh(dynamicBoxColliderComponent* bounds, const std::string& path);
 		entity createDynamicRenderingEntity(std::vector<Vertex>* vertices, glm::mat4* model);
 		void updateTransformData(frameContext* ctx, entity entityToUpdate); // entity must contain positionComponent, rotationComponent and scaleComponent
-		void createPlayerEntity();
+		void createPlayerEntity(const glm::vec2& spawnPoint);
 		void updateDirection(bool facingRight);
+
+		void startDialogue(const std::string& path, frameContext* ctx);
 
 		entity getPlayer() { return epicRotatingTriangle; }
 
@@ -47,5 +50,8 @@ namespace rfct {
 
 		entity epicRotatingTriangle;
 		playerController m_playerController;
+
+		dialogue* m_currentlyPlayingDialogue = nullptr;
+
 	};
 };

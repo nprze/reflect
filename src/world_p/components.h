@@ -14,7 +14,8 @@ namespace rfct {
     enum class dynamicObjectType : uint8_t {
         Player = 0,
         Vine,
-        Cigarette
+        Cigarette, 
+        NPC
     };
 
 
@@ -100,20 +101,6 @@ namespace rfct {
     struct dynamicObjCollisionCallbackComponent {
         dynamicCollisionHandler handler;
     };
-
-    struct vinePositionsComponent {
-        std::vector<glm::vec2> previousPosition;
-        std::vector<glm::vec2> positions;
-    };
-    struct vineStateComponent {
-        bool holdingToThis = false;
-    };
-    struct vineLenghtComponent {
-        float oneBoneLenght;
-    };
-
-
-    bool checkForCollisionAABBAABB(dynamicBoxColliderComponent* a, staticBoxColliderComponent* b);
 
     struct transform {
 		positionComponent pos;

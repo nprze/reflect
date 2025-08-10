@@ -13,7 +13,7 @@ constexpr uint32_t substepCount = 10;
 constexpr float dumping = 0.97f;
 
 namespace rfct
-{
+{ 
     static flecs::query<gravityComponent, velocityComponent, positionComponent, dynamicBoxColliderComponent, staticObjCollisionCallbackComponent> gravityVelocityPositionBoxQuery;
     static flecs::query<positionComponent, dynamicBoxColliderComponent, dynamicObjCollisionCallbackComponent> dynamicObjectsQuery;
     static flecs::query<staticBoxColliderComponent> staticBoxColliderQuery;

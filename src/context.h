@@ -3,6 +3,7 @@ namespace rfct {
 	enum gameState {
 		undefined,
 		gameplay,
+		stateDialogue,
 		menu
 	};
 	class scene;

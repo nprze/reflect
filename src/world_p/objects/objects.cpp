@@ -4,6 +4,7 @@
 #include "world_p/objects/cigarettes.h"
 #include "glm/gtc/matrix_transform.hpp"
 #include "world_p/transform.h"
+#include "world_p/object_components.h"
 
 void rfct::objectsHolder::init(sceneSerializedData* serializeData, scene* parentScene)
 {
@@ -58,8 +59,19 @@ void rfct::objectsHolder::init(sceneSerializedData* serializeData, scene* parent
 	for (uint8_t i = 6; i < 12; ++i) {
 		cigaretteVertices[i].color = blue;
 	}
+
+
+	for (NPCInfo npcInfo : serializeData->npcs) {
+		dynamicBoxColliderComponent boc = { npcInfo.min, npcInfo.max };
+ 		entity npcEntity = parentScene->createDynamicRect(&boc);
+		npcEntity.set<dynamicObjectTypeComponent>({ dynamicObjectType::NPC });
+		npcEntity.set<interactionDistanceComponent>({ npcInfo.ineratcionRadius * npcInfo.ineratcionRadius });
+		npcEntity.set<dialoguePathComponent>({ npcInfo.dialogueFile });
+		npcEntity.set<positionComponent>({ (boc.min + boc.max) * 0.5f });
+		npcs.push_back(npcEntity);
+	}
 }
-void rfct::objectsHolder::update(const frameContext* fc)
+void rfct::objectsHolder::update(frameContext* fc)
 {
 	if (fc->fixedUpdateTimes) {
 		if (nearestVineEdgeToPlayerIndex != -1) {
@@ -67,6 +79,9 @@ void rfct::objectsHolder::update(const frameContext* fc)
 				fc->scene->getPlayer().get_mut<positionComponent>()->position = simulateVinePlayerIsHolding(fc->scene->getPlayer(), vineClosestToPlayer, nearestVineEdgeToPlayerIndex, fc);
 			}
 
+		}
+		for (entity& npcEntity : npcs) {
+			updateNpc(fc, npcEntity, this);
 		}
 		for (vine& v : vines) {
 			v.update(fc);
@@ -76,11 +91,14 @@ void rfct::objectsHolder::update(const frameContext* fc)
 			updateCigarette(cigarette, fc);
 		}
 	}
+}
+
+void rfct::objectsHolder::draw(const frameContext* fc){
+
 	for (vine& v : vines) {
 		v.draw(fc);
 	}
 }
-
 void rfct::objectsHolder::onPlayerDash(const frameContext* fc, const entity entityPlayer, const bool facingRight)
 {
 

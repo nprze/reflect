@@ -14,6 +14,8 @@
 #include "ui.h"
 #include <stb_image/stb_image.h>
 #include "player/player_animations.h"
+#include "assets/dialogue_serialize_data.h"
+#include "dialogue/dialogue.h"
 
 const float maxVelocityX = 100;
 rfct::scene::scene(world* worldArg) : m_World(worldArg)
@@ -24,6 +26,9 @@ rfct::scene::scene(world* worldArg) : m_World(worldArg)
 rfct::scene::~scene()
 {
 	cleanupQueries();
+	if (m_currentlyPlayingDialogue) {
+		delete m_currentlyPlayingDialogue;
+	}
 }
 namespace rfct{
 	void drawGridLines(int n, int start_from = 0, const glm::vec3 colorPositive = { 0.6f,0.6f,0.6f }, const glm::vec3 colorNegative = { 0.4f,0.4f,0.4f }) {
@@ -74,7 +79,14 @@ void rfct::scene::onUpdate(frameContext* context)
 	playerAnimations::get().update(epicRotatingTriangle.get<velocityComponent>()->velocity, epicRotatingTriangle.get<positionComponent>()->position, *context);
 	cameraComponentOnUpdate(context->dt, epicRotatingTriangle);
 
-	//drawGridLines(20);
+	if (context->state == gameState::stateDialogue) {
+		if (m_currentlyPlayingDialogue->update(context)) {
+			delete m_currentlyPlayingDialogue;
+			context->state = gameState::gameplay;
+		}
+	}
+
+	m_dynamicObjects.draw(context);
 }
 
 void rfct::scene::updateUI(frameContext* context)
@@ -110,7 +122,7 @@ void rfct::scene::loadScene(const std::string& path)
 		createStaticMesh("building_blocks/" + r.file, size, r.min, color);
 	}
 	// the first dynamic object must be the player (the player is unique, uses frame animation; the frame animation uses the model matrix from dynamic objects ubo, with the 0 index)
-	createPlayerEntity();
+	createPlayerEntity(sc.spawnPoint);
 
 
 	// init dynamic objects
@@ -124,6 +136,7 @@ void rfct::scene::loadScene(const std::string& path)
 	m_RenderData.endTransferStatic();
 	buildStaticObjBVH();
 	buildDynamicObjBVH();
+
 }
 
 
@@ -241,7 +254,7 @@ void rfct::scene::updateTransformData(frameContext* ctx, entity e)
 	m_RenderData.updateMat(ctx, e.get<dynamicSSBOIndexComponent>()->indexInSSBO, &model);
 }
 
-void rfct::scene::createPlayerEntity()
+void rfct::scene::createPlayerEntity(const glm::vec2& spawnPoint)
 {
 	dynamicBoxColliderComponent bounds = { { -0.25f, -0.475f }, { 0.25, 0.5f } };
 
@@ -263,7 +276,7 @@ void rfct::scene::createPlayerEntity()
 		.set<dynamicSSBOIndexComponent>({ 0 })
 		.set<rotationComponent>({})
 		.set<scaleComponent>(trans.scale)
-		.set<positionComponent>({ { 7.f, 9.f } })
+		.set<positionComponent>({ spawnPoint })
 		.set<gravityComponent>({})
 		.set<velocityComponent>({ glm::vec2(0.f,0.f) })
 		.set<inputVelocityComponent>({ glm::vec2(0.f,0.f) })
@@ -280,4 +293,11 @@ void rfct::scene::updateDirection(bool facingRight)
 	scaleComponent* scale = epicRotatingTriangle.get_mut<scaleComponent>();
 	scale->scale.x = scale->scale.x* (facingRight? (scale->scale.x < 0 ? -1 : 1) :(scale->scale.x>0?-1:1));
 	epicRotatingTriangle.set<scaleComponent>(*scale);
+}
+
+void rfct::scene::startDialogue(const std::string& path, frameContext* ctx)
+{
+	ctx->state = gameState::stateDialogue;
+	m_currentlyPlayingDialogue = new dialogue(path);
+	m_currentlyPlayingDialogue->fullLoad();
 }

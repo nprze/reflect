@@ -8,7 +8,10 @@ namespace rfct {
 		inline glyphsRenderData(uint32_t size) :buffer(size, vk::BufferUsageFlagBits::eVertexBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU), bufferOffset(0), vertexCount(0) {
  			bufferMappedMemory = buffer.Map();
 		};
-		inline ~glyphsRenderData() { buffer.Unmap(); };
+		inline ~glyphsRenderData() 
+		{ 
+			buffer.Unmap(); 
+		};
 		inline void postFrame() { bufferOffset = 0; vertexCount = 0; };
 		VulkanBuffer buffer;
 		uint32_t bufferOffset;

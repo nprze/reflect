@@ -8,7 +8,7 @@ rfct::world rfct::world::currentWorld;
 
 void rfct::world::initWorld(const std::string& path)
 {
-	loadScene("scenes/scene04layout.txt");
+	loadScene("scenes/scene07layout.txt");
 }
 
 void rfct::world::loadScene(const std::string& path)

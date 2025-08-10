@@ -160,17 +160,33 @@ rfct::objectLocation rfct::sceneRenderData::addStaticObject(std::vector<Vertex>*
 	return objLoc;
 }
 
-rfct::objectLocation rfct::sceneRenderData::addDynamicObject(std::vector<Vertex>* vertices, glm::mat4* matrix, const frameContext fc)
+rfct::objectLocation rfct::sceneRenderData::addDynamicObject(std::vector<Vertex>* vertices, glm::mat4* matrix, bool shouldAddToAllBuffers, const frameContext& fc)
 {
 	objectLocation objLoc{};
-	uint32_t matLocation = addDynamicMat(&fc, matrix);
-	objLoc.indexInSSBO = matLocation;
+	if (shouldAddToAllBuffers) {
+		frameContext ctx = {};
+		objLoc.indexInSSBO = addDynamicMat(&ctx, matrix);
+		for (uint8_t i = 1; i < RFCT_FRAMES_IN_FLIGHT; ++i) {
+			ctx.frame = i;
+			updateMat(&ctx, objLoc.indexInSSBO, matrix);
+		}
+	}
+	else {
+		objLoc.indexInSSBO = addDynamicMat(&fc, matrix);
+	}
 	for (Vertex& ver : *vertices) {
-		ver.objectIndex = matLocation;
+		ver.objectIndex = objLoc.indexInSSBO;
 	}
 	objLoc.verticesCount = vertices->size();
 	m_verticesCountDynamicObj += objLoc.verticesCount;
-	for (size_t i = 0;i<RFCT_FRAMES_IN_FLIGHT;i++)
-		objLoc.vertexBufferOffset = m_VertexBufferDynamic[i]->copyData(*vertices);
-	return objLoc;
+
+	if (shouldAddToAllBuffers) {
+		for (uint8_t i = 0; i < RFCT_FRAMES_IN_FLIGHT; ++i) {
+			objLoc.vertexBufferOffset = m_VertexBufferDynamic[i]->copyData(*vertices);
+		}
+	}
+	else {
+		objLoc.vertexBufferOffset = m_VertexBufferDynamic[fc.frame]->copyData(*vertices);
+	}
+ 	return objLoc;
 }

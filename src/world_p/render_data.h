@@ -19,7 +19,7 @@ namespace rfct {
 		uint32_t addStaticMat(void* data);
 		uint32_t addDynamicMat(const frameContext* ctx, void* data);
 		objectLocation addStaticObject(std::vector<Vertex>* vertices, glm::mat4* matrix);
-		objectLocation addDynamicObject(std::vector<Vertex>* vertices, glm::mat4* matrix, const frameContext fc = {});
+		objectLocation addDynamicObject(std::vector<Vertex>* vertices, glm::mat4* matrix, bool shouldAddToAllBuffers = true, const frameContext& fc = {});
 
 		vk::UniqueDescriptorPool m_DescriptorPool;
 

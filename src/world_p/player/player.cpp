@@ -1,6 +1,7 @@
 ﻿#include "player.h"
 #include "input.h"
 #include "world_p/components.h"
+#include "world_p/object_components.h"
 #include "context.h"
 #include "renderer_p/debug/debug_draw.h"
 #include "world_p/scene.h"
@@ -105,7 +106,7 @@ void rfct::playerController::update(frameContext* ctx)
 
 		if (hold) {
 			notHoldingTime = 0.f;
-			if (ctx->scene->getObjectHolder().nearestVineEdgeToPlayerIndex == -1) {
+			if (ctx->scene->getObjectHolder().nearestVineEdgeToPlayerIndex == -1 && ctx->scene->getObjectHolder().vines.size()!=0) {
 				// proritize vines
 				glm::vec3 red = glm::vec3(1.f, 0.f, 0.f);
 				ctx->scene->getObjectHolder().vineClosestToPlayer = findTheNearestVineToPlayer(player);
@@ -124,7 +125,7 @@ void rfct::playerController::update(frameContext* ctx)
 		}
 		else {
 			notHoldingTime += fixedDeltaTime;
-			if (notHoldingTime > fixedDeltaTime * 4 && playerState->holding) {
+			if (notHoldingTime > fixedDeltaTime * 2 && playerState->holding) {
 				ctx->scene->getObjectHolder().vineClosestToPlayer.get_mut<vineStateComponent>()->holdingToThis = false;
 				ctx->scene->getObjectHolder().nearestVineEdgeToPlayerIndex = -1;
 

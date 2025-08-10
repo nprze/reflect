@@ -16,6 +16,9 @@ m_Renderer(RFCT_RENDERER_ARGUMENTS_VAR)
 
 
 	world::getWorld().initWorld("");
+
+	lastState = gameState::gameplay;
+
 #ifdef WINDOWS_BUILD
     update();
 	renderer::getRen().getWindow().show();
@@ -50,7 +53,7 @@ void rfct::reflectApplication::update() {
 		.dt = deltaTime.count(),
 		.frame = currentFrame,
 		.scene = &world::getWorld().getCurrentScene(),
-		.state = gameState::undefined
+		.state = lastState
 	};
 	static float accululator = 0.f;
 	accululator += context.dt;
@@ -64,6 +67,7 @@ void rfct::reflectApplication::update() {
 		updateGameplay(context);
 		renderer::getRen().render(context);
 	};
+	lastState = context.state;
 }
 
 void rfct::reflectApplication::updateGameplay(frameContext& ContextArg)

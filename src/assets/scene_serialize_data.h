@@ -13,9 +13,17 @@ namespace rfct {
         glm::vec2 end;
         int numEdges;
     };
+    struct NPCInfo {
+        glm::vec2 min;
+        glm::vec2 max;
+        float ineratcionRadius;
+        std::string dialogueFile;
+    };
 	struct sceneSerializedData {
         int width, height;
         std::vector<rectangle> rectangles;
         std::vector<vineInfo> vines;
+        std::vector<NPCInfo> npcs;
+        glm::vec2 spawnPoint;
 	};
 }

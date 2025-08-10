@@ -1,6 +1,7 @@
 #pragma once
 #include "scene_serialize_data.h"
 #include "renderer_p/rasterizer_pipeline/vertex.h"
+#include "dialogue_serialize_data.h"
 
 
 namespace rfct {
@@ -26,7 +27,8 @@ namespace rfct {
         void loadBackgroundMesh(const std::string& path, std::vector<Vertex>* vertxBufferOut, const glm::vec3& color, const float zMin, const float zMax);
         void loadCharacterMesh(const std::string& path, std::vector<Vertex>* meshOut);
         void loadScene(const std::string& path, sceneSerializedData* sceneSerializedDataOut);
-        void loadDialogue(const std::string& path, sceneSerializedData* sceneSerializedDataOut);
+        void loadDialogue(const std::string& path, dialogueSerializeData* dialogueSerializedDataOut);
+        void loadDialogueSpriteSheet(const std::string& path, dialogueSpritesheetSerializeData* dialogueSpritesheetSerializedDataOut);
 
         void uploadVertices(const std::vector<Vertex>& vertices, VulkanBuffer* buffer, vk::DeviceSize offset); // helper function
 

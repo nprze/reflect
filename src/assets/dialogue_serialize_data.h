@@ -1,0 +1,29 @@
+#pragma once
+#include <glm/glm.hpp>
+namespace rfct {
+	// dialogue version 1.0
+	struct dialogueParticipantSerializeData {
+		std::string name;
+		std::vector<std::string> spritesFilenames;
+	};
+	struct dialogueNodeSerializeData {
+		std::string participantDataInBrackets;
+		std::string dialogueText;
+	};
+	struct dialogueSerializeData {
+		std::vector<dialogueParticipantSerializeData> participants;
+		std::vector<dialogueNodeSerializeData> text;
+	};
+	struct spritesheetCycle {
+		std::vector<glm::vec2> indices;
+		int repeat;
+		float cycleTime;
+		std::string fallBack;
+	};
+	struct dialogueSpritesheetSerializeData {
+		int rowCount;
+		int columnCount;
+		std::map<std::string, spritesheetCycle> cycles;
+
+	};
+}

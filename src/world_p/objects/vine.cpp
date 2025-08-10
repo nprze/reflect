@@ -4,6 +4,7 @@
 #include "world_p/transform.h"
 #include "renderer_p/debug/debug_draw.h"
 #include "world_p/components.h"
+#include "world_p/object_components.h"
 #include <random>
 
 #define RFCT_VINE_CONSTRAINS_ITERATIONS 10

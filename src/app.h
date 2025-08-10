@@ -15,5 +15,6 @@ namespace rfct {
     private:
 		size_t currentFrame = -1; // the frame in flight which resources to use this frame
         renderer m_Renderer;
+		gameState lastState;
 	};
 }

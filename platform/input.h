@@ -54,6 +54,7 @@ namespace rfct {
 		void init();
         void drawButtons();
 
+        // gameplay inputs
 		bool openMenu;
 
 		float walk;
@@ -69,8 +70,10 @@ namespace rfct {
 
 		glm::vec2 dashHelper;
 
-		gameState m_previousState;
 		float m_timeElapsedSinceStateChanged;
+
+        // dialogue input 
+        bool anyClicked;
 
 		void pollAndParseEvents(frameContext* context);
 		button* addClickableButton(glm::vec2 pos, glm::vec2 size);
