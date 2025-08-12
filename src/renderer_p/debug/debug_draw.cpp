@@ -244,7 +244,7 @@ rfct::debugLine* rfct::debugDraw::requestNLines(uint32_t count)
     return (debugLine*)ret;
 }
 
-void rfct::debugDraw::text(const std::string& text, glm::vec2 startPosition, float scale)
+float rfct::debugDraw::text(const std::string& text, glm::vec2 startPosition, float scale)
 {
-    renderer::getRen().getUIPipeline().debugText(text, startPosition, scale);
+    return renderer::getRen().getUIPipeline().debugText(text, startPosition, scale);
 }

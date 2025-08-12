@@ -222,9 +222,9 @@ void rfct::UIPipeline::draw(frameData& fd, vk::Framebuffer framebuffer, vk::Rend
     m_debugDrawglyphsRenderData.postFrame();
 }
 
-void rfct::UIPipeline::debugText(const std::string& text, glm::vec2 startPosition, float scale)
+float rfct::UIPipeline::debugText(const std::string& text, glm::vec2 startPosition, float scale)
 {
-    addTextVertices(&m_debugDrawglyphsRenderData, text, startPosition, scale);
+    return addTextVertices(&m_debugDrawglyphsRenderData, text, startPosition, scale);
 }
 
 int rfct::UIPipeline::getTextureIndex(bindableImage* image, imageUsage usage)
@@ -285,7 +285,7 @@ int rfct::UIPipeline::getTextureIndex(bindableImage* image, imageUsage usage)
     return indexInShader;
 }
 
-void rfct::UIPipeline::addImage(const glm::vec2& min, const glm::vec2& max, bindableImage* image)
+void rfct::UIPipeline::addImage(const glm::vec2& min, const glm::vec2& max, bindableImage* image, const glm::vec2& texCoordmin, const glm::vec2& texCoordmax)
 {
 	GlyphVertex vertices[6];
 	vertices[0].pos = { min.x, min.y };
@@ -295,12 +295,12 @@ void rfct::UIPipeline::addImage(const glm::vec2& min, const glm::vec2& max, bind
 	vertices[4].pos = { min.x, min.y };
 	vertices[5].pos = { max.x, max.y };
 
-	vertices[0].texCoord = { 0.0f, 0.0f };
-	vertices[1].texCoord = { 1.0f, 0.0f };
-	vertices[2].texCoord = { 1.0f, 1.0f };
-	vertices[3].texCoord = { 0.0f, 1.0f };
-	vertices[4].texCoord = { 0.0f, 0.0f };
-	vertices[5].texCoord = { 1.0f, 1.0f };
+	vertices[0].texCoord = texCoordmin;
+	vertices[1].texCoord = { texCoordmax.x, texCoordmin.y };
+	vertices[2].texCoord = texCoordmax;
+	vertices[3].texCoord = { texCoordmin.x, texCoordmax.y };
+	vertices[4].texCoord = texCoordmin;
+	vertices[5].texCoord = texCoordmax;
 
 	int texIndex = getTextureIndex(image, imageUsage::ui);
 	
@@ -342,7 +342,7 @@ void rfct::UIPipeline::removeImage(bindableImage* image)
     }
 }
 
-void rfct::UIPipeline::addTextVertices(glyphsRenderData* rd, const std::string& text, glm::vec2 position, float scale, font* f)
+float rfct::UIPipeline::addTextVertices(glyphsRenderData* rd, const std::string& text, glm::vec2 position, float scale, font* f)
 {
     RFCT_PROFILE_FUNCTION();
     if (!f) f = &m_defaultFont;
@@ -382,13 +382,14 @@ void rfct::UIPipeline::addTextVertices(glyphsRenderData* rd, const std::string& 
         cursorX += g->xadvance * scale;
     }
 
-    char* mapped = (char*)rd->buffer.Map();
+    char* mapped = (char*)rd->bufferMappedMemory;
     mapped += rd->bufferOffset;
     memcpy(mapped, vertices.data(), vertices.size() * sizeof(vertices[0]));
 
     rd->bufferOffset += vertices.size() * sizeof(vertices[0]);
-    rd->buffer.Unmap();
     rd->vertexCount += vertices.size();
+
+    return cursorX;
 }
 
 vk::DescriptorSetLayout rfct::UIPipeline::getDescriptorSetLayout()

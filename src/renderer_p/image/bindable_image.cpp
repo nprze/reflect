@@ -14,4 +14,10 @@ rfct::bindableImage::bindableImage(const std::string& path) :m_Image(path), name
     samplerCreateInfo.mipmapMode = vk::SamplerMipmapMode::eLinear;
 
    m_sampler = renderer::getRen().getDevice().createSamplerUnique(samplerCreateInfo);
+   RFCT_INFO("created image {}", name);
+}
+
+rfct::bindableImage::~bindableImage()
+{
+   RFCT_INFO("deleting image {}", name);
 }

@@ -16,10 +16,12 @@ void rfct::updateNpc(frameContext* ctx, entity npcEntity, objectsHolder* owner) 
 			float dist = distanceSquared(&(ctx->scene->getPlayer()).get<positionComponent>()->position, &npcEntity.get<positionComponent>()->position);
 			float wantedDist = npcEntity.get<interactionDistanceComponent>()->inetrationDistanceSquared;
 			if (dist <= wantedDist) {
-				if (input::getInput().hold) {
+				if (input::getInput().hold && ctx->scene->getPlayer().get<playerStateComponent>()->grounded) {
 					ctx->scene->startDialogue(npcEntity.get<dialoguePathComponent>()->dialoguePath, ctx);
 				}
-				debugDraw::drawText("talk to me", { 100.f, 100.f }, .3f);
+				else {
+					debugDraw::drawText("talk to me", { 100.f, 100.f }, .3f);
+				}
 			}
 		}
 	}

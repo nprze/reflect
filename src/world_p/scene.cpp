@@ -82,6 +82,7 @@ void rfct::scene::onUpdate(frameContext* context)
 	if (context->state == gameState::stateDialogue) {
 		if (m_currentlyPlayingDialogue->update(context)) {
 			delete m_currentlyPlayingDialogue;
+			m_currentlyPlayingDialogue = nullptr;
 			context->state = gameState::gameplay;
 		}
 	}

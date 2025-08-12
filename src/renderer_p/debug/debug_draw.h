@@ -56,7 +56,7 @@ namespace rfct {
 	public:
 		static debugTriangle* requestTriangles(uint32_t count) { return instance->requestNTriangles(count); };
 		static debugLine* requestLines(uint32_t count) { return instance->requestNLines(count); };
-		static void drawText(const std::string& text, glm::vec2 startPosition, float scale) { instance->text(text, startPosition, scale); }
+		static float drawText(const std::string& text, glm::vec2 startPosition, float scale) { return instance->text(text, startPosition, scale); }
 		static void flush(frameContext* ctx, frameData& fd, vk::Framebuffer framebuffer, vk::RenderPass renderPass) { instance->draw(ctx, fd, framebuffer, renderPass); };
 	private:
 		debugDraw(vk::RenderPass renderPass);
@@ -64,7 +64,7 @@ namespace rfct {
 		void draw(frameContext* ctx, frameData& fd, vk::Framebuffer framebuffer, vk::RenderPass renderPass);
 		debugTriangle* requestNTriangles(uint32_t count);
 		debugLine* requestNLines(uint32_t count);
-		void text(const std::string& text, glm::vec2 startPosition, float scale);
+		float text(const std::string& text, glm::vec2 startPosition, float scale);
 	private:
 		debugDrawVertexBuffer m_triangleBuffer;
 		debugDrawVertexBuffer m_lineBuffer;
