@@ -22,6 +22,7 @@ namespace rfct {
 		ecs::get().component<dynamicBoxColliderComponent>();
 		ecs::get().component<gravityComponent>();
 		ecs::get().component<velocityComponent>();
+		ecs::get().component<angularVelocityComponent>();
 		ecs::get().component<inputVelocityComponent>();
 		ecs::get().component<playerStateComponent>();
 		ecs::get().component<staticObjCollisionCallbackComponent>();

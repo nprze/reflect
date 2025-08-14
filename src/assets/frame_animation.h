@@ -7,6 +7,8 @@ namespace rfct {
 		uint32_t frameCount;
 		float cycleTime;
 		float timePerFrame;
+		bool shouldBeRepeated;
+		bool endedPlaying = false;
 		std::vector<uint32_t> trianglesPerFrame;
 
 		VulkanBuffer* buffer;

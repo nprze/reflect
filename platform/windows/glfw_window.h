@@ -11,10 +11,10 @@ namespace rfct {
     class GlfwWindow : public windowAbstact {
     public:
         GlfwWindow() = delete;
-        GlfwWindow(int width, int height, const char* title);
+        GlfwWindow(const char* title, bool maximized = true, int width = 0, int height = 0);
         ~GlfwWindow() { destroy(); }
 		inline float getAspectRatio() { return (float)((float)(extent.width) / (float)(extent.height)); }
-        void create(int width, int height, const char* title) override;
+        void create(const char* title, bool maximized = true, int width = 0, int height = 0) override;
         void destroy() override;
         void show() override;
         void hide() override;

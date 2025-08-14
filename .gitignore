@@ -61,6 +61,10 @@ ipch/
 # Reflect specific
 assets/building_blocks
 assets/scenes
+assets/dialogues
+assets/player
+assets/UI
+assets/background
 build/
 !deps/
 src/utils/reflect_directories.h

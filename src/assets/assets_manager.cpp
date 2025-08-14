@@ -696,6 +696,7 @@ namespace rfct {
         uint32_t allTrianglesCount = 0;
         std::string filename;
         std::vector<uint32_t> trianglesCount;
+        bool repeatAnimation = true;
         char buffer[256];
         while (std::getline(file, line)) {
             if (line.find("KeyframeCount:") != std::string::npos) {
@@ -711,6 +712,12 @@ namespace rfct {
             else if (line.find("File:") != std::string::npos) {
                 RFCT_ASSERT(sscanf(line.c_str(), "  File: %s", buffer) == 1);
                 filename = buffer;
+            }
+            else if (line.find("Repeat:") != std::string::npos) {
+                RFCT_ASSERT(sscanf(line.c_str(), "  Repeat: %s", buffer) == 1);
+                if (buffer[0] == '0') {
+                    repeatAnimation = false;
+                }
             }
             else if (line.find("TriangleCount:") != std::string::npos) {
                 uint32_t temporaryHolder;
@@ -756,6 +763,7 @@ namespace rfct {
         anim.bufferOffsetInBytes = loc.offsetInBytes;
         anim.cycleTime = cycleTime;
         anim.frameCount = keyFrameCount;
+        anim.shouldBeRepeated = repeatAnimation;
         anim.trianglesPerFrame = std::move(trianglesCount);
         anim.timePerFrame = cycleTime / keyFrameCount;
         return anim;

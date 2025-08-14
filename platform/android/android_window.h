@@ -14,7 +14,7 @@ namespace rfct {
         inline float getAspectRatio() { return (float)((float)(extent.width) / (float)(extent.height)); }
 
         void create(ANativeWindow* nativeWindow);
-        void create(int width, int height, const char* title) override {};
+        void create(const char* title, bool maximized = true, int width = 0, int height = 0) override {};
         void destroyWind();
         void destroy() override {};
         void show() override {}

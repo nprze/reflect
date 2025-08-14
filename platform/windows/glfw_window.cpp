@@ -17,19 +17,29 @@ void framebufferResizeCallback(GLFWwindow* window, int width, int height) {
     }
 }
 
-rfct::GlfwWindow::GlfwWindow(int width, int height, const char* title) {
+rfct::GlfwWindow::GlfwWindow(const char* title, bool maximized, int width, int height) {
     if (!glfwInit()) {
         RFCT_CRITICAL("Failed to initialize GLFW");
     }
-    create(width, height, title);
+    create(title, maximized, width, height);
 }
 
-void rfct::GlfwWindow::create(int width, int height, const char* title) {
+void rfct::GlfwWindow::create(const char* title, bool maximized, int width, int height) {
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
-    window = glfwCreateWindow(width, height, title, nullptr, nullptr);
-    if (!window) {
-        RFCT_CRITICAL("Failed to create GLFW window");
+    if (maximized) {
+
+        GLFWmonitor* primaryMonitor = glfwGetPrimaryMonitor();
+        const GLFWvidmode* mode = glfwGetVideoMode(primaryMonitor);
+        window = glfwCreateWindow(mode->width, mode->height, title, nullptr, nullptr);
+        width = mode->width;
+        height = mode->height;
+        glfwMaximizeWindow(window);
+        RFCT_ASSERT(window);
+    }
+    else {
+        window = glfwCreateWindow(width, height, title, nullptr, nullptr);
+        RFCT_ASSERT(window);
     }
     extent = vk::Extent2D(width, height);
     glfwSetFramebufferSizeCallback(window, framebufferResizeCallback);

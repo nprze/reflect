@@ -45,13 +45,16 @@ namespace rfct {
         glm::vec3 position = glm::vec3(0.f);
     };
     struct rotationComponent {
-        glm::vec2 rotation = glm::vec2(0.f);
+        glm::vec3 rotation = glm::vec3(0.f);
     };
     struct scaleComponent {
         glm::vec2 scale = glm::vec2(1.f);
     };
     struct matrixComponent {
         glm::mat4 model = glm::mat4(1.f);
+    };
+    struct angularVelocityComponent {
+        float zAngularVelocity;
     };
 
     struct staticSSBOIndexComponent {

@@ -76,7 +76,7 @@ void rfct::scene::onUpdate(frameContext* context)
 	updatePhysics(context);
 	updateTransformData(context, epicRotatingTriangle);
 	updateUI(context);
-	playerAnimations::get().update(epicRotatingTriangle.get<velocityComponent>()->velocity, epicRotatingTriangle.get<positionComponent>()->position, *context);
+	playerAnimations::get().update(epicRotatingTriangle.get<velocityComponent>()->velocity, epicRotatingTriangle.get<positionComponent>()->position, *context, epicRotatingTriangle);
 	cameraComponentOnUpdate(context->dt, epicRotatingTriangle);
 
 	if (context->state == gameState::stateDialogue) {
@@ -106,7 +106,7 @@ void rfct::scene::loadScene(const std::string& path)
 	camera = ecs::get().entity()
 		.child_of(sceneEntity)
 		.set<position3DComponent>({ { 0.f,  0.f, 20.f} })
-		.set<rotationComponent>({ {0.f, 0.f} })
+		.set<rotationComponent>({ {0.f, 0.f, 0.f} })
 		.set<cameraComponent>({ 45.0f, renderer::getRen().getAspectRatio(), 0.1f, 100.0f });
 	setCamera(camera);
 	m_RenderData.startTransferStatic();

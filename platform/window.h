@@ -4,7 +4,7 @@ namespace rfct {
     class windowAbstact {
     public:
 
-        virtual void create(int width, int height, const char* title) = 0;
+        virtual void create(const char* title, bool maximized = true, int width = 0, int height = 0) = 0;
         virtual void destroy() = 0;
         virtual void show() = 0;
         virtual void hide() = 0;
