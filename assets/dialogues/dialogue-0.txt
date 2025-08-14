@@ -1,9 +1,0 @@
-Version 1.0
-Participants:
-	test:
-		normal
-
-DialogueText:
-{test normal talk 2}[=]Hello, [f]this[=] is test dialogue.
-{test normal talk auto}[=]Hello, this is second test dialogue.
-{test normal talk 1}[=]Hello, this is third test dialogue.

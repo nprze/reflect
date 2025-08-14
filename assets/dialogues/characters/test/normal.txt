@@ -1,9 +1,0 @@
-ColumnCount: 2
-RowCount: 1
-CycleName: talk
-	Images: (0,0) (0,1)
-	Repeat: 0
-	CycleTime: 1
-	Fallback: talk-idle
-CycleName: talk-idle
-	Images: (0,0)
