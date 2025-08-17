@@ -14,7 +14,7 @@ void rfct::objectsHolder::init(sceneSerializedData* serializeData, scene* parent
 	}
 	nearestVineEdgeToPlayerIndex = -1;
 
-	initCigaretteVertices();
+	initCigaretteVars(parentScene);
 
 	for (NPCInfo npcInfo : serializeData->npcs) {
 		dynamicBoxColliderComponent boc = { npcInfo.min, npcInfo.max };
@@ -41,11 +41,7 @@ void rfct::objectsHolder::update(frameContext* fc)
 		for (vine& v : vines) {
 			v.update(fc);
 		}
-		for (entity& cigarette : cigarettes) {
-			if (cigarette == entity()) return;
-			updateCigarette(cigarette, fc);
-			constructCigaretteBoundingBox(cigarette);
-		}
+		updateCigarettes(fc);
 	}
 }
 
@@ -55,7 +51,7 @@ void rfct::objectsHolder::draw(const frameContext* fc){
 		v.draw(fc);
 	}
 }
-void rfct::objectsHolder::onPlayerDash(const frameContext* fc, const entity entityPlayer, const bool facingRight)
+void rfct::objectsHolder::onPlayerDashObjects(const frameContext* fc, const entity entityPlayer, const bool facingRight)
 {
 	entity newCigarette = constructCigarette(fc, entityPlayer, facingRight);
 	if (cigarettes[lastCigaretteIndex] != entity())

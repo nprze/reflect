@@ -24,7 +24,7 @@ namespace rfct {
 		float dash45upInput;
 		float dash45downInput;
 		bool facingRight;
-		bool anyDash; // for simplicity
+		bool anyDash = false; // for simplicity
 
 		bool hold;
 		

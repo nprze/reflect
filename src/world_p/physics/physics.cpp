@@ -357,7 +357,7 @@ entity rfct::findTheNearestVineToPlayer(entity player)
     float nearestDistSq = std::numeric_limits<float>::max();
 
     std::stack<int> stack;
-    stack.push(static_cast<int>(bvh.size()) - 1); // Root
+    stack.push(static_cast<int>(bvh.size()) - 1);
 
     while (!stack.empty()) {
         int nodeIndex = stack.top();
@@ -365,7 +365,7 @@ entity rfct::findTheNearestVineToPlayer(entity player)
         const BVHnode& node = bvh[nodeIndex];
 
         float distSq = SquaredDistanceToAABB(point, node.min, node.max);
-        if (distSq >= nearestDistSq) continue; // This node can’t improve
+        if (distSq >= nearestDistSq) continue;
 
         if (node.left == -1 && node.right == -1) {
             if (node.entity.get<dynamicObjectTypeComponent>()->type == dynamicObjectType::Vine) {

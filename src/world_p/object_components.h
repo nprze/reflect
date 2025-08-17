@@ -25,4 +25,17 @@ namespace rfct {
     struct dialoguePathComponent {
         std::string dialoguePath;
     };
+    struct cigaretteUpdateComponent {
+        bool shouldBeUpdated = false;
+    };
+    struct smokeFinishedComponent {
+        bool hasSmokeFinished = false;
+    };
+    struct smokeParticleComponent {
+        glm::vec2 direction;
+    };
+    struct smokeDisperseComponent {
+        float fullLenght;
+        float currentProgress;
+    };
 }

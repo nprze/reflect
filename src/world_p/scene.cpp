@@ -72,6 +72,7 @@ void rfct::scene::onUpdate(frameContext* context)
 {
 	m_playerController.update(context);
 	m_dynamicObjects.update(context);
+	m_decorations.update(context);
 	buildDynamicObjBVH();
 	updatePhysics(context);
 	updateTransformData(context, epicRotatingTriangle);
@@ -128,6 +129,9 @@ void rfct::scene::loadScene(const std::string& path)
 
 	// init dynamic objects
 	m_dynamicObjects.init(&sc, this);
+	m_decorations.init(&sc, this);
+
+
 	if (sc.vines.size() != 0) hasVines = true;
 
 	// init player hair anim

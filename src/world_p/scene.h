@@ -3,6 +3,7 @@
 #include "renderer_p/image/bindable_image.h"
 #include "player/player.h"
 #include "objects/objects.h"
+#include "decors/decorations.h"
 
 namespace rfct {
 	class world;
@@ -37,6 +38,7 @@ namespace rfct {
 		entity getPlayer() { return epicRotatingTriangle; }
 
 		objectsHolder& getObjectHolder() { return m_dynamicObjects; }
+		decorationHolder& getDecorationHolder() { return m_decorations; }
 		world* getWorld() { return m_World; }
 
 		entity camera;
@@ -47,6 +49,7 @@ namespace rfct {
 		world* m_World;
 
 		objectsHolder m_dynamicObjects;
+		decorationHolder m_decorations;
 
 		entity epicRotatingTriangle;
 		playerController m_playerController;

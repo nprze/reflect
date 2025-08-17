@@ -3,32 +3,35 @@
 #include "context.h"
 #include "world_p/scene.h"
 #include "world_p/transform.h"
+#include "world_p/ecs.h"
 #include "renderer_p/rasterizer_pipeline/vertex.h"
+#include "world_p/object_components.h"
 
-namespace {
-    constexpr glm::vec2 gravity{ 0.f, -5.f };
-    constexpr float bounceDamping = 0.3f;
-    constexpr float linearDamping = 0.9f;
-    constexpr float angularDamping = 0.98f;
-    constexpr float torqueScale = 0.05f; // tweak for realism
+namespace rfct {
+    constexpr float angularDamping = 0.94f;
+
+    constexpr float betweenVer = 0.03f;
+    constexpr float betweenHor = 0.08f;
+    constexpr float restVer = .05f;
+    constexpr float restHor = .10f;
+
+    static flecs::query<cigaretteUpdateComponent, positionComponent, velocityComponent, angularVelocityComponent, rotationComponent> cigaretteComponentsQuery;
 }
 
 std::vector<rfct::Vertex> cigaretteVertices;
-void rfct::initCigaretteVertices()
+void rfct::initCigaretteVars(scene* scene)
 {
+    // vertices
     cigaretteVertices.resize(12);
 
 
-    constexpr float between = 0.10f;
-    constexpr float rest = .15f;
-
-    glm::vec3 blue = { 0.f,0.f, 1.f };
+    glm::vec3 white = { 0.6f, 0.6f, 0.6f };
     glm::vec3 black = { 0.f,0.f, 0.f };
     // background triangles
-    glm::vec3 bg0 = glm::vec3(-rest, rest, 0);
-    glm::vec3 bg1 = glm::vec3(rest, rest, 0);
-    glm::vec3 bg2 = glm::vec3(-rest, -rest, 0);
-    glm::vec3 bg3 = glm::vec3(rest, -rest, 0);
+    glm::vec3 bg0 = glm::vec3(-restHor, restVer, 0);
+    glm::vec3 bg1 = glm::vec3(restHor, restVer, 0);
+    glm::vec3 bg2 = glm::vec3(-restHor, -restVer, 0);
+    glm::vec3 bg3 = glm::vec3(restHor, -restVer, 0);
 
 
     cigaretteVertices[0].pos = bg0;
@@ -45,10 +48,10 @@ void rfct::initCigaretteVertices()
 
 
     // color triangles
-    glm::vec3 v0 = glm::vec3(-between, between, 0);
-    glm::vec3 v1 = glm::vec3(between, between, 0);
-    glm::vec3 v2 = glm::vec3(-between, -between, 0);
-    glm::vec3 v3 = glm::vec3(between, -between, 0);
+    glm::vec3 v0 = glm::vec3(-betweenHor, betweenVer, 0);
+    glm::vec3 v1 = glm::vec3(betweenHor, betweenVer, 0);
+    glm::vec3 v2 = glm::vec3(-betweenHor, -betweenVer, 0);
+    glm::vec3 v3 = glm::vec3(betweenHor, -betweenVer, 0);
 
 
     cigaretteVertices[6].pos = v2;
@@ -61,8 +64,16 @@ void rfct::initCigaretteVertices()
 
 
     for (uint8_t i = 6; i < 12; ++i) {
-        cigaretteVertices[i].color = blue;
+        cigaretteVertices[i].color = white;
     }
+
+
+    // query
+
+    cigaretteComponentsQuery =
+        ecs::get().query_builder<cigaretteUpdateComponent, positionComponent, velocityComponent, angularVelocityComponent, rotationComponent>()
+        .with(flecs::ChildOf, scene->sceneEntity)
+        .build();
 
 }
 
@@ -79,53 +90,61 @@ void rfct::onCollision_Cigarette_StaticObj(entity cigarette, entity collidedWith
     pos->position += resolution;
 }
 
-void rfct::updateCigarette(entity cigaretteEntity, const frameContext* fc) {
-    auto* pos = cigaretteEntity.get_mut<positionComponent>();
-    auto* velocity = cigaretteEntity.get_mut<velocityComponent>();
-    auto* angVel = cigaretteEntity.get_mut<angularVelocityComponent>();
-    auto* rotation = cigaretteEntity.get_mut<rotationComponent>(); // assuming degrees or radians
+void rfct::updateCigarettes(const frameContext* ctx) { // cigarette system
+    sceneRenderData& rd = ctx->scene->getRenderData();
+    cigaretteComponentsQuery.each([&](flecs::entity cigaretteEntity, cigaretteUpdateComponent& update, positionComponent& pos, velocityComponent& velocity, angularVelocityComponent& angVel, rotationComponent& rotation) {
+        if (update.shouldBeUpdated) {
+            for (uint8_t i = 0; i < ctx->fixedUpdateTimes; ++i) {
 
-    for (uint8_t i = 0; i < fc->fixedUpdateTimes; ++i) {
-        // Apply gravity
-        velocity->velocity += gravity * fixedDeltaTime;
+                // position
+                pos.position += velocity.velocity * fixedDeltaTime;
 
-        // Apply linear damping
-        velocity->velocity *= linearDamping;
+                // angular motion
+                angVel.zAngularVelocity *= angularDamping;
+                rotation.rotation.z += angVel.zAngularVelocity * fixedDeltaTime;
+                if (std::abs(velocity.velocity.x) < 0.1f && std::abs(velocity.velocity.y) < 0.2f) {
+                    update.shouldBeUpdated = false;
+                }
+            }
 
-        // Update position
-        pos->position += velocity->velocity * fixedDeltaTime;
+            // render matrix
+            glm::mat4 mat = getModelMatrixFromEntity(cigaretteEntity);
+            rd.updateMat(
+                ctx,
+                cigaretteEntity.get<dynamicSSBOIndexComponent>()->indexInSSBO,
+                &mat
+            );
+        }
+        });
+}
 
-        // Update angular motion
-        angVel->zAngularVelocity *= angularDamping;
-        rotation->rotation.z += angVel->zAngularVelocity * fixedDeltaTime; // radians
-    }
+float randF() {
+    static uint32_t seed = rand();
+    seed = 1664525u * seed + 1013904223u;
+    return (seed >> 8) * (1.0f / 16777216.0f);
 
-    // Update render matrix
-    glm::mat4 mat = getModelMatrixFromEntity(cigaretteEntity);
-    fc->scene->getRenderData().updateMat(
-        fc,
-        cigaretteEntity.get<dynamicSSBOIndexComponent>()->indexInSSBO,
-        &mat
-    );
 }
 
 entity rfct::constructCigarette(const frameContext* fc, const entity entityPlayer, const bool facingRight)
 {
+    constexpr float min_val = std::min(betweenVer, betweenHor);
+
     glm::mat4 transMat = glm::translate(glm::mat4(1.f), glm::vec3(entityPlayer.get<positionComponent>()->position, 0.f));
     entity newCigarette = fc->scene->createDynamicRenderingEntity(&cigaretteVertices, &transMat);
+    newCigarette.set<cigaretteUpdateComponent>({ true });
     newCigarette.set<positionComponent>({ entityPlayer.get<positionComponent>()->position });
-    newCigarette.set<staticObjCollisionCallbackComponent>({ onCollision_Cigarette_StaticObj });
-    newCigarette.set<rotationComponent>({});
-    newCigarette.set<angularVelocityComponent>({ 3.f });
-    newCigarette.set<scaleComponent>({});
-    newCigarette.set<gravityComponent>({ 0.97f, false, 5.f });
     newCigarette.set<velocityComponent>({ .5f * glm::vec2{facingRight ? -1.f : 1.f, 1.f} });
+    newCigarette.set<angularVelocityComponent>({ randF() * 20.f + 20.f });
+    newCigarette.set<staticObjCollisionCallbackComponent>({ onCollision_Cigarette_StaticObj });
+    newCigarette.set<gravityComponent>({ 0.90f, true, 4.f });
     newCigarette.set<dynamicObjectTypeComponent>({ dynamicObjectType::Cigarette });
-    newCigarette.set<dynamicBoxColliderComponent>({});
-    constructCigaretteBoundingBox(newCigarette);
+    newCigarette.set<dynamicBoxColliderComponent>({ { -min_val, -min_val}, { min_val, min_val} });
+    newCigarette.set<rotationComponent>({});
+    newCigarette.set<scaleComponent>({});
     return newCigarette;
 }
 
+/*
 void rfct::constructCigaretteBoundingBox(entity cigarette)
 {
     dynamicBoxColliderComponent* boc = cigarette.get_mut<dynamicBoxColliderComponent>();
@@ -150,5 +169,5 @@ void rfct::constructCigaretteBoundingBox(entity cigarette)
         boc->max.y = std::max(rotatedPos.y, boc->max.y);
     }
 
-
 }
+*/

@@ -197,7 +197,8 @@ void rfct::playerController::update(frameContext* ctx)
 			dashVelocity.x += (dash45upInput + dash45downInput) * ((float)1 / std::sqrt(2)) * dashSpeed;
 			dashVelocity.y += (dash45upInput - dash45downInput) * ((float)1 / std::sqrt(2)) * dashSpeed;
 
-			ctx->scene->getObjectHolder().onPlayerDash(ctx, player, facingRight);
+			ctx->scene->getObjectHolder().onPlayerDashObjects(ctx, player, facingRight);
+			ctx->scene->getDecorationHolder().onPlayerDashDecorations(ctx, player, facingRight);
 		}
 		if (timeSinceLastDash != 0 && timeSinceLastDash<0.2f) {
 			player.get_mut<gravityComponent>()->gravityEnabled = false;

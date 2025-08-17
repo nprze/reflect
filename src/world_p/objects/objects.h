@@ -12,7 +12,7 @@ namespace rfct{
 		void update(frameContext* fc);
 		void draw(const frameContext* fc);
 		
-		void onPlayerDash(const frameContext* fc, const entity entityPlayer, const bool facingRight); // to be called before physics update
+		void onPlayerDashObjects(const frameContext* fc, const entity entityPlayer, const bool facingRight); // to be called before physics update
 		std::vector<vine> vines;
 		entity vineClosestToPlayer;
 		int nearestVineEdgeToPlayerIndex;
