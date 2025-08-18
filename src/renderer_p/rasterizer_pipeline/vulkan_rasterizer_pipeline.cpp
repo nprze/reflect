@@ -182,7 +182,7 @@ void rfct::vulkanRasterizerPipeline::recordCommandBuffer(frameContext* ctx, fram
     
     if (renderdata.m_verticesCountDynamicObj) {
 
-        vk::Buffer vertexBuffers[] = { renderdata.m_VertexBufferDynamic[ctx->frame]->m_Buffer.buffer};
+        vk::Buffer vertexBuffers[] = { renderdata.m_VertexBufferDynamic[ctx->frame]->buffer};
         
         commandBuffer.bindVertexBuffers(0, 1, vertexBuffers, offsets);
 

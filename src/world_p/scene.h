@@ -25,6 +25,7 @@ namespace rfct {
 		entity createStaticBackgroundMesh(const std::string& path, const glm::vec3& color, const float zMin = -1, const float zMax = -20); // loads mesh from .txt file (path should be pointing to a .txt). pos is left top coord.
 		entity createStaticRect(staticBoxColliderComponent* bounds, glm::vec3 color = glm::vec3(1.f, 1.f, 1.f)); // creates a simple rect with color
 		entity createStaticRenderingEntity(std::vector<Vertex>* vertices, glm::mat4* model);
+		void deleteDynamicEntity(entity e);
 		
 		entity createDynamicRect(dynamicBoxColliderComponent* bounds, glm::vec3 color = glm::vec3(1.f, 1.f, 1.f));
 		entity createDynamicMesh(dynamicBoxColliderComponent* bounds, const std::string& path);

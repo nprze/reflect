@@ -31,7 +31,7 @@ void rfct::sceneRenderData::destroyDescriptorSetLayout()
 rfct::sceneRenderData::sceneRenderData() : m_VertexBufferStatic(RFCT_DEBUG_DRAW_VERTEX_BUFFER_MAX_SIZE * 100), m_StaticModelMatsBuffer(sizeof(glm::mat4)* RFCT_MAX_STATIC_OBJ_ON_SCENE, vk::BufferUsageFlagBits::eStorageBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU), m_mappedDataStatic(nullptr), m_matsCounterStatic(0), m_verticesCountStaticObj(0), m_verticesCountDynamicObj(0), m_matsCounterDynamic(0)
 {
  	for (uint32_t i = 0; i < RFCT_FRAMES_IN_FLIGHT; ++i) {
-		m_VertexBufferDynamic[i] = std::make_unique<vulkanVertexBuffer>(RFCT_DEBUG_DRAW_VERTEX_BUFFER_MAX_SIZE * 100);
+		m_VertexBufferDynamic[i] = std::make_unique<VulkanBuffer>(RFCT_DEBUG_DRAW_VERTEX_BUFFER_MAX_SIZE * 100, vk::BufferUsageFlagBits::eVertexBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU);
 		m_DynamicModelMatsBuffers[i] = std::move(VulkanBuffer(sizeof(glm::mat4) * 20, vk::BufferUsageFlagBits::eStorageBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU));
 		m_mappedMatsDataDynamic[i] = nullptr;
 	}
@@ -106,7 +106,7 @@ rfct::sceneRenderData::sceneRenderData() : m_VertexBufferStatic(RFCT_DEBUG_DRAW_
 		renderer::getRen().getDevice().updateDescriptorSets(1, &write, 0, nullptr);
 
 		m_mappedMatsDataDynamic[i] = m_DynamicModelMatsBuffers[i].Map();
-		m_mappedVerticesDataDynamic[i] = m_VertexBufferDynamic[i]->m_Buffer.Map();
+		m_mappedVerticesDataDynamic[i] = m_VertexBufferDynamic[i]->Map();
 	}
 }
 
@@ -114,7 +114,7 @@ rfct::sceneRenderData::~sceneRenderData()
 {
 	for (size_t i = 0; i < RFCT_FRAMES_IN_FLIGHT; i++) {
 		m_DynamicModelMatsBuffers[i].Unmap();
-		m_VertexBufferDynamic[i]->m_Buffer.Unmap();
+		m_VertexBufferDynamic[i]->Unmap();
 
 	}
 	destroyDescriptorSetLayout();
@@ -139,11 +139,65 @@ uint32_t rfct::sceneRenderData::addStaticMat(void* data)
 	memcpy(finalPtr, data, sizeof(glm::mat4));
 	return m_matsCounterStatic++;
 }
+
 uint32_t rfct::sceneRenderData::addDynamicMat(const frameContext* ctx, void* data)
 {
-	char* finalPtr = ((char*)m_mappedMatsDataDynamic[ctx->frame]) + (m_matsCounterDynamic * sizeof(glm::mat4));
-	memcpy(finalPtr, data, sizeof(glm::mat4));
-	return m_matsCounterDynamic++;
+	if (m_matricesFreeIndices.size() != 0) {
+		size_t index = m_matricesFreeIndices.back();
+		m_matricesFreeIndices.pop_back();
+		char* finalPtr = ((char*)m_mappedMatsDataDynamic[ctx->frame]) + (index * sizeof(glm::mat4));
+		memcpy(finalPtr, data, sizeof(glm::mat4));
+		return index;
+
+	}
+	else {
+		char* finalPtr = ((char*)m_mappedMatsDataDynamic[ctx->frame]) + (m_matsCounterDynamic * sizeof(glm::mat4));
+		memcpy(finalPtr, data, sizeof(glm::mat4));
+		return m_matsCounterDynamic++;
+	}
+}
+
+uint32_t rfct::sceneRenderData::reserveSuitableVertexBufferLocation(size_t numVertices) {
+	uint32_t bestMatch = -1;
+	uint32_t bestSizeDiff = INT_MAX;
+	for (uint32_t i = 0; i < m_freeVertices.size(); ++i) {
+		if (m_freeVertices[i].verticesCount == numVertices) {
+			// found exact match
+			uint32_t returnVal = m_freeVertices[i].vertexBufferOffset;
+			m_freeVertices.erase(m_freeVertices.begin() + i);
+			RFCT_INFO("reusing vertex buffer memory");
+			return returnVal;
+		}
+		else {
+			if (m_freeVertices[i].verticesCount > numVertices) {
+				if (m_freeVertices[i].verticesCount - numVertices < bestSizeDiff) {
+					bestSizeDiff = m_freeVertices[i].verticesCount - numVertices;
+					bestMatch = i;
+				}
+			}
+		}
+	}
+	if (bestMatch != -1){
+		uint32_t returnVal = m_freeVertices[bestMatch].vertexBufferOffset;
+		m_freeVertices[bestMatch].vertexBufferOffset += numVertices;
+		m_freeVertices[bestMatch].verticesCount -= numVertices;
+		return returnVal;
+		
+	}
+	else {
+		RFCT_INFO("getting new vertex buffer memory");
+		return m_verticesCountDynamicObj;
+	}
+}
+
+uint32_t rfct::sceneRenderData::addDynamicVertices(std::vector<Vertex>* vertices, uint32_t frame, uint32_t location)
+{
+	if (location == -1) {
+		location = reserveSuitableVertexBufferLocation(vertices->size());
+	}
+	void* finalPtr = ((char*)m_mappedVerticesDataDynamic[frame]) + (location * sizeof(Vertex));
+	std::memcpy(finalPtr, vertices->data(), vertices->size() * sizeof(vertices[0]));
+	return location;
 }
 
 rfct::objectLocation rfct::sceneRenderData::addStaticObject(std::vector<Vertex>* vertices, glm::mat4* matrix)
@@ -177,16 +231,39 @@ rfct::objectLocation rfct::sceneRenderData::addDynamicObject(std::vector<Vertex>
 	for (Vertex& ver : *vertices) {
 		ver.objectIndex = objLoc.indexInSSBO;
 	}
-	objLoc.verticesCount = vertices->size();
-	m_verticesCountDynamicObj += objLoc.verticesCount;
 
 	if (shouldAddToAllBuffers) {
-		for (uint8_t i = 0; i < RFCT_FRAMES_IN_FLIGHT; ++i) {
-			objLoc.vertexBufferOffset = m_VertexBufferDynamic[i]->copyData(*vertices);
+		objLoc.vertexBufferOffset = addDynamicVertices(vertices, 0);
+		for (uint8_t i = 1; i < RFCT_FRAMES_IN_FLIGHT; ++i) {
+			addDynamicVertices(vertices, i, objLoc.vertexBufferOffset);
 		}
 	}
 	else {
-		objLoc.vertexBufferOffset = m_VertexBufferDynamic[fc.frame]->copyData(*vertices);
+		objLoc.vertexBufferOffset = addDynamicVertices(vertices, fc.frame);
+		RFCT_CRITICAL("you know that the buffer offset is incremented each time you call it and the RFCT_FRAMES_IN_FLIGHT is not 1");
 	}
+	objLoc.verticesCount = vertices->size();
+	m_verticesCountDynamicObj += objLoc.verticesCount;
  	return objLoc;
+}
+
+void rfct::sceneRenderData::removeDynamicObject(const dynamicSSBOIndexComponent& ssboData, const vertexRenderInfoComponent& vertexRenderInfo, bool addToFreelist, const frameContext* ctx)
+{
+	char* finalPtr = ((char*)m_mappedMatsDataDynamic[ctx->frame]) + (ssboData.indexInSSBO * sizeof(glm::mat4));
+	memset(finalPtr, 0, sizeof(glm::mat4));
+	if (!addToFreelist) return;
+	m_matricesFreeIndices.push_back(ssboData.indexInSSBO);
+	m_freeVertices.push_back(vertexRenderInfo);
+}
+
+void rfct::sceneRenderData::removeDynamicEntity(entity e)
+{
+	const dynamicSSBOIndexComponent* ssbo = e.get<dynamicSSBOIndexComponent>();
+	const vertexRenderInfoComponent* vData = e.get<vertexRenderInfoComponent>();
+	frameContext noCtx = {};
+	removeDynamicObject(*ssbo, *vData, true, &noCtx);
+	for (uint8_t i = 1; i < RFCT_FRAMES_IN_FLIGHT; i++) {
+		noCtx.frame = i;
+		removeDynamicObject(*ssbo, *vData, false, &noCtx);
+	}
 }

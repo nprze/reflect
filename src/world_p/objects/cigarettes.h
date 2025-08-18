@@ -7,5 +7,6 @@ namespace rfct {
     void initCigaretteVars(scene* scene);
     void onCollision_Cigarette_StaticObj(entity cigarette, entity collidedWith, glm::vec2 resolution);
     void updateCigarettes(const frameContext* ctx);
+    void updateCigarettesMatrixes(const frameContext* ctx);
     entity constructCigarette(const frameContext* fc, const entity entityPlayer, const bool facingRight);
 }

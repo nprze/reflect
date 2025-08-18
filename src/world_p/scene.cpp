@@ -78,6 +78,7 @@ void rfct::scene::onUpdate(frameContext* context)
 	updateTransformData(context, epicRotatingTriangle);
 	updateUI(context);
 	playerAnimations::get().update(epicRotatingTriangle.get<velocityComponent>()->velocity, epicRotatingTriangle.get<positionComponent>()->position, *context, epicRotatingTriangle);
+
 	cameraComponentOnUpdate(context->dt, epicRotatingTriangle);
 
 	if (context->state == gameState::stateDialogue) {
@@ -238,6 +239,12 @@ entity rfct::scene::createStaticRenderingEntity(std::vector<Vertex>* vertices, g
 		.set<positionComponent>({})
 		.set<rotationComponent>({})
 		.set<scaleComponent>({});
+}
+
+void rfct::scene::deleteDynamicEntity(entity e)
+{
+	m_RenderData.removeDynamicEntity(e);
+	e.destruct();
 }
 
 entity rfct::scene::createDynamicRenderingEntity(std::vector<Vertex>* vertices, glm::mat4* model)

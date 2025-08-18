@@ -65,7 +65,7 @@ namespace rfct {
     };
     struct vertexRenderInfoComponent {
         uint32_t verticesCount;
-        size_t vertexBufferOffset;
+        size_t vertexBufferOffset; // in vertices count (not bytes)
     };
 
 

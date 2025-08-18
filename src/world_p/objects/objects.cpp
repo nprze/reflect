@@ -50,12 +50,14 @@ void rfct::objectsHolder::draw(const frameContext* fc){
 	for (vine& v : vines) {
 		v.draw(fc);
 	}
+	updateCigarettesMatrixes(fc);
 }
-void rfct::objectsHolder::onPlayerDashObjects(const frameContext* fc, const entity entityPlayer, const bool facingRight)
+void rfct::objectsHolder::onPlayerDashObjects(frameContext* fc, const entity entityPlayer, const bool facingRight)
 {
 	entity newCigarette = constructCigarette(fc, entityPlayer, facingRight);
-	if (cigarettes[lastCigaretteIndex] != entity())
-		cigarettes[lastCigaretteIndex].destruct();
+	if (cigarettes[lastCigaretteIndex] != entity()) {
+		fc->scene->deleteDynamicEntity(cigarettes[lastCigaretteIndex]);
+	}
 	cigarettes[lastCigaretteIndex] = (newCigarette);
 	lastCigaretteIndex = (lastCigaretteIndex + 1) % cigarettesMaxCount;
 }

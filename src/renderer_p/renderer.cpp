@@ -100,24 +100,6 @@ rfct::renderer::~renderer() {
 void rfct::renderer::render(frameContext& frameContext)
 {
     RFCT_PROFILE_FUNCTION();
-    {
-
-        using namespace std::chrono;
-
-        static const double frameDurationMs = 1000.0 / 60.f;
-
-        static auto lastFrameTime = high_resolution_clock::now();
-
-        auto now = high_resolution_clock::now();
-        auto elapsedMs = duration<double, std::milli>(now - lastFrameTime).count();
-
-        if (elapsedMs < frameDurationMs) {
-            std::this_thread::sleep_for(milliseconds((long long)(frameDurationMs - elapsedMs)));
-        }
-
-        lastFrameTime = high_resolution_clock::now();
-
-    }
 	frameData& frameData = m_framesInFlight.getNextFrame(frameContext.frame);
     {
         RFCT_PROFILE_SCOPE("fences wait");

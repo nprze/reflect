@@ -9,6 +9,8 @@
 
 namespace rfct {
     constexpr float angularDamping = 0.94f;
+    constexpr glm::vec2 gravity{ 0.f, -5.f };
+    constexpr float linearDamping = 0.9f;
 
     constexpr float betweenVer = 0.03f;
     constexpr float betweenHor = 0.08f;
@@ -95,6 +97,11 @@ void rfct::updateCigarettes(const frameContext* ctx) { // cigarette system
     cigaretteComponentsQuery.each([&](flecs::entity cigaretteEntity, cigaretteUpdateComponent& update, positionComponent& pos, velocityComponent& velocity, angularVelocityComponent& angVel, rotationComponent& rotation) {
         if (update.shouldBeUpdated) {
             for (uint8_t i = 0; i < ctx->fixedUpdateTimes; ++i) {
+                // Apply gravity
+                velocity.velocity += gravity * fixedDeltaTime;
+
+                // Apply linear damping
+                velocity.velocity *= linearDamping;
 
                 // position
                 pos.position += velocity.velocity * fixedDeltaTime;
@@ -107,15 +114,17 @@ void rfct::updateCigarettes(const frameContext* ctx) { // cigarette system
                 }
             }
 
-            // render matrix
-            glm::mat4 mat = getModelMatrixFromEntity(cigaretteEntity);
-            rd.updateMat(
-                ctx,
-                cigaretteEntity.get<dynamicSSBOIndexComponent>()->indexInSSBO,
-                &mat
-            );
         }
         });
+}
+
+void rfct::updateCigarettesMatrixes(const frameContext* ctx)
+{
+    sceneRenderData& rd = ctx->scene->getRenderData();
+    cigaretteComponentsQuery.each([&](flecs::entity cigaretteEntity, cigaretteUpdateComponent& update, positionComponent& pos, velocityComponent& velocity, angularVelocityComponent& angVel, rotationComponent& rotation){
+        glm::mat4 mat = getModelMatrixFromEntity(cigaretteEntity);
+        rd.updateMat(ctx, cigaretteEntity.get<dynamicSSBOIndexComponent>()->indexInSSBO, &mat);
+    });
 }
 
 float randF() {
@@ -136,7 +145,7 @@ entity rfct::constructCigarette(const frameContext* fc, const entity entityPlaye
     newCigarette.set<velocityComponent>({ .5f * glm::vec2{facingRight ? -1.f : 1.f, 1.f} });
     newCigarette.set<angularVelocityComponent>({ randF() * 20.f + 20.f });
     newCigarette.set<staticObjCollisionCallbackComponent>({ onCollision_Cigarette_StaticObj });
-    newCigarette.set<gravityComponent>({ 0.90f, true, 4.f });
+    newCigarette.set<gravityComponent>({ 0.90f, false, 4.f });
     newCigarette.set<dynamicObjectTypeComponent>({ dynamicObjectType::Cigarette });
     newCigarette.set<dynamicBoxColliderComponent>({ { -min_val, -min_val}, { min_val, min_val} });
     newCigarette.set<rotationComponent>({});
