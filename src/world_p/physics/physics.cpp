@@ -23,6 +23,7 @@ namespace rfct
 }
 // Queries helper
 void rfct::createQueries(entity sceneEntity) {
+    RFCT_PROFILE_SCOPE("init physics");
     gravityVelocityPositionBoxQuery =
         ecs::get().query_builder<gravityComponent, velocityComponent, positionComponent, dynamicBoxColliderComponent, staticObjCollisionCallbackComponent>()
         .with(flecs::ChildOf, sceneEntity)
@@ -55,6 +56,7 @@ void rfct::buildStaticObjBVH()
 
 void rfct::buildDynamicObjBVH()
 {
+    RFCT_PROFILE_SCOPE("build BVH");
     buildDynamicBVH(dynamicBoxColliderQuery, &DynamicObjsBVHnodes);
 }
 
@@ -318,8 +320,10 @@ namespace rfct {
 
 void rfct::updatePhysics(const frameContext* ctx)
 {
+    RFCT_PROFILE_SCOPE("physics update");
     // drawBVH(0, DynamicObjsBVHnodes.back(), &DynamicObjsBVHnodes);
     for (uint32_t i = 0; i < ctx->fixedUpdateTimes;++i) {
+        RFCT_PROFILE_SCOPE("physics step");
         gravityVelocityPositionBoxQuery.each([&](flecs::entity ent, gravityComponent& gravity, velocityComponent& velocity, positionComponent& position, dynamicBoxColliderComponent& dynamicBox, staticObjCollisionCallbackComponent& callback) {
             if (gravity.gravityEnabled) {
                 velocity.velocity.y += -gravity.gravity * fixedDeltaTime;

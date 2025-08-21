@@ -42,7 +42,7 @@ namespace rfct {
 }
 void rfct::playerController::update(frameContext* ctx)
 {
-
+	RFCT_PROFILE_SCOPE("player update");
 	// draw last frame velocity
 	//drawPlayervelocity(player.get<inputVelocityComponent>()->velocity, player.get<positionComponent>()->position);
 	//drawPlayervelocity(player.get<velocityComponent>()->velocity, player.get<positionComponent>()->position);

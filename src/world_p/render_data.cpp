@@ -128,7 +128,7 @@ void rfct::sceneRenderData::updateMat(const frameContext* ctx, const uint32_t& o
 
 void rfct::sceneRenderData::updateDynamicVertices(const frameContext* ctx, const size_t objBufferOffset, void* vertices, const size_t size)
 {
-	char* finalPtr = (char*)m_mappedVerticesDataDynamic[ctx->frame] + objBufferOffset;
+	char* finalPtr = (char*)m_mappedVerticesDataDynamic[ctx->frame] + (objBufferOffset * sizeof(Vertex));
 	memcpy(finalPtr, vertices, size);
 }
 
@@ -165,7 +165,6 @@ uint32_t rfct::sceneRenderData::reserveSuitableVertexBufferLocation(size_t numVe
 			// found exact match
 			uint32_t returnVal = m_freeVertices[i].vertexBufferOffset;
 			m_freeVertices.erase(m_freeVertices.begin() + i);
-			RFCT_INFO("reusing vertex buffer memory");
 			return returnVal;
 		}
 		else {
@@ -185,7 +184,6 @@ uint32_t rfct::sceneRenderData::reserveSuitableVertexBufferLocation(size_t numVe
 		
 	}
 	else {
-		RFCT_INFO("getting new vertex buffer memory");
 		return m_verticesCountDynamicObj;
 	}
 }
@@ -202,6 +200,7 @@ uint32_t rfct::sceneRenderData::addDynamicVertices(std::vector<Vertex>* vertices
 
 rfct::objectLocation rfct::sceneRenderData::addStaticObject(std::vector<Vertex>* vertices, glm::mat4* matrix)
 {
+	RFCT_PROFILE_FUNCTION();
 	objectLocation objLoc{};
 	uint32_t matLocation = addStaticMat(matrix);
 	objLoc.indexInSSBO = matLocation;
@@ -216,6 +215,7 @@ rfct::objectLocation rfct::sceneRenderData::addStaticObject(std::vector<Vertex>*
 
 rfct::objectLocation rfct::sceneRenderData::addDynamicObject(std::vector<Vertex>* vertices, glm::mat4* matrix, bool shouldAddToAllBuffers, const frameContext& fc)
 {
+	RFCT_PROFILE_FUNCTION();
 	objectLocation objLoc{};
 	if (shouldAddToAllBuffers) {
 		frameContext ctx = {};
@@ -251,6 +251,8 @@ void rfct::sceneRenderData::removeDynamicObject(const dynamicSSBOIndexComponent&
 {
 	char* finalPtr = ((char*)m_mappedMatsDataDynamic[ctx->frame]) + (ssboData.indexInSSBO * sizeof(glm::mat4));
 	memset(finalPtr, 0, sizeof(glm::mat4));
+	char* finalPtrVer = ((char*)m_mappedVerticesDataDynamic[ctx->frame]) + (vertexRenderInfo.vertexBufferOffset * sizeof(Vertex));
+	memset(finalPtrVer, 0, vertexRenderInfo.verticesCount * sizeof(Vertex));
 	if (!addToFreelist) return;
 	m_matricesFreeIndices.push_back(ssboData.indexInSSBO);
 	m_freeVertices.push_back(vertexRenderInfo);

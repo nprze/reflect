@@ -6,6 +6,7 @@
 #include "world_p/ecs.h"
 #include "renderer_p/rasterizer_pipeline/vertex.h"
 #include "world_p/object_components.h"
+#include "world_p/decors/smokes.h"
 
 namespace rfct {
     constexpr float angularDamping = 0.94f;
@@ -18,6 +19,7 @@ namespace rfct {
     constexpr float restHor = .10f;
 
     static flecs::query<cigaretteUpdateComponent, positionComponent, velocityComponent, angularVelocityComponent, rotationComponent> cigaretteComponentsQuery;
+    static flecs::query<cigaretteUpdateComponent, dynamicSSBOIndexComponent, positionComponent, rotationComponent, scaleComponent> cigaretteMatricesQuery;
 }
 
 std::vector<rfct::Vertex> cigaretteVertices;
@@ -77,6 +79,17 @@ void rfct::initCigaretteVars(scene* scene)
         .with(flecs::ChildOf, scene->sceneEntity)
         .build();
 
+    cigaretteMatricesQuery =
+        ecs::get().query_builder<cigaretteUpdateComponent, dynamicSSBOIndexComponent, positionComponent, rotationComponent, scaleComponent>()
+        .with(flecs::ChildOf, scene->sceneEntity)
+        .build();
+
+}
+
+void rfct::cleanupCigarettes()
+{
+    cigaretteComponentsQuery.~query();
+    cigaretteMatricesQuery.~query();
 }
 
 void rfct::onCollision_Cigarette_StaticObj(entity cigarette, entity collidedWith, glm::vec2 resolution)
@@ -90,9 +103,14 @@ void rfct::onCollision_Cigarette_StaticObj(entity cigarette, entity collidedWith
     
 
     pos->position += resolution;
+
+    if (!cigarette.get<cigaretteUpdateComponent>()->spawnedSmoke) {
+        cigarette.get_mut<cigaretteUpdateComponent>()->spawnedSmoke = true;
+        cigarette.get_mut<cigaretteUpdateComponent>()->shouldSpawnSmoke = true;
+    }
 }
 
-void rfct::updateCigarettes(const frameContext* ctx) { // cigarette system
+void rfct::updateCigarettes(frameContext* ctx) { // cigarette system
     sceneRenderData& rd = ctx->scene->getRenderData();
     cigaretteComponentsQuery.each([&](flecs::entity cigaretteEntity, cigaretteUpdateComponent& update, positionComponent& pos, velocityComponent& velocity, angularVelocityComponent& angVel, rotationComponent& rotation) {
         if (update.shouldBeUpdated) {
@@ -112,6 +130,11 @@ void rfct::updateCigarettes(const frameContext* ctx) { // cigarette system
                 if (std::abs(velocity.velocity.x) < 0.1f && std::abs(velocity.velocity.y) < 0.2f) {
                     update.shouldBeUpdated = false;
                 }
+                if (update.shouldSpawnSmoke) {
+                    spawnSmoke(ctx, pos.position);
+                    update.spawnedSmoke = true;
+                    update.shouldSpawnSmoke = false;
+                }
             }
 
         }
@@ -121,17 +144,10 @@ void rfct::updateCigarettes(const frameContext* ctx) { // cigarette system
 void rfct::updateCigarettesMatrixes(const frameContext* ctx)
 {
     sceneRenderData& rd = ctx->scene->getRenderData();
-    cigaretteComponentsQuery.each([&](flecs::entity cigaretteEntity, cigaretteUpdateComponent& update, positionComponent& pos, velocityComponent& velocity, angularVelocityComponent& angVel, rotationComponent& rotation){
-        glm::mat4 mat = getModelMatrixFromEntity(cigaretteEntity);
-        rd.updateMat(ctx, cigaretteEntity.get<dynamicSSBOIndexComponent>()->indexInSSBO, &mat);
+    cigaretteMatricesQuery.each([&](flecs::entity cigaretteEntity, cigaretteUpdateComponent& upd, dynamicSSBOIndexComponent& ssboData, positionComponent& pos, rotationComponent& rot, scaleComponent& sc) {
+        glm::mat4 mat = getModelMatrix(pos, rot, sc);
+        rd.updateMat(ctx, ssboData.indexInSSBO, &mat);
     });
-}
-
-float randF() {
-    static uint32_t seed = rand();
-    seed = 1664525u * seed + 1013904223u;
-    return (seed >> 8) * (1.0f / 16777216.0f);
-
 }
 
 entity rfct::constructCigarette(const frameContext* fc, const entity entityPlayer, const bool facingRight)

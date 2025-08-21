@@ -23,6 +23,7 @@ namespace rfct {
     }
     void cameraComponentOnUpdate(float dt, entity player)
     {
+        RFCT_PROFILE_SCOPE("camera update");
         /*
         if (input::getInput().cameraXAxis || input::getInput().cameraYAxis) {
             cameraEntity.get_mut<positionComponent>()->position.x += dt * input::getInput().cameraXAxis;

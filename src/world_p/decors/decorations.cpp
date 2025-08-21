@@ -5,12 +5,18 @@
 #include "assets/scene_serialize_data.h"
 
 void rfct::decorationHolder::init(sceneSerializedData* serializeData, scene* parentScene) {
-	initSmokeVars();
+	initSmokeVars(parentScene);
+}
+
+rfct::decorationHolder::~decorationHolder()
+{
+	cleanupSmokes();
 }
 
 void rfct::decorationHolder::onPlayerDashDecorations(frameContext* fc, const entity entityPlayer, const bool facingRight) {
-	spawnSmoke(fc, entityPlayer.get<positionComponent>()->position);
 }
 void rfct::decorationHolder::update(frameContext* ctx) {
+	RFCT_PROFILE_SCOPE("decorations update");
 	updateSmokes(ctx);
+	updateSmokeMatrices(ctx);
 }

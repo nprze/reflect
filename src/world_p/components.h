@@ -8,6 +8,7 @@ namespace flecs {
 	class entity;
 }
 namespace rfct {
+    float randF();
     class scene;
 	struct frameContext;
 
@@ -15,6 +16,7 @@ namespace rfct {
         Player = 0,
         Vine,
         Cigarette, 
+        Smoke,
         NPC
     };
 

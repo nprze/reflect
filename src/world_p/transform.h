@@ -13,6 +13,17 @@ namespace rfct {
         return model;
 
 	}
+    static glm::mat4 getModelMatrix(positionComponent& pos, rotationComponent& rot, scaleComponent& sc) {
+        glm::mat4 model = glm::mat4(1.0f);
+        model = glm::translate(model, glm::vec3{ pos.position , 0.f });
+        glm::vec3 rotation = rot.rotation;
+        model = glm::rotate(model, rotation.x, glm::vec3(1, 0, 0));
+        model = glm::rotate(model, rotation.y, glm::vec3(0, 1, 0));
+        model = glm::rotate(model, rotation.z, glm::vec3(0, 0, 1));
+        model = glm::scale(model, { sc.scale, 0.f });
+        return model;
+
+    }
     static glm::mat4 getModelMatrixFromTransform(const transform& trans) {
         glm::mat4 model = glm::mat4(1.0f);
         model = glm::translate(model, { trans.pos.position, 0.f});

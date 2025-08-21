@@ -70,6 +70,7 @@ namespace rfct{
 
 void rfct::scene::onUpdate(frameContext* context)
 {
+	RFCT_PROFILE_SCOPE("scene update");
 	m_playerController.update(context);
 	m_dynamicObjects.update(context);
 	m_decorations.update(context);
@@ -94,6 +95,7 @@ void rfct::scene::onUpdate(frameContext* context)
 
 void rfct::scene::updateUI(frameContext* context)
 {
+	RFCT_PROFILE_SCOPE("UI update");
 	UpdateUI(context);
 }
 
@@ -244,7 +246,7 @@ entity rfct::scene::createStaticRenderingEntity(std::vector<Vertex>* vertices, g
 void rfct::scene::deleteDynamicEntity(entity e)
 {
 	m_RenderData.removeDynamicEntity(e);
-	e.destruct();
+	//e.destruct();
 }
 
 entity rfct::scene::createDynamicRenderingEntity(std::vector<Vertex>* vertices, glm::mat4* model)

@@ -27,12 +27,20 @@ namespace rfct {
     };
     struct cigaretteUpdateComponent {
         bool shouldBeUpdated = false;
+        bool shouldSpawnSmoke = false;
+        bool spawnedSmoke = false;
     };
     struct smokeFinishedComponent {
         bool hasSmokeFinished = false;
     };
     struct smokeParticleComponent {
         glm::vec2 direction;
+    };
+
+    struct smokeFloatComponent {
+        float amplitude;
+        float frequency;
+        float phase;
     };
     struct smokeDisperseComponent {
         float fullLenght;

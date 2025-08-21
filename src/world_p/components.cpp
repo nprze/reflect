@@ -6,6 +6,12 @@
 #include "ecs.h"
 #include "object_components.h"
 namespace rfct {
+	float randF() {
+		static uint32_t seed = rand();
+		seed = 1664525u * seed + 1013904223u;
+		return (seed >> 8) * (1.0f / 16777216.0f);
+
+	}
 	void registerComponents()
 	{
 		ecs::get().component<sceneComponent>();

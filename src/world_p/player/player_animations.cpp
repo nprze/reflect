@@ -53,6 +53,7 @@ void rfct::playerAnimations::unloadAnimations()
 
 void rfct::playerAnimations::update(const glm::vec2& playerVel, const glm::vec2& playerPos, frameContext& ctx, entity player)
 {
+	RFCT_PROFILE_SCOPE("player animation update");
 	if (!player.get<playerStateComponent>()->grounded) {
 		if (m_currentAnimation == &m_walking || m_currentAnimation == &m_idle) {
 			// change anim

@@ -5,9 +5,10 @@
 
 namespace rfct{
 	struct sceneSerializedData;
-	constexpr uint8_t cigarettesMaxCount = 1;
+	constexpr uint8_t cigarettesMaxCount = 4;
 	struct objectsHolder {
 		objectsHolder() : cigarettes(cigarettesMaxCount, entity()) {};
+		~objectsHolder();
 		void init(sceneSerializedData* serializeData, scene* parentScene);
 		void update(frameContext* fc);
 		void draw(const frameContext* fc);

@@ -6,6 +6,11 @@
 #include "world_p/transform.h"
 #include "world_p/object_components.h"
 
+rfct::objectsHolder::~objectsHolder()
+{
+	cleanupCigarettes();
+}
+
 void rfct::objectsHolder::init(sceneSerializedData* serializeData, scene* parentScene)
 {
 	vines.reserve(serializeData->vines.size());
@@ -28,6 +33,7 @@ void rfct::objectsHolder::init(sceneSerializedData* serializeData, scene* parent
 }
 void rfct::objectsHolder::update(frameContext* fc)
 {
+	RFCT_PROFILE_SCOPE("cigarette update");
 	if (fc->fixedUpdateTimes) {
 		if (nearestVineEdgeToPlayerIndex != -1) {
 			if (vineClosestToPlayer.get<vineStateComponent>()->holdingToThis) {
