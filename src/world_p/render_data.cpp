@@ -28,11 +28,11 @@ void rfct::sceneRenderData::destroyDescriptorSetLayout()
 	renderer::getRen().getDevice().destroyDescriptorSetLayout(m_descriptorSetLayout);
 }
 
-rfct::sceneRenderData::sceneRenderData() : m_VertexBufferStatic(RFCT_DEBUG_DRAW_VERTEX_BUFFER_MAX_SIZE * 100), m_StaticModelMatsBuffer(sizeof(glm::mat4)* RFCT_MAX_STATIC_OBJ_ON_SCENE, vk::BufferUsageFlagBits::eStorageBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU), m_mappedDataStatic(nullptr), m_matsCounterStatic(0), m_verticesCountStaticObj(0), m_verticesCountDynamicObj(0), m_matsCounterDynamic(0)
+rfct::sceneRenderData::sceneRenderData() : m_VertexBufferStatic(RFCT_SCENE_STATIC_DRAW_VERTEX_BUFFER_VERTEX_COUNT * sizeof(Vertex)), m_StaticModelMatsBuffer(sizeof(glm::mat4) * RFCT_MAX_STATIC_OBJ_ON_SCENE, vk::BufferUsageFlagBits::eStorageBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU), m_mappedDataStatic(nullptr), m_matsCounterStatic(0), m_verticesCountStaticObj(0), m_verticesCountDynamicObj(0), m_matsCounterDynamic(0)
 {
  	for (uint32_t i = 0; i < RFCT_FRAMES_IN_FLIGHT; ++i) {
-		m_VertexBufferDynamic[i] = std::make_unique<VulkanBuffer>(RFCT_DEBUG_DRAW_VERTEX_BUFFER_MAX_SIZE * 100, vk::BufferUsageFlagBits::eVertexBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU);
-		m_DynamicModelMatsBuffers[i] = std::move(VulkanBuffer(sizeof(glm::mat4) * 20, vk::BufferUsageFlagBits::eStorageBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU));
+		m_VertexBufferDynamic[i] = std::make_unique<VulkanBuffer>(RFCT_SCENE_DYNAMIC_DRAW_VERTEX_BUFFER_VERTEX_COUNT *sizeof(Vertex), vk::BufferUsageFlagBits::eVertexBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU);
+		m_DynamicModelMatsBuffers[i] = std::move(VulkanBuffer(sizeof(glm::mat4) * RFCT_MAX_DYNAMIC_OBJ_ON_SCENE, vk::BufferUsageFlagBits::eStorageBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU));
 		m_mappedMatsDataDynamic[i] = nullptr;
 	}
 	m_verticesCountDynamicObj = 0;
@@ -63,7 +63,7 @@ rfct::sceneRenderData::sceneRenderData() : m_VertexBufferStatic(RFCT_DEBUG_DRAW_
 		vk::DescriptorBufferInfo bufferInfoStatic = {
 			m_StaticModelMatsBuffer.buffer,
 			0,
-			sizeof(glm::mat4) * 20
+			VK_WHOLE_SIZE
 		};
 
 		vk::WriteDescriptorSet write{};
@@ -91,7 +91,7 @@ rfct::sceneRenderData::sceneRenderData() : m_VertexBufferStatic(RFCT_DEBUG_DRAW_
 		vk::DescriptorBufferInfo bufferInfoDynamic = {
 			m_DynamicModelMatsBuffers[i].buffer,
 			0,
-			sizeof(glm::mat4) * 20
+			VK_WHOLE_SIZE
 		};
 
 
@@ -153,48 +153,35 @@ uint32_t rfct::sceneRenderData::addDynamicMat(const frameContext* ctx, void* dat
 	else {
 		char* finalPtr = ((char*)m_mappedMatsDataDynamic[ctx->frame]) + (m_matsCounterDynamic * sizeof(glm::mat4));
 		memcpy(finalPtr, data, sizeof(glm::mat4));
+		RFCT_ASSERT(m_matsCounterDynamic < RFCT_MAX_DYNAMIC_OBJ_ON_SCENE);
 		return m_matsCounterDynamic++;
 	}
 }
 
 uint32_t rfct::sceneRenderData::reserveSuitableVertexBufferLocation(size_t numVertices) {
-	uint32_t bestMatch = -1;
+	
 	uint32_t bestSizeDiff = INT_MAX;
 	for (uint32_t i = 0; i < m_freeVertices.size(); ++i) {
 		if (m_freeVertices[i].verticesCount == numVertices) {
+			RFCT_INFO("reusing space");
 			// found exact match
 			uint32_t returnVal = m_freeVertices[i].vertexBufferOffset;
 			m_freeVertices.erase(m_freeVertices.begin() + i);
 			return returnVal;
 		}
-		else {
-			if (m_freeVertices[i].verticesCount > numVertices) {
-				if (m_freeVertices[i].verticesCount - numVertices < bestSizeDiff) {
-					bestSizeDiff = m_freeVertices[i].verticesCount - numVertices;
-					bestMatch = i;
-				}
-			}
-		}
 	}
-	if (bestMatch != -1){
-		uint32_t returnVal = m_freeVertices[bestMatch].vertexBufferOffset;
-		m_freeVertices[bestMatch].vertexBufferOffset += numVertices;
-		m_freeVertices[bestMatch].verticesCount -= numVertices;
-		return returnVal;
-		
-	}
-	else {
-		return m_verticesCountDynamicObj;
-	}
+	m_verticesCountDynamicObj += numVertices;
+	RFCT_ASSERT(m_verticesCountDynamicObj < RFCT_SCENE_STATIC_DRAW_VERTEX_BUFFER_VERTEX_COUNT);
+	return m_verticesCountDynamicObj - numVertices;
 }
 
 uint32_t rfct::sceneRenderData::addDynamicVertices(std::vector<Vertex>* vertices, uint32_t frame, uint32_t location)
 {
-	if (location == -1) {
+	if (location == UINT32_MAX) {
 		location = reserveSuitableVertexBufferLocation(vertices->size());
 	}
-	void* finalPtr = ((char*)m_mappedVerticesDataDynamic[frame]) + (location * sizeof(Vertex));
-	std::memcpy(finalPtr, vertices->data(), vertices->size() * sizeof(vertices[0]));
+	void* finalPtr = (char*)(m_mappedVerticesDataDynamic[frame]) + (location * sizeof(Vertex));
+	std::memcpy(finalPtr, vertices->data(), vertices->size() * sizeof(Vertex));
 	return location;
 }
 
@@ -227,6 +214,7 @@ rfct::objectLocation rfct::sceneRenderData::addDynamicObject(std::vector<Vertex>
 	}
 	else {
 		objLoc.indexInSSBO = addDynamicMat(&fc, matrix);
+		RFCT_CRITICAL("no.");
 	}
 	for (Vertex& ver : *vertices) {
 		ver.objectIndex = objLoc.indexInSSBO;

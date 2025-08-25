@@ -246,7 +246,7 @@ entity rfct::scene::createStaticRenderingEntity(std::vector<Vertex>* vertices, g
 void rfct::scene::deleteDynamicEntity(entity e)
 {
 	m_RenderData.removeDynamicEntity(e);
-	//e.destruct();
+	e.destruct();
 }
 
 entity rfct::scene::createDynamicRenderingEntity(std::vector<Vertex>* vertices, glm::mat4* model)

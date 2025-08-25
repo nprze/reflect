@@ -65,17 +65,15 @@ void rfct::initSmokeVars(scene* parentScene)
 
     int triInner[4][3] = { {0,1,2}, {0,2,3}, {3,4,5}, {3,5,0} };
 
-    float f = 0.95f; // shrink factor (0 < f < 1 makes triangles smaller)
+    float f = 0.95f; 
 
     for (int t = 0; t < 4; t++) {
-        // compute centroid of triangle
         glm::vec3 centroid(0.0f);
         for (int j = 0; j < 3; j++) {
             centroid += hexInner[triInner[t][j]];
         }
         centroid /= 3.0f;
 
-        // shrink vertices towards centroid
         for (int j = 0; j < 3; j++) {
             glm::vec3 orig = hexInner[triInner[t][j]];
             glm::vec3 inset = centroid + f * (orig - centroid);
@@ -197,7 +195,8 @@ void rfct::updateSmokes(frameContext* ctx)
             });
     }
     for (entity e : toBeRemovedEnt) {
-        ctx->scene->deleteDynamicEntity(e);
+        if(ecs::get().is_valid(e))
+            ctx->scene->deleteDynamicEntity(e);
     }
 }
 

@@ -13,10 +13,10 @@ namespace rfct {
     constexpr glm::vec2 gravity{ 0.f, -5.f };
     constexpr float linearDamping = 0.9f;
 
-    constexpr float betweenVer = 0.03f;
-    constexpr float betweenHor = 0.08f;
-    constexpr float restVer = .05f;
-    constexpr float restHor = .10f;
+    constexpr float betweenVer = 0.05f;
+    constexpr float betweenHor = 0.11f;
+    constexpr float restVer = .07f;
+    constexpr float restHor = .13f;
 
     static flecs::query<cigaretteUpdateComponent, positionComponent, velocityComponent, angularVelocityComponent, rotationComponent> cigaretteComponentsQuery;
     static flecs::query<cigaretteUpdateComponent, dynamicSSBOIndexComponent, positionComponent, rotationComponent, scaleComponent> cigaretteMatricesQuery;
