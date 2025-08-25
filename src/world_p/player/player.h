@@ -3,6 +3,7 @@
 
 namespace rfct {
 	constexpr float maxWalkVelocity = 0.3f;
+	constexpr float dashFullTime = 0.2f;
 	struct frameContext;
 	void onCollision_Player_StaticObj(entity player, entity collidedWith, glm::vec2 resolution);
 	class playerController {

@@ -38,6 +38,8 @@ void rfct::playerAnimations::loadAnimations()
 	m_jumpTurnover = AssetsManager::get().loadAnimation("player/walkAnim/jump-turnover.txt");
 	m_jumpFall = AssetsManager::get().loadAnimation("player/walkAnim/jump-fall.txt");
 	m_jumpReturn = AssetsManager::get().loadAnimation("player/walkAnim/jump-return.txt");
+	m_dashStart = AssetsManager::get().loadAnimation("player/walkAnim/dash-start.txt");
+	m_dashEnd = AssetsManager::get().loadAnimation("player/walkAnim/dash-end.txt");
 	
 	m_currentAnimation = &m_idle;
 }
@@ -54,51 +56,64 @@ void rfct::playerAnimations::unloadAnimations()
 void rfct::playerAnimations::update(const glm::vec2& playerVel, const glm::vec2& playerPos, frameContext& ctx, entity player)
 {
 	RFCT_PROFILE_SCOPE("player animation update");
-	if (!player.get<playerStateComponent>()->grounded) {
-		if (m_currentAnimation == &m_walking || m_currentAnimation == &m_idle) {
-			// change anim
-			changeAnimation(&m_jumpStart);
+	const playerDashStateComponent* dc = player.get<playerDashStateComponent>();
+	if (dc->dashing) {
+		if (m_currentAnimation != &m_dashStart && m_currentAnimation != &m_dashEnd) {
+			changeAnimation(&m_dashStart);
 		}
 		else {
-			if (m_currentAnimation == &m_jumpStart) {
-				if (m_jumpStart.endedPlaying) {
-					changeAnimation(&m_jumpUp);
-				}
-			}
-			else {
-				if (m_currentAnimation == &m_jumpUp) {
-					if (playerVel.y < 1.f) {
-						changeAnimation(&m_jumpTurnover);
-					}
-				}
-				else {
-					if (m_currentAnimation == &m_jumpTurnover) {
-						if (m_jumpTurnover.endedPlaying && playerVel.y<=0.1f) {
-							changeAnimation(&m_jumpFall);
-						}
-					
-					}
-				}
+			if (m_currentAnimation->endedPlaying) {
+				changeAnimation(&m_dashEnd);
 			}
 		}
 	}
 	else {
-		if (m_currentAnimation == &m_jumpFall) {
-			changeAnimation(&m_jumpReturn);
-		}
-		else {
-			if (m_currentAnimation == &m_jumpReturn && !m_jumpReturn.endedPlaying) {
-				// just update normally
+		if (!player.get<playerStateComponent>()->grounded) {
+			if (m_currentAnimation == &m_walking || m_currentAnimation == &m_idle) {
+				// change anim
+				changeAnimation(&m_jumpStart);
 			}
 			else {
-				if (std::abs(playerVel.x) > 0.1f) {
-					if (m_currentAnimation != &m_walking) {
-						changeAnimation(&m_walking);
+				if (m_currentAnimation == &m_jumpStart) {
+					if (m_jumpStart.endedPlaying) {
+						changeAnimation(&m_jumpUp);
 					}
 				}
 				else {
-					if (m_currentAnimation != &m_idle) {
-						changeAnimation(&m_idle);
+					if (m_currentAnimation == &m_jumpUp) {
+						if (playerVel.y < 1.f) {
+							changeAnimation(&m_jumpTurnover);
+						}
+					}
+					else {
+						if (m_currentAnimation == &m_jumpTurnover) {
+							if (playerVel.y <= 0.1f) {
+								changeAnimation(&m_jumpFall);
+							}
+
+						}
+					}
+				}
+			}
+		}
+		else {
+			if (m_currentAnimation == &m_jumpFall) {
+				changeAnimation(&m_jumpReturn);
+			}
+			else {
+				if (m_currentAnimation == &m_jumpReturn && !m_jumpReturn.endedPlaying) {
+					// just update normally
+				}
+				else {
+					if (std::abs(playerVel.x) > 0.1f) {
+						if (m_currentAnimation != &m_walking) {
+							changeAnimation(&m_walking);
+						}
+					}
+					else {
+						if (m_currentAnimation != &m_idle) {
+							changeAnimation(&m_idle);
+						}
 					}
 				}
 			}

@@ -99,6 +99,10 @@ namespace rfct {
         bool grounded = false;
         bool holding = false;
     };
+    struct playerDashStateComponent {
+        bool dashing = false;
+        float dashProgress = 0.f;
+    };
 
     struct staticObjCollisionCallbackComponent {
         collisionHandler handler;

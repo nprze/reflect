@@ -297,6 +297,7 @@ void rfct::scene::createPlayerEntity(const glm::vec2& spawnPoint)
 		.set<staticObjCollisionCallbackComponent>(colCallback)
 		.set<dynamicBoxColliderComponent>(bounds)
 		.set<playerStateComponent>({})
+		.set<playerDashStateComponent>({})
 		.set<dynamicObjectTypeComponent>({dynamicObjectType::Player});
 
 	m_playerController.setPlayer(epicRotatingTriangle);

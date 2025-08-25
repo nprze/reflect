@@ -8,8 +8,8 @@
 #include "world_p/transform.h"
 
 namespace rfct {
-    constexpr float inside = 0.07f;
-    constexpr float outside = 0.09f;
+    constexpr float inside = 0.08f;
+    constexpr float outside = 0.1f;
 
 
     constexpr float angularDamping = 0.94f;
@@ -18,71 +18,57 @@ namespace rfct {
     static flecs::query<kindlingParticleComponent, dynamicSSBOIndexComponent, positionComponent, rotationComponent, scaleComponent> kindlingParticlesQuery;
 }
 
-std::vector<rfct::Vertex> kindlingVerticesRed;
-std::vector<rfct::Vertex> kindlingVerticesOrange;
+std::vector<rfct::Vertex> kindlingVertices [3];
 void rfct::initKindlingsVars(scene* parentScene)
 {
     RFCT_PROFILE_FUNCTION();
 
-    kindlingVerticesRed.clear();
-    kindlingVerticesOrange.clear();
-    kindlingVerticesRed.resize(24);
-    kindlingVerticesOrange.resize(24);
+    for (uint8_t i = 0; i < 3; ++i) {
+        kindlingVertices[i].clear();
+        kindlingVertices[i].resize(6);
+    }
 
     glm::vec3 red = { 0.8f, 0.2f, 0.2f };
+    glm::vec3 orange = { 0.7f, 0.3f, 0.2f };
+    glm::vec3 yellow = { 0.6f, 0.4f, 0.2f };
     glm::vec3 black = { 0.f, 0.f, 0.f };
 
     glm::vec3 center = { 0, 0, 0 };
 
     float r_outer = outside;
-    std::vector<glm::vec3> hexOuter(6);
-    for (int i = 0; i < 6; i++) {
-        float angle = glm::radians(60.0f * i + 30.0f);
+    std::vector<glm::vec3> hexOuter(3);
+    for (int i = 0; i < 3; i++) {
+        float angle = glm::radians(120.0f * i);
         hexOuter[i] = glm::vec3(r_outer * cos(angle), r_outer * sin(angle), 0);
     }
 
-    int v = 0;
-
-    kindlingVerticesRed[v + 0].pos = hexOuter[0];
-    kindlingVerticesRed[v + 1].pos = hexOuter[2];
-    kindlingVerticesRed[v + 2].pos = hexOuter[4];
-    kindlingVerticesRed[v + 0].color = black;
-    kindlingVerticesRed[v + 1].color = black;
-    kindlingVerticesRed[v + 2].color = black;
-    v += 3;
-
-    int triOuter[3][3] = { {0,1,2}, {2,3,4}, {4,5,0} };
-    for (int t = 0; t < 3; t++) {
-        for (int j = 0; j < 3; j++) {
-            kindlingVerticesRed[v + j].pos = hexOuter[triOuter[t][j]];
-            kindlingVerticesRed[v + j].color = black;
-        }
-        v += 3;
+    for (uint8_t i = 0; i < 3; ++i) {
+        kindlingVertices[i][0].pos = hexOuter[0];
+        kindlingVertices[i][1].pos = hexOuter[1];
+        kindlingVertices[i][2].pos = hexOuter[2];
+        kindlingVertices[i][0].color = black;
+        kindlingVertices[i][1].color = black;
+        kindlingVertices[i][2].color = black;
     }
 
     float r_inner = inside;
-    std::vector<glm::vec3> hexInner(6);
-    for (int i = 0; i < 6; i++) {
-        float angle = glm::radians(60.0f * i + 30.0f);
+    std::vector<glm::vec3> hexInner(3);
+    for (int i = 0; i < 3; i++) {
+        float angle = glm::radians(120.f * i);
         hexInner[i] = glm::vec3(r_inner * cos(angle), r_inner * sin(angle), 0);
     }
-
-    kindlingVerticesRed[v + 0].pos = hexInner[0];
-    kindlingVerticesRed[v + 1].pos = hexInner[2];
-    kindlingVerticesRed[v + 2].pos = hexInner[4];
-    kindlingVerticesRed[v + 0].color = red;
-    kindlingVerticesRed[v + 1].color = red;
-    kindlingVerticesRed[v + 2].color = red;
-    v += 3;
-    
-    for (int t = 0; t < 3; t++) {
-        for (int j = 0; j < 3; j++) {
-            kindlingVerticesRed[v + j].pos = hexInner[triOuter[t][j]];
-            kindlingVerticesRed[v + j].color = red;
-        }
-        v += 3;
+    for (uint8_t i = 0; i < 3; ++i) {
+        kindlingVertices[i][3 + 0].pos = hexInner[0];
+        kindlingVertices[i][3 + 1].pos = hexInner[1];
+        kindlingVertices[i][3 + 2].pos = hexInner[2];
+        glm::vec3 color;
+        if (i == 0) color = red;
+        if (i == 1) color = orange;
+        if (i == 2) color = yellow;
+        kindlingVertices[i][3 + 0].color = color;
+        kindlingVertices[i][3 + 1].color = color;
+        kindlingVertices[i][3 + 2].color = color;
     }
-
 
 
 
@@ -104,23 +90,26 @@ void rfct::cleanupKindlings()
 
 void rfct::spawnKindling(frameContext* fc, const glm::vec2& position, const glm::vec2& playerVel , uint32_t var)
 {
-    glm::mat4 transMat = glm::translate(glm::mat4(1.f), glm::vec3(position, 0.f));
-    entity kindling = fc->scene->createDynamicRenderingEntity(&kindlingVerticesRed, &transMat);
-    glm::vec2 dir = glm::normalize(-playerVel);
-    kindling.set<kindlingParticleComponent>({ dir, 0.5f, 0.f });
-    kindling.set<sinusoidFloatComponent>({
-            glm::linearRand(0.5f, 2.0f),
-            glm::linearRand(0.5f, 3.0f),
-            glm::linearRand(0.f, 6.28f)
-        });
+    for (uint32_t i = 0; i < var + 1; ++i) {
+        glm::mat4 transMat = glm::translate(glm::mat4(1.f), glm::vec3(position, 0.f));
+        entity kindling = fc->scene->createDynamicRenderingEntity(&kindlingVertices[2 - var], &transMat);
+        glm::vec2 per = glm::normalize(glm::cross(glm::vec3(-playerVel, 0.f), glm::vec3(0, 0, 1)));
+        glm::vec2 dir = glm::normalize(-playerVel + (per * glm::linearRand(-0.3f, 0.3f)));
+        kindling.set<kindlingParticleComponent>({ dir, 0.5f, 0.f });
+        kindling.set<sinusoidFloatComponent>({
+                glm::linearRand(0.5f, 2.0f),
+                glm::linearRand(0.5f, 3.0f),
+                glm::linearRand(0.f, 6.28f)
+            });
 
-    kindling.set<angularVelocityComponent>({ glm::linearRand(-60.f, 60.f) });
+        kindling.set<angularVelocityComponent>({ glm::linearRand(-10.f, 10.f) });
 
-    kindling.set<positionComponent>({ position });
-    kindling.set<rotationComponent>({});
-    kindling.set<scaleComponent>({ {1, 1} });
+        kindling.set<positionComponent>({ position });
+        kindling.set<rotationComponent>({});
+        kindling.set<scaleComponent>({ {0, 0} });
 
-    kindling.set<dynamicObjectTypeComponent>({ dynamicObjectType::Kindling });
+        kindling.set<dynamicObjectTypeComponent>({ dynamicObjectType::Kindling });
+    }
 }
 
 void rfct::updateKindlings(frameContext* ctx)

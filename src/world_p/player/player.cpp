@@ -202,27 +202,33 @@ void rfct::playerController::update(frameContext* ctx)
 			ctx->scene->getDecorationHolder().onPlayerDashDecorations(ctx, player, facingRight);
 			kindlingsToSpawnThisDash = 3;
 		}
-		if (timeSinceLastDash != 0 && timeSinceLastDash<0.2f) {
-			if (timeSinceLastDash < 0.02f && kindlingsToSpawnThisDash == 3) {
+		if (timeSinceLastDash != 0 && timeSinceLastDash<dashFullTime) {
+			playerDashStateComponent* dc = player.get_mut<playerDashStateComponent>();
+			player.get_mut<gravityComponent>()->gravityEnabled = false;
+			dc->dashing = true;
+			dc->dashProgress = timeSinceLastDash / dashFullTime;
+
+			if (dc->dashProgress > 0.1f && kindlingsToSpawnThisDash == 3) {
 				kindlingsToSpawnThisDash -= 1;
 				spawnKindling(ctx, player.get_mut<positionComponent>()->position, vel->velocity, kindlingsToSpawnThisDash);
 			}
 			else {
-				if (timeSinceLastDash < 0.7f && kindlingsToSpawnThisDash == 2) {
+				if (dc->dashProgress > 0.3f && kindlingsToSpawnThisDash == 2) {
 					kindlingsToSpawnThisDash -= 1;
 					spawnKindling(ctx, player.get_mut<positionComponent>()->position, vel->velocity, kindlingsToSpawnThisDash);
 				}
 				else {
-					if (timeSinceLastDash < 0.15f && kindlingsToSpawnThisDash == 1) {
+					if (dc->dashProgress > 0.9f && kindlingsToSpawnThisDash == 1) {
 						kindlingsToSpawnThisDash -= 1;
 						spawnKindling(ctx, player.get_mut<positionComponent>()->position, vel->velocity, kindlingsToSpawnThisDash);
 					}
 				}
 
 			}
-			player.get_mut<gravityComponent>()->gravityEnabled = false;
 		}
 		else {
+			player.get_mut<playerDashStateComponent>()->dashing = false;
+			player.get_mut<playerDashStateComponent>()->dashProgress = 0.f;
 			if (!player.get<playerStateComponent>()->holding) {
 				player.get_mut<gravityComponent>()->gravityEnabled = true;
 			}
