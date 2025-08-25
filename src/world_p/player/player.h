@@ -36,5 +36,6 @@ namespace rfct {
 		glm::vec2 dashVelocity;
 		int dashCharges;
 
+		uint8_t kindlingsToSpawnThisDash;
 	};
 }

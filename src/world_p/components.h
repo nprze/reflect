@@ -17,7 +17,8 @@ namespace rfct {
         Vine,
         Cigarette, 
         Smoke,
-        NPC
+        NPC,
+        Kindling
     };
 
 

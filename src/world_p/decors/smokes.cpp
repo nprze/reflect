@@ -14,7 +14,7 @@ namespace rfct {
 
     constexpr float angularDamping = 0.94f;
 
-    static flecs::query<smokeParticleComponent, smokeDisperseComponent, smokeFloatComponent, angularVelocityComponent, positionComponent, rotationComponent, scaleComponent> smokeParticlesComponentsQuery;
+    static flecs::query<smokeParticleComponent, smokeDisperseComponent, sinusoidFloatComponent, angularVelocityComponent, positionComponent, rotationComponent, scaleComponent> smokeParticlesComponentsQuery;
     static flecs::query<smokeDisperseComponent, dynamicSSBOIndexComponent, positionComponent, rotationComponent, scaleComponent> smokeParticlesQuery;
 }
 
@@ -83,7 +83,7 @@ void rfct::initSmokeVars(scene* parentScene)
         v += 3;
     }
     smokeParticlesComponentsQuery =
-        ecs::get().query_builder<smokeParticleComponent, smokeDisperseComponent, smokeFloatComponent, angularVelocityComponent, positionComponent, rotationComponent, scaleComponent>()
+        ecs::get().query_builder<smokeParticleComponent, smokeDisperseComponent, sinusoidFloatComponent, angularVelocityComponent, positionComponent, rotationComponent, scaleComponent>()
         .with(flecs::ChildOf, parentScene->sceneEntity)
         .build();
     smokeParticlesQuery =
@@ -118,13 +118,13 @@ void rfct::spawnSmoke(frameContext* fc, const glm::vec2& position, const glm::ve
         smoke.set<smokeParticleComponent>({ randomDir });
 
         smoke.set<smokeDisperseComponent>({
-            (float)(glm::linearRand(1, 3)),
+            (float)(glm::linearRand(0.5, 1.5)),
             0.f
             });
 
         smoke.set<positionComponent>({ spawnPos });
 
-        smoke.set<smokeFloatComponent>({
+        smoke.set<sinusoidFloatComponent>({
             glm::linearRand(0.5f, 2.0f),
             glm::linearRand(0.5f, 3.0f),
             glm::linearRand(0.f, 6.28f) 
@@ -168,7 +168,7 @@ void rfct::updateSmokes(frameContext* ctx)
 {
     std::vector<entity> toBeRemovedEnt;
     for (uint8_t i = 0; i < ctx->fixedUpdateTimes; i++) {
-        smokeParticlesComponentsQuery.each([&](flecs::entity smokeParticle, smokeParticleComponent& particleDir, smokeDisperseComponent& disperse, smokeFloatComponent& smokeFloat, angularVelocityComponent& angVel, positionComponent& pos, rotationComponent& rot, scaleComponent& sc) {
+        smokeParticlesComponentsQuery.each([&](flecs::entity smokeParticle, smokeParticleComponent& particleDir, smokeDisperseComponent& disperse, sinusoidFloatComponent& smokeFloat, angularVelocityComponent& angVel, positionComponent& pos, rotationComponent& rot, scaleComponent& sc) {
             if (disperse.currentProgress < disperse.fullLenght) {
                 disperse.currentProgress += fixedDeltaTime;
                 float progressPercentage = disperse.currentProgress / disperse.fullLenght;

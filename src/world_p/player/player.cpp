@@ -6,6 +6,7 @@
 #include "renderer_p/debug/debug_draw.h"
 #include "world_p/scene.h"
 #include "world_p/physics/physics.h"
+#include "world_p/decors/dash_kindlings.h"
 
 constexpr float maxVelocityX = 0.6f;
 constexpr float boostPureHorizontalVertical = 1.2f;
@@ -149,7 +150,7 @@ void rfct::playerController::update(frameContext* ctx)
 			}
 		}
 
-		// calculate if player is midair (forgive 50 ms)
+		// calculate if player is midair (forgive ~50 ms)
 		velocityComponent* vel = player.get_mut<velocityComponent>();
 		if (vel->velocity.y != 0) {
 			timesYNotZero += fixedDeltaTime;
@@ -199,8 +200,26 @@ void rfct::playerController::update(frameContext* ctx)
 
 			ctx->scene->getObjectHolder().onPlayerDashObjects(ctx, player, facingRight);
 			ctx->scene->getDecorationHolder().onPlayerDashDecorations(ctx, player, facingRight);
+			kindlingsToSpawnThisDash = 3;
 		}
 		if (timeSinceLastDash != 0 && timeSinceLastDash<0.2f) {
+			if (timeSinceLastDash < 0.02f && kindlingsToSpawnThisDash == 3) {
+				kindlingsToSpawnThisDash -= 1;
+				spawnKindling(ctx, player.get_mut<positionComponent>()->position, vel->velocity, kindlingsToSpawnThisDash);
+			}
+			else {
+				if (timeSinceLastDash < 0.7f && kindlingsToSpawnThisDash == 2) {
+					kindlingsToSpawnThisDash -= 1;
+					spawnKindling(ctx, player.get_mut<positionComponent>()->position, vel->velocity, kindlingsToSpawnThisDash);
+				}
+				else {
+					if (timeSinceLastDash < 0.15f && kindlingsToSpawnThisDash == 1) {
+						kindlingsToSpawnThisDash -= 1;
+						spawnKindling(ctx, player.get_mut<positionComponent>()->position, vel->velocity, kindlingsToSpawnThisDash);
+					}
+				}
+
+			}
 			player.get_mut<gravityComponent>()->gravityEnabled = false;
 		}
 		else {
@@ -234,13 +253,28 @@ void rfct::onCollision_Player_StaticObj(entity player, entity collidedWith, glm:
 
 	velocityComponent* vel = player.get_mut<velocityComponent>();
 	inputVelocityComponent* ivel = player.get_mut<inputVelocityComponent>();
+
 	if (resolution.x != 0.0f) {
 		vel->velocity.x = 0.0f;
 		ivel->velocity.x = 0.0f;
 	}
+
+	// Vertical collision handling with priority rules
 	if (resolution.y != 0.0f) {
-		vel->velocity.y = 0.0f;
-		ivel->velocity.y = 0.0f;
+		if (resolution.y > 0.0f) {
+			// Landed on something
+			vel->velocity.y = 0.0f;
+			ivel->velocity.y = 0.0f;
+		}
+		else {
+			if (resolution.x != 0.f) {
+				// Hit your head on a ceiling: only stop upward motion
+				if (vel->velocity.y > 0.0f) {
+					vel->velocity.y = 0.0f;
+					ivel->velocity.y = 0.0f;
+				}
+			}
+		}
 	}
 	if (resolution.y > 0)
 	{

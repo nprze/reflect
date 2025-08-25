@@ -163,7 +163,6 @@ uint32_t rfct::sceneRenderData::reserveSuitableVertexBufferLocation(size_t numVe
 	uint32_t bestSizeDiff = INT_MAX;
 	for (uint32_t i = 0; i < m_freeVertices.size(); ++i) {
 		if (m_freeVertices[i].verticesCount == numVertices) {
-			RFCT_INFO("reusing space");
 			// found exact match
 			uint32_t returnVal = m_freeVertices[i].vertexBufferOffset;
 			m_freeVertices.erase(m_freeVertices.begin() + i);
