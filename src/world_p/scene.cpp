@@ -315,3 +315,10 @@ void rfct::scene::startDialogue(const std::string& path, frameContext* ctx)
 	m_currentlyPlayingDialogue = new dialogue(path);
 	m_currentlyPlayingDialogue->fullLoad();
 }
+
+glm::vec2 rfct::scene::getPlayerScreenPos(frameContext* ctx)
+{
+	glm::vec4 playerPos = glm::vec4(epicRotatingTriangle.get<positionComponent>()->position, 0.f, 1.f);
+	glm::vec2 ret= getVPMatrix() * playerPos;
+	return ret;
+}

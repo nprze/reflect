@@ -7,6 +7,11 @@
 #include "world_p/scene.h"
 #include "world_p/player/player_animations.h"
 
+namespace rfct {
+    struct playerPosPushConstants {
+        glm::vec2 playerPos;
+    };
+}
 
 rfct::vulkanRasterizerPipeline::vulkanRasterizerPipeline(vk::RenderPass renderPass) :m_vertexShader("shaders/cube/cube_vert.spv"), m_fragShader("shaders/cube/cube_frag.spv")
 {
@@ -92,12 +97,21 @@ void rfct::vulkanRasterizerPipeline::createPipeline(vk::RenderPass renderPass)
     dynamicState.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
     dynamicState.pDynamicStates = dynamicStates.data();
 
+    // push constants
+    vk::PushConstantRange pushConstantRange{};
+    pushConstantRange.stageFlags = vk::ShaderStageFlagBits::eVertex;
+    pushConstantRange.offset = 0;
+    pushConstantRange.size = sizeof(playerPosPushConstants);
+
 
     // Pipeline layout
     vk::PipelineLayoutCreateInfo pipelineLayoutInfo = {};
     pipelineLayoutInfo.setLayoutCount = 2;
+    pipelineLayoutInfo.pushConstantRangeCount = 1;
+    pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
     vk::DescriptorSetLayout dscSetLayouts[] = { cameraUbo::getDescriptorSetLayout(), sceneRenderData::getDescriptorSetLayout() };
     pipelineLayoutInfo.pSetLayouts = dscSetLayouts;
+
     m_pipelineLayout = renderer::getRen().getDevice().createPipelineLayoutUnique(pipelineLayoutInfo);
 
     vk::PipelineViewportStateCreateInfo viewportState = {};
@@ -128,6 +142,7 @@ void rfct::vulkanRasterizerPipeline::createPipeline(vk::RenderPass renderPass)
 void rfct::vulkanRasterizerPipeline::recordCommandBuffer(frameContext* ctx, frameData& frameData, vk::Framebuffer framebuffer, vk::RenderPass renderPass)
 {
     RFCT_PROFILE_FUNCTION();
+
     const sceneRenderData& renderdata = ctx->scene->getRenderData();
     vk::CommandBuffer commandBuffer = frameData.m_sceneCommandBuffer.get();
 
@@ -150,6 +165,17 @@ void rfct::vulkanRasterizerPipeline::recordCommandBuffer(frameContext* ctx, fram
 
     commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, m_graphicsPipeline.get());
     
+
+    playerPosPushConstants pc;
+    pc.playerPos = ctx->scene->getPlayerScreenPos(ctx);
+
+    commandBuffer.pushConstants(
+        m_pipelineLayout.get(),
+        vk::ShaderStageFlagBits::eVertex,
+        0,
+        sizeof(playerPosPushConstants),
+        &pc
+    );
 
 
     vk::Viewport viewport = {};

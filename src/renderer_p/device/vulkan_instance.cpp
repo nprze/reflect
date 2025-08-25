@@ -32,7 +32,7 @@ rfct::vulkanInstance::vulkanInstance()
 	RFCT_PROFILE_FUNCTION();
     try {
         vk::ApplicationInfo appInfo(
-            "game",
+            "smokes",
             VK_MAKE_VERSION(1, 0, 0),
             "reflect",
             VK_MAKE_VERSION(1, 0, 0),

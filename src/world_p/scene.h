@@ -37,6 +37,7 @@ namespace rfct {
 		void startDialogue(const std::string& path, frameContext* ctx);
 
 		entity getPlayer() { return epicRotatingTriangle; }
+		glm::vec2 getPlayerScreenPos(frameContext* ctx);
 
 		objectsHolder& getObjectHolder() { return m_dynamicObjects; }
 		decorationHolder& getDecorationHolder() { return m_decorations; }
