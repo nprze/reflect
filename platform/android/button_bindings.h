@@ -14,28 +14,34 @@ namespace rfct {
         bottom,
         rightBottom
     };
-    struct theWierdButton {
-        bindableImage* image;
-        bindableImage* image45;
-        bindableImage* image45down;
-        bindableImage* imageUp;
-        float timeBasicButtonActivated = 0.f;
-        float timePossibleDash = 0.f;
+    struct joystick {
+        bindableImage* joystickBg;
+        glm::vec2 currentBttnPos;
         glm::vec2 position;
-        float radius;
-        float button;
-        dir generalDirection = dir::DirUndefined;
-        float timeSinceGeneralDirectionEstablished = 0.f;
-        void dragCheck(const glm::vec2& point, const int& action, const int& pointerID, const float& dt, bool basicButtonActivated);
+        float drawRadius;
+        float intractionRadius;
+
+        glm::vec2 joystickMiddleHalfSize;
+
+        glm::vec2 joystickMiddleImageMin;
+        glm::vec2 joystickMiddleImageMax;
+
+        dir dashDirection = dir::DirUndefined;
+        dir moveDirection = dir::DirUndefined;
+        bool isTriggered;
+
+        std::unordered_set<int> activePointers;
+        glm::vec2 lastTouchPos = { -1, -1 };
+        void update(const glm::vec2& point, const int& action, const int& pointerID, const float& dt);
+        void updateDir();
     };
     struct gameplayButtonBindings {
         static gameplayButtonBindings buttonBindings;
-        button walkRight;
-        button walkLeft;
         button jump;
         button menu;
         button hold;
-        theWierdButton dash;
+        button dashBttn;
+        joystick movement;
 
         void init();
         void clickCheck(const glm::vec2& point, const int& action, const int& pointerID, const frameContext* ctx);
@@ -44,7 +50,8 @@ namespace rfct {
     };
     struct gameplayButtonRenderInfo{
         static gameplayButtonRenderInfo buttonRenderInfo;
-        std::vector<unique<bindableImage>> Images;
-        void bindImages();
+        unique<bindableImage> Image;
+        unique<bindableImage> JoystickImage;
+        void bindImages(const std::string& path); // path is to a .txt file describing the button atlas image
     };
 }

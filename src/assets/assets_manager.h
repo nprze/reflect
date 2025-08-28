@@ -2,6 +2,7 @@
 #include "scene_serialize_data.h"
 #include "renderer_p/rasterizer_pipeline/vertex.h"
 #include "dialogue_serialize_data.h"
+#include "button_image_serialize_data.h"
 
 
 namespace rfct {
@@ -29,6 +30,8 @@ namespace rfct {
         void loadScene(const std::string& path, sceneSerializedData* sceneSerializedDataOut);
         void loadDialogue(const std::string& path, dialogueSerializeData* dialogueSerializedDataOut);
         void loadDialogueSpriteSheet(const std::string& path, dialogueSpritesheetSerializeData* dialogueSpritesheetSerializedDataOut);
+
+        void loadButtonImage(const std::string& path, buttonImageSerializeData* buttonImageSerializedDataOut);
 
         void uploadVertices(const std::vector<Vertex>& vertices, VulkanBuffer* buffer, vk::DeviceSize offset); // helper function
 

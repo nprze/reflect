@@ -2,6 +2,8 @@
 #include "renderer_p/renderer.h"
 #include <glm/trigonometric.hpp>
 #include <glm/gtc/constants.hpp>
+#include "assets/assets_manager.h"
+
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
 #endif
@@ -10,63 +12,12 @@ constexpr float timeForDashAfterBasicButtonReleased = 0.3f;
 rfct::gameplayButtonBindings rfct::gameplayButtonBindings::buttonBindings;
 rfct::gameplayButtonRenderInfo rfct::gameplayButtonRenderInfo::buttonRenderInfo;
 
-void rfct::theWierdButton::dragCheck(const glm::vec2& point, const int& action, const int& pointerID, const float& dt, bool basicButtonActivated) {
-    if (basicButtonActivated) {
-        timeBasicButtonActivated = std::clamp(timeBasicButtonActivated + dt, 0.f, 0.2f);
-    }
-    else {
-        if (timeBasicButtonActivated >= 0.02f) {
-            timePossibleDash = timeForDashAfterBasicButtonReleased + dt;
-        }
-        timeBasicButtonActivated = 0.f;
-    }
-    timePossibleDash = std::clamp(timePossibleDash - dt, 0.f, timeForDashAfterBasicButtonReleased);
-    generalDirection = dir::DirUndefined;
-    if (timePossibleDash == 0.f) return;
-    if (glm::distance(point, position) < radius && glm::distance(point, position) > button) {
-        if (action == 2) {
-            glm::vec2 direction = glm::normalize(point - position);
-            float angle = atan2(direction.y, direction.x);
-
-
-            dir directionEnum = DirUndefined;
-
-            if (angle >= -M_PI / 8 && angle < M_PI / 8) {
-                generalDirection = right;
-            }
-            else if (angle >= M_PI / 8 && angle < 3 * M_PI / 8) {
-                generalDirection = rightBottom;
-            }
-            else if (angle >= 3 * M_PI / 8 && angle < 5 * M_PI / 8) {
-                generalDirection = bottom;
-            }
-            else if (angle >= 5 * M_PI / 8 && angle < 7 * M_PI / 8) {
-                generalDirection = leftBottom;
-            }
-            else if (angle >= 7 * M_PI / 8 || angle < -7 * M_PI / 8) {
-                generalDirection = left;
-            }
-            else if (angle >= -7 * M_PI / 8 && angle < -5 * M_PI / 8) {
-                generalDirection = leftTop;
-            }
-            else if (angle >= -5 * M_PI / 8 && angle < -3 * M_PI / 8) {
-                generalDirection = top;
-            }
-            else if (angle >= -3 * M_PI / 8 && angle < -M_PI / 8) {
-                generalDirection = rightTop;
-            }
-
-        }
-    }
-}
-
 void rfct::gameplayButtonBindings::clickCheck(const glm::vec2 &point, const int& action, const int& pointerID, const frameContext* ctx){
-    walkRight.updateIsClicked(point, action, pointerID);
-    walkLeft.updateIsClicked(point, action, pointerID);
+    dashBttn.updateIsClicked(point, action, pointerID);
     jump.updateIsClicked(point, action, pointerID);
     menu.updateIsClicked(point, action, pointerID);
     hold.updateIsClicked(point, action, pointerID);
-    dash.dragCheck(point, action, pointerID, ctx->dt, hold.isClicked);
+    movement.update(point, action, pointerID, ctx->dt);
 }
 
 void rfct::gameplayButtonBindings::updateInput(rfct::input &input) const{
@@ -81,12 +32,6 @@ void rfct::gameplayButtonBindings::updateInput(rfct::input &input) const{
     input.hold = false;
 
 
-    if (walkRight.isClicked){
-        input.walk += 1;
-    }
-    if (walkLeft.isClicked){
-        input.walk -= 1;
-    }
     if (jump.isClicked){
         input.jump += 1;
     }
@@ -96,34 +41,42 @@ void rfct::gameplayButtonBindings::updateInput(rfct::input &input) const{
     if (hold.isClicked) {
         input.hold = true;
     }
-    if (dash.generalDirection != dir::DirUndefined) {
-        switch (dash.generalDirection) {
-        case right:
-            input.dashX = 1;
-            break;
-        case rightTop:
-            input.dash45up = 1;
-            break;
-        case top:
-            input.dashY = 1;
-            break;
-        case leftTop:
-            input.dash45down = -1;
-            break;
-        case left:
-            input.dashX = -1;
-            break;
-        case leftBottom:
-            input.dash45up = -1;
-            break;
-        case bottom:
-            input.dashY = -1;
-            break;
-        case rightBottom:
-            input.dash45down = 1;
-            break;
-        default:
-            break;
+    if (movement.moveDirection != dir::DirUndefined) {
+        input.walk = (movement.moveDirection == dir::right) ? 1 : -1;
+    }
+    if (dashBttn.isClicked) {
+        if (movement.dashDirection != dir::DirUndefined) {
+            switch (movement.dashDirection) {
+            case right:
+                input.dashX = 1;
+                break;
+            case rightTop:
+                input.dash45up = 1;
+                break;
+            case top:
+                input.dashY = 1;
+                break;
+            case leftTop:
+                input.dash45down = -1;
+                break;
+            case left:
+                input.dashX = -1;
+                break;
+            case leftBottom:
+                input.dash45up = -1;
+                break;
+            case bottom:
+                input.dashY = -1;
+                break;
+            case rightBottom:
+                input.dash45down = 1;
+                break;
+            default:
+                break;
+            }
+        }
+        else {
+            input.dashDefault = 1;
         }
     }
     
@@ -133,105 +86,160 @@ void rfct::gameplayButtonBindings::init() {
 
     vk::Extent2D windowExtent = renderer::getRen().getWindow().getExtent();
     // walk bttns size
-    glm::vec2 walkBttnsSize = {((float)windowExtent.height) * 0.25f, ((float)windowExtent.height) * 0.25f };
-    glm::vec2 jumpBttnsSize = {((float)windowExtent.height) * 0.15f, ((float)windowExtent.height) * 0.15f };
+    glm::vec2 joystickSize = {((float)windowExtent.height) * 0.45f, ((float)windowExtent.height) * 0.45f };
+    glm::vec2 smallerButtonSize = {((float)windowExtent.height) * 0.15f, ((float)windowExtent.height) * 0.15f };
     // basic layout:
-    // left: 10% height from bottom, 10% height from left
     float tenPercentHeight = ((float)windowExtent.height) * 0.10f;
-    walkLeft.min = {tenPercentHeight, ((float)windowExtent.height) - walkBttnsSize.y - tenPercentHeight};
-    walkLeft.max = walkLeft.min + walkBttnsSize;
-    // right: 10% height from walk left, same height as walk left
-    walkRight.min = {walkLeft.min.x + walkBttnsSize.x + tenPercentHeight, walkLeft.min.y};
-    walkRight.max = walkRight.min + walkBttnsSize;
     // jump: 10% height from bottom, 30% height from right
-    jump.min = {((float)windowExtent.width) - jumpBttnsSize.x - 3 * tenPercentHeight, ((float)windowExtent.height) - jumpBttnsSize.y - tenPercentHeight};
-    jump.max = jump.min + jumpBttnsSize;
-    // hold: 40% height from bottom, 20% height from right
-    hold.min = { ((float)windowExtent.width) - jumpBttnsSize.x - 2 * tenPercentHeight, ((float)windowExtent.height) - jumpBttnsSize.y - 4 * tenPercentHeight };
-    hold.max = hold.min + jumpBttnsSize;
-    // menu aligned to right top corner, width and height 10% of window height
-    menu.min = {windowExtent.width - tenPercentHeight, 0};
-    menu.max = menu.min + glm::vec2(tenPercentHeight, tenPercentHeight);
-   
-    dash.position = { (hold.min + hold.max) * 0.5f };
-    dash.radius = tenPercentHeight * 2.5;
-    dash.button = (hold.max.x - hold.min.x) * 0.5f;
+    jump.minViewport = {((float)windowExtent.width) - smallerButtonSize.x - 3 * tenPercentHeight, ((float)windowExtent.height) - smallerButtonSize.y - tenPercentHeight};
+    jump.maxViewport = jump.minViewport + smallerButtonSize;
+    // hold: 30% height from bottom, 20% height from right
+    hold.minViewport = { ((float)windowExtent.width) - smallerButtonSize.x - 2 * tenPercentHeight, ((float)windowExtent.height) - smallerButtonSize.y - 3 * tenPercentHeight };
+    hold.maxViewport = hold.minViewport + smallerButtonSize;
+    
+    // hold: 50% height from bottom, 20% height from right
+    dashBttn.minViewport = { ((float)windowExtent.width) - smallerButtonSize.x - 2 * tenPercentHeight, ((float)windowExtent.height) - smallerButtonSize.y - 5 * tenPercentHeight };
+    dashBttn.maxViewport = dashBttn.minViewport + smallerButtonSize;
 
-    gameplayButtonRenderInfo::buttonRenderInfo.bindImages();
+    // menu aligned to right top corner, width and height 10% of window height
+    menu.minViewport = {windowExtent.width - tenPercentHeight, 0};
+    menu.maxViewport = menu.minViewport + glm::vec2(tenPercentHeight, tenPercentHeight);
+
+    // joystick middle: 15% height from bottom, 30% height from right
+    movement.position = { 3.f * tenPercentHeight, ((float)windowExtent.height) - smallerButtonSize.y - 1.5f * tenPercentHeight };
+    // joystick interaction radius: 25% height
+    movement.intractionRadius = 3.0 * tenPercentHeight;
+    // joystick draw radius: 20% height
+    movement.drawRadius = 2.5f * tenPercentHeight;
+
+    movement.joystickMiddleHalfSize = smallerButtonSize * 0.5f;
+    movement.lastTouchPos = movement.position;
+
+    gameplayButtonRenderInfo::buttonRenderInfo.bindImages("UI/android_buttons.txt");
 }
 
 void rfct::gameplayButtonBindings::drawButtons() {
-    renderer::getRen().getUIPipeline().addImage(walkLeft.min, walkLeft.max, walkLeft.image);
-    renderer::getRen().getUIPipeline().addImage(walkRight.min, walkRight.max, walkRight.image);
-    renderer::getRen().getUIPipeline().addImage(jump.min, jump.max, jump.image);
-    renderer::getRen().getUIPipeline().addImage(menu.min, menu.max, menu.image);
-    renderer::getRen().getUIPipeline().addImage(hold.min, hold.max, hold.image);
-    if (dash.timeBasicButtonActivated != 0.f) {
-        float widthAndHeight = dash.radius - dash.button;
-        // right
-        renderer::getRen().getUIPipeline().addImage({ dash.position.x + dash.button, dash.position.y - (widthAndHeight * 0.5f) }, { dash.position.x + dash.radius, dash.position.y + (widthAndHeight * 0.5f) }, dash.image);
-        // left
-        renderer::getRen().getUIPipeline().addImage({ dash.position.x - dash.button, dash.position.y - (widthAndHeight * 0.5f) }, { dash.position.x - dash.radius, dash.position.y + (widthAndHeight * 0.5f) }, dash.image);
-        // up
-        renderer::getRen().getUIPipeline().addImage(
-                { dash.position.x - (widthAndHeight * 0.5f), dash.position.y - dash.radius },
-                { dash.position.x + (widthAndHeight * 0.5f), dash.position.y - dash.button },
-                dash.imageUp
-        );
-        // down
-        renderer::getRen().getUIPipeline().addImage(
-                { dash.position.x - (widthAndHeight * 0.5f), dash.position.y + dash.radius },
-                { dash.position.x + (widthAndHeight * 0.5f), dash.position.y + dash.button },
-                dash.imageUp
-        );
-        float offset = dash.button  * (1/std::sqrt(2.0f));
-        float offsetMax = dash.radius * 0.9f;
-        // top-right (45°)
-        renderer::getRen().getUIPipeline().addImage(
-                { dash.position.x + offset, dash.position.y - offsetMax },
-                { dash.position.x + offsetMax, dash.position.y - offset },
-                dash.image45
-        );
-        renderer::getRen().getUIPipeline().addImage(
-                { dash.position.x + offset, dash.position.y + offset },      // min
-                { dash.position.x + offsetMax, dash.position.y + offsetMax },// max
-                dash.image45
-        );
-        renderer::getRen().getUIPipeline().addImage(
-                { dash.position.x - offsetMax, dash.position.y - offset },   // min
-                { dash.position.x - offset, dash.position.y - offsetMax },   // max
-                dash.image45down
-        );
-        renderer::getRen().getUIPipeline().addImage(
-                { dash.position.x - offsetMax, dash.position.y + offset },   // min
-                { dash.position.x - offset, dash.position.y + offsetMax },   // max
-                dash.image45down
-        );
+    renderer::getRen().getUIPipeline().addImage(dashBttn.minViewport, dashBttn.maxViewport, gameplayButtonRenderInfo::buttonRenderInfo.Image.get(),            dashBttn.minImageReleased, dashBttn.maxImageReleased);
+    renderer::getRen().getUIPipeline().addImage(jump.minViewport, jump.maxViewport, gameplayButtonRenderInfo::buttonRenderInfo.Image.get(),                    jump.minImageReleased, jump.maxImageReleased);
+    renderer::getRen().getUIPipeline().addImage(menu.minViewport, menu.maxViewport, gameplayButtonRenderInfo::buttonRenderInfo.Image.get(),                    menu.minImageReleased, menu.maxImageReleased);
+    renderer::getRen().getUIPipeline().addImage(hold.minViewport, hold.maxViewport, gameplayButtonRenderInfo::buttonRenderInfo.Image.get(),                    hold.minImageReleased, hold.maxImageReleased);
+
+    renderer::getRen().getUIPipeline().addImage(movement.position - glm::vec2{movement.drawRadius, movement.drawRadius}, movement.position + glm::vec2{movement.drawRadius, movement.drawRadius}, gameplayButtonRenderInfo::buttonRenderInfo.JoystickImage.get());
+    renderer::getRen().getUIPipeline().addImage(movement.lastTouchPos - movement.joystickMiddleHalfSize, movement.lastTouchPos + movement.joystickMiddleHalfSize, gameplayButtonRenderInfo::buttonRenderInfo.Image.get(), movement.joystickMiddleImageMin, movement.joystickMiddleImageMax);
+}
+
+void rfct::gameplayButtonRenderInfo::bindImages(const std::string& path) {
+    buttonImageSerializeData serializeData;
+    AssetsManager::get().loadButtonImage(path, &serializeData);
+    // init images
+    Image = std::make_unique<bindableImage>(serializeData.imagePath);
+    JoystickImage = std::make_unique<bindableImage>(serializeData.joystickImagePath);
+
+    float oneOverRowCount = 1.f / ((float)serializeData.imageRows);
+    float oneOverColumnCount = 1.f / ((float)serializeData.imageColumns);
+
+    gameplayButtonBindings::buttonBindings.movement.joystickMiddleImageMin = { serializeData.joystick.released.y * oneOverColumnCount + 0.003f, serializeData.joystick.released.x * oneOverRowCount + 0.003f };
+    gameplayButtonBindings::buttonBindings.movement.joystickMiddleImageMax = { (serializeData.joystick.released.y +1) * oneOverColumnCount - 0.003f , (serializeData.joystick.released.x + 1) * oneOverRowCount -0.003f };
+
+    gameplayButtonBindings::buttonBindings.dashBttn.minImageReleased = { serializeData.dash.released.y * oneOverColumnCount, serializeData.dash.released.x * oneOverRowCount };
+    gameplayButtonBindings::buttonBindings.dashBttn.maxImageReleased = { (serializeData.dash.released.y +1) * oneOverColumnCount , (serializeData.dash.released.x + 1) * oneOverRowCount  };
+
+    gameplayButtonBindings::buttonBindings.jump.minImageReleased = { serializeData.jump.released.y * oneOverColumnCount, serializeData.jump.released.x * oneOverRowCount };
+    gameplayButtonBindings::buttonBindings.jump.maxImageReleased = { (serializeData.jump.released.y +1) * oneOverColumnCount , (serializeData.jump.released.x + 1) * oneOverRowCount  };
+
+    gameplayButtonBindings::buttonBindings.hold.minImageReleased = { serializeData.hold.released.y * oneOverColumnCount, serializeData.hold.released.x * oneOverRowCount };
+    gameplayButtonBindings::buttonBindings.hold.maxImageReleased = { (serializeData.hold.released.y +1) * oneOverColumnCount , (serializeData.hold.released.x + 1) * oneOverRowCount  };
+
+    gameplayButtonBindings::buttonBindings.menu.minImageReleased = { serializeData.menu.released.y * oneOverColumnCount, serializeData.menu.released.x * oneOverRowCount  };
+    gameplayButtonBindings::buttonBindings.menu.maxImageReleased = { (serializeData.menu.released.y +1) * oneOverColumnCount, (serializeData.menu.released.x + 1) * oneOverRowCount };
+}
+
+void rfct::joystick::update(const glm::vec2& point, const int& action, const int& pointer, const float& dt)
+{
+    bool inside = (glm::distance(point, position) < intractionRadius);
+        
+    if (action == 0) {
+        if (inside) {
+            activePointers.insert(pointer);
+            lastTouchPos = point;
+        }
+    }
+    else if (action == 1) {
+        activePointers.erase(pointer);
+        lastTouchPos = position;
+    }
+    else if (action == 2) {
+        if (activePointers.count(pointer)) {
+            if (!inside) {
+                activePointers.erase(pointer);
+                lastTouchPos = position;
+            }
+            else {
+                lastTouchPos = point;
+            }
+        }
+        else if (inside) {
+            activePointers.insert(pointer);
+            lastTouchPos = point;
+        }
+    }
+
+    isTriggered = !activePointers.empty();
+}
+
+void rfct::joystick::updateDir()
+{
+    glm::vec2 direction = lastTouchPos - position;
+    if (std::abs(direction.x) > 0.1 * intractionRadius) {
+        if (direction.x > 0) {
+            moveDirection = right;
+        }
+        else {
+            moveDirection = left;
+        }
+    }
+    else {
+        moveDirection = dir::DirUndefined;
+    }
+    if (gameplayButtonBindings::buttonBindings.dashBttn.isClicked) {
+        RFCT_INFO("dashing!");
+        if (glm::length(direction) > 0.1 * intractionRadius) {
+            direction = glm::normalize(lastTouchPos - position);
+            float angle = atan2(direction.y, direction.x);
+
+
+            dir directionEnum = DirUndefined;
+
+            if (angle >= -M_PI / 8 && angle < M_PI / 8) {
+                dashDirection = right;
+            }
+            else if (angle >= M_PI / 8 && angle < 3 * M_PI / 8) {
+                dashDirection = rightBottom;
+            }
+            else if (angle >= 3 * M_PI / 8 && angle < 5 * M_PI / 8) {
+                dashDirection = bottom;
+            }
+            else if (angle >= 5 * M_PI / 8 && angle < 7 * M_PI / 8) {
+                dashDirection = leftBottom;
+            }
+            else if (angle >= 7 * M_PI / 8 || angle < -7 * M_PI / 8) {
+                dashDirection = left;
+            }
+            else if (angle >= -7 * M_PI / 8 && angle < -5 * M_PI / 8) {
+                dashDirection = leftTop;
+            }
+            else if (angle >= -5 * M_PI / 8 && angle < -3 * M_PI / 8) {
+                dashDirection = top;
+            }
+            else if (angle >= -3 * M_PI / 8 && angle < -M_PI / 8) {
+                dashDirection = rightTop;
+            }
+        }
+        else {
+            dashDirection = dir::DirUndefined;
+        }
+    }
+    else {
+        dashDirection = dir::DirUndefined;
     }
 }
-
-void rfct::gameplayButtonRenderInfo::bindImages() {
-    // init images
-    Images.reserve(9);
-    Images.push_back(std::make_unique<bindableImage>("UI/left.png"));
-    gameplayButtonBindings::buttonBindings.walkLeft.image = Images.back().get();
-    Images.push_back(std::make_unique<bindableImage>("UI/right.png"));
-    gameplayButtonBindings::buttonBindings.walkRight.image = Images.back().get();
-    Images.push_back(std::make_unique<bindableImage>("UI/jump.png"));
-    gameplayButtonBindings::buttonBindings.jump.image = Images.back().get();
-    Images.push_back(std::make_unique<bindableImage>("UI/menu.png"));
-    gameplayButtonBindings::buttonBindings.menu.image = Images.back().get();
-    Images.push_back(std::make_unique<bindableImage>("UI/hold.png"));
-    gameplayButtonBindings::buttonBindings.hold.image = Images.back().get();
-    Images.push_back(std::make_unique<bindableImage>("UI/dash.png"));
-    gameplayButtonBindings::buttonBindings.dash.image = Images.back().get();
-    Images.push_back(std::make_unique<bindableImage>("UI/dash45.png"));
-    gameplayButtonBindings::buttonBindings.dash.image45 = Images.back().get();
-    Images.push_back(std::make_unique<bindableImage>("UI/dashUp.png"));
-    gameplayButtonBindings::buttonBindings.dash.imageUp = Images.back().get();
-    Images.push_back(std::make_unique<bindableImage>("UI/dash45down.png"));
-    gameplayButtonBindings::buttonBindings.dash.image45down = Images.back().get();
-
-}
-
-

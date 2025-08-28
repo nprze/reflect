@@ -20,6 +20,7 @@ namespace rfct {
             glm::vec2 point = {event.x, event.y};
             gameplayButtonBindings::buttonBindings.clickCheck(point, event.action, event.pointerID, context);
         }
+        gameplayButtonBindings::buttonBindings.movement.updateDir();
         gameplayButtonBindings::buttonBindings.updateInput(s_input);
     }
 }

@@ -1,5 +1,6 @@
 #pragma once
 #include <glm/glm.hpp>
+#include <map>
 namespace rfct {
 	// dialogue version 1.0
 	struct dialogueParticipantSerializeData {

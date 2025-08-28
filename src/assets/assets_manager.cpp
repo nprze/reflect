@@ -2,6 +2,11 @@
 #include "app.h"
 #include "stb_image/stb_image.h"
 #include <fstream>
+#include <charconv>
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <unordered_map>
 
 #include "renderer_p/shader/vulkan_shader.h"
 #include "renderer_p/image/image.h"
@@ -466,17 +471,15 @@ namespace rfct {
 
                 std::getline(file, line); // min
                 {
-                    float x, y;
-                    std::from_chars(line.data() + 10, line.data() + line.find(','), x);
-                    std::from_chars(line.data() + line.find(',') + 2, line.data() + line.size() - 1, y);
+                    float x = std::stof(line.substr(10, line.find(',') - 10));
+                    float y = std::stof(line.substr(line.find(',') + 2, line.size() - line.find(',') - 3));
                     npc.min = { x, y };
                 }
 
                 std::getline(file, line); // max
                 {
-                    float x, y;
-                    std::from_chars(line.data() + 8, line.data() + line.find(','), x);
-                    std::from_chars(line.data() + line.find(',') + 2, line.data() + line.size() - 1, y);
+                    float x = std::stof(line.substr(8, line.find(',') - 8));
+                    float y = std::stof(line.substr(line.find(',') + 2, line.size() - line.find(',') - 3));
                     npc.max = { x, y };
                 }
 
@@ -679,6 +682,85 @@ namespace rfct {
             dialogueSpritesheetSerializedDataOut->cycles[currentCycleName] = currentCycle;
         }
 
+    }
+
+    void AssetsManager::loadButtonImage(const std::string& path, buttonImageSerializeData* buttonImageSerializedDataOut)
+    {
+        std::string finalPath = m_Path + "/" + path;
+        std::ifstream file(finalPath);
+
+        if (!file.is_open()) {
+            RFCT_CRITICAL("Failed to open button image descripting file: {}", finalPath);
+        }
+
+        std::string line;
+        int currentRow = -1;
+        bool parsingReleased = false;
+        bool parsingHold = false;
+
+        std::unordered_map<std::string, buttonCoordInfo*> buttonMap = {
+            {"joystickButton",   &buttonImageSerializedDataOut->joystick},
+            {"hold",   &buttonImageSerializedDataOut->hold},
+            {"jump",   &buttonImageSerializedDataOut->jump},
+            {"menu",   &buttonImageSerializedDataOut->menu},
+            {"dash",   &buttonImageSerializedDataOut->dash}
+        };
+
+        while (std::getline(file, line)) {
+            if (line.empty()) continue;
+
+            std::istringstream iss(line);
+            std::string key;
+            iss >> key;
+
+            if (key == "image:") {
+                iss >> buttonImageSerializedDataOut->imagePath;
+            }
+            else if (key == "joystickBG:") {
+                iss >> buttonImageSerializedDataOut->joystickImagePath;
+            }
+            else if (key == "imageRows:") {
+                iss >> buttonImageSerializedDataOut->imageRows;
+            }
+            else if (key == "imageColumns:") {
+                iss >> buttonImageSerializedDataOut->imageColumns;
+            }
+            else if (key == "buttonSize:") {
+                char c;
+                float w, h;
+                iss >> c >> w >> c >> h >> c;
+                buttonImageSerializedDataOut->buttonSize = { w, h };
+            }
+            else if (key == "Row") {
+                iss >> currentRow;
+            }
+            else if (key == "Released:") {
+                parsingReleased = true;
+                parsingHold = false;
+            }
+            else if (key == "Hold:") {
+                parsingReleased = false;
+                parsingHold = true;
+            }
+            else {
+                auto it = buttonMap.find(key);
+                if (it != buttonMap.end()) {
+                    int colIndex = 0;
+                    static int colCounter = 0;
+
+                    if (parsingReleased) {
+                        it->second->released = { currentRow, colCounter };
+                    }
+                    else if (parsingHold) {
+                        it->second->hold = { currentRow, colCounter };
+                    }
+
+                    colCounter++;
+
+                    if (file.peek() == '\n') colCounter = 0;
+                }
+            }
+        }
     }
 
     frameAnimation AssetsManager::loadAnimation(const std::string& path)
