@@ -249,9 +249,9 @@ void rfct::scene::deleteDynamicEntity(entity e)
 	e.destruct();
 }
 
-entity rfct::scene::createDynamicRenderingEntity(std::vector<Vertex>* vertices, glm::mat4* model)
+entity rfct::scene::createDynamicRenderingEntity(std::vector<Vertex>* vertices, glm::mat4* model, uint32_t numVertices)
 {
-	objectLocation ol = m_RenderData.addDynamicObject(vertices, model);
+	objectLocation ol = m_RenderData.addDynamicObject(vertices, model, true, {}, numVertices);
 	dynamicSSBOIndexComponent ssboIndex = { ol.indexInSSBO };
 
 	return ecs::get().entity<>()

@@ -22,11 +22,11 @@ namespace rfct {
     static flecs::query<cigaretteUpdateComponent, dynamicSSBOIndexComponent, positionComponent, rotationComponent, scaleComponent> cigaretteMatricesQuery;
 }
 
-std::vector<rfct::Vertex> cigaretteVertices;
+std::vector<rfct::Vertex> spikeVertices;
 void rfct::initCigaretteVars(scene* scene)
 {
     // vertices
-    cigaretteVertices.resize(12);
+    spikeVertices.resize(12);
 
 
     glm::vec3 white = { 0.6f, 0.6f, 0.6f };
@@ -38,16 +38,16 @@ void rfct::initCigaretteVars(scene* scene)
     glm::vec3 bg3 = glm::vec3(restHor, -restVer, 0);
 
 
-    cigaretteVertices[0].pos = bg0;
-    cigaretteVertices[1].pos = bg1;
-    cigaretteVertices[2].pos = bg2;
+    spikeVertices[0].pos = bg0;
+    spikeVertices[1].pos = bg1;
+    spikeVertices[2].pos = bg2;
 
-    cigaretteVertices[3].pos = bg3;
-    cigaretteVertices[4].pos = bg1;
-    cigaretteVertices[5].pos = bg2;
+    spikeVertices[3].pos = bg3;
+    spikeVertices[4].pos = bg1;
+    spikeVertices[5].pos = bg2;
 
     for (uint8_t i = 0; i < 6; ++i) {
-        cigaretteVertices[i].color = black;
+        spikeVertices[i].color = black;
     }
 
 
@@ -58,17 +58,17 @@ void rfct::initCigaretteVars(scene* scene)
     glm::vec3 v3 = glm::vec3(betweenHor, -betweenVer, 0);
 
 
-    cigaretteVertices[6].pos = v2;
-    cigaretteVertices[7].pos = v1;
-    cigaretteVertices[8].pos = v3;
+    spikeVertices[6].pos = v2;
+    spikeVertices[7].pos = v1;
+    spikeVertices[8].pos = v3;
 
-    cigaretteVertices[9].pos = v0;
-    cigaretteVertices[10].pos = v1;
-    cigaretteVertices[11].pos = v2;
+    spikeVertices[9].pos = v0;
+    spikeVertices[10].pos = v1;
+    spikeVertices[11].pos = v2;
 
 
     for (uint8_t i = 6; i < 12; ++i) {
-        cigaretteVertices[i].color = white;
+        spikeVertices[i].color = white;
     }
 
 
@@ -155,7 +155,7 @@ entity rfct::constructCigarette(const frameContext* fc, const entity entityPlaye
     constexpr float min_val = std::min(betweenVer, betweenHor);
 
     glm::mat4 transMat = glm::translate(glm::mat4(1.f), glm::vec3(entityPlayer.get<positionComponent>()->position, 0.f));
-    entity newCigarette = fc->scene->createDynamicRenderingEntity(&cigaretteVertices, &transMat);
+    entity newCigarette = fc->scene->createDynamicRenderingEntity(&spikeVertices, &transMat);
     newCigarette.set<cigaretteUpdateComponent>({ true });
     newCigarette.set<positionComponent>({ entityPlayer.get<positionComponent>()->position });
     newCigarette.set<velocityComponent>({ .5f * glm::vec2{facingRight ? -1.f : 1.f, 1.f} });
@@ -185,7 +185,7 @@ void rfct::constructCigaretteBoundingBox(entity cigarette)
     rotationMat = glm::rotate(rotationMat, rot->rotation.z, glm::vec3(0.0f, 0.0f, 1.0f)); // roll
 
     for (uint8_t i = 0; i < 4; ++i) {
-        glm::vec4 rotatedPos = rotationMat * glm::vec4(cigaretteVertices[i].pos, 1.0f);
+        glm::vec4 rotatedPos = rotationMat * glm::vec4(spikeVertices[i].pos, 1.0f);
 
         boc->min.x = std::min(rotatedPos.x, boc->min.x);
         boc->min.y = std::min(rotatedPos.y, boc->min.y);

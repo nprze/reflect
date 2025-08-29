@@ -3,6 +3,7 @@
 #include "renderer_p/rasterizer_pipeline/vertex.h"
 #include "dialogue_serialize_data.h"
 #include "button_image_serialize_data.h"
+#include "scene_loader.h"
 
 
 namespace rfct {
@@ -41,6 +42,7 @@ namespace rfct {
     private:
         vk::CommandPool m_AssetsCommandPool;
         std::string m_Path;
+        sceneLoader m_SceneLoader; // separate becaues load scene is growing real fast and the .cpp file is getting messy
 
         AssetsManager() = default;
         ~AssetsManager() = default;

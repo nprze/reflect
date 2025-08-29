@@ -18,7 +18,8 @@ namespace rfct {
         Cigarette, 
         Smoke,
         NPC,
-        Kindling
+        Kindling,
+        Spike
     };
 
 
@@ -98,6 +99,7 @@ namespace rfct {
     struct playerStateComponent {
         bool grounded = false;
         bool holding = false;
+        uint32_t timesShouldBeDead = 0;
     };
     struct playerDashStateComponent {
         bool dashing = false;

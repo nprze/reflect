@@ -5,21 +5,26 @@
 #include "glm/gtc/matrix_transform.hpp"
 #include "world_p/transform.h"
 #include "world_p/object_components.h"
+#include "world_p/objects/spikes.h"
 
 rfct::objectsHolder::~objectsHolder()
 {
 	cleanupCigarettes();
+	cleanupSpikes();
 }
 
 void rfct::objectsHolder::init(sceneSerializedData* serializeData, scene* parentScene)
 {
+	initCigaretteVars(parentScene);
+	initSpikeVars(parentScene);
+
+
 	vines.reserve(serializeData->vines.size());
 	for (vineInfo& vi : serializeData->vines) {
 		vines.push_back(vine(vi.start, vi.end, vi.numEdges, parentScene));
 	}
 	nearestVineEdgeToPlayerIndex = -1;
 
-	initCigaretteVars(parentScene);
 
 	for (NPCInfo npcInfo : serializeData->npcs) {
 		dynamicBoxColliderComponent boc = { npcInfo.min, npcInfo.max };
@@ -29,6 +34,10 @@ void rfct::objectsHolder::init(sceneSerializedData* serializeData, scene* parent
 		npcEntity.set<dialoguePathComponent>({ npcInfo.dialogueFile });
 		npcEntity.set<positionComponent>({ (boc.min + boc.max) * 0.5f });
 		npcs.push_back(npcEntity);
+	}
+
+	for (SpikeInfo spike : serializeData->spikes) {
+		createSpike(parentScene, spike);
 	}
 }
 void rfct::objectsHolder::update(frameContext* fc)

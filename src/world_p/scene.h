@@ -29,7 +29,7 @@ namespace rfct {
 		
 		entity createDynamicRect(dynamicBoxColliderComponent* bounds, glm::vec3 color = glm::vec3(1.f, 1.f, 1.f));
 		entity createDynamicMesh(dynamicBoxColliderComponent* bounds, const std::string& path);
-		entity createDynamicRenderingEntity(std::vector<Vertex>* vertices, glm::mat4* model);
+		entity createDynamicRenderingEntity(std::vector<Vertex>* vertices, glm::mat4* model, uint32_t numVertices = 0);
 		void updateTransformData(frameContext* ctx, entity entityToUpdate); // entity must contain positionComponent, rotationComponent and scaleComponent
 		void createPlayerEntity(const glm::vec2& spawnPoint);
 		void updateDirection(bool facingRight);
