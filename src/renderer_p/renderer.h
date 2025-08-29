@@ -64,6 +64,7 @@ namespace rfct {
 		bloomResurcesHolder m_bloomRes;
 		debugDraw m_debugDraw;
 		UIPipeline m_UIPipeline;
+
     private:
         friend class vulkanSwapChain;
         friend class reflectApplication;

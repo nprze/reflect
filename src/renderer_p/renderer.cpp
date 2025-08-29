@@ -177,11 +177,17 @@ void rfct::renderer::render(frameContext& frameContext)
         presentInfo.pSwapchains = &sc;
         presentInfo.pImageIndices = &imageIndex;
         presentInfo.pResults = nullptr;
-#ifdef WINDOWS_BUILD
-        RFCT_VULKAN_CHECK(m_device.getQueueManager().getPresentQueue().presentKHR(&presentInfo));
-#else
-        m_device.getQueueManager().getPresentQueue().presentKHR(&presentInfo);
-#endif
+
+        vk::Result presRes = m_device.getQueueManager().getPresentQueue().presentKHR(&presentInfo);
+        if (presRes == vk::Result::eSuboptimalKHR){
+            getRenderImagesManager().getSwapChain().framebufferResized = true;
+            RFCT_INFO("recreation needed");
+        }else{
+            if (presRes != vk::Result::eSuccess){
+                RFCT_INFO("other present error");
+
+            }
+        }
     }
 }
 

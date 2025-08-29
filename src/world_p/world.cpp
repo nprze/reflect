@@ -47,3 +47,6 @@ void rfct::world::onUpdate(frameContext& context)
 }
 
 
+void rfct::world::addScreenTransform(float degree) {
+	screenViewTransformDegrees = degree;
+}

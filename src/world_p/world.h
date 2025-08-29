@@ -14,9 +14,12 @@ namespace rfct {
 		inline scene& getCurrentScene() { return *m_currentScene; };
 		void cleanWorld();
 		void onUpdate(frameContext& context);
+        void addScreenTransform(float degree);
 	private:
 		world() = default;
 		~world() = default;
 		scene* m_currentScene;
+    public:
+        float screenViewTransformDegrees = 0;
 	};
 }

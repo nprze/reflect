@@ -5,14 +5,16 @@
 #define GLM_ENABLE_EXPERIMENTAL
 #include "glm/gtx/euler_angles.hpp"
 #include "world_p/camera/camera.h"
-
+#include "world_p/world.h"  
 
 inline static glm::mat4 getUIMatrix() {
+
     vk::Extent2D extent = rfct::renderer::getRen().getWindow().getExtent();
     float width = static_cast<float>(extent.width);
     float height = static_cast<float>(extent.height);
 
-    return glm::ortho(0.0f, width, 0.0f, height);
+    glm::mat4 screenRot = glm::rotate(glm::mat4(1), glm::radians(rfct::world::getWorld().screenViewTransformDegrees), glm::vec3(0.0f, 0.0f, 1.0f));
+    return screenRot * glm::ortho(0.0f, width, 0.0f, height);
 }
 
 rfct::frameData::frameData(vk::Device device, VmaAllocator& allocator, vk::Fence lastFramePresentFinishedFence, vk::Fence thisFramePresentFinishedFence)

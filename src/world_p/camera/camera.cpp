@@ -13,7 +13,8 @@ namespace rfct {
     static glm::mat4 projectionMatrix;
 
     void recalculateProjectionMatrix(const cameraComponent* cam) {
-        projectionMatrix = glm::perspective(glm::radians(cam->fov), cam->aspectRatio, cam->nearPlane, cam->farPlane);
+        glm::mat4 screenRot = glm::rotate(glm::mat4(1), glm::radians(world::getWorld().screenViewTransformDegrees), glm::vec3(0.0f, 0.0f, 1.0f));
+        projectionMatrix = screenRot* glm::perspective(glm::radians(cam->fov), cam->aspectRatio, cam->nearPlane, cam->farPlane);
     }
 
     void setCamera(entity camera)
@@ -39,6 +40,7 @@ namespace rfct {
             cameraEntity.get_mut<cameraComponent>()->aspectRatio = renderer::getRen().getAspectRatio();
 			recalculateProjectionMatrix(cameraEntity.get<cameraComponent>());
         }
+        recalculateProjectionMatrix(cameraEntity.get<cameraComponent>());
 
     }
 

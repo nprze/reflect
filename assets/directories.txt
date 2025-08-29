@@ -1,0 +1,16 @@
+background
+building_blocks
+dialogues
+fonts
+player
+scenes
+shaders
+UI
+world
+dialogues/characters
+dialogues/characters/test
+player/walkAnim
+shaders/cube
+shaders/debug_draw
+shaders/post_proc
+shaders/UI

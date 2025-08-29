@@ -20,10 +20,10 @@ foreach(OUTPUTCONFIG IN LISTS CMAKE_CONFIGURATION_TYPES)
 endforeach()
 
 # Project name
-project(reflect)
+project(reflect LANGUAGES C CXX)
 
 # Source setup
-file(GLOB_RECURSE REFLECT_SOURCE
+file(GLOB_RECURSE REFLECT_SOURCE_PLATFORM_INDEPENDENT
         "src/*.h"
         "src/*.cpp"
         "src/assets/asset_manager.cpp"
@@ -32,13 +32,13 @@ file(GLOB_RECURSE REFLECT_SOURCE
 )
 if(PLATFORM_WINDOWS)
     file(GLOB_RECURSE REFLECT_SOURCE
-            ${REFLECT_SOURCE}
+            ${REFLECT_SOURCE_PLATFORM_INDEPENDENT}
             "platform/windows/*.h"
             "platform/windows/*.cpp"
     )
 elseif(PLATFORM_ANDROID)
     file(GLOB_RECURSE REFLECT_SOURCE
-            ${REFLECT_SOURCE}
+            ${REFLECT_SOURCE_PLATFORM_INDEPENDENT}
             "platform/android/*.h"
             "platform/android/*.cpp"
     )
@@ -54,7 +54,14 @@ endif()
 
 
 if(PLATFORM_ANDROID)
-    add_library(reflect SHARED ${REFLECT_SOURCE})
+    set(${CMAKE_C_FLAGS}, "${CMAKE_C_FLAGS}")
+    set(NATIVE_APP_GLUE_DIR ${ANDROID_NDK}/sources/android/native_app_glue)
+    add_library(native_app_glue STATIC ${NATIVE_APP_GLUE_DIR}/android_native_app_glue.c)
+    target_include_directories(native_app_glue PUBLIC ${NATIVE_APP_GLUE_DIR})
+
+    
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+    add_library(reflect SHARED platform/android/android_glue.cpp)
     target_compile_definitions(reflect PRIVATE RFCT_ASSETS_DIR="\"\"")
 
     target_compile_definitions(reflect PUBLIC ANDROID_BUILD)
@@ -71,7 +78,7 @@ if(PLATFORM_ANDROID)
             ${Vulkan_INCLUDE_DIRS}
     )
 
-    target_link_libraries(reflect PRIVATE ${log-lib} ${android-lib} Vulkan::Vulkan)
+    target_link_libraries(reflect PRIVATE ${log-lib} ${android-lib} Vulkan::Vulkan native_app_glue)
 
     include_directories(${Vulkan_INCLUDE_DIRS})
     link_directories(${VULKAN_SDK}/Lib)
@@ -87,7 +94,6 @@ if(PLATFORM_ANDROID)
     )
     set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -u ANativeActivity_onCreate")
 endif()
-
 
 
 target_sources(reflect PRIVATE ${REFLECT_SOURCE})
