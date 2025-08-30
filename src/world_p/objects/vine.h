@@ -12,6 +12,7 @@ namespace rfct {
 	public:
 		vine(const glm::vec2& start, const glm::vec2& end, const int numEdges, scene* parentScene);
 		void update(const frameContext* fc);
+		void reset();
 		void draw(const frameContext* fc);
 	private:
 		entity m_vineEntity;

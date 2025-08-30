@@ -18,7 +18,7 @@ void rfct::cleanupSpikes()
 namespace rfct {
 	void onCollision_Spike_DynamicObj(entity vineEntity, entity collidedWith) {
 		if (collidedWith.get<dynamicObjectTypeComponent>()->type != dynamicObjectType::Player) return;
-		RFCT_INFO("kill the player");
+		collidedWith.get_mut<playerLifeComponent>()->alive = false;
 	}
 }
 void rfct::createSpike(scene* parentScene, const SpikeInfo& spawnInfo)

@@ -12,6 +12,7 @@ namespace rfct{
 		void init(sceneSerializedData* serializeData, scene* parentScene);
 		void update(frameContext* fc);
 		void draw(const frameContext* fc);
+		void reset(const frameContext* fc);
 		
 		void onPlayerDashObjects(frameContext* fc, const entity entityPlayer, const bool facingRight); // to be called before physics update
 		std::vector<vine> vines;

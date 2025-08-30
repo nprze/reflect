@@ -71,6 +71,11 @@ namespace rfct{
 void rfct::scene::onUpdate(frameContext* context)
 {
 	RFCT_PROFILE_SCOPE("scene update");
+	if (epicRotatingTriangle.get<playerLifeComponent>()->alive == false) {
+		epicRotatingTriangle.get_mut<playerLifeComponent>()->alive = true;
+		epicRotatingTriangle.get_mut<positionComponent>()->position = m_spawnPlayerPos;
+		m_dynamicObjects.reset(context);
+	}
 	m_playerController.update(context);
 	m_dynamicObjects.update(context);
 	m_decorations.update(context);
@@ -104,6 +109,7 @@ void rfct::scene::loadScene(const std::string& path)
 	sceneSerializedData sc;
 	AssetsManager::get().loadScene(path, &sc);
 
+
 	sceneEntity = ecs::get().entity<sceneComponent>();
 	createQueries(sceneEntity);
 
@@ -128,6 +134,7 @@ void rfct::scene::loadScene(const std::string& path)
 	}
 	// the first dynamic object must be the player (the player is unique, uses frame animation; the frame animation uses the model matrix from dynamic objects ubo, with the 0 index)
 	createPlayerEntity(sc.spawnPoint);
+	m_spawnPlayerPos = sc.spawnPoint;
 
 
 	// init dynamic objects
@@ -298,7 +305,8 @@ void rfct::scene::createPlayerEntity(const glm::vec2& spawnPoint)
 		.set<dynamicBoxColliderComponent>(bounds)
 		.set<playerStateComponent>({})
 		.set<playerDashStateComponent>({})
-		.set<dynamicObjectTypeComponent>({dynamicObjectType::Player});
+		.set<dynamicObjectTypeComponent>({dynamicObjectType::Player})
+		.set<playerLifeComponent>({false});
 
 	m_playerController.setPlayer(epicRotatingTriangle);
 }

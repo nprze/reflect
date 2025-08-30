@@ -185,8 +185,10 @@ glm::vec3 getColorWithFluctuate(float maxFluct = 0.2f, const glm::vec3& basicCol
 rfct::vine::vine(const glm::vec2& startArg, const glm::vec2& endArg, const int numEdges, scene* parentScene):m_vertices((numEdges-1) * 3 * 4, Vertex())
 {
 	vinePositionsComponent vpCom = {};
+	vineBasePositionsComponent vbpCom = {};
 	vpCom.positions.reserve(numEdges);
 	vpCom.previousPosition.reserve(numEdges);
+	vbpCom.basePositions.reserve(numEdges);
 	glm::vec2 start = { 0.f,0.f };
 	glm::vec2 end = endArg - startArg;
 	glm::vec2 dir = glm::normalize(end);
@@ -194,6 +196,7 @@ rfct::vine::vine(const glm::vec2& startArg, const glm::vec2& endArg, const int n
 	for (uint32_t i = 0; i < numEdges; i++) {
 		vpCom.positions.push_back((i * oneLineLen) * dir);
 		vpCom.previousPosition.push_back((i * oneLineLen) * dir);
+		vbpCom.basePositions.push_back((i * oneLineLen) * dir);
 	}
 
 	staticObjCollisionCallbackComponent colCallback;
@@ -237,6 +240,7 @@ rfct::vine::vine(const glm::vec2& startArg, const glm::vec2& endArg, const int n
 		.set<dynamicSSBOIndexComponent>({ ol.indexInSSBO })
 		.set<vertexRenderInfoComponent>({ ol.verticesCount, ol.vertexBufferOffset })
 		.set<vinePositionsComponent>(vpCom)
+		.set<vineBasePositionsComponent>(vbpCom)
 		.set<positionComponent>({ startArg })
 		.set<gravityComponent>({ 0.f,false,0.f })
 		.set<velocityComponent>({ {0.f, 0.f} })
@@ -283,6 +287,18 @@ void rfct::vine::update(const frameContext* fc)
 
 		}
 		constructBoundingBox(m_vineEntity);
+	}
+}
+
+void rfct::vine::reset()
+{
+	std::vector<glm::vec2>& positions = m_vineEntity.get_mut<vinePositionsComponent>()->positions;
+	std::vector<glm::vec2>& previousPositions = m_vineEntity.get_mut<vinePositionsComponent>()->previousPosition;
+	std::vector<glm::vec2>& basePositions = m_vineEntity.get_mut<vineBasePositionsComponent>()->basePositions;
+
+	for (uint32_t i = 0; i < positions.size(); ++i) {
+		positions[i] = basePositions[i];
+		previousPositions[i] = basePositions[i];
 	}
 }
 

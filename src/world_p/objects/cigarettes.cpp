@@ -141,6 +141,18 @@ void rfct::updateCigarettes(frameContext* ctx) { // cigarette system
         });
 }
 
+void rfct::resetCigarettes(const frameContext* ctx)
+{
+    std::vector<entity> cigarettes;
+    cigarettes.reserve(cigaretteComponentsQuery.count());
+    cigaretteComponentsQuery.each([&](flecs::entity cigaretteEntity, cigaretteUpdateComponent& update, positionComponent& pos, velocityComponent& velocity, angularVelocityComponent& angVel, rotationComponent& rotation) {
+        cigarettes.push_back(cigaretteEntity);
+        });
+    for (entity e : cigarettes) {
+        ctx->scene->deleteDynamicEntity(e);
+    }
+}
+
 void rfct::updateCigarettesMatrixes(const frameContext* ctx)
 {
     sceneRenderData& rd = ctx->scene->getRenderData();

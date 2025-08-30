@@ -67,6 +67,16 @@ void rfct::objectsHolder::draw(const frameContext* fc){
 	}
 	updateCigarettesMatrixes(fc);
 }
+void rfct::objectsHolder::reset(const frameContext* fc)
+{
+	for (vine& v : vines) {
+		v.reset();
+	}
+
+	resetCigarettes(fc);
+	cigarettes.clear();
+	cigarettes.resize(cigarettesMaxCount);
+}
 void rfct::objectsHolder::onPlayerDashObjects(frameContext* fc, const entity entityPlayer, const bool facingRight)
 {
 	entity newCigarette = constructCigarette(fc, entityPlayer, facingRight);

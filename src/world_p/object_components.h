@@ -13,6 +13,10 @@ namespace rfct {
         std::vector<glm::vec2> previousPosition;
         std::vector<glm::vec2> positions;
     };
+
+    struct vineBasePositionsComponent {
+        std::vector<glm::vec2> basePositions;
+    };
     struct vineStateComponent {
         bool holdingToThis = false;
     };

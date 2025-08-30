@@ -99,7 +99,9 @@ namespace rfct {
     struct playerStateComponent {
         bool grounded = false;
         bool holding = false;
-        uint32_t timesShouldBeDead = 0;
+    };
+    struct playerLifeComponent {
+        bool alive = true;
     };
     struct playerDashStateComponent {
         bool dashing = false;

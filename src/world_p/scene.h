@@ -57,5 +57,6 @@ namespace rfct {
 
 		dialogue* m_currentlyPlayingDialogue = nullptr;
 
+		glm::vec2 m_spawnPlayerPos;
 	};
 };
