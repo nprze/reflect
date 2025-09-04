@@ -4,6 +4,7 @@
 #include "dash_kindlings.h"
 #include "world_p/components.h"
 #include "assets/scene_serialize_data.h"
+#include "death_anim.h"
 
 void rfct::decorationHolder::init(sceneSerializedData* serializeData, scene* parentScene) {
 	initSmokeVars(parentScene);

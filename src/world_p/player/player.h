@@ -1,5 +1,6 @@
 #pragma once
 #include <glm/glm.hpp>
+#include "world_p/components.h"
 
 namespace rfct {
 	constexpr float maxWalkVelocity = 0.3f;
@@ -7,7 +8,9 @@ namespace rfct {
 	struct frameContext;
 	void onCollision_Player_StaticObj(entity player, entity collidedWith, glm::vec2 resolution);
 	class playerController {
+		static playerController instance;
 	public:
+		static playerController& get() { return instance; };
 		playerController();
 		void setPlayer(entity playerEntity) { player = playerEntity; }
 		void update(frameContext* ctx);

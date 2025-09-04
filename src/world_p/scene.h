@@ -36,6 +36,8 @@ namespace rfct {
 
 		void startDialogue(const std::string& path, frameContext* ctx);
 
+		void resetScene(frameContext* ctx);
+
 		entity getPlayer() { return epicRotatingTriangle; }
 
 		objectsHolder& getObjectHolder() { return m_dynamicObjects; }
@@ -53,7 +55,6 @@ namespace rfct {
 		decorationHolder m_decorations;
 
 		entity epicRotatingTriangle;
-		playerController m_playerController;
 
 		dialogue* m_currentlyPlayingDialogue = nullptr;
 

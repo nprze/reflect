@@ -22,6 +22,16 @@ namespace rfct {
         Spike
     };
 
+    enum class playerState : uint8_t {
+        normal = 0,
+        dashing,
+        jumping,
+        holdingVines,
+        holdingBlocks
+    };
+
+
+
 
 
     struct objectLocation {
@@ -99,6 +109,7 @@ namespace rfct {
     struct playerStateComponent {
         bool grounded = false;
         bool holding = false;
+        playerState  state = playerState::normal;
     };
     struct playerLifeComponent {
         bool alive = true;
@@ -106,6 +117,9 @@ namespace rfct {
     struct playerDashStateComponent {
         bool dashing = false;
         float dashProgress = 0.f;
+    };
+    struct playerBoxToHoldComponent {
+        staticBoxColliderComponent* boundingBox;
     };
 
     struct staticObjCollisionCallbackComponent {

@@ -165,6 +165,11 @@ void rfct::buildBVH(flecs::query<T> qr, std::vector<BVHnode>* BVHnodes)
     createSubTree(entries, 0, entries.size()-1, BVHnodes);
 }
 
+glm::vec2 rfct::nearestPointOnAABB(const glm::vec2& point, const glm::vec2& AABBMin, const glm::vec2& AABBMax)
+{
+    return glm::vec2(glm::clamp(point.x, AABBMin.x, AABBMax.x), glm::clamp(point.y, AABBMin.y, AABBMax.y));
+}
+
 void rfct::buildDynamicBVH(flecs::query<dynamicBoxColliderComponent, positionComponent>& qr, std::vector<BVHnode>* BVHnodes)
 {
     BVHnodes->clear();
@@ -265,8 +270,7 @@ namespace rfct {
 }
 
 // BVH draw functions
-namespace rfct {
-    void drawAABB(const glm::vec2& min, const glm::vec2& max, uint32_t depth) {
+void rfct::drawAABB(const glm::vec2& min, const glm::vec2& max, uint32_t depth) {
         debugLine* lines = debugDraw::requestLines(4);
         float z_coord = depth / 100;
         lines[0].vertices[0].pos = { min.x, min.y, z_coord };
@@ -309,6 +313,7 @@ namespace rfct {
         }
 
     }
+namespace rfct {
     void drawBVH(uint32_t depth, const BVHnode& start, std::vector<BVHnode>* nodes) {
         drawAABB(start.min, start.max, depth);
         if (!(start.right<0)) {
@@ -380,6 +385,61 @@ entity rfct::findTheNearestVineToPlayer(entity player)
                     nearestDistSq = entityDistSq;
                     nearestEntity = node.entity;
                 }
+            }
+        }
+        else {
+            int left = node.left;
+            int right = node.right;
+
+            if (left != -1 && right != -1) {
+                float leftDist = SquaredDistanceToAABB(point, bvh[left].min, bvh[left].max);
+                float rightDist = SquaredDistanceToAABB(point, bvh[right].min, bvh[right].max);
+
+                if (leftDist < rightDist) {
+                    if (rightDist < nearestDistSq) stack.push(right);
+                    if (leftDist < nearestDistSq) stack.push(left);
+                }
+                else {
+                    if (leftDist < nearestDistSq) stack.push(left);
+                    if (rightDist < nearestDistSq) stack.push(right);
+                }
+            }
+            else {
+                if (left != -1 && SquaredDistanceToAABB(point, bvh[left].min, bvh[left].max) < nearestDistSq)
+                    stack.push(left);
+                if (right != -1 && SquaredDistanceToAABB(point, bvh[right].min, bvh[right].max) < nearestDistSq)
+                    stack.push(right);
+            }
+        }
+    }return nearestEntity;
+}
+
+
+entity rfct::findTheNearestBlockToPlayer(entity player)
+{
+    glm::vec2 point = player.get<positionComponent>()->position;
+    std::vector<BVHnode>& bvh = StaticObjsBVHnodes;
+    entity nearestEntity{};
+    float nearestDistSq = std::numeric_limits<float>::max();
+
+    std::stack<int> stack;
+    stack.push(static_cast<int>(bvh.size()) - 1);
+
+    while (!stack.empty()) {
+        int nodeIndex = stack.top();
+        stack.pop();
+        const BVHnode& node = bvh[nodeIndex];
+
+        float distSq = SquaredDistanceToAABB(point, node.min, node.max);
+        if (distSq >= nearestDistSq) continue;
+
+        if (node.left == -1 && node.right == -1) {
+            float entityDistSq = 0.0f;
+            entityDistSq = distSq;
+
+            if (entityDistSq < nearestDistSq) {
+                nearestDistSq = entityDistSq;
+                nearestEntity = node.entity;
             }
         }
         else {

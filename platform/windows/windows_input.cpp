@@ -13,7 +13,7 @@ namespace rfct {
 		}
 	}
 
-	input::input() :walk(0), windowExtent(nullptr)
+	input::input() :walk(0), openMenu(false), jump(0), dashDefault(0), dashX(0), dash45up(0), dash45down(0), dashY(0), hold(false), windowExtent(nullptr)
 	{
 	}
 

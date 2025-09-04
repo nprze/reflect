@@ -71,12 +71,10 @@ namespace rfct{
 void rfct::scene::onUpdate(frameContext* context)
 {
 	RFCT_PROFILE_SCOPE("scene update");
-	if (epicRotatingTriangle.get<playerLifeComponent>()->alive == false) {
-		epicRotatingTriangle.get_mut<playerLifeComponent>()->alive = true;
-		epicRotatingTriangle.get_mut<positionComponent>()->position = m_spawnPlayerPos;
-		m_dynamicObjects.reset(context);
+	if (!epicRotatingTriangle.get<playerLifeComponent>()->alive) {
+		resetScene(context);
 	}
-	m_playerController.update(context);
+	playerController::get().update(context);
 	m_dynamicObjects.update(context);
 	m_decorations.update(context);
 	buildDynamicObjBVH();
@@ -306,9 +304,10 @@ void rfct::scene::createPlayerEntity(const glm::vec2& spawnPoint)
 		.set<playerStateComponent>({})
 		.set<playerDashStateComponent>({})
 		.set<dynamicObjectTypeComponent>({dynamicObjectType::Player})
-		.set<playerLifeComponent>({false});
+		.set<playerBoxToHoldComponent>({nullptr})
+		.set<playerLifeComponent>({true});
 
-	m_playerController.setPlayer(epicRotatingTriangle);
+	playerController::get().setPlayer(epicRotatingTriangle);
 }
 
 void rfct::scene::updateDirection(bool facingRight)
@@ -323,4 +322,12 @@ void rfct::scene::startDialogue(const std::string& path, frameContext* ctx)
 	ctx->state = gameState::stateDialogue;
 	m_currentlyPlayingDialogue = new dialogue(path);
 	m_currentlyPlayingDialogue->fullLoad();
+}
+
+void rfct::scene::resetScene(frameContext* ctx)
+{
+
+	epicRotatingTriangle.get_mut<playerLifeComponent>()->alive = true;
+	epicRotatingTriangle.get_mut<positionComponent>()->position = m_spawnPlayerPos;
+	m_dynamicObjects.reset(ctx);
 }

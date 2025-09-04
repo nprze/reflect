@@ -58,4 +58,10 @@ namespace rfct {
         float currentProgress;
     };
 
+    struct deathAnimParticle {
+        glm::vec2 direction;
+        float currentProgress;
+
+    };
+
 }
