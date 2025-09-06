@@ -31,6 +31,9 @@ namespace rfct {
 		float dashVerticalInput;
 		float dash45upInput;
 		float dash45downInput;
+
+		float arrowUpDownInput;
+
 		bool anyDash = false; // for simplicity
 
 
@@ -52,7 +55,9 @@ namespace rfct {
 		bool hold;
 		nearestObject nearestObjectToHold;
 
-
+		float dashCooldown;
+		float holdCooldown;
+		float holdJumpCooldown;
 	private:
 		// to simplify
 		positionComponent* posComp;
@@ -65,8 +70,8 @@ namespace rfct {
 
 		void normalWalkUpdate();
 		void normalJumpUpdate();
-		void normalDashUpdate();
-		void normalHoldUpdate();
+
+		bool checkHold(scene* scen); // returns if holding
 
 		void startDash(frameContext* ctx);
 	};

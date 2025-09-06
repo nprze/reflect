@@ -66,6 +66,8 @@ namespace rfct {
 		float dash45down;
 		float dashY;
 
+        float upDown;
+
         bool hold;
 
 		glm::vec2 dashHelper;

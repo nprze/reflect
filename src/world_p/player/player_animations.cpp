@@ -55,6 +55,7 @@ void rfct::playerAnimations::unloadAnimations()
 
 void rfct::playerAnimations::update(const glm::vec2& playerVel, const glm::vec2& playerPos, frameContext& ctx, entity player)
 {
+	return;
 	RFCT_PROFILE_SCOPE("player animation update");
 	const playerDashStateComponent* dc = player.get<playerDashStateComponent>();
 	if (dc->dashing) {

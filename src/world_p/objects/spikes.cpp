@@ -9,7 +9,7 @@ namespace rfct {
 }
 void rfct::initSpikeVars(scene* parentScene)
 {
-	vertices.resize(20 * 3);
+	vertices.resize(100 * 3);
 }
 
 void rfct::cleanupSpikes()

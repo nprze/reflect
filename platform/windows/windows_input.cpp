@@ -36,6 +36,8 @@ namespace rfct {
 		dash45down = 0;
 		dashDefault = 0;
 
+		upDown = 0;
+
 		anyClicked = false;
 	
 
@@ -106,6 +108,12 @@ namespace rfct {
 				else { // default
 					dashDefault = 1;
 				}
+			}
+			if (glfwGetKey(window, keyBindings::dash_dir_top) == GLFW_PRESS) {
+				upDown += 1;
+			}
+			if (glfwGetKey(window, keyBindings::dash_dir_bottom) == GLFW_PRESS) {
+				upDown -= 1;
 			}
 			break;
 		}
