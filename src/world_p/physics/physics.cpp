@@ -15,9 +15,12 @@ constexpr float dumping = 0.97f;
 namespace rfct
 { 
     static flecs::query<gravityComponent, velocityComponent, positionComponent, dynamicBoxColliderComponent, staticObjCollisionCallbackComponent> gravityVelocityPositionBoxQuery;
-    static flecs::query<positionComponent, dynamicBoxColliderComponent, dynamicObjCollisionCallbackComponent> dynamicObjectsQuery;
+    static flecs::query<positionComponent, dynamicCircleColliderComponent, staticObjCollisionCallbackComponent> staticCircleCollisionQuery;
+    static flecs::query<positionComponent, dynamicBoxColliderComponent, dynamicObjCollisionCallbackComponent> dynamicBoxesQuery;
+    static flecs::query<positionComponent, dynamicCircleColliderComponent, dynamicObjCollisionCallbackComponent> dynamicCirclesQuery;
     static flecs::query<staticBoxColliderComponent> staticBoxColliderQuery;
     static flecs::query<dynamicBoxColliderComponent, positionComponent> dynamicBoxColliderQuery;
+    static flecs::query<dynamicCircleColliderComponent, positionComponent> dynamicCircleColliderQuery;
     static std::vector<BVHnode> StaticObjsBVHnodes;
     static std::vector<BVHnode> DynamicObjsBVHnodes;
 }
@@ -28,8 +31,16 @@ void rfct::createQueries(entity sceneEntity) {
         ecs::get().query_builder<gravityComponent, velocityComponent, positionComponent, dynamicBoxColliderComponent, staticObjCollisionCallbackComponent>()
         .with(flecs::ChildOf, sceneEntity)
         .build();
-    dynamicObjectsQuery =
+    staticCircleCollisionQuery =
+        ecs::get().query_builder<positionComponent, dynamicCircleColliderComponent, staticObjCollisionCallbackComponent>()
+        .with(flecs::ChildOf, sceneEntity)
+        .build();
+    dynamicBoxesQuery =
         ecs::get().query_builder<positionComponent, dynamicBoxColliderComponent, dynamicObjCollisionCallbackComponent>()
+        .with(flecs::ChildOf, sceneEntity)
+        .build();
+    dynamicCirclesQuery =
+        ecs::get().query_builder<positionComponent, dynamicCircleColliderComponent, dynamicObjCollisionCallbackComponent>()
         .with(flecs::ChildOf, sceneEntity)
         .build();
     staticBoxColliderQuery =
@@ -40,13 +51,20 @@ void rfct::createQueries(entity sceneEntity) {
         ecs::get().query_builder<dynamicBoxColliderComponent, positionComponent>()
         .with(flecs::ChildOf, sceneEntity)
         .build();
+    dynamicCircleColliderQuery =
+        ecs::get().query_builder<dynamicCircleColliderComponent, positionComponent>()
+        .with(flecs::ChildOf, sceneEntity)
+        .build();
 }
 
 void rfct::cleanupQueries() {
     gravityVelocityPositionBoxQuery.~query();
-    dynamicObjectsQuery.~query();
+    dynamicBoxesQuery.~query();
+    dynamicCirclesQuery.~query();
     staticBoxColliderQuery.~query();
     dynamicBoxColliderQuery.~query();
+    dynamicCircleColliderQuery.~query();
+    staticCircleCollisionQuery.~query();
 }
 
 void rfct::buildStaticObjBVH()
@@ -57,17 +75,29 @@ void rfct::buildStaticObjBVH()
 void rfct::buildDynamicObjBVH()
 {
     RFCT_PROFILE_SCOPE("build BVH");
-    buildDynamicBVH(dynamicBoxColliderQuery, &DynamicObjsBVHnodes);
+    buildDynamicBVH(dynamicBoxColliderQuery, dynamicCircleColliderQuery, &DynamicObjsBVHnodes);
 }
 
 
 
 // helper functions
 namespace rfct {
+    std::pair<glm::vec2, glm::vec2> circleToAABB(const glm::vec2& center, float radius) {
+        glm::vec2 min = center - glm::vec2(radius);
+        glm::vec2 max = center + glm::vec2(radius);
+        return { min, max };
+    }
+
     float SquaredDistanceToAABB(const glm::vec2& point, const glm::vec2& min, const glm::vec2& max) {
         float dx = std::max(std::max(min.x - point.x, 0.0f), point.x - max.x);
         float dy = std::max(std::max(min.y - point.y, 0.0f), point.y - max.y);
         return dx * dx + dy * dy;
+    }
+
+
+    glm::vec2 rfct::nearestPointOnAABB(const glm::vec2& point, const glm::vec2& AABBMin, const glm::vec2& AABBMax)
+    {
+        return glm::vec2(glm::clamp(point.x, AABBMin.x, AABBMax.x), glm::clamp(point.y, AABBMin.y, AABBMax.y));
     }
 
     uint32_t expandBits(uint16_t v) {
@@ -131,6 +161,7 @@ namespace rfct {
         }
     }
 }
+
 template<typename T>
 void rfct::buildBVH(flecs::query<T> qr, std::vector<BVHnode>* BVHnodes)
 {
@@ -165,32 +196,41 @@ void rfct::buildBVH(flecs::query<T> qr, std::vector<BVHnode>* BVHnodes)
     createSubTree(entries, 0, entries.size()-1, BVHnodes);
 }
 
-glm::vec2 rfct::nearestPointOnAABB(const glm::vec2& point, const glm::vec2& AABBMin, const glm::vec2& AABBMax)
-{
-    return glm::vec2(glm::clamp(point.x, AABBMin.x, AABBMax.x), glm::clamp(point.y, AABBMin.y, AABBMax.y));
-}
 
-void rfct::buildDynamicBVH(flecs::query<dynamicBoxColliderComponent, positionComponent>& qr, std::vector<BVHnode>* BVHnodes)
+void rfct::buildDynamicBVH(flecs::query<dynamicBoxColliderComponent, positionComponent>& qBox, flecs::query<dynamicCircleColliderComponent, positionComponent>& qCircle, std::vector<BVHnode>* BVHnodes)
 {
     BVHnodes->clear();
     glm::vec2 globalMin(FLT_MAX);
     glm::vec2 globalMax(-FLT_MAX);
 
-    qr.each([&](flecs::entity e, dynamicBoxColliderComponent& box, positionComponent& pos) {
+    qBox.each([&](flecs::entity e, dynamicBoxColliderComponent& box, positionComponent& pos) {
         globalMin = glm::min(globalMin, box.min + pos.position);
         globalMax = glm::max(globalMax, box.max + pos.position);
+        });
+
+    qCircle.each([&](flecs::entity e, dynamicCircleColliderComponent& circ, positionComponent& pos) {
+        globalMin = glm::min(globalMin, pos.position + circ.offsetFromCenter - glm::vec2{ circ.radius, circ.radius });
+        globalMax = glm::max(globalMax, pos.position + circ.offsetFromCenter + glm::vec2{ circ.radius, circ.radius });
         });
 
     glm::vec2 extent = globalMax - globalMin;
 
     std::vector<Entry> entries;
 
-    qr.each([&](flecs::entity e, dynamicBoxColliderComponent& box, positionComponent& pos) {
+    qBox.each([&](flecs::entity e, dynamicBoxColliderComponent& box, positionComponent& pos) {
         glm::vec2 center = (box.min + box.max) * 0.5f + pos.position;
         glm::vec2 normalized = (center - globalMin) / extent;
         uint32_t morton = getMortonCode(normalized.x, normalized.y);
 
         entries.push_back({ morton, box.min + pos.position, box.max + pos.position, e });
+        });
+
+    qCircle.each([&](flecs::entity e, dynamicCircleColliderComponent& circ, positionComponent& pos) {
+        glm::vec2 center = circ.offsetFromCenter + pos.position;
+        glm::vec2 normalized = (center - globalMin) / extent;
+        uint32_t morton = getMortonCode(normalized.x, normalized.y);
+
+        entries.push_back({ morton, circ.offsetFromCenter - glm::vec2{ circ.radius, circ.radius } + pos.position, circ.offsetFromCenter + glm::vec2{ circ.radius, circ.radius } + pos.position, e });
         });
 
     std::sort(entries.begin(), entries.end(), [](const Entry& a, const Entry& b) {
@@ -215,6 +255,11 @@ namespace rfct {
         return (aMin.x <= bMax.x && aMax.x >= bMin.x &&
             aMin.y <= bMax.y && aMax.y >= bMin.y);
     }
+    bool checkCollisionAABBCircle(const glm::vec2& aMin, const glm::vec2& aMax, const glm::vec2& circleCenter, float radius) {
+        glm::vec2 nearest = nearestPointOnAABB(circleCenter, aMin, aMax);
+        float distSq = glm::dot(nearest - circleCenter, nearest - circleCenter);
+        return distSq <= radius * radius;
+    }
 
     glm::vec2 ResolveAABBCollision(
         const dynamicBoxColliderComponent& dynamic,
@@ -236,6 +281,46 @@ namespace rfct {
             return glm::vec2(0.0f, overlapY);
         }
     }
+
+    glm::vec2 ResolveAABBCircleCollision(
+        const dynamicCircleColliderComponent& dynamic,
+        const staticBoxColliderComponent& staticCol
+    ) {
+        // Closest point on AABB to circle center
+        glm::vec2 closest = glm::clamp(dynamic.offsetFromCenter, staticCol.min, staticCol.max);
+
+        glm::vec2 diff = dynamic.offsetFromCenter - closest;
+        float dist2 = glm::dot(diff, diff);
+
+        // If outside or just touching, no resolution
+        if (dist2 >= dynamic.radius * dynamic.radius)
+            return glm::vec2(0.0f);
+
+        float dist = std::sqrt(dist2);
+
+        if (dist > 0.0001f) {
+            glm::vec2 normal = diff / dist;
+            float penetration = dynamic.radius - dist;
+            return normal * penetration;
+        }
+
+        glm::vec2 circleMin = dynamic.offsetFromCenter - glm::vec2(dynamic.radius);
+        glm::vec2 circleMax = dynamic.offsetFromCenter + glm::vec2(dynamic.radius);
+
+        float dx1 = staticCol.max.x - circleMin.x;
+        float dx2 = staticCol.min.x - circleMax.x;
+        float dy1 = staticCol.max.y - circleMin.y;
+        float dy2 = staticCol.min.y - circleMax.y;
+
+        float overlapX = std::abs(dx1) < std::abs(dx2) ? dx1 : dx2;
+        float overlapY = std::abs(dy1) < std::abs(dy2) ? dy1 : dy2;
+
+        if (std::abs(overlapX) < std::abs(overlapY))
+            return glm::vec2(overlapX, 0.0f);
+        else
+            return glm::vec2(0.0f, overlapY);
+    }
+
 
     void checkForCollision(BVHnode& node, dynamicBoxColliderComponent& bocCollider, staticObjCollisionCallbackComponent& callback, entity& dynamicEntity) {
         if (checkForCollisionAABBAABB(node.min, node.max, bocCollider.min, bocCollider.max)) {
@@ -267,6 +352,38 @@ namespace rfct {
             }
         }
     }
+
+    void checkForCollision(BVHnode& node, dynamicCircleColliderComponent& circleCollider, dynamicObjCollisionCallbackComponent& callback, entity& collidingEntity) {
+        if (checkCollisionAABBCircle(node.min, node.max, circleCollider.offsetFromCenter, circleCollider.radius)) {
+            if (node.right < 0) 
+            {
+                // BVH leaf
+                if (collidingEntity != node.entity) {
+                    callback.handler(collidingEntity, node.entity);
+                }
+            }
+            else {
+                checkForCollision(DynamicObjsBVHnodes[node.right], circleCollider, callback, collidingEntity);
+                checkForCollision(DynamicObjsBVHnodes[node.left], circleCollider, callback, collidingEntity);
+            }
+        }
+    }
+
+    void checkForCollision(BVHnode& node, dynamicCircleColliderComponent& circleCollider, staticObjCollisionCallbackComponent& callback, entity& dynamicEntity) {
+        if (checkCollisionAABBCircle(node.min, node.max, circleCollider.offsetFromCenter, circleCollider.radius)) {
+            if (node.right < 0)
+            {
+                // BVH leaf
+                glm::vec2 resolution = ResolveAABBCircleCollision(circleCollider, { node.min, node.max });
+                callback.handler(dynamicEntity, node.entity, resolution);
+            }
+            else {
+                checkForCollision(StaticObjsBVHnodes[node.right], circleCollider, callback, dynamicEntity);
+                checkForCollision(StaticObjsBVHnodes[node.left], circleCollider, callback, dynamicEntity);
+            }
+        }
+    }
+
 }
 
 // BVH draw functions
@@ -326,7 +443,7 @@ namespace rfct {
 void rfct::updatePhysics(const frameContext* ctx)
 {
     RFCT_PROFILE_SCOPE("physics update");
-    // drawBVH(0, DynamicObjsBVHnodes.back(), &DynamicObjsBVHnodes);
+    //drawBVH(0, DynamicObjsBVHnodes.back(), &DynamicObjsBVHnodes);
     for (uint32_t i = 0; i < ctx->fixedUpdateTimes;++i) {
         RFCT_PROFILE_SCOPE("physics step");
         gravityVelocityPositionBoxQuery.each([&](flecs::entity ent, gravityComponent& gravity, velocityComponent& velocity, positionComponent& position, dynamicBoxColliderComponent& dynamicBox, staticObjCollisionCallbackComponent& callback) {
@@ -344,15 +461,31 @@ void rfct::updatePhysics(const frameContext* ctx)
             }
 
             });
+        staticCircleCollisionQuery.each([&](flecs::entity ent, positionComponent& position, dynamicCircleColliderComponent& dynamicCorcle, staticObjCollisionCallbackComponent& callback) {
+            constexpr float substepTime = (fixedDeltaTime) / (float)substepCount;
+            for (uint32_t substep = 0; substep < substepCount; substep++) {
+                dynamicCircleColliderComponent circ = { dynamicCorcle.offsetFromCenter + position.position, dynamicCorcle.radius };
+                checkForCollision(StaticObjsBVHnodes.back(), circ, callback, ent);
+            }
+
+            });
 
         // on dynamic objects do not update velocities
-        dynamicObjectsQuery.each([&](flecs::entity ent, positionComponent& position, dynamicBoxColliderComponent& dynamicBox, dynamicObjCollisionCallbackComponent& callback) {
+        dynamicBoxesQuery.each([&](flecs::entity ent, positionComponent& position, dynamicBoxColliderComponent& dynamicBox, dynamicObjCollisionCallbackComponent& callback) {
             constexpr float substepTime = (fixedDeltaTime) / (float)substepCount;
             for (uint32_t substep = 0; substep < substepCount; substep++) {
                 dynamicBoxColliderComponent finalBoundingBox = { dynamicBox.min + position.position, dynamicBox.max + position.position };
                 checkForCollision(DynamicObjsBVHnodes.back(), finalBoundingBox, callback, ent);
             }
 
+            });
+        dynamicCirclesQuery.each([&](flecs::entity ent, positionComponent& position, dynamicCircleColliderComponent& dynamicCircle, dynamicObjCollisionCallbackComponent& callback) {
+            RFCT_INFO("corcle");
+            constexpr float substepTime = (fixedDeltaTime) / (float)substepCount;
+            for (uint32_t substep = 0; substep < substepCount; substep++) {
+                dynamicCircleColliderComponent circ = { dynamicCircle.offsetFromCenter + position.position, dynamicCircle.radius };
+                checkForCollision(DynamicObjsBVHnodes.back(), circ, callback, ent);
+            }
             });
     }
 }

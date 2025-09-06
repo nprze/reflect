@@ -3,6 +3,11 @@
 #include "world_p/components.h"
 
 namespace rfct {
+	struct nearestObject {
+		entity object = entity();
+		glm::vec2 closestPosition = {0,0};
+		int vineIndex = -1; // -2 if block, -1 if no object found
+	};
 	constexpr float maxWalkVelocity = 0.3f;
 	constexpr float dashFullTime = 0.2f;
 	struct frameContext;
@@ -19,7 +24,6 @@ namespace rfct {
 		float walkSpeed;
 		float dashSpeed;
 		float jumpSpeed;
-		float timeSinceLastDash;
 
 		float walkHorizontalInput;
 		float jumpInput;
@@ -27,19 +31,43 @@ namespace rfct {
 		float dashVerticalInput;
 		float dash45upInput;
 		float dash45downInput;
-		bool facingRight;
 		bool anyDash = false; // for simplicity
 
-		bool hold;
-		
-		float notHoldingTime;
 
-		float timesYNotZero;
+
 		float changingDirectionBoost;
 		float walkVelocity;
-		glm::vec2 dashVelocity;
-		int dashCharges;
+		bool facingRight;
 
+
+		float timeYNotZero;
+		float startedJumpingTime;
+
+		float dashTime;
+		glm::vec2 dashVelocity;
+		uint8_t dashCharges;
 		uint8_t kindlingsToSpawnThisDash;
+
+
+		bool hold;
+		nearestObject nearestObjectToHold;
+
+
+	private:
+		// to simplify
+		positionComponent* posComp;
+		velocityComponent* velComp;
+		playerStateComponent* stateComp;
+		inputVelocityComponent* inputVelComp;
+
+	private:
+		nearestObject findObjectToHold();
+
+		void normalWalkUpdate();
+		void normalJumpUpdate();
+		void normalDashUpdate();
+		void normalHoldUpdate();
+
+		void startDash(frameContext* ctx);
 	};
 }

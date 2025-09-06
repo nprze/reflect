@@ -2,7 +2,7 @@
 #include <glm/glm.hpp>
 
 using collisionHandler = void(*)(entity, entity, glm::vec2);
-using dynamicCollisionHandler = void(*)(entity, entity);
+using dynamicCollisionHandler = void(*)(entity, entity); // the second entity must have EITHER dynamic box collider or dynamic circle collider
 namespace flecs {
 	class world;
 	class entity;
@@ -91,6 +91,13 @@ namespace rfct {
         glm::vec2 min;
         glm::vec2 max;
     };
+    struct dynamicCircleColliderComponent { // center at positionComponent
+        glm::vec2 offsetFromCenter;
+        float radius;
+    };
+    struct staticCircleColliderComponent {
+        float radius;
+    };
 
 
 	struct velocityComponent {
@@ -108,7 +115,7 @@ namespace rfct {
 
     struct playerStateComponent {
         bool grounded = false;
-        bool holding = false;
+        bool allowToJump = false;
         playerState  state = playerState::normal;
     };
     struct playerLifeComponent {
@@ -118,16 +125,13 @@ namespace rfct {
         bool dashing = false;
         float dashProgress = 0.f;
     };
-    struct playerBoxToHoldComponent {
-        staticBoxColliderComponent* boundingBox;
-    };
 
     struct staticObjCollisionCallbackComponent {
         collisionHandler handler;
     };
 
     struct dynamicObjCollisionCallbackComponent {
-        dynamicCollisionHandler handler;
+        dynamicCollisionHandler handler; 
     };
 
     struct transform {
