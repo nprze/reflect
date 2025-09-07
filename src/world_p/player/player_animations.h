@@ -39,10 +39,20 @@ namespace rfct {
 		frameAnimation m_jumpReturn;
 		frameAnimation m_dashStart;
 		frameAnimation m_dashEnd;
+		frameAnimation m_hold;
+		frameAnimation m_climb;
 
 		frameAnimation* m_currentAnimation;
 
 		hairAnimation m_rightHairAnim;
 		hairAnimation m_leftHairAnim;
+
+		void changeIfNotCurrent(frameAnimation* newAnim);
+		bool ifThisChangeToThat(frameAnimation* checkAnim, frameAnimation* newAnim);
+		bool isThisPlaying(frameAnimation* checkAnim);
+
+		inline bool between(float value, float min, float max) { return value >= min && value <= max; };
+		bool isAnyJumpAnimPlaying();
+		
 	};
 }

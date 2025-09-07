@@ -40,6 +40,8 @@ void rfct::playerAnimations::loadAnimations()
 	m_jumpReturn = AssetsManager::get().loadAnimation("player/walkAnim/jump-return.txt");
 	m_dashStart = AssetsManager::get().loadAnimation("player/walkAnim/dash-start.txt");
 	m_dashEnd = AssetsManager::get().loadAnimation("player/walkAnim/dash-end.txt");
+	m_hold = AssetsManager::get().loadAnimation("player/walkAnim/hold.txt");
+	m_climb = AssetsManager::get().loadAnimation("player/walkAnim/climb.txt");
 	
 	m_currentAnimation = &m_idle;
 }
@@ -55,8 +57,65 @@ void rfct::playerAnimations::unloadAnimations()
 
 void rfct::playerAnimations::update(const glm::vec2& playerVel, const glm::vec2& playerPos, frameContext& ctx, entity player)
 {
-	return;
 	RFCT_PROFILE_SCOPE("player animation update");
+	const playerStateComponent* ps = player.get<playerStateComponent>();
+	const inputVelocityComponent* ivel = player.get<inputVelocityComponent>();
+	const velocityComponent* pvel = player.get<velocityComponent>();
+	constexpr float velocityTreshold = 0.03f;
+	switch (ps->state) {
+	case playerState::normal: {
+		if (pvel->velocity.y < -velocityTreshold) {
+			// falling
+			changeIfNotCurrent(&m_jumpFall);
+		}
+		else {
+			ifThisChangeToThat(&m_jumpFall, &m_jumpReturn);
+			if (!isThisPlaying(&m_jumpReturn)) {
+				if (std::abs(ivel->velocity.x) > 0.1f) {
+					changeIfNotCurrent(&m_walking);
+				}
+				else {
+					changeIfNotCurrent(&m_idle);
+				}
+			}
+		}
+		break;
+	}
+	case playerState::jumping: {
+		if (pvel->velocity.y != 0.f || ivel->velocity.y != 0.f) {
+			if (!isAnyJumpAnimPlaying()) changeAnimation(&m_jumpUp);
+			if (between(pvel->velocity.y, 0.6f, 3.f)) { changeIfNotCurrent(&m_jumpUp); }
+			if (between(pvel->velocity.y, -0.3f, 0.6f)) { ifThisChangeToThat(&m_jumpUp, &m_jumpTurnover); }
+			if (between(pvel->velocity.y, -10.f, -0.3f)) { ifThisChangeToThat(&m_jumpTurnover , &m_jumpFall); }
+		}
+		else {
+			if (isAnyJumpAnimPlaying()) { 
+				changeIfNotCurrent(&m_jumpReturn);
+			}
+		}
+		break;
+	}
+	case playerState::dashing: {
+		break;
+	}
+	case playerState::holdingVines: {
+		changeIfNotCurrent(&m_hold);
+		break;
+	}
+	case playerState::holdingBlocks: {
+		if (pvel->velocity.y != 0.f) {
+			changeIfNotCurrent(&m_climb);
+		}
+		else {
+			changeIfNotCurrent(&m_hold);
+		}
+		break;
+	}
+	default: {
+		RFCT_CRITICAL("state unknown: {}", (uint8_t)ps->state);
+	}
+	}
+	/*
 	const playerDashStateComponent* dc = player.get<playerDashStateComponent>();
 	if (dc->dashing) {
 		if (m_currentAnimation != &m_dashStart && m_currentAnimation != &m_dashEnd) {
@@ -119,7 +178,8 @@ void rfct::playerAnimations::update(const glm::vec2& playerVel, const glm::vec2&
 				}
 			}
 		}
-	}
+	}*/
+
 	m_timeSinceFrameChanged += ctx.dt;
 	if (m_timeSinceFrameChanged > m_currentAnimation->timePerFrame) {
 		if (!m_currentAnimation->shouldBeRepeated&& m_currentFrame == m_currentAnimation->frameCount-1) {
@@ -168,4 +228,35 @@ void rfct::playerAnimations::initHairAnim(float playerWidth, float playerHeight)
 
 	m_rightHairAnim.init(glm::vec2{ playerWidth * 0.4f, 0.4f * playerHeight }, 0.9f * playerHeight, 4);
 	m_leftHairAnim.init(glm::vec2{ playerWidth * -0.4f, 0.4f * playerHeight }, 0.9f * playerHeight, 4);
+}
+
+void rfct::playerAnimations::changeIfNotCurrent(frameAnimation* newAnim)
+{
+	if (m_currentAnimation != newAnim) {
+		changeAnimation(newAnim);
+	}
+}
+
+bool rfct::playerAnimations::ifThisChangeToThat(frameAnimation* checkAnim, frameAnimation* newAnim)
+{
+	if (m_currentAnimation == checkAnim) {
+		changeAnimation(newAnim);
+		return true;
+	}
+	return false;
+}
+
+bool rfct::playerAnimations::isThisPlaying(frameAnimation* checkAnim)
+{
+	return (m_currentAnimation == checkAnim && !m_currentAnimation->endedPlaying);
+}
+
+bool rfct::playerAnimations::isAnyJumpAnimPlaying()
+{
+	return
+		isThisPlaying(&m_jumpStart) ||
+		isThisPlaying(&m_jumpUp) ||
+		isThisPlaying(&m_jumpTurnover) ||
+		isThisPlaying(&m_jumpFall) ||
+		isThisPlaying(&m_jumpReturn);
 }

@@ -317,7 +317,7 @@ void rfct::playerController::update(frameContext* ctx)
 				ctx->scene->getObjectHolder().vineClosestToPlayer.get_mut<vineStateComponent>()->holdingToThis = false;
 				player.get_mut<gravityComponent>()->gravityEnabled = true;
 				
-				holdCooldown = 0.15f + (stateComp->state == playerState::dashing?1.f:0.f);
+				holdCooldown = 0.4f;
 				velComp->velocity.y += 2.f;
 			}
 			break;
@@ -327,7 +327,7 @@ void rfct::playerController::update(frameContext* ctx)
 			if (
 				(nearestObjectToHold.closestPosition.y < posComp->position.y) || (nearestObjectToHold.closestPosition.y > posComp->position.y)) {
 				stateComp->state = playerState::normal;
-				posComp->position.y += std::abs(nearestObjectToHold.closestPosition.x - posComp->position.x) * 0.6f;
+				posComp->position.y += std::abs(nearestObjectToHold.closestPosition.x - posComp->position.x) * 0.9f;
 			}
 			if (!hold) {
 				stateComp->state = playerState::normal;
@@ -353,119 +353,32 @@ void rfct::playerController::update(frameContext* ctx)
 				player.get_mut<gravityComponent>()->gravityEnabled = true;
 				holdCooldown = 0.15f;
 				//velComp->velocity.y += .5f;
-				holdJumpCooldown = 0.4f;
+				holdJumpCooldown = 0.5f;
 			}
 			break;
 		}
 		default:
 			break;
 		}
+		 
+		if (velComp->velocity.x > 0) {
+			facingRight = true;
+		}
+		else if (velComp->velocity.x<0) {
+			facingRight = false;
+		}
 
-/*
-		//// find object to hold
-		///*
-		//if (hold) {
-		//	notHoldingTime = 0.f;
-		//	if (!stateComp->holding) {
-		//	}
-		//}
-		//else {
-		//	notHoldingTime += fixedDeltaTime;
-		//	if (notHoldingTime > fixedDeltaTime * 2 && stateComp->holding) {
-		//		ctx->scene->getObjectHolder().vineClosestToPlayer.get_mut<vineStateComponent>()->holdingToThis = false;
-		//		ctx->scene->getObjectHolder().nearestVineEdgeToPlayerIndex = -1;
-
-		//		stateComp->holding = false;
-		//		player.get_mut<gravityComponent>()->gravityEnabled = true;
-
-		//		glm::vec2 launchDir = glm::vec2(0.f);
-
-		//		launchDir.x = facingRight ? 1.f : -1.f;
-
-		//		launchDir.y = 0.2f;
-		//		player.get_mut<velocityComponent>()->velocity += launchDir * 10.f;
-		//	}
-		//}
-
-		//// dash last time calculate
-		//if (timeSinceLastDash != 0.f) {
-		//	timeSinceLastDash += fixedDeltaTime;
-		//	if (timeSinceLastDash >= 1.f) {
-		//		timeSinceLastDash = 0.f;
-		//	}
-		//}
-
-
-		//// calculate direction
-		//if (velComp->velocity.x > 0) {
-		//	facingRight = true;
-		//}
-		//else if (velComp->velocity.x<0) {
-		//	facingRight = false;
-		//}
-
-		//// dash apply
-		//if (anyDash) {
-		//	player.get_mut<velocityComponent>()->velocity = { 0.f,0.f };
-		//	dashVelocity = { 0, 0 };
-		//	dashVelocity.y += dashVerticalInput * dashSpeed * boostPureHorizontalVertical;
-		//	dashVelocity.x += dashHorizontalInput * dashSpeed * boostPureHorizontalVertical;
-		//	dashVelocity.x += (dash45upInput + dash45downInput) * ((float)1 / std::sqrt(2)) * dashSpeed;
-		//	dashVelocity.y += (dash45upInput - dash45downInput) * ((float)1 / std::sqrt(2)) * dashSpeed;
-
-		//	ctx->scene->getObjectHolder().onPlayerDashObjects(ctx, player, facingRight);
-		//	ctx->scene->getDecorationHolder().onPlayerDashDecorations(ctx, player, facingRight);
-		//	kindlingsToSpawnThisDash = 3;
-		//}
-		//if (timeSinceLastDash != 0 && timeSinceLastDash<dashFullTime) {
-		//	playerDashStateComponent* dc = player.get_mut<playerDashStateComponent>();
-		//	player.get_mut<gravityComponent>()->gravityEnabled = false;
-		//	dc->dashing = true;
-		//	dc->dashProgress = timeSinceLastDash / dashFullTime;
-
-		//	if (dc->dashProgress > 0.1f && kindlingsToSpawnThisDash == 3) {
-		//		kindlingsToSpawnThisDash -= 1;
-		//		spawnKindling(ctx, player.get_mut<positionComponent>()->position, velComp->velocity, kindlingsToSpawnThisDash);
-		//	}
-		//	else {
-		//		if (dc->dashProgress > 0.3f && kindlingsToSpawnThisDash == 2) {
-		//			kindlingsToSpawnThisDash -= 1;
-		//			spawnKindling(ctx, player.get_mut<positionComponent>()->position, velComp->velocity, kindlingsToSpawnThisDash);
-		//		}
-		//		else {
-		//			if (dc->dashProgress > 0.9f && kindlingsToSpawnThisDash == 1) {
-		//				kindlingsToSpawnThisDash -= 1;
-		//				spawnKindling(ctx, player.get_mut<positionComponent>()->position, velComp->velocity, kindlingsToSpawnThisDash);
-		//			}
-		//		}
-
-		//	}
-		//}
-		//else {
-		//	player.get_mut<playerDashStateComponent>()->dashing = false;
-		//	player.get_mut<playerDashStateComponent>()->dashProgress = 0.f;
-		//
-		//	if (!player.get<playerStateComponent>()->holding) {
-		//		player.get_mut<gravityComponent>()->gravityEnabled = true;
-		//	}
-		//}
-		//dashVelocity *= 0.9f - std::clamp(timeSinceLastDash * 2.f, 0.f, 0.9f);
-		//if (glm::length(dashVelocity) >= 0.1f) {
-		//	velComp->velocity = dashVelocity;
-		//	inputVel = dashVelocity;
-		//}
-*/
-
-// reset after applying
-jumpInput = 0;
-dashHorizontalInput = 0.f;
-dashVerticalInput = 0.f;
-dash45upInput = 0.f;
-dash45downInput = 0.f;
-arrowUpDownInput = 0.f;
-anyDash = false;
-hold = false;
+		// trigger only once
+		anyDash = false;
+		dashHorizontalInput = 0.f;
+		dashVerticalInput = 0.f;
+		dash45upInput = 0.f;
+		dash45downInput = 0.f;
+		arrowUpDownInput = 0.f;
 	}
+	// reset after applying
+	jumpInput = 0;
+	hold = false;
 	ctx->scene->updateDirection(facingRight);
 }
 
@@ -543,6 +456,7 @@ bool rfct::playerController::checkHold(scene* scen)
 		else {
 			return false;
 		}
+		facingRight = (nearestObjectToHold.closestPosition.x - posComp->position.x) > 0;
 		velComp->velocity = {0,0};
 		return true;
 	}
@@ -593,12 +507,20 @@ void rfct::onCollision_Player_StaticObj(entity player, entity collidedWith, glm:
 
 	velocityComponent* vel = player.get_mut<velocityComponent>();
 	inputVelocityComponent* ivel = player.get_mut<inputVelocityComponent>();
-
-	if (resolution.x != 0.0f) {
-		vel->velocity.x = 0.0f;
-		ivel->velocity.x = 0.0f;
+	
+	if (resolution.x != 0.0f && resolution.y != 0.0f) {
+		// circle collision. zero velocity on x only when real change.
+		if (std::abs(resolution.x) > 0.01f) {
+			vel->velocity.x = 0.0f;
+		}
 	}
+	
+	else {
+		if (resolution.x != 0.0f) {
 
+			vel->velocity.x = 0.0f;
+		}
+	}
 	if (resolution.y != 0.0f) {
 		if (resolution.y > 0.0f) {
 			// Landed on something
