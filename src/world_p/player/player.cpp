@@ -16,7 +16,7 @@ rfct::playerController rfct::playerController::instance;
 rfct::playerController::playerController() :
 	walkSpeed(.06f),
 	jumpSpeed(1.3f),
-	dashSpeed(7.f),
+	dashSpeed(8.f),
 	arrowUpDownInput(0),
 	walkHorizontalInput(0),
 	jumpInput(0),
@@ -50,6 +50,8 @@ void rfct::playerController::update(frameContext* ctx)
 {
 	RFCT_PROFILE_SCOPE("player update");
 
+	// debug helpers
+	// colliders
 	if (false) {
 		// draw box
 		const positionComponent* pos = player.get<positionComponent>();
@@ -96,6 +98,7 @@ void rfct::playerController::update(frameContext* ctx)
 			lines[i].vertices[1].color = { 0.8f, 0.4f, 0.4f };
 		}
 	}
+	// object to hold
 	if (false){
 		if (nearestObjectToHold.vineIndex == -2) {
 			const staticBoxColliderComponent* col = nearestObjectToHold.object.get<staticBoxColliderComponent>();
@@ -129,9 +132,12 @@ void rfct::playerController::update(frameContext* ctx)
 			}
 		}
 	}
-	// draw last frame velocity
-	//drawPlayervelocity(player.get<inputVelocityComponent>()->velocity, player.get<positionComponent>()->position);
-	//drawPlayervelocity(player.get<velocityComponent>()->velocity, player.get<positionComponent>()->position);
+	// last frame velocity
+	if (false) {
+		drawPlayervelocity(player.get<inputVelocityComponent>()->velocity, player.get<positionComponent>()->position);
+		drawPlayervelocity(player.get<velocityComponent>()->velocity, player.get<positionComponent>()->position);
+	}
+
 
 	if (input::getInput().hold) {
 		hold = true;
@@ -228,7 +234,6 @@ void rfct::playerController::update(frameContext* ctx)
 			break;
 		}
 		case (playerState::dashing): {
-			RFCT_INFO("dashing");
 			if (dashTime == 0.f) {
 				startDash(ctx);
 			}
@@ -295,7 +300,6 @@ void rfct::playerController::update(frameContext* ctx)
 			break;
 		}
 		case (playerState::holdingVines): {
-			RFCT_INFO("holding");
 			normalWalkUpdate();
 			stateComp->allowToJump = false;
 			player.get_mut<gravityComponent>()->gravityEnabled = false;
@@ -321,8 +325,11 @@ void rfct::playerController::update(frameContext* ctx)
 		case (playerState::holdingBlocks): {
 			nearestObjectToHold = findObjectToHold();
 			if (
-				(nearestObjectToHold.closestPosition.y < posComp->position.y) || (nearestObjectToHold.closestPosition.y > posComp->position.y) || 
-				!hold) {
+				(nearestObjectToHold.closestPosition.y < posComp->position.y) || (nearestObjectToHold.closestPosition.y > posComp->position.y)) {
+				stateComp->state = playerState::normal;
+				posComp->position.y += std::abs(nearestObjectToHold.closestPosition.x - posComp->position.x) * 0.6f;
+			}
+			if (!hold) {
 				stateComp->state = playerState::normal;
 			}
 			stateComp->allowToJump = true;
@@ -345,7 +352,7 @@ void rfct::playerController::update(frameContext* ctx)
 			if (stateComp->state != playerState::holdingBlocks) {
 				player.get_mut<gravityComponent>()->gravityEnabled = true;
 				holdCooldown = 0.15f;
-				velComp->velocity.y += .5f;
+				//velComp->velocity.y += .5f;
 				holdJumpCooldown = 0.4f;
 			}
 			break;
@@ -564,6 +571,7 @@ void rfct::playerController::startDash(frameContext* ctx)
 {
 	dashCharges--;
 	player.get_mut<velocityComponent>()->velocity = { 0.f,0.f };
+	velComp->velocity = { 0,0 };
 	dashVelocity = { 0, 0 };
 	dashVelocity.y += dashVerticalInput * dashSpeed * boostPureHorizontalVertical;
 	dashVelocity.x += dashHorizontalInput * dashSpeed * boostPureHorizontalVertical;
