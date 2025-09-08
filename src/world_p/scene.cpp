@@ -285,14 +285,14 @@ void rfct::scene::createPlayerEntity(const glm::vec2& spawnPoint)
 	trans.scale.scale.y = oneSeventieth;
 	glm::mat4 model = getModelMatrixFromTransform(trans);
 	frameContext noCtx{};
-	uint32_t loc = m_RenderData.addDynamicMat(&noCtx, &model);
-	RFCT_ASSERT(loc == 0);
+	// player always uses index 1.
+	m_RenderData.updateMat(&noCtx, 1, &model);
 
 	staticObjCollisionCallbackComponent colCallback;
 	colCallback.handler = onCollision_Player_StaticObj;
 	epicRotatingTriangle = ecs::get().entity<>()
 		.child_of(sceneEntity)
-		.set<dynamicSSBOIndexComponent>({ 0 })
+		.set<dynamicSSBOIndexComponent>({ 1 })
 		.set<rotationComponent>({})
 		.set<scaleComponent>(trans.scale)
 		.set<positionComponent>({ spawnPoint })

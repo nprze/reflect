@@ -351,7 +351,7 @@ namespace rfct {
         }
     }
 
-    void AssetsManager::loadCharacterMesh(const std::string& path, std::vector<Vertex>* meshOut)
+    void AssetsManager::loadCharacterMesh(const std::string& path, std::vector<Vertex>* meshOut, uint32_t matrixIndex)
     {
         std::string finalPath = m_Path + "/" + path;
         std::ifstream file(finalPath);
@@ -387,6 +387,7 @@ namespace rfct {
                     Vertex vtx{};
                     vtx.pos = glm::vec3(coords[i], 0.0f);
                     vtx.color = color_fin;
+                    vtx.objectIndex = matrixIndex;
                     meshOut->push_back(vtx);
                 }
 
@@ -708,7 +709,7 @@ namespace rfct {
 
         std::string newPath = folderPath + filename;
 
-        loadCharacterMesh(newPath, &vertices);
+        loadCharacterMesh(newPath, &vertices, 1);
         
 
         vulkanBufferLocation loc = playerAnimations::get().requestVulkanBuffer(allTrianglesCount);

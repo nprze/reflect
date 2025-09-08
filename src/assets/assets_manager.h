@@ -27,7 +27,7 @@ namespace rfct {
         void loadGlyphs(const std::string& path, font* fontOut);
         void loadBuildingBlockMesh(const std::string& path, std::vector<Vertex>* vertxBufferOut, const glm::vec3& color, const glm::vec2& size);
         void loadBackgroundMesh(const std::string& path, std::vector<Vertex>* vertxBufferOut, const glm::vec3& color, const float zMin, const float zMax);
-        void loadCharacterMesh(const std::string& path, std::vector<Vertex>* meshOut);
+        void loadCharacterMesh(const std::string& path, std::vector<Vertex>* meshOut, uint32_t matrixIndexInSSBO);
         void loadScene(const std::string& path, sceneSerializedData* sceneSerializedDataOut);
         void loadDialogue(const std::string& path, dialogueSerializeData* dialogueSerializedDataOut);
         void loadDialogueSpriteSheet(const std::string& path, dialogueSpritesheetSerializeData* dialogueSpritesheetSerializedDataOut);

@@ -23,7 +23,7 @@ namespace rfct {
 	struct mesh {
 		mesh(const std::string& path) {
 			m_Vertices.reserve(500);
-			AssetsManager::get().loadCharacterMesh(path, &m_Vertices);
+			AssetsManager::get().loadCharacterMesh(path, &m_Vertices, 1);
 		};
 		std::vector<Vertex> m_Vertices;
 	private:

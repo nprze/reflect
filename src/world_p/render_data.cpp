@@ -108,6 +108,12 @@ rfct::sceneRenderData::sceneRenderData() : m_VertexBufferStatic(RFCT_SCENE_STATI
 		m_mappedMatsDataDynamic[i] = m_DynamicModelMatsBuffers[i].Map();
 		m_mappedVerticesDataDynamic[i] = m_VertexBufferDynamic[i]->Map();
 	}
+
+	// reserve matrix index 0 for identity and index 1 for player transform (bcs player uses frame anim)
+	frameContext noCtx = {};
+	glm::mat4 identityMat4 = {1.f};
+	RFCT_ASSERT(addDynamicMat(&noCtx, &identityMat4)==0);
+	RFCT_ASSERT(addDynamicMat(&noCtx, &identityMat4)==1);
 }
 
 rfct::sceneRenderData::~sceneRenderData()
