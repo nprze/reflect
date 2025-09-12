@@ -40,12 +40,19 @@ namespace rfct {
         glm::vec2 max;
         SpikeDirection dir;
     };
+    struct BasicEnemyInfo {
+        glm::vec2 position;
+        glm::vec2 min;
+        glm::vec2 max;
+        std::string animation;
+    };
 	struct sceneSerializedData {
         int width, height;
         std::vector<rectangle> rectangles;
         std::vector<vineInfo> vines;
         std::vector<NPCInfo> npcs;
         std::vector<SpikeInfo> spikes;
+        std::vector<BasicEnemyInfo> enemies;
         glm::vec2 spawnPoint;
 	};
 }

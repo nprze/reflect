@@ -19,7 +19,8 @@ namespace rfct {
         Smoke,
         NPC,
         Kindling,
-        Spike
+        Spike, 
+        Enemy
     };
 
     enum class playerState : uint8_t {

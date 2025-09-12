@@ -8,8 +8,8 @@
 #include <functional>
 #include <algorithm>
 
-constexpr float physicsScale = 100.f; // to make applied forces smaller for more readability
-constexpr uint32_t substepCount = 10;
+constexpr float physicsScale = 12.f; // to make applied forces smaller for more readability
+constexpr uint32_t substepCount = 5;
 constexpr float dumping = 0.97f;
 
 namespace rfct
@@ -265,20 +265,36 @@ namespace rfct {
         const dynamicBoxColliderComponent& dynamic,
         const staticBoxColliderComponent& staticCol
     ) {
-        float dx1 = staticCol.max.x - dynamic.min.x;
-        float dx2 = staticCol.min.x - dynamic.max.x;
+        float overlapLeft = dynamic.max.x - staticCol.min.x;
+        float overlapRight = staticCol.max.x - dynamic.min.x;
+        float overlapDown = dynamic.max.y - staticCol.min.y; 
+        float overlapUp = staticCol.max.y - dynamic.min.y; 
 
-        float dy1 = staticCol.max.y - dynamic.min.y;
-        float dy2 = staticCol.min.y - dynamic.max.y;
+        float resolveX = 0.0f;
+        if (overlapLeft > 0.0f || overlapRight > 0.0f) {
+            if (overlapLeft < overlapRight) {
+                resolveX = -overlapLeft;
+            }
+            else {
+                resolveX = overlapRight;
+            }
+        }
 
-        float overlapX = std::abs(dx1) < std::abs(dx2) ? dx1 : dx2;
-        float overlapY = std::abs(dy1) < std::abs(dy2) ? dy1 : dy2;
+        float resolveY = 0.0f;
+        if (overlapDown > 0.0f || overlapUp > 0.0f) {
+            if (overlapDown < overlapUp) {
+                resolveY = -overlapDown;
+            }
+            else {
+                resolveY = overlapUp;
+            }
+        }
 
-        if (std::abs(overlapX) < std::abs(overlapY)) {
-            return glm::vec2(overlapX, 0.0f);
+        if (std::abs(resolveX) < std::abs(resolveY)) {
+            return glm::vec2(resolveX, 0.0f);
         }
         else {
-            return glm::vec2(0.0f, overlapY);
+            return glm::vec2(0.0f, resolveY);
         }
     }
 
@@ -286,39 +302,38 @@ namespace rfct {
         const dynamicCircleColliderComponent& dynamic,
         const staticBoxColliderComponent& staticCol
     ) {
-        // Closest point on AABB to circle center
-        glm::vec2 closest = glm::clamp(dynamic.offsetFromCenter, staticCol.min, staticCol.max);
 
-        glm::vec2 diff = dynamic.offsetFromCenter - closest;
+        glm::vec2 center = dynamic.offsetFromCenter;
+
+        glm::vec2 closest = glm::clamp(center, staticCol.min, staticCol.max);
+
+        glm::vec2 diff = center - closest;
         float dist2 = glm::dot(diff, diff);
 
-        // If outside or just touching, no resolution
-        if (dist2 >= dynamic.radius * dynamic.radius)
-            return glm::vec2(0.0f);
+        // Circle center is outside box
+        if (dist2 > 0.0f) {
+            float dist = std::sqrt(dist2);
+            if (dist < dynamic.radius) {
+                glm::vec2 normal = diff / dist;
+                float penetration = dynamic.radius - dist;
+                return normal * penetration;
+            }
+        }
+        // Circle center inside box
+        else {
+            float left = center.x - staticCol.min.x;
+            float right = staticCol.max.x - center.x;
+            float down = center.y - staticCol.min.y;
+            float up = staticCol.max.y - center.y;
 
-        float dist = std::sqrt(dist2);
-
-        if (dist > 0.0001f) {
-            glm::vec2 normal = diff / dist;
-            float penetration = dynamic.radius - dist;
-            return normal * penetration;
+            float minPen = std::min({ left, right, down, up });
+            if (minPen == left)   return glm::vec2(dynamic.radius - left, 0);
+            if (minPen == right)  return glm::vec2(-(dynamic.radius - right), 0);
+            if (minPen == down)   return glm::vec2(0, dynamic.radius - down);
+            if (minPen == up)     return glm::vec2(0, -(dynamic.radius - up));
         }
 
-        glm::vec2 circleMin = dynamic.offsetFromCenter - glm::vec2(dynamic.radius);
-        glm::vec2 circleMax = dynamic.offsetFromCenter + glm::vec2(dynamic.radius);
-
-        float dx1 = staticCol.max.x - circleMin.x;
-        float dx2 = staticCol.min.x - circleMax.x;
-        float dy1 = staticCol.max.y - circleMin.y;
-        float dy2 = staticCol.min.y - circleMax.y;
-
-        float overlapX = std::abs(dx1) < std::abs(dx2) ? dx1 : dx2;
-        float overlapY = std::abs(dy1) < std::abs(dy2) ? dy1 : dy2;
-
-        if (std::abs(overlapX) < std::abs(overlapY))
-            return glm::vec2(overlapX, 0.0f);
-        else
-            return glm::vec2(0.0f, overlapY);
+        return glm::vec2(0.0f);
     }
 
 
@@ -453,9 +468,7 @@ void rfct::updatePhysics(const frameContext* ctx)
             }
             constexpr float substepTime = (fixedDeltaTime) / (float)substepCount;
             for (uint32_t substep = 0; substep < substepCount; substep++) {
-
-                glm::vec2 substepVelocity = velocity.velocity / (float)substepCount;
-                position.position += substepVelocity * physicsScale * substepTime;
+                position.position += velocity.velocity * physicsScale * substepTime;
                 dynamicBoxColliderComponent finalBoundingBox = { dynamicBox.min + position.position, dynamicBox.max + position.position };
                 checkForCollision(StaticObjsBVHnodes.back(), finalBoundingBox, callback, ent);
             }

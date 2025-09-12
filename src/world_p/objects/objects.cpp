@@ -6,6 +6,7 @@
 #include "world_p/transform.h"
 #include "world_p/object_components.h"
 #include "world_p/objects/spikes.h"
+#include "enemies/enemy.h"
 
 rfct::objectsHolder::~objectsHolder()
 {
@@ -17,6 +18,7 @@ void rfct::objectsHolder::init(sceneSerializedData* serializeData, scene* parent
 {
 	initCigaretteVars(parentScene);
 	initSpikeVars(parentScene);
+	spawnEnemies(serializeData, parentScene);
 
 
 	vines.reserve(serializeData->vines.size());
@@ -42,7 +44,7 @@ void rfct::objectsHolder::init(sceneSerializedData* serializeData, scene* parent
 }
 void rfct::objectsHolder::update(frameContext* fc)
 {
-	RFCT_PROFILE_SCOPE("cigarette update");
+	RFCT_PROFILE_SCOPE("dynamic objects update");
 	if (fc->fixedUpdateTimes) {
 		if (nearestVineEdgeToPlayerIndex != -1) {
 			if (vineClosestToPlayer.get<vineStateComponent>()->holdingToThis) {
@@ -57,6 +59,7 @@ void rfct::objectsHolder::update(frameContext* fc)
 			v.update(fc);
 		}
 		updateCigarettes(fc);
+		updateEnemies(fc);
 	}
 }
 

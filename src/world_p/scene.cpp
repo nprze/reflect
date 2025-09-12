@@ -79,9 +79,9 @@ void rfct::scene::onUpdate(frameContext* context)
 	m_decorations.update(context);
 	buildDynamicObjBVH();
 	updatePhysics(context);
-	updateTransformData(context, epicRotatingTriangle);
 	updateUI(context);
 	playerAnimations::get().update(epicRotatingTriangle.get<velocityComponent>()->velocity, epicRotatingTriangle.get<positionComponent>()->position, *context, epicRotatingTriangle);
+	updateTransformData(context, epicRotatingTriangle);
 
 	cameraComponentOnUpdate(context->dt, epicRotatingTriangle);
 
@@ -275,7 +275,7 @@ void rfct::scene::updateTransformData(frameContext* ctx, entity e)
 
 void rfct::scene::createPlayerEntity(const glm::vec2& spawnPoint)
 {
-	dynamicBoxColliderComponent bounds = { { -0.23f, -0.25f }, { 0.23, 0.4f } };
+	dynamicBoxColliderComponent bounds = { { -0.23f, -0.45f }, { 0.23, 0.4f } };
 
 	transform trans = {};
 
@@ -297,7 +297,7 @@ void rfct::scene::createPlayerEntity(const glm::vec2& spawnPoint)
 		.set<scaleComponent>(trans.scale)
 		.set<positionComponent>({ spawnPoint })
 		.set<gravityComponent>({})
-		.set<dynamicCircleColliderComponent>({ {0,-0.245f}, .25f })
+		//.set<dynamicCircleColliderComponent>({ {0,-0.245f}, .25f })
 		.set<velocityComponent>({ glm::vec2(0.f,0.f) })
 		.set<inputVelocityComponent>({ glm::vec2(0.f,0.f) })
 		.set<staticObjCollisionCallbackComponent>(colCallback)

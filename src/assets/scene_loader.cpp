@@ -135,6 +135,37 @@ void rfct::sceneLoader::loadScene(const std::string& path, sceneSerializedData* 
             }
             out->spikes.push_back(std::move(spk));
         }
+        else if (sv.starts_with("BasicEnemy:")) {
+            BasicEnemyInfo enemy{};
+
+            std::getline(file, line); // position
+            {
+                float x = std::stof(line.substr(13, line.find(',') - 10));
+                float y = std::stof(line.substr(line.find(',') + 2, line.size() - line.find(',') - 3));
+                enemy.position = { x, y };
+            }
+
+            std::getline(file, line); // min
+            {
+                float x = std::stof(line.substr(8, line.find(',') - 8));
+                float y = std::stof(line.substr(line.find(',') + 2, line.size() - line.find(',') - 3));
+                enemy.min = { x, y };
+            }
+
+            std::getline(file, line); // max
+            {
+                float x = std::stof(line.substr(8, line.find(',') - 8));
+                float y = std::stof(line.substr(line.find(',') + 2, line.size() - line.find(',') - 3));
+                enemy.max = { x, y };
+            }
+
+            std::getline(file, line); // file
+            enemy.animation = line.substr(line.find(':') + 2);
+            if (!enemy.animation.empty() && enemy.animation.back() == '\r') {
+                enemy.animation.pop_back();
+            }
+            out->enemies.push_back(std::move(enemy));
+        }
         else if (sv.starts_with("SceneWidth:")) {
             std::from_chars(sv.data() + 12, sv.data() + sv.size(), out->width);
         }
@@ -155,6 +186,11 @@ void rfct::sceneLoader::loadScene(const std::string& path, sceneSerializedData* 
             int count;
             std::from_chars(sv.data() + 12, sv.data() + sv.size(), count);
             out->spikes.reserve(count);
+        }
+        else if (sv.starts_with("BasicEnemyCount:")) {
+            int count;
+            std::from_chars(sv.data() + 17, sv.data() + sv.size(), count);
+            out->enemies.reserve(count);
         }
         else if (sv.starts_with("NPCCount:")) {
             int count;

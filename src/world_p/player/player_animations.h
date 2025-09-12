@@ -37,8 +37,8 @@ namespace rfct {
 		frameAnimation m_jumpTurnover;
 		frameAnimation m_jumpFall;
 		frameAnimation m_jumpReturn;
-		frameAnimation m_dashStart;
-		frameAnimation m_dashEnd;
+		frameAnimation m_dash;
+		frameAnimation m_dashUp;
 		frameAnimation m_hold;
 		frameAnimation m_climb;
 
@@ -46,6 +46,9 @@ namespace rfct {
 
 		hairAnimation m_rightHairAnim;
 		hairAnimation m_leftHairAnim;
+
+		float dashRotationAnimationTime = 0;
+		float angleMax = 0;
 
 		void changeIfNotCurrent(frameAnimation* newAnim);
 		bool ifThisChangeToThat(frameAnimation* checkAnim, frameAnimation* newAnim);

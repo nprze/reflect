@@ -3,6 +3,7 @@
 #include "renderer_p/buffer/vulkan_buffer.h"
 #include "assets/assets_manager.h"
 #include <vma/vk_mem_alloc.h>
+#include "player.h"
 
 
 
@@ -38,8 +39,10 @@ void rfct::playerAnimations::loadAnimations()
 	m_jumpTurnover = AssetsManager::get().loadAnimation("player/walkAnim/jump-turnover.txt");
 	m_jumpFall = AssetsManager::get().loadAnimation("player/walkAnim/jump-fall.txt");
 	m_jumpReturn = AssetsManager::get().loadAnimation("player/walkAnim/jump-return.txt");
-	m_dashStart = AssetsManager::get().loadAnimation("player/walkAnim/dash-start.txt");
-	m_dashEnd = AssetsManager::get().loadAnimation("player/walkAnim/dash-end.txt");
+	m_dash = AssetsManager::get().loadAnimation("player/walkAnim/dash.txt");
+	m_dash.cycleTime = dashFullTime;
+	m_dashUp = AssetsManager::get().loadAnimation("player/walkAnim/dash-up.txt");
+	m_dashUp.cycleTime = dashFullTime;
 	m_hold = AssetsManager::get().loadAnimation("player/walkAnim/hold.txt");
 	m_climb = AssetsManager::get().loadAnimation("player/walkAnim/climb.txt");
 	
@@ -58,9 +61,20 @@ void rfct::playerAnimations::unloadAnimations()
 void rfct::playerAnimations::update(const glm::vec2& playerVel, const glm::vec2& playerPos, frameContext& ctx, entity player)
 {
 	RFCT_PROFILE_SCOPE("player animation update");
+
 	const playerStateComponent* ps = player.get<playerStateComponent>();
 	const inputVelocityComponent* ivel = player.get<inputVelocityComponent>();
 	const velocityComponent* pvel = player.get<velocityComponent>();
+	dashRotationAnimationTime = std::clamp(dashRotationAnimationTime - ctx.dt, 0.f, 10.f);
+	if (dashRotationAnimationTime > 0.f) {
+		float x = std::clamp((dashFullTime - dashRotationAnimationTime) / dashFullTime, 0.f, 1.f); // dash progress
+		float rot = (angleMax) * (-std::pow(x, 1) + 1);
+		player.get_mut<rotationComponent>()->rotation.z = rot;
+
+	}
+	else {
+		player.get_mut<rotationComponent>()->rotation.z = 0.0f;
+	}
 	constexpr float velocityTreshold = 0.03f;
 	switch (ps->state) {
 	case playerState::normal: {
@@ -96,6 +110,18 @@ void rfct::playerAnimations::update(const glm::vec2& playerVel, const glm::vec2&
 		break;
 	}
 	case playerState::dashing: {
+		glm::vec2 dir = playerController::get().dashVelocity;
+		if (dir.x == 0.f && dir.y!= 0.f) {
+			changeIfNotCurrent(&m_dashUp);
+		}
+		else {
+			changeIfNotCurrent(&m_dash);
+		}
+		break;
+		if (dir.x == 0 && dir.y == 0) break;
+		if (dir.x < 0) dir.x *= -1.f;
+		angleMax = std::atan2(dir.x, dir.y) + (0.5f * 3.14f);
+		dashRotationAnimationTime = dashFullTime;
 		break;
 	}
 	case playerState::holdingVines: {

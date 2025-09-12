@@ -74,5 +74,6 @@ namespace rfct {
 		bool checkHold(scene* scen); // returns if holding
 
 		void startDash(frameContext* ctx);
+		friend class playerAnimations;
 	};
 }

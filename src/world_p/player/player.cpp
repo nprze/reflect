@@ -351,7 +351,7 @@ void rfct::playerController::update(frameContext* ctx)
 
 			if (stateComp->state != playerState::holdingBlocks) {
 				player.get_mut<gravityComponent>()->gravityEnabled = true;
-				holdCooldown = 0.15f;
+				holdCooldown = 0.25f;
 				//velComp->velocity.y += .5f;
 				holdJumpCooldown = 0.5f;
 			}
@@ -507,15 +507,15 @@ void rfct::onCollision_Player_StaticObj(entity player, entity collidedWith, glm:
 
 	velocityComponent* vel = player.get_mut<velocityComponent>();
 	inputVelocityComponent* ivel = player.get_mut<inputVelocityComponent>();
-	
+	/*
 	if (resolution.x != 0.0f && resolution.y != 0.0f) {
 		// circle collision. zero velocity on x only when real change.
 		if (std::abs(resolution.x) > 0.01f) {
 			vel->velocity.x = 0.0f;
 		}
-	}
+	}*/
 	
-	else {
+	{
 		if (resolution.x != 0.0f) {
 
 			vel->velocity.x = 0.0f;
