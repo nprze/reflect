@@ -93,7 +93,8 @@ void rfct::scene::onUpdate(frameContext* context)
 		}
 	}
 
-	m_dynamicObjects.draw(context);
+	m_dynamicObjects.updateMatrices(context);
+	resolvePendingDynamicEnitityDeletions();
 }
 
 void rfct::scene::updateUI(frameContext* context)
@@ -150,6 +151,8 @@ void rfct::scene::loadScene(const std::string& path)
 	buildStaticObjBVH();
 	buildDynamicObjBVH();
 
+	m_pendingEntityDeletions.clear();
+	m_pendingEntityDeletions.reserve(20);
 }
 
 
@@ -254,6 +257,33 @@ void rfct::scene::deleteDynamicEntity(entity e)
 	e.destruct();
 }
 
+void rfct::scene::deleteAnimatedEntity(entity e)
+{
+	m_RenderData.removeAnimatedEntity(e);
+	e.destruct();
+}
+
+void rfct::scene::addPendingDynamicEnitityDeletion(entity e)
+{
+	m_pendingEntityDeletions.push_back({e, false});
+}
+
+void rfct::scene::addPendingAnimatedEnitityDeletion(entity e)
+{
+	m_pendingEntityDeletions.push_back({ e, true });
+}
+
+void rfct::scene::resolvePendingDynamicEnitityDeletions()
+{
+	for (auto& e : m_pendingEntityDeletions) {
+		if (e.second)
+			deleteAnimatedEntity(e.first);
+		else
+			deleteDynamicEntity(e.first);
+	}
+	m_pendingEntityDeletions.clear();
+}
+
 entity rfct::scene::createDynamicRenderingEntity(std::vector<Vertex>* vertices, glm::mat4* model, uint32_t numVertices)
 {
 	objectLocation ol = m_RenderData.addDynamicObject(vertices, model, true, {}, numVertices);
@@ -304,7 +334,7 @@ void rfct::scene::createPlayerEntity(const glm::vec2& spawnPoint)
 		.set<dynamicBoxColliderComponent>(bounds)
 		.set<playerStateComponent>({})
 		.set<playerDashStateComponent>({})
-		.set<dynamicObjectTypeComponent>({dynamicObjectType::Player})
+		.set<dynamicObjectTypeComponent>({dynamicObjectType::Player, false})
 		.set<playerLifeComponent>({true});
 
 	playerController::get().setPlayer(epicRotatingTriangle);

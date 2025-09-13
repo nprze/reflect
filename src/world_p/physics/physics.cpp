@@ -7,6 +7,7 @@
 #include <limits>
 #include <functional>
 #include <algorithm>
+#include "collision.h"
 
 constexpr float physicsScale = 12.f; // to make applied forces smaller for more readability
 constexpr uint32_t substepCount = 5;
@@ -21,8 +22,8 @@ namespace rfct
     static flecs::query<staticBoxColliderComponent> staticBoxColliderQuery;
     static flecs::query<dynamicBoxColliderComponent, positionComponent> dynamicBoxColliderQuery;
     static flecs::query<dynamicCircleColliderComponent, positionComponent> dynamicCircleColliderQuery;
-    static std::vector<BVHnode> StaticObjsBVHnodes;
-    static std::vector<BVHnode> DynamicObjsBVHnodes;
+    std::vector<BVHnode> StaticObjsBVHnodes;
+    std::vector<BVHnode> DynamicObjsBVHnodes;
 }
 // Queries helper
 void rfct::createQueries(entity sceneEntity) {
@@ -92,12 +93,6 @@ namespace rfct {
         float dx = std::max(std::max(min.x - point.x, 0.0f), point.x - max.x);
         float dy = std::max(std::max(min.y - point.y, 0.0f), point.y - max.y);
         return dx * dx + dy * dy;
-    }
-
-
-    glm::vec2 rfct::nearestPointOnAABB(const glm::vec2& point, const glm::vec2& AABBMin, const glm::vec2& AABBMax)
-    {
-        return glm::vec2(glm::clamp(point.x, AABBMin.x, AABBMax.x), glm::clamp(point.y, AABBMin.y, AABBMax.y));
     }
 
     uint32_t expandBits(uint16_t v) {
@@ -244,99 +239,7 @@ void rfct::buildDynamicBVH(flecs::query<dynamicBoxColliderComponent, positionCom
 }
 
 // collision functions
-namespace rfct {
-    bool checkForCollisionAABBAABB(dynamicBoxColliderComponent* a, staticBoxColliderComponent* b)
-    {
-        return (a->min.x <= b->max.x && a->max.x >= b->min.x &&
-            a->min.y <= b->max.y && a->max.y >= b->min.y);
-    }
-    bool checkForCollisionAABBAABB(const glm::vec2& aMin, const glm::vec2& aMax, const glm::vec2& bMin, const glm::vec2& bMax)
-    {
-        return (aMin.x <= bMax.x && aMax.x >= bMin.x &&
-            aMin.y <= bMax.y && aMax.y >= bMin.y);
-    }
-    bool checkCollisionAABBCircle(const glm::vec2& aMin, const glm::vec2& aMax, const glm::vec2& circleCenter, float radius) {
-        glm::vec2 nearest = nearestPointOnAABB(circleCenter, aMin, aMax);
-        float distSq = glm::dot(nearest - circleCenter, nearest - circleCenter);
-        return distSq <= radius * radius;
-    }
-
-    glm::vec2 ResolveAABBCollision(
-        const dynamicBoxColliderComponent& dynamic,
-        const staticBoxColliderComponent& staticCol
-    ) {
-        float overlapLeft = dynamic.max.x - staticCol.min.x;
-        float overlapRight = staticCol.max.x - dynamic.min.x;
-        float overlapDown = dynamic.max.y - staticCol.min.y; 
-        float overlapUp = staticCol.max.y - dynamic.min.y; 
-
-        float resolveX = 0.0f;
-        if (overlapLeft > 0.0f || overlapRight > 0.0f) {
-            if (overlapLeft < overlapRight) {
-                resolveX = -overlapLeft;
-            }
-            else {
-                resolveX = overlapRight;
-            }
-        }
-
-        float resolveY = 0.0f;
-        if (overlapDown > 0.0f || overlapUp > 0.0f) {
-            if (overlapDown < overlapUp) {
-                resolveY = -overlapDown;
-            }
-            else {
-                resolveY = overlapUp;
-            }
-        }
-
-        if (std::abs(resolveX) < std::abs(resolveY)) {
-            return glm::vec2(resolveX, 0.0f);
-        }
-        else {
-            return glm::vec2(0.0f, resolveY);
-        }
-    }
-
-    glm::vec2 ResolveAABBCircleCollision(
-        const dynamicCircleColliderComponent& dynamic,
-        const staticBoxColliderComponent& staticCol
-    ) {
-
-        glm::vec2 center = dynamic.offsetFromCenter;
-
-        glm::vec2 closest = glm::clamp(center, staticCol.min, staticCol.max);
-
-        glm::vec2 diff = center - closest;
-        float dist2 = glm::dot(diff, diff);
-
-        // Circle center is outside box
-        if (dist2 > 0.0f) {
-            float dist = std::sqrt(dist2);
-            if (dist < dynamic.radius) {
-                glm::vec2 normal = diff / dist;
-                float penetration = dynamic.radius - dist;
-                return normal * penetration;
-            }
-        }
-        // Circle center inside box
-        else {
-            float left = center.x - staticCol.min.x;
-            float right = staticCol.max.x - center.x;
-            float down = center.y - staticCol.min.y;
-            float up = staticCol.max.y - center.y;
-
-            float minPen = std::min({ left, right, down, up });
-            if (minPen == left)   return glm::vec2(dynamic.radius - left, 0);
-            if (minPen == right)  return glm::vec2(-(dynamic.radius - right), 0);
-            if (minPen == down)   return glm::vec2(0, dynamic.radius - down);
-            if (minPen == up)     return glm::vec2(0, -(dynamic.radius - up));
-        }
-
-        return glm::vec2(0.0f);
-    }
-
-
+namespace rfct{
     void checkForCollision(BVHnode& node, dynamicBoxColliderComponent& bocCollider, staticObjCollisionCallbackComponent& callback, entity& dynamicEntity) {
         if (checkForCollisionAABBAABB(node.min, node.max, bocCollider.min, bocCollider.max)) {
             if (node.right < 0) 
@@ -493,7 +396,6 @@ void rfct::updatePhysics(const frameContext* ctx)
 
             });
         dynamicCirclesQuery.each([&](flecs::entity ent, positionComponent& position, dynamicCircleColliderComponent& dynamicCircle, dynamicObjCollisionCallbackComponent& callback) {
-            RFCT_INFO("corcle");
             constexpr float substepTime = (fixedDeltaTime) / (float)substepCount;
             for (uint32_t substep = 0; substep < substepCount; substep++) {
                 dynamicCircleColliderComponent circ = { dynamicCircle.offsetFromCenter + position.position, dynamicCircle.radius };

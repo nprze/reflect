@@ -3,6 +3,8 @@
 
 using collisionHandler = void(*)(entity, entity, glm::vec2);
 using dynamicCollisionHandler = void(*)(entity, entity); // the second entity must have EITHER dynamic box collider or dynamic circle collider
+using rayHitCallback = void(*)(entity, entity); // the second entity must have static box collider. the first one is the ray
+
 namespace flecs {
 	class world;
 	class entity;
@@ -45,6 +47,7 @@ namespace rfct {
 
     struct dynamicObjectTypeComponent {
         dynamicObjectType type;
+        bool passable = true;
     };
 	struct sceneComponent {
 		std::string name;

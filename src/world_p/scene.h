@@ -26,6 +26,10 @@ namespace rfct {
 		entity createStaticRect(staticBoxColliderComponent* bounds, glm::vec3 color = glm::vec3(1.f, 1.f, 1.f)); // creates a simple rect with color
 		entity createStaticRenderingEntity(std::vector<Vertex>* vertices, glm::mat4* model);
 		void deleteDynamicEntity(entity e);
+		void deleteAnimatedEntity(entity e);
+		void addPendingDynamicEnitityDeletion(entity e);
+		void addPendingAnimatedEnitityDeletion(entity e);
+		void resolvePendingDynamicEnitityDeletions();
 		
 		entity createDynamicRect(dynamicBoxColliderComponent* bounds, glm::vec3 color = glm::vec3(1.f, 1.f, 1.f));
 		entity createDynamicMesh(dynamicBoxColliderComponent* bounds, const std::string& path);
@@ -59,5 +63,7 @@ namespace rfct {
 		dialogue* m_currentlyPlayingDialogue = nullptr;
 
 		glm::vec2 m_spawnPlayerPos;
+
+		std::vector<std::pair<entity, bool>> m_pendingEntityDeletions;
 	};
 };

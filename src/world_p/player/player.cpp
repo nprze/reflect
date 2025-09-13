@@ -15,7 +15,7 @@ rfct::playerController rfct::playerController::instance;
 
 rfct::playerController::playerController() :
 	walkSpeed(.06f),
-	jumpSpeed(1.3f),
+	jumpSpeed(1.1f),
 	dashSpeed(8.f),
 	arrowUpDownInput(0),
 	walkHorizontalInput(0),
@@ -530,7 +530,7 @@ void rfct::onCollision_Player_StaticObj(entity player, entity collidedWith, glm:
 		else {
 			// Hit your head on a ceiling: only stop upward motion
 			if (vel->velocity.y > 0.0f) {
-				vel->velocity.y = 0.0f;
+				vel->velocity.y = -vel->velocity.y * 0.3f;
 				ivel->velocity.y = 0.0f;
 			}
 		}

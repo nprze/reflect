@@ -265,3 +265,15 @@ void rfct::sceneRenderData::removeDynamicEntity(entity e)
 		removeDynamicObject(*ssbo, *vData, false, &noCtx);
 	}
 }
+
+void rfct::sceneRenderData::removeAnimatedEntity(entity e)
+{
+	const dynamicSSBOIndexComponent* ssbo = e.get<dynamicSSBOIndexComponent>();
+
+	m_matricesFreeIndices.push_back(ssbo->indexInSSBO);
+
+	for (uint8_t i = 0; i < RFCT_FRAMES_IN_FLIGHT; i++) {
+		char* finalPtr = ((char*)m_mappedMatsDataDynamic[i]) + (ssbo->indexInSSBO * sizeof(glm::mat4));
+		memset(finalPtr, 0, sizeof(glm::mat4));
+	}
+}

@@ -195,6 +195,7 @@ void rfct::vulkanRasterizerPipeline::recordCommandBuffer(frameContext* ctx, fram
     vk::DescriptorSet sets[] = { frameData.getCameraUboDescSet(ctx->frame), renderdata.m_DescriptorSetsDynamic[ctx->frame].get() };
     commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_pipelineLayout.get(), 0, sets, {});
     playerAnimations::get().drawPlayer(commandBuffer);
+    ctx->scene->getObjectHolder().customDrawObjects(commandBuffer, ctx);
 
     commandBuffer.endRenderPass();
     commandBuffer.end();

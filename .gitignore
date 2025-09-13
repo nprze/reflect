@@ -65,6 +65,7 @@ assets/dialogues
 assets/player
 assets/UI
 assets/background
+assets/anim
 build/
 !deps/
 src/utils/reflect_directories.h

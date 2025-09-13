@@ -16,6 +16,7 @@
 #include "world_p/player/player_animations.h"
 #include "renderer_p/buffer/vulkan_buffer.h"
 #include "assets/dialogue_serialize_data.h"
+#include "renderer_p/frame_anim/anim_buffer.h"
 
 namespace rfct {
     void AssetsManager::uploadVertices(const std::vector<Vertex>& vertices, VulkanBuffer* buffer, vk::DeviceSize offset)
@@ -640,7 +641,7 @@ namespace rfct {
         }
     }
 
-    frameAnimation AssetsManager::loadAnimation(const std::string& path)
+    frameAnimation AssetsManager::loadAnimation(const std::string& path, animationBuffer* loc, uint32_t matrixIndex)
     {
         std::string finalPath = m_Path + "/" + path;
         std::ifstream file(finalPath);
@@ -709,17 +710,17 @@ namespace rfct {
 
         std::string newPath = folderPath + filename;
 
-        loadCharacterMesh(newPath, &vertices, 1);
-        
+        loadCharacterMesh(newPath, &vertices, matrixIndex);
 
-        vulkanBufferLocation loc = playerAnimations::get().requestVulkanBuffer(allTrianglesCount);
+        vulkanBufferLocation location = loc->requestTriangles(allTrianglesCount);
+        RFCT_ASSERT(location.buffer); // cannot find buffer to accomodate needs for animation
 
-        uploadVertices(vertices, loc.buffer, loc.offsetInBytes);
+        uploadVertices(vertices, location.buffer, location.offsetInBytes);
         
 
         frameAnimation anim;
-        anim.buffer = loc.buffer;
-        anim.bufferOffsetInBytes = loc.offsetInBytes;
+        anim.buffer = location.buffer;
+        anim.bufferOffsetInBytes = location.offsetInBytes;
         anim.cycleTime = cycleTime;
         anim.frameCount = keyFrameCount;
         anim.shouldBeRepeated = repeatAnimation;

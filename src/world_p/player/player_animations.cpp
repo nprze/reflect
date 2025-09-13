@@ -7,55 +7,36 @@
 
 
 
-#define RFCT_PLAYER_ANIMATIONS_VERTEX_BUFFER_COUNT 1
 #define RFCT_PLAYER_ANIMATIONS_VERTEX_BUFFER_TRIANGLE_COUNT 10000
 
 
 rfct::playerAnimations rfct::playerAnimations::instance;
 
-rfct::vulkanBufferLocation rfct::playerAnimations::requestVulkanBuffer(uint32_t triangleCount)
-{
-	for (uint32_t i = 0; i < RFCT_PLAYER_ANIMATIONS_VERTEX_BUFFER_COUNT; ++i) {
-		if (trianglesLeftInBuffer[i] >= triangleCount) {
-			uint32_t val = static_cast<uint32_t>(((RFCT_PLAYER_ANIMATIONS_VERTEX_BUFFER_TRIANGLE_COUNT * 3 * sizeof(Vertex)) - (trianglesLeftInBuffer[i]) * 3 * sizeof(Vertex)));
-			trianglesLeftInBuffer[i] -= triangleCount;
- 			return {&vulkanBuffers[i], val };
-		}
-	}
-	RFCT_CRITICAL("cannot find vertex buffer to accomodate needs for animtaion");
-}
 void rfct::playerAnimations::loadAnimations()
 {
-	vulkanBuffers = (VulkanBuffer*)malloc(RFCT_PLAYER_ANIMATIONS_VERTEX_BUFFER_COUNT * sizeof(VulkanBuffer));
-	trianglesLeftInBuffer.reserve(RFCT_PLAYER_ANIMATIONS_VERTEX_BUFFER_COUNT);
-	for (uint32_t i = 0; i < RFCT_PLAYER_ANIMATIONS_VERTEX_BUFFER_COUNT; ++i) {
-		new (&vulkanBuffers[i]) VulkanBuffer(RFCT_PLAYER_ANIMATIONS_VERTEX_BUFFER_TRIANGLE_COUNT * 3 * sizeof(Vertex), vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eTransferDst, VMA_MEMORY_USAGE_GPU_ONLY);
-		trianglesLeftInBuffer.push_back(RFCT_PLAYER_ANIMATIONS_VERTEX_BUFFER_TRIANGLE_COUNT);
-	}
-	m_idle = AssetsManager::get().loadAnimation("player/walkAnim/idle.txt");
-	m_walking = AssetsManager::get().loadAnimation("player/walkAnim/walk.txt");
-	m_jumpStart = AssetsManager::get().loadAnimation("player/walkAnim/jump-start.txt");
-	m_jumpUp = AssetsManager::get().loadAnimation("player/walkAnim/jump-up.txt");
-	m_jumpTurnover = AssetsManager::get().loadAnimation("player/walkAnim/jump-turnover.txt");
-	m_jumpFall = AssetsManager::get().loadAnimation("player/walkAnim/jump-fall.txt");
-	m_jumpReturn = AssetsManager::get().loadAnimation("player/walkAnim/jump-return.txt");
-	m_dash = AssetsManager::get().loadAnimation("player/walkAnim/dash.txt");
+	buffer.init(RFCT_PLAYER_ANIMATIONS_VERTEX_BUFFER_TRIANGLE_COUNT);
+
+
+	m_idle = AssetsManager::get().loadAnimation("player/walkAnim/idle.txt", &buffer);
+	m_walking = AssetsManager::get().loadAnimation("player/walkAnim/walk.txt", &buffer);
+	m_jumpStart = AssetsManager::get().loadAnimation("player/walkAnim/jump-start.txt", &buffer);
+	m_jumpUp = AssetsManager::get().loadAnimation("player/walkAnim/jump-up.txt", &buffer);
+	m_jumpTurnover = AssetsManager::get().loadAnimation("player/walkAnim/jump-turnover.txt", &buffer);
+	m_jumpFall = AssetsManager::get().loadAnimation("player/walkAnim/jump-fall.txt", &buffer);
+	m_jumpReturn = AssetsManager::get().loadAnimation("player/walkAnim/jump-return.txt", &buffer);
+	m_dash = AssetsManager::get().loadAnimation("player/walkAnim/dash.txt", &buffer);
 	m_dash.cycleTime = dashFullTime;
-	m_dashUp = AssetsManager::get().loadAnimation("player/walkAnim/dash-up.txt");
+	m_dashUp = AssetsManager::get().loadAnimation("player/walkAnim/dash-up.txt", &buffer);
 	m_dashUp.cycleTime = dashFullTime;
-	m_hold = AssetsManager::get().loadAnimation("player/walkAnim/hold.txt");
-	m_climb = AssetsManager::get().loadAnimation("player/walkAnim/climb.txt");
+	m_hold = AssetsManager::get().loadAnimation("player/walkAnim/hold.txt", &buffer);
+	m_climb = AssetsManager::get().loadAnimation("player/walkAnim/climb.txt", &buffer);
 	
 	m_currentAnimation = &m_idle;
 }
 
 void rfct::playerAnimations::unloadAnimations()
 {
-	for (uint32_t i = 0; i < RFCT_PLAYER_ANIMATIONS_VERTEX_BUFFER_COUNT; ++i) {
-		vulkanBuffers[i].cleanup();
-	}
-	free(vulkanBuffers);
-	vulkanBuffers = nullptr;
+	buffer.cleanup();
 }
 
 void rfct::playerAnimations::update(const glm::vec2& playerVel, const glm::vec2& playerPos, frameContext& ctx, entity player)

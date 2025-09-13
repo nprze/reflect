@@ -1,5 +1,6 @@
 #pragma once
 #include <glm/glm.hpp>
+#include "assets/frame_animation.h"
 
 namespace flecs {
     class world;
@@ -62,6 +63,21 @@ namespace rfct {
         glm::vec2 direction;
         float currentProgress;
 
+    };
+
+    struct enemyComponent {
+        bool facingRight = true;
+        frameAnimation walkFrameAnim;
+        frameAnimation turnFrameAnim;
+        frameAnimation dieFrameAnim;
+        uint8_t animIndex; // 0- walk, 1-turn, 2- die
+
+        float timeSinceFrameChanged = 0.f;
+        uint8_t frameIndex;
+        size_t bufferOffset;
+    };
+    struct enemyRayComponent {
+        entity owner;
     };
 
 }

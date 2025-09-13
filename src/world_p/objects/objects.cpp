@@ -10,15 +10,18 @@
 
 rfct::objectsHolder::~objectsHolder()
 {
+	animBuffer.cleanup();
 	cleanupCigarettes();
 	cleanupSpikes();
+	cleanupEnemies();
 }
 
 void rfct::objectsHolder::init(sceneSerializedData* serializeData, scene* parentScene)
 {
+	animBuffer.init(10000);
 	initCigaretteVars(parentScene);
 	initSpikeVars(parentScene);
-	spawnEnemies(serializeData, parentScene);
+	spawnEnemies(serializeData, parentScene, &animBuffer);
 
 
 	vines.reserve(serializeData->vines.size());
@@ -59,18 +62,23 @@ void rfct::objectsHolder::update(frameContext* fc)
 			v.update(fc);
 		}
 		updateCigarettes(fc);
-		updateEnemies(fc);
 	}
+	updateEnemies(fc);
 }
 
-void rfct::objectsHolder::draw(const frameContext* fc){
+void rfct::objectsHolder::updateMatrices(frameContext* fc){
 
 	for (vine& v : vines) {
 		v.draw(fc);
 	}
 	updateCigarettesMatrixes(fc);
+	updateEnemiesMatrices(fc);
 }
-void rfct::objectsHolder::reset(const frameContext* fc)
+void rfct::objectsHolder::customDrawObjects(vk::CommandBuffer& cmd, frameContext* ctx)
+{
+	drawEnemies(cmd, ctx);
+}
+void rfct::objectsHolder::reset(frameContext* fc)
 {
 	for (vine& v : vines) {
 		v.reset();

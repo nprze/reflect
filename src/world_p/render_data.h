@@ -24,7 +24,8 @@ namespace rfct {
 		uint32_t reserveSuitableVertexBufferLocation(size_t numVertices);
 
 		void removeDynamicObject(const dynamicSSBOIndexComponent& ssboData, const vertexRenderInfoComponent& vertexRenderInfo, bool addToFreelist = false, const frameContext* ctx = {});
-		void removeDynamicEntity(entity e);
+		void removeDynamicEntity(entity e); // clears both matrices and vertices
+		void removeAnimatedEntity(entity e); // only clears matrices
 
 
 		vk::UniqueDescriptorPool m_DescriptorPool;

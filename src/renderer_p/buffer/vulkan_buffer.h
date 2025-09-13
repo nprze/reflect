@@ -30,5 +30,10 @@ namespace rfct {
 
         vk::Buffer buffer;
 		VmaAllocation allocation;
-	};;
+	};
+
+    struct vulkanBufferLocation {
+        VulkanBuffer* buffer;
+        uint32_t offsetInBytes;
+    };
 }

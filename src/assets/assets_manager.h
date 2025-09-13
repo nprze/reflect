@@ -12,6 +12,7 @@ namespace rfct {
     class font;
     struct buildingBlockMesh;
     struct frameAnimation;
+    struct animationBuffer;
     class VulkanBuffer;
 
     // this class exist because the path for assets waries by platform.
@@ -36,13 +37,13 @@ namespace rfct {
 
         void uploadVertices(const std::vector<Vertex>& vertices, VulkanBuffer* buffer, vk::DeviceSize offset); // helper function
 
-        frameAnimation loadAnimation(const std::string& path);
+        frameAnimation loadAnimation(const std::string& path, animationBuffer* location, uint32_t matrixIndex = 1);
         void createDummyImage(image* imageOut);
         vk::CommandPool& getCommandPool();
     private:
         vk::CommandPool m_AssetsCommandPool;
         std::string m_Path;
-        sceneLoader m_SceneLoader; // separate becaues load scene is growing real fast and the .cpp file is getting messy
+        sceneLoader m_SceneLoader; // separate because load scene is growing real fast and the .cpp file is getting messy
 
         AssetsManager() = default;
         ~AssetsManager() = default;

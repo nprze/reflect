@@ -2,21 +2,18 @@
 #include "assets/frame_animation.h"
 #include "hair_anim.h"
 #include "context.h"
+#include "renderer_p/buffer/vulkan_buffer.h"
+#include "renderer_p/frame_anim/anim_buffer.h"
+
+
 
 namespace rfct {
-	struct vulkanBufferLocation {
-		VulkanBuffer* buffer;
-		uint32_t offsetInBytes;
-	};
-	class VulkanBuffer;
 	class playerAnimations {
 	private:
 		static playerAnimations instance;
 	public:
 		static playerAnimations& get() { return instance; }
 	private:
-		VulkanBuffer* vulkanBuffers;
-		std::vector<uint32_t> trianglesLeftInBuffer;
 	public:
 		vulkanBufferLocation requestVulkanBuffer(uint32_t triangleCount);
 		void loadAnimations();
@@ -26,6 +23,8 @@ namespace rfct {
 		void drawPlayer(vk::CommandBuffer& cmdBffr);
 		void initHairAnim(float playerWidth, float playerHeight);
 	private:
+		animationBuffer buffer;
+
 		uint32_t m_currentFrame;
 		float m_timeSinceFrameChanged;
 		uint32_t m_bufferOffset;

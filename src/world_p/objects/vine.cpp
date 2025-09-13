@@ -56,7 +56,7 @@ namespace rfct {
 	}
 	void onCollision_Vine_DynamicObj(entity vineEntity, entity collidedWith) {
 		// narrow phase
-		if(collidedWith.get<dynamicObjectTypeComponent>()->type != dynamicObjectType::Player) return;
+		if(collidedWith.get<dynamicObjectTypeComponent>()->passable) return;
 		if (vineEntity.get<vineStateComponent>()->holdingToThis) return; // update separately
 		glm::vec2 playerMin = collidedWith.get_mut<dynamicBoxColliderComponent>()->min + collidedWith.get<positionComponent>()->position;
 		glm::vec2 playerMax = collidedWith.get_mut<dynamicBoxColliderComponent>()->max + collidedWith.get<positionComponent>()->position;

@@ -1,6 +1,7 @@
 #pragma once
 #include <glm/glm.hpp>
 #include "world_p/components.h"
+
 namespace rfct{
 	struct BVHnode {
 		glm::vec2 min;
@@ -9,6 +10,8 @@ namespace rfct{
 		int right = -1;
 		entity entity;
 	};
+	extern std::vector<BVHnode> StaticObjsBVHnodes;
+	extern std::vector<BVHnode> DynamicObjsBVHnodes;
 	struct frameContext;
 	// setup
 	void createQueries(entity sceneEntity);
@@ -17,7 +20,6 @@ namespace rfct{
 	void buildDynamicObjBVH();
 	entity findTheNearestVineToPlayer(entity player);
 	entity findTheNearestBlockToPlayer(entity player);
-	entity findTheNearestBlockToHold(entity player);
 	void drawAABB(const glm::vec2& min, const glm::vec2& max, uint32_t depth);
 	template<typename T>
 	void buildBVH(flecs::query<T> qr, std::vector<BVHnode>* BVHnodes);
