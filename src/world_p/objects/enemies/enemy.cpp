@@ -11,6 +11,7 @@
 
 namespace rfct {
 	constexpr float maxEnemySpeed = 0.2f;
+	constexpr float oneTurnTime = .5f;
 	static flecs::query<velocityComponent, positionComponent, scaleComponent, enemyComponent> enemyQuery;
 	void onCollision_Enemy_StaticObj(entity enemy, entity collidedWith, glm::vec2 resolution) {
 		positionComponent* pos = enemy.get_mut<positionComponent>();
@@ -19,7 +20,8 @@ namespace rfct {
 		if (resolution.x != 0) {
 			vel->velocity.x = 0.f;
 			enemyComponent* enComp = enemy.get_mut<enemyComponent>();
-			enComp->facingRight = !enComp->facingRight;
+			if (enComp->turningTime == 0.f)
+				enComp->turningTime = oneTurnTime;
 		}
 		else if (resolution.y != 0) {
 			vel->velocity.y = 0.f;
@@ -38,8 +40,8 @@ namespace rfct {
 		if (resolution.y == 0) {
 			vel->velocity.x = 0.f;
 			enemyComponent* enComp = enemy.get_mut<enemyComponent>();
-			enComp->facingRight = !enComp->facingRight;
-			
+			if (enComp->turningTime == 0.f)
+				enComp->turningTime = oneTurnTime;
 		}
 		else if (resolution.x == 0) {
 			vel->velocity.y = 0.f;
@@ -119,7 +121,28 @@ void rfct::updateEnemies(frameContext* ctx)
 	enemyQuery.each([&](flecs::entity e, velocityComponent& vel, positionComponent& pos, scaleComponent& sc, enemyComponent& en) {
 
 		frameAnimation* currentAnim = (frameAnimation*)((char*)&en.walkFrameAnim + (en.animIndex * sizeof(frameAnimation)));
+		en.turningTime = std::clamp(en.turningTime - ctx->dt, 0.f, oneTurnTime);
+		if (en.turningTime != 0.f) {
+			if (en.animIndex != 1) {
+				// change anim to turn
+				en.animIndex = 1;
+				en.frameIndex = 0;
+				en.bufferOffset = 0;
+			}
+		}
+		else {
+			if (en.animIndex == 1) {
+				// switch sides XD
+				en.facingRight = !en.facingRight;
 
+				// change anim to walk
+				en.animIndex = 0;
+				en.frameIndex = 0;
+				en.bufferOffset = 0;
+			}
+			else {
+			}
+		}
 
 		en.timeSinceFrameChanged += ctx->dt;
 		if (en.timeSinceFrameChanged > currentAnim->timePerFrame) {
@@ -140,11 +163,19 @@ void rfct::updateEnemies(frameContext* ctx)
 		}
 
 		sc.scale.x = std::abs(sc.scale.x) * (en.facingRight ? 1.f : -1.f);
-		glm::vec2 rayMin = pos.position + glm::vec2{ 0.3f * (en.facingRight ? 1.f : -1.f), 0.f};
-		glm::vec2 rayMax = pos.position + glm::vec2{ 0.3f * (en.facingRight ? 1.f : -1.f), -1.f};
+		glm::vec2 rayMin = pos.position + glm::vec2{ 0.3f * (en.facingRight ? 1.f : -1.f), 0.f };
+		glm::vec2 rayMax = pos.position + glm::vec2{ 0.3f * (en.facingRight ? 1.f : -1.f), -1.f };
 		bool groundBefore = checkRayStatic(StaticObjsBVHnodes.back(), rayMin, rayMax);
-		vel.velocity.x = std::clamp(en.facingRight ? 1.f : -1.f * maxEnemySpeed, -maxEnemySpeed, maxEnemySpeed);
-		if (!groundBefore) en.facingRight = !en.facingRight;
+		if (en.turningTime != 0.f) {
+			vel.velocity.x = 0.f;
+		}
+		else {
+			vel.velocity.x = std::clamp(en.facingRight ? 1.f : -1.f * maxEnemySpeed, -maxEnemySpeed, maxEnemySpeed);
+		}
+		if (!groundBefore) {
+			if (en.turningTime == 0.f)
+				en.turningTime = oneTurnTime;
+		}
 		}
 	);
 }

@@ -410,7 +410,7 @@ entity rfct::findTheNearestVineToPlayer(entity player)
 {
     glm::vec2 point = player.get<positionComponent>()->position;
     std::vector<BVHnode>& bvh = DynamicObjsBVHnodes;
-    entity nearestEntity{};
+    entity nearestEntity = flecs::entity::null();
     float nearestDistSq = std::numeric_limits<float>::max();
 
     std::stack<int> stack;

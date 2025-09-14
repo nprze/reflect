@@ -71,6 +71,7 @@ namespace rfct {
         frameAnimation turnFrameAnim;
         frameAnimation dieFrameAnim;
         uint8_t animIndex; // 0- walk, 1-turn, 2- die
+        float turningTime = 0.f;
 
         float timeSinceFrameChanged = 0.f;
         uint8_t frameIndex;

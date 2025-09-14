@@ -388,11 +388,13 @@ rfct::nearestObject rfct::playerController::findObjectToHold()
 	nearestObject returnVal;
 	// proritize vines
 	returnVal.object = findTheNearestVineToPlayer(player);
-	std::pair<glm::vec2, int> vineEdgePos = getNearestEdgePos((player.get<positionComponent>()->position), returnVal.object);
-	returnVal.closestPosition = vineEdgePos.first;
-	if (len(returnVal.closestPosition - posComp->position) < forgivenessVine) {
-		returnVal.vineIndex = vineEdgePos.second;
-		return returnVal;
+	if (returnVal.object != flecs::entity::null()) {
+		std::pair<glm::vec2, int> vineEdgePos = getNearestEdgePos((player.get<positionComponent>()->position), returnVal.object);
+		returnVal.closestPosition = vineEdgePos.first;
+		if (len(returnVal.closestPosition - posComp->position) < forgivenessVine) {
+			returnVal.vineIndex = vineEdgePos.second;
+			return returnVal;
+		}
 	}
 	// vine is too far, fallback to block
 	returnVal.object = findTheNearestBlockToPlayer(player);
