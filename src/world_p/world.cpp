@@ -1,14 +1,14 @@
 #include "world.h"
 #include "scene.h"
 #include "input.h"
-#include "job_system_p\job_system.h"
-#include "renderer_p\debug\debug_draw.h"
+#include "job_system_p/job_system.h"
+#include "renderer_p/debug/debug_draw.h"
 
 rfct::world rfct::world::currentWorld;
 
 void rfct::world::initWorld(const std::string& path)
 {
-	loadScene("scenes/enemies-test1.txt");
+	loadScene("scenes/enemies-test0.txt");
 }
  
 void rfct::world::loadScene(const std::string& path)

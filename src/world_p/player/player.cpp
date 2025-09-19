@@ -312,13 +312,7 @@ void rfct::playerController::update(frameContext* ctx)
 			}
 
 			if (stateComp->state != playerState::holdingVines) {
-
-				ctx->scene->getObjectHolder().nearestVineEdgeToPlayerIndex = -1;
-				ctx->scene->getObjectHolder().vineClosestToPlayer.get_mut<vineStateComponent>()->holdingToThis = false;
-				player.get_mut<gravityComponent>()->gravityEnabled = true;
-				
-				holdCooldown = 0.4f;
-				velComp->velocity.y += 2.f;
+				endHold(ctx->scene);
 			}
 			break;
 		}
@@ -350,6 +344,9 @@ void rfct::playerController::update(frameContext* ctx)
 			}
 
 			if (stateComp->state != playerState::holdingBlocks) {
+				if (stateComp->state == playerState::normal) {
+					player.get_mut<positionComponent>()->position.x += (facingRight ? 1.f : -1.f) * 0.3f;
+				}
 				player.get_mut<gravityComponent>()->gravityEnabled = true;
 				holdCooldown = 0.25f;
 				//velComp->velocity.y += .5f;
@@ -438,6 +435,17 @@ void rfct::playerController::normalJumpUpdate()
 	float inputMultiplayer = std::clamp(- std::sqrt(7.f * startedJumpingTime) + 1.f, 0.f, 1.f);
 	velComp->velocity.y += inputMultiplayer * jumpInput * jumpSpeed;
 	inputVelComp->velocity.y += inputMultiplayer * jumpInput * jumpSpeed;
+}
+
+void rfct::playerController::endHold(scene* sc)
+{
+	sc->getObjectHolder().nearestVineEdgeToPlayerIndex = -1;
+	if (sc->getObjectHolder().vineClosestToPlayer != flecs::entity::null())
+		sc->getObjectHolder().vineClosestToPlayer.get_mut<vineStateComponent>()->holdingToThis = false;
+	player.get_mut<gravityComponent>()->gravityEnabled = true;
+
+	holdCooldown = 0.4f;
+	velComp->velocity.y += 2.f;
 }
 
 

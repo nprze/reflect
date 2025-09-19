@@ -105,8 +105,7 @@ void rfct::scene::updateUI(frameContext* context)
 
 void rfct::scene::loadScene(const std::string& path)
 {
-	sceneSerializedData sc;
-	AssetsManager::get().loadScene(path, &sc);
+	AssetsManager::get().loadScene(path, &m_InitialData);
 
 
 	sceneEntity = ecs::get().entity<sceneComponent>();
@@ -120,7 +119,7 @@ void rfct::scene::loadScene(const std::string& path)
 	setCamera(camera);
 	m_RenderData.startTransferStatic();
 	//createStaticBackgroundMesh("background/20x20-0.txt", { 0.06f, 0.04f,0.04f });
-	for (rectangle r : sc.rectangles) {
+	for (rectangle r : m_InitialData.rectangles) {
 		glm::vec2 min = r.min;
 		min.x -= 1;
 		min.y -= 1;
@@ -131,17 +130,15 @@ void rfct::scene::loadScene(const std::string& path)
 		color.b = std::stoi(r.color.substr(4, 2), nullptr, 16);
 		createStaticMesh("building_blocks/" + r.file, size, r.min, color);
 	}
-	// the first dynamic object must be the player (the player is unique, uses frame animation; the frame animation uses the model matrix from dynamic objects ubo, with the 0 index)
-	createPlayerEntity(sc.spawnPoint);
-	m_spawnPlayerPos = sc.spawnPoint;
+	createPlayerEntity(m_InitialData.spawnPoint);
 
 
 	// init dynamic objects
-	m_dynamicObjects.init(&sc, this);
-	m_decorations.init(&sc, this);
+	m_dynamicObjects.init(&m_InitialData, this);
+	m_decorations.init(&m_InitialData, this);
 
 
-	if (sc.vines.size() != 0) hasVines = true;
+	//if (m_InitialData.vines.size() != 0) hasVines = true;
 
 	// init player hair anim
 	const dynamicBoxColliderComponent* bounds = epicRotatingTriangle.get<dynamicBoxColliderComponent>();
@@ -153,6 +150,8 @@ void rfct::scene::loadScene(const std::string& path)
 
 	m_pendingEntityDeletions.clear();
 	m_pendingEntityDeletions.reserve(20);
+
+	m_InitialData.rectangles.clear();
 }
 
 
@@ -356,8 +355,9 @@ void rfct::scene::startDialogue(const std::string& path, frameContext* ctx)
 
 void rfct::scene::resetScene(frameContext* ctx)
 {
-
 	epicRotatingTriangle.get_mut<playerLifeComponent>()->alive = true;
-	epicRotatingTriangle.get_mut<positionComponent>()->position = m_spawnPlayerPos;
+	playerController::get().endHold(this);
+	epicRotatingTriangle.get_mut<positionComponent>()->position = m_InitialData.spawnPoint;
+	epicRotatingTriangle.get_mut<playerStateComponent>()->state = playerState::normal;
 	m_dynamicObjects.reset(ctx);
 }

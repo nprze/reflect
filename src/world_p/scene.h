@@ -4,6 +4,7 @@
 #include "player/player.h"
 #include "objects/objects.h"
 #include "decors/decorations.h"
+#include "assets/scene_serialize_data.h"
 
 namespace rfct {
 	class world;
@@ -51,8 +52,7 @@ namespace rfct {
 		entity camera;
 		entity sceneEntity; // root of all objects in this scene. 
 		sceneRenderData m_RenderData;
-	private:
-		bool hasVines = false; 
+	private: 
 		world* m_World;
 
 		objectsHolder m_dynamicObjects;
@@ -62,8 +62,8 @@ namespace rfct {
 
 		dialogue* m_currentlyPlayingDialogue = nullptr;
 
-		glm::vec2 m_spawnPlayerPos;
-
 		std::vector<std::pair<entity, bool>> m_pendingEntityDeletions;
+
+		sceneSerializedData m_InitialData; // holds an empty static rectangles data
 	};
 };

@@ -19,6 +19,7 @@ namespace rfct {
 		playerController();
 		void setPlayer(entity playerEntity) { player = playerEntity; }
 		void update(frameContext* ctx);
+		void endHold(scene* sc);
 	private:
 		entity player;
 		float walkSpeed;
@@ -70,6 +71,7 @@ namespace rfct {
 
 		void normalWalkUpdate();
 		void normalJumpUpdate();
+
 
 		bool checkHold(scene* scen); // returns if holding
 
