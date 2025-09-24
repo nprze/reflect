@@ -6,6 +6,8 @@
 #include "renderer_p/debug/debug_draw.h"
 #include "world_p/scene.h"
 #include "world_p/physics/physics.h"
+#include "world_p/transform.h"
+#include "world_p/ecs.h"
 #include "world_p/decors/dash_kindlings.h"
 
 constexpr float maxVelocityX = 0.6f;
@@ -33,6 +35,42 @@ rfct::playerController::playerController() :
 	startedJumpingTime(0.f),
 	dashCooldown(0.f)
 {
+}
+entity rfct::playerController::createPlayer(scene* sc, const glm::vec2& spawnPoint)
+{
+	dynamicBoxColliderComponent bounds = { { -0.23f, -0.45f }, { 0.23, 0.4f } };
+
+	transform trans = {};
+
+	constexpr float oneSeventieth = 1.f / 70.f;
+	trans.scale = scaleComponent{};
+	trans.scale.scale.x = oneSeventieth;
+	trans.scale.scale.y = oneSeventieth;
+	glm::mat4 model = getModelMatrixFromTransform(trans);
+	frameContext noCtx{};
+	// player always uses index 1.
+	sc->getRenderData().updateMat(&noCtx, 1, &model);
+
+	staticObjCollisionCallbackComponent colCallback;
+	colCallback.handler = onCollision_Player_StaticObj;
+	player = ecs::get().entity<>()
+		.child_of(sc->sceneEntity)
+		.set<dynamicSSBOIndexComponent>({ 1 })
+		.set<rotationComponent>({})
+		.set<scaleComponent>(trans.scale)
+		.set<positionComponent>({ spawnPoint })
+		.set<gravityComponent>({})
+		//.set<dynamicCircleColliderComponent>({ {0,-0.245f}, .25f })
+		.set<velocityComponent>({ glm::vec2(0.f,0.f) })
+		.set<inputVelocityComponent>({ glm::vec2(0.f,0.f) })
+		.set<staticObjCollisionCallbackComponent>(colCallback)
+		.set<dynamicBoxColliderComponent>(bounds)
+		.set<playerStateComponent>({})
+		.set<playerDashStateComponent>({})
+		.set<dynamicObjectTypeComponent>({ dynamicObjectType::Player, false })
+		.set<playerLifeComponent>({ true });
+
+	return player;
 }
 namespace rfct {
 	void drawPlayervelocity(const glm::vec2 velComp, const glm::vec2 posComp, const glm::vec2 offset = {0.f, 0.f}) {
@@ -137,7 +175,13 @@ void rfct::playerController::update(frameContext* ctx)
 		drawPlayervelocity(player.get<inputVelocityComponent>()->velocity, player.get<positionComponent>()->position);
 		drawPlayervelocity(player.get<velocityComponent>()->velocity, player.get<positionComponent>()->position);
 	}
-
+	// below block
+	if (true) {
+		if (belowBlock != flecs::entity::null() && player.get<velocityComponent>()->velocity.y == 0) {
+			const dynamicBoxColliderComponent* col = belowBlock.get<dynamicBoxColliderComponent>();
+			drawAABB(col->min, col->max, 0);
+		}
+	}
 
 	if (input::getInput().hold) {
 		hold = true;
@@ -149,7 +193,7 @@ void rfct::playerController::update(frameContext* ctx)
 
 	arrowUpDownInput = input::getInput().upDown;
 
-	if ((input::getInput().dashX || input::getInput().dashY || input::getInput().dash45up || input::getInput().dash45down || input::getInput().dashDefault) && dashCharges>0 && dashCooldown <= 0.f) {
+	if ((input::getInput().dashX || input::getInput().dashY || input::getInput().dash45up || input::getInput().dash45down || input::getInput().dashDefault) && player.get<playerStateComponent>()->dashCharges>0 && dashCooldown <= 0.f) {
 		if (input::getInput().dashX) {
 			dashHorizontalInput = input::getInput().dashX;
 			anyDash = true;
@@ -210,12 +254,15 @@ void rfct::playerController::update(frameContext* ctx)
 				timeYNotZero = 0;
 				stateComp->allowToJump = true;
 				if (dashCooldown == 0.f) {
-					dashCharges = 1;
+					stateComp->dashCharges = 1;
 				}
 			}
 			else {
 				timeYNotZero += fixedDeltaTime;
-				if (timeYNotZero > fixedDeltaTime * 3) {
+				if (timeYNotZero == fixedDeltaTime) {
+					velComp->velocity.x += (facingRight ? 1.f : -1.f) * 0.6f;
+				}
+				if (timeYNotZero > fixedDeltaTime * 3 && stateComp->allowToJump) {
 					stateComp->allowToJump = false;
 				}
 			}
@@ -317,6 +364,7 @@ void rfct::playerController::update(frameContext* ctx)
 			break;
 		}
 		case (playerState::holdingBlocks): {
+			holdingTime += fixedDeltaTime;
 			nearestObjectToHold = findObjectToHold();
 			if (
 				(nearestObjectToHold.closestPosition.y < posComp->position.y) || (nearestObjectToHold.closestPosition.y > posComp->position.y)) {
@@ -345,12 +393,22 @@ void rfct::playerController::update(frameContext* ctx)
 
 			if (stateComp->state != playerState::holdingBlocks) {
 				if (stateComp->state == playerState::normal) {
-					player.get_mut<positionComponent>()->position.x += (facingRight ? 1.f : -1.f) * 0.3f;
+					if (holdingTime >= fixedDeltaTime * 10.f) {
+						player.get_mut<positionComponent>()->position.x += (facingRight ? 1.f : -1.f) * 0.3f;
+						player.get_mut<positionComponent>()->position.y += 0.1f;
+						//velComp->velocity.y += .1f;
+					}
+					else {
+						RFCT_INFO("WIERD ASS SITUATION");
+						velComp->velocity.x -= (facingRight ? 1.f : -1.f) * 0.6f;
+
+					}
 				}
 				player.get_mut<gravityComponent>()->gravityEnabled = true;
 				holdCooldown = 0.25f;
 				//velComp->velocity.y += .5f;
 				holdJumpCooldown = 0.5f;
+				holdingTime = 0.f;
 			}
 			break;
 		}
@@ -493,7 +551,7 @@ bool rfct::playerController::checkHold(scene* scen)
 
 void rfct::playerController::startDash(frameContext* ctx)
 {
-	dashCharges--;
+	player.get_mut<playerStateComponent>()->dashCharges--;
 	player.get_mut<velocityComponent>()->velocity = { 0.f,0.f };
 	velComp->velocity = { 0,0 };
 	dashVelocity = { 0, 0 };
@@ -513,7 +571,6 @@ void rfct::onCollision_Player_StaticObj(entity player, entity collidedWith, glm:
 {
 	positionComponent* pos = player.get_mut<positionComponent>();
 	pos->position += resolution;
-
 
 	velocityComponent* vel = player.get_mut<velocityComponent>();
 	inputVelocityComponent* ivel = player.get_mut<inputVelocityComponent>();

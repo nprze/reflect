@@ -77,6 +77,10 @@ namespace rfct {
         uint8_t frameIndex;
         size_t bufferOffset;
     };
+    struct jumpBoosterComponent {
+        float timeSinceBoost = -1.f;
+
+    };
     struct enemyRayComponent {
         entity owner;
     };

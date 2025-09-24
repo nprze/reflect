@@ -130,7 +130,7 @@ void rfct::scene::loadScene(const std::string& path)
 		color.b = std::stoi(r.color.substr(4, 2), nullptr, 16);
 		createStaticMesh("building_blocks/" + r.file, size, r.min, color);
 	}
-	createPlayerEntity(m_InitialData.spawnPoint);
+	createPlayerEntity(m_InitialData.spawnPoints[0].position);
 
 
 	// init dynamic objects
@@ -304,39 +304,7 @@ void rfct::scene::updateTransformData(frameContext* ctx, entity e)
 
 void rfct::scene::createPlayerEntity(const glm::vec2& spawnPoint)
 {
-	dynamicBoxColliderComponent bounds = { { -0.23f, -0.45f }, { 0.23, 0.4f } };
-
-	transform trans = {};
-
-	constexpr float oneSeventieth = 1.f / 70.f;
-	trans.scale = scaleComponent{};
-	trans.scale.scale.x = oneSeventieth;
-	trans.scale.scale.y = oneSeventieth;
-	glm::mat4 model = getModelMatrixFromTransform(trans);
-	frameContext noCtx{};
-	// player always uses index 1.
-	m_RenderData.updateMat(&noCtx, 1, &model);
-
-	staticObjCollisionCallbackComponent colCallback;
-	colCallback.handler = onCollision_Player_StaticObj;
-	epicRotatingTriangle = ecs::get().entity<>()
-		.child_of(sceneEntity)
-		.set<dynamicSSBOIndexComponent>({ 1 })
-		.set<rotationComponent>({})
-		.set<scaleComponent>(trans.scale)
-		.set<positionComponent>({ spawnPoint })
-		.set<gravityComponent>({})
-		//.set<dynamicCircleColliderComponent>({ {0,-0.245f}, .25f })
-		.set<velocityComponent>({ glm::vec2(0.f,0.f) })
-		.set<inputVelocityComponent>({ glm::vec2(0.f,0.f) })
-		.set<staticObjCollisionCallbackComponent>(colCallback)
-		.set<dynamicBoxColliderComponent>(bounds)
-		.set<playerStateComponent>({})
-		.set<playerDashStateComponent>({})
-		.set<dynamicObjectTypeComponent>({dynamicObjectType::Player, false})
-		.set<playerLifeComponent>({true});
-
-	playerController::get().setPlayer(epicRotatingTriangle);
+	epicRotatingTriangle = playerController::get().createPlayer(this, spawnPoint);
 }
 
 void rfct::scene::updateDirection(bool facingRight)
@@ -357,7 +325,7 @@ void rfct::scene::resetScene(frameContext* ctx)
 {
 	epicRotatingTriangle.get_mut<playerLifeComponent>()->alive = true;
 	playerController::get().endHold(this);
-	epicRotatingTriangle.get_mut<positionComponent>()->position = m_InitialData.spawnPoint;
+	epicRotatingTriangle.get_mut<positionComponent>()->position = m_InitialData.spawnPoints[0].position;
 	epicRotatingTriangle.get_mut<playerStateComponent>()->state = playerState::normal;
 	m_dynamicObjects.reset(ctx);
 }

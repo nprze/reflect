@@ -7,6 +7,7 @@
 #include "world_p/object_components.h"
 #include "world_p/objects/spikes.h"
 #include "enemies/enemy.h"
+#include "boosters/jump_booster.h"
 
 rfct::objectsHolder::~objectsHolder()
 {
@@ -14,6 +15,7 @@ rfct::objectsHolder::~objectsHolder()
 	cleanupCigarettes();
 	cleanupSpikes();
 	cleanupEnemies();
+	cleanupJumpBoosterVars();
 }
 
 void rfct::objectsHolder::init(sceneSerializedData* serializeData, scene* parentScene)
@@ -22,6 +24,7 @@ void rfct::objectsHolder::init(sceneSerializedData* serializeData, scene* parent
 	initCigaretteVars(parentScene);
 	initSpikeVars(parentScene);
 	spawnEnemies(serializeData, parentScene, &animBuffer);
+	initJumpBoosterVars(parentScene, serializeData);
 
 
 	vines.reserve(serializeData->vines.size());
@@ -64,6 +67,7 @@ void rfct::objectsHolder::update(frameContext* fc)
 		updateCigarettes(fc);
 	}
 	updateEnemies(fc);
+	updateJumpBoosters(fc);
 }
 
 void rfct::objectsHolder::updateMatrices(frameContext* fc){

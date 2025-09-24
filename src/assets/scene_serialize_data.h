@@ -46,6 +46,21 @@ namespace rfct {
         glm::vec2 max;
         std::string animation;
     };
+    struct JumpBoosterAnimInfo {
+        std::string standing;
+        std::string up;
+    };
+    struct JumpBoosterInfo {
+        glm::vec2 position;
+        glm::vec2 min;
+        glm::vec2 max;
+    };
+    struct DashRechargeInfo {
+        glm::vec2 position;
+    };
+    struct SpawnPointInfo {
+        glm::vec2 position;
+    };
 	struct sceneSerializedData {
         int width, height;
         std::vector<rectangle> rectangles;
@@ -53,6 +68,9 @@ namespace rfct {
         std::vector<NPCInfo> npcs;
         std::vector<SpikeInfo> spikes;
         std::vector<BasicEnemyInfo> enemies;
-        glm::vec2 spawnPoint;
+        std::vector<JumpBoosterInfo> boosters;
+        std::vector<DashRechargeInfo> dashRecharge;
+        JumpBoosterAnimInfo boosterAnimInfo;
+        std::vector<SpawnPointInfo> spawnPoints;
 	};
 }

@@ -17,9 +17,10 @@ namespace rfct {
 	public:
 		static playerController& get() { return instance; };
 		playerController();
-		void setPlayer(entity playerEntity) { player = playerEntity; }
+		entity createPlayer(scene* sc, const glm::vec2& spawnPoint);
 		void update(frameContext* ctx);
 		void endHold(scene* sc);
+		entity belowBlock = flecs::entity::null();
 	private:
 		entity player;
 		float walkSpeed;
@@ -49,11 +50,11 @@ namespace rfct {
 
 		float dashTime;
 		glm::vec2 dashVelocity;
-		uint8_t dashCharges;
 		uint8_t kindlingsToSpawnThisDash;
 
 
 		bool hold;
+		float holdingTime = 0.f;
 		nearestObject nearestObjectToHold;
 
 		float dashCooldown;

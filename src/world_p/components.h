@@ -22,7 +22,8 @@ namespace rfct {
         NPC,
         Kindling,
         Spike, 
-        Enemy
+        Enemy,
+        JumpBooster,
     };
 
     enum class playerState : uint8_t {
@@ -121,6 +122,7 @@ namespace rfct {
         bool grounded = false;
         bool allowToJump = false;
         playerState  state = playerState::normal;
+        uint8_t dashCharges;
     };
     struct playerLifeComponent {
         bool alive = true;
