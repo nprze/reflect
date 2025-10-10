@@ -326,6 +326,7 @@ void rfct::scene::resetScene(frameContext* ctx)
 	epicRotatingTriangle.get_mut<playerLifeComponent>()->alive = true;
 	playerController::get().endHold(this);
 	epicRotatingTriangle.get_mut<positionComponent>()->position = m_InitialData.spawnPoints[0].position;
+	epicRotatingTriangle.get_mut<velocityComponent>()->velocity = {0,0};
 	epicRotatingTriangle.get_mut<playerStateComponent>()->state = playerState::normal;
 	m_dynamicObjects.reset(ctx);
 }

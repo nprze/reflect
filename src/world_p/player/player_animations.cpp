@@ -28,6 +28,8 @@ void rfct::playerAnimations::loadAnimations()
 	m_dash.cycleTime = dashFullTime;
 	m_dashUp = AssetsManager::get().loadAnimation("player/walkAnim/dash-up.txt", &buffer);
 	m_dashUp.cycleTime = dashFullTime;
+	m_dashDown = AssetsManager::get().loadAnimation("player/walkAnim/dash-down.txt", &buffer);
+	m_dashDown.cycleTime = dashFullTime;
 	m_hold = AssetsManager::get().loadAnimation("player/walkAnim/hold.txt", &buffer);
 	m_climb = AssetsManager::get().loadAnimation("player/walkAnim/climb.txt", &buffer);
 	
@@ -63,6 +65,11 @@ void rfct::playerAnimations::update(const glm::vec2& playerVel, const glm::vec2&
 			// falling
 			changeIfNotCurrent(&m_jumpFall);
 		}
+		else if (pvel->velocity.y > velocityTreshold) {
+			// going up, but not necesarily jumping, eg.jump booster
+			changeIfNotCurrent(&m_jumpTurnover);
+
+		}
 		else {
 			ifThisChangeToThat(&m_jumpFall, &m_jumpReturn);
 			if (!isThisPlaying(&m_jumpReturn)) {
@@ -93,7 +100,10 @@ void rfct::playerAnimations::update(const glm::vec2& playerVel, const glm::vec2&
 	case playerState::dashing: {
 		glm::vec2 dir = playerController::get().dashVelocity;
 		if (dir.x == 0.f && dir.y!= 0.f) {
-			changeIfNotCurrent(&m_dashUp);
+			if (dir.y > 0.f)
+				changeIfNotCurrent(&m_dashUp);
+			else 
+				changeIfNotCurrent(&m_dashDown);
 		}
 		else {
 			changeIfNotCurrent(&m_dash);

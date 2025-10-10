@@ -38,6 +38,7 @@ namespace rfct {
 		frameAnimation m_jumpReturn;
 		frameAnimation m_dash;
 		frameAnimation m_dashUp;
+		frameAnimation m_dashDown;
 		frameAnimation m_hold;
 		frameAnimation m_climb;
 

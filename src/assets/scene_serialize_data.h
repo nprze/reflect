@@ -46,14 +46,8 @@ namespace rfct {
         glm::vec2 max;
         std::string animation;
     };
-    struct JumpBoosterAnimInfo {
-        std::string standing;
-        std::string up;
-    };
     struct JumpBoosterInfo {
         glm::vec2 position;
-        glm::vec2 min;
-        glm::vec2 max;
     };
     struct DashRechargeInfo {
         glm::vec2 position;
@@ -70,7 +64,6 @@ namespace rfct {
         std::vector<BasicEnemyInfo> enemies;
         std::vector<JumpBoosterInfo> boosters;
         std::vector<DashRechargeInfo> dashRecharge;
-        JumpBoosterAnimInfo boosterAnimInfo;
         std::vector<SpawnPointInfo> spawnPoints;
 	};
 }

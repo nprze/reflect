@@ -48,7 +48,7 @@ void rfct::createSpike(scene* parentScene, const SpikeInfo& spawnInfo)
 	entity spikeEntity = parentScene->createDynamicRenderingEntity(&vertices, &modelMat, glm::length(spawnInfo.max - spawnInfo.min) * 4 * 3);
 	dynamicBoxColliderComponent boc;
 	boc.min = spawnInfo.min;
-	boc.max = glm::vec2(spawnInfo.max + (perpenicular * 0.2f));
+	boc.max = spawnInfo.max + (perpenicular * 0.2f);
 	spikeEntity.set<dynamicBoxColliderComponent>(boc);
 	spikeEntity.set<dynamicObjectTypeComponent>({dynamicObjectType::Spike});
 	dynamicObjCollisionCallbackComponent dynColCallback;

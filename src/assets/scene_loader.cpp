@@ -4,6 +4,13 @@
 #include <sstream>
 #include <charconv>
 
+#define FILE_COUNT_PART(label, out)                                                                                 \
+    else if (sv.starts_with(label)) {                                                                               \
+            int count;                                                                                              \
+            std::from_chars(sv.data() + sizeof(label), sv.data() + sv.size(), count);                               \
+            out.reserve(count);                                                                                     \
+        }                                                                                                           
+
 void rfct::sceneLoader::loadScene(const std::string& path, sceneSerializedData* out)
 {
     // IO only here
@@ -176,20 +183,6 @@ void rfct::sceneLoader::loadScene(const std::string& path, sceneSerializedData* 
                 booster.position = { x, y };
             }
 
-            std::getline(file, line); // min
-            {
-                float x = std::stof(line.substr(8, line.find(',') - 8));
-                float y = std::stof(line.substr(line.find(',') + 2, line.size() - line.find(',') - 3));
-                booster.min = { x, y };
-            }
-
-            std::getline(file, line); // max
-            {
-                float x = std::stof(line.substr(8, line.find(',') - 8));
-                float y = std::stof(line.substr(line.find(',') + 2, line.size() - line.find(',') - 3));
-                booster.max = { x, y };
-            }
-
             out->boosters.push_back(std::move(booster));
         }
         else if (sv.starts_with("DashRecharge:")) {
@@ -220,61 +213,14 @@ void rfct::sceneLoader::loadScene(const std::string& path, sceneSerializedData* 
         else if (sv.starts_with("SceneHeight:")) {
             std::from_chars(sv.data() + 13, sv.data() + sv.size(), out->height);
         }
-        else if (sv.starts_with("RectCount:")) {
-            int count;
-            std::from_chars(sv.data() + 11, sv.data() + sv.size(), count);
-            out->rectangles.reserve(count);
-        }
-        else if (sv.starts_with("VineCount:")) {
-            int count;
-            std::from_chars(sv.data() + 11, sv.data() + sv.size(), count);
-            out->vines.reserve(count);
-        }
-        else if (sv.starts_with("SpikeCount:")) {
-            int count;
-            std::from_chars(sv.data() + 12, sv.data() + sv.size(), count);
-            out->spikes.reserve(count);
-        }
-        else if (sv.starts_with("EnemyCount:")) {
-            int count;
-            std::from_chars(sv.data() + 12, sv.data() + sv.size(), count);
-            out->enemies.reserve(count);
-        }
-        else if (sv.starts_with("NPCCount:")) {
-            int count;
-            std::from_chars(sv.data() + 10, sv.data() + sv.size(), count);
-            out->npcs.reserve(count);
-        }
-        else if (sv.starts_with("SpawnPointCount:")) {
-            int count;
-            std::from_chars(sv.data() + 17, sv.data() + sv.size(), count);
-            out->spawnPoints.reserve(count);
-        }
-        else if (sv.starts_with("DashRechargeCount:")) {
-            int count;
-            std::from_chars(sv.data() + 19, sv.data() + sv.size(), count);
-            out->dashRecharge.reserve(count);
-        }
-        else if (sv.starts_with("JumpBoosterCount:")) {
-            int count;
-            std::from_chars(sv.data() + 18, sv.data() + sv.size(), count);
-            out->boosters.reserve(count);
-            if (count > 0) {
-                std::string anims;
-                std::getline(file, line);
-                anims = line.substr(line.find(':') + 2);
-                if (!anims.empty() && anims.back() == '\r') {
-                    anims.pop_back();
-                }
-                out->boosterAnimInfo.standing = anims;
-
-                std::getline(file, line);
-                anims = line.substr(line.find(':') + 2);
-                if (!anims.empty() && anims.back() == '\r') {
-                    anims.pop_back();
-                }
-                out->boosterAnimInfo.up = anims;
-            }
-        }
+        FILE_COUNT_PART("RectCount:", out->rectangles)
+        FILE_COUNT_PART("VineCount:", out->vines)
+        FILE_COUNT_PART("SpikeCount:", out->spikes)
+        FILE_COUNT_PART("EnemyCount:", out->enemies)
+        FILE_COUNT_PART("NPCCount:", out->npcs)
+        FILE_COUNT_PART("SpawnPointCount:", out->spawnPoints)
+        FILE_COUNT_PART("DashRechargeCount:", out->dashRecharge)
+        FILE_COUNT_PART("DashRechargeCount:", out->dashRecharge)
+        FILE_COUNT_PART("JumpBoosterCount:", out->boosters)
     }
 }
