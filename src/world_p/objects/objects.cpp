@@ -1,103 +1,89 @@
 #include "objects.h"
 #include "assets/scene_serialize_data.h"
 #include "world_p/scene.h"
-#include "world_p/objects/cigarettes.h"
 #include "glm/gtc/matrix_transform.hpp"
 #include "world_p/transform.h"
 #include "world_p/object_components.h"
-#include "world_p/objects/spikes.h"
-#include "enemies/enemy.h"
 #include "boosters/jump_booster.h"
+
+rfct::objectsHolder rfct::objectsHolder::instance;
 
 rfct::objectsHolder::~objectsHolder()
 {
-	animBuffer.cleanup();
-	cleanupCigarettes();
-	cleanupSpikes();
-	cleanupEnemies();
-	cleanupJumpBoosterVars();
 }
 
-void rfct::objectsHolder::init(sceneSerializedData* serializeData, scene* parentScene)
+void rfct::objectsHolder::init()
 {
-	animBuffer.init(10000);
-	initCigaretteVars(parentScene);
-	initSpikeVars(parentScene);
-	spawnEnemies(serializeData, parentScene, &animBuffer);
-	initJumpBoosterVars(parentScene, serializeData);
-
-
-	vines.reserve(serializeData->vines.size());
-	for (vineInfo& vi : serializeData->vines) {
-		vines.push_back(vine(vi.start, vi.end, vi.numEdges, parentScene));
-	}
-	nearestVineEdgeToPlayerIndex = -1;
-
-
-	for (NPCInfo npcInfo : serializeData->npcs) {
-		dynamicBoxColliderComponent boc = { npcInfo.min, npcInfo.max };
- 		entity npcEntity = parentScene->createDynamicRect(&boc);
-		npcEntity.set<dynamicObjectTypeComponent>({ dynamicObjectType::NPC });
-		npcEntity.set<interactionDistanceComponent>({ npcInfo.ineratcionRadius * npcInfo.ineratcionRadius });
-		npcEntity.set<dialoguePathComponent>({ npcInfo.dialogueFile });
-		npcEntity.set<positionComponent>({ (boc.min + boc.max) * 0.5f });
-		npcs.push_back(npcEntity);
-	}
-
-	for (SpikeInfo spike : serializeData->spikes) {
-		createSpike(parentScene, spike);
-	}
+	m_jumpBoostSystem.initSystem();
+	m_spikeSystem.initSystem();
+	m_npcSystem.initSystem();
+	m_vineSystem.initSystem();
+	m_enemySystem.initSystem();
+	m_cigSystem.initSystem();
 }
+
+void rfct::objectsHolder::cleanup()
+{
+	m_cigSystem.cleanupSystem();
+	m_enemySystem.cleanupSystem();
+	m_vineSystem.cleanupSystem();
+	m_npcSystem.cleanupSystem();
+	m_spikeSystem.cleanupSystem();
+	m_jumpBoostSystem.cleanupSystem();
+}
+
+
+void rfct::objectsHolder::loadSceneData(sceneSerializedData* serializeData, scene* parentScene)
+{
+	m_cigSystem.spawnData(parentScene, serializeData);
+	m_enemySystem.spawnData(parentScene, serializeData);
+	m_vineSystem.spawnData(parentScene, serializeData);
+	m_npcSystem.spawnData(parentScene, serializeData);
+	m_spikeSystem.spawnData(parentScene, serializeData);
+	m_jumpBoostSystem.spawnData(parentScene, serializeData);
+}
+
 void rfct::objectsHolder::update(frameContext* fc)
 {
 	RFCT_PROFILE_SCOPE("dynamic objects update");
-	if (fc->fixedUpdateTimes) {
-		if (nearestVineEdgeToPlayerIndex != -1) {
-			if (vineClosestToPlayer.get<vineStateComponent>()->holdingToThis) {
-				fc->scene->getPlayer().get_mut<positionComponent>()->position = simulateVinePlayerIsHolding(fc->scene->getPlayer(), vineClosestToPlayer, nearestVineEdgeToPlayerIndex, fc);
-			}
-
-		}
-		for (entity& npcEntity : npcs) {
-			updateNpc(fc, npcEntity, this);
-		}
-		for (vine& v : vines) {
-			v.update(fc);
-		}
-		updateCigarettes(fc);
-	}
-	updateEnemies(fc);
-	updateJumpBoosters(fc);
+	// todo: make sure all the systems handle multiple fixed updates in one frame
+	m_cigSystem.updateSystem(fc);
+	m_enemySystem.updateSystem(fc);
+	m_vineSystem.updateSystem(fc);
+	m_npcSystem.updateSystem(fc);
+	m_spikeSystem.updateSystem(fc);
+	m_jumpBoostSystem.updateSystem(fc);
 }
 
-void rfct::objectsHolder::updateMatrices(frameContext* fc){
-
-	for (vine& v : vines) {
-		v.draw(fc);
-	}
-	updateCigarettesMatrixes(fc);
-	updateEnemiesMatrices(fc);
+void rfct::objectsHolder::updateVisuals(frameContext* fc){
+	m_cigSystem.updateVisuals(fc);
+	m_enemySystem.updateVisuals(fc);
+ 	m_vineSystem.updateVisuals(fc);
+	m_npcSystem.updateVisuals(fc);
+	m_spikeSystem.updateVisuals(fc);
+	m_jumpBoostSystem.updateVisuals(fc);
 }
 void rfct::objectsHolder::customDrawObjects(vk::CommandBuffer& cmd, frameContext* ctx)
 {
-	drawEnemies(cmd, ctx);
+	m_enemySystem.drawFrameAnimSprites(cmd, ctx);
 }
 void rfct::objectsHolder::reset(frameContext* fc)
 {
-	for (vine& v : vines) {
-		v.reset();
-	}
-
-	resetCigarettes(fc);
-	cigarettes.clear();
-	cigarettes.resize(cigarettesMaxCount);
+	m_cigSystem.resetLevel(fc);
+	m_vineSystem.resetLevel(fc);
 }
-void rfct::objectsHolder::onPlayerDashObjects(frameContext* fc, const entity entityPlayer, const bool facingRight)
+void rfct::objectsHolder::onPlayerDash(frameContext* fc, const entity entityPlayer, const bool facingRight)
 {
-	entity newCigarette = constructCigarette(fc, entityPlayer, facingRight);
-	if (cigarettes[lastCigaretteIndex] != entity()) {
-		fc->scene->deleteDynamicEntity(cigarettes[lastCigaretteIndex]);
-	}
-	cigarettes[lastCigaretteIndex] = (newCigarette);
-	lastCigaretteIndex = (lastCigaretteIndex + 1) % cigarettesMaxCount;
+	m_cigSystem.onDash(fc, entityPlayer, facingRight);
+}
+
+void rfct::objectsHolder::onStartHolding(playerState state, nearestObject& nearest)
+{
+	if (nearest.vineIndex >= 0)
+		m_vineSystem.onStartHolding(nearest);
+}
+
+void rfct::objectsHolder::onEndHolding()
+{
+	m_vineSystem.onEndHolding();
 }

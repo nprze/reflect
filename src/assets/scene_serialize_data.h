@@ -32,7 +32,7 @@ namespace rfct {
     struct NPCInfo {
         glm::vec2 min;
         glm::vec2 max;
-        float ineratcionRadius;
+        float interatcionRadius;
         std::string dialogueFile;
     };
     struct SpikeInfo {

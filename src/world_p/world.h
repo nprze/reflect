@@ -10,6 +10,7 @@ namespace rfct {
 	public:
 		static world& getWorld() { return currentWorld; }
 		void initWorld(const std::string& path);
+		void initObjects();
 		void loadScene(const std::string& path);
 		inline scene& getCurrentScene() { return *m_currentScene; };
 		void cleanWorld();

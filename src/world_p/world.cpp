@@ -3,12 +3,19 @@
 #include "input.h"
 #include "job_system_p/job_system.h"
 #include "renderer_p/debug/debug_draw.h"
+#include "world_p/objects/objects.h"
 
 rfct::world rfct::world::currentWorld;
 
 void rfct::world::initWorld(const std::string& path)
 {
+	initObjects();
 	loadScene("scenes/load-test.txt");
+}
+
+void rfct::world::initObjects()
+{
+	objectsHolder::get().init();
 }
  
 void rfct::world::loadScene(const std::string& path)
@@ -23,6 +30,7 @@ void rfct::world::cleanWorld()
 {
 	RFCT_PROFILE_FUNCTION();
 	m_currentScene->unloadScene(); 
+	objectsHolder::get().cleanup();
 	delete m_currentScene; 
 }
 

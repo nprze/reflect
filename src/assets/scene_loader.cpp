@@ -98,7 +98,7 @@ void rfct::sceneLoader::loadScene(const std::string& path, sceneSerializedData* 
             std::getline(file, line); // interaction radius
             float count;
             RFCT_ASSERT(sscanf(line.c_str(), "  interactionRadius: %f", &count) == 1);
-            npc.ineratcionRadius = count;
+            npc.interatcionRadius = count;
 
 
             std::getline(file, line); // file

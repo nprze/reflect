@@ -15,7 +15,7 @@
 #include <stb_image/stb_image.h>
 #include "player/player_animations.h"
 #include "assets/dialogue_serialize_data.h"
-#include "dialogue/dialogue.h"
+#include "objects/objects.h"
 
 const float maxVelocityX = 100;
 rfct::scene::scene(world* worldArg) : m_World(worldArg)
@@ -26,9 +26,6 @@ rfct::scene::scene(world* worldArg) : m_World(worldArg)
 rfct::scene::~scene()
 {
 	cleanupQueries();
-	if (m_currentlyPlayingDialogue) {
-		delete m_currentlyPlayingDialogue;
-	}
 }
 namespace rfct{
 	void drawGridLines(int n, int start_from = 0, const glm::vec3 colorPositive = { 0.6f,0.6f,0.6f }, const glm::vec3 colorNegative = { 0.4f,0.4f,0.4f }) {
@@ -75,7 +72,7 @@ void rfct::scene::onUpdate(frameContext* context)
 		resetScene(context);
 	}
 	playerController::get().update(context);
-	m_dynamicObjects.update(context);
+	objectsHolder::get().update(context);
 	m_decorations.update(context);
 	buildDynamicObjBVH();
 	updatePhysics(context);
@@ -85,15 +82,7 @@ void rfct::scene::onUpdate(frameContext* context)
 
 	cameraComponentOnUpdate(context->dt, epicRotatingTriangle);
 
-	if (context->state == gameState::stateDialogue) {
-		if (m_currentlyPlayingDialogue->update(context)) {
-			delete m_currentlyPlayingDialogue;
-			m_currentlyPlayingDialogue = nullptr;
-			context->state = gameState::gameplay;
-		}
-	}
-
-	m_dynamicObjects.updateMatrices(context);
+	objectsHolder::get().updateVisuals(context);
 	resolvePendingDynamicEnitityDeletions();
 }
 
@@ -134,7 +123,7 @@ void rfct::scene::loadScene(const std::string& path)
 
 
 	// init dynamic objects
-	m_dynamicObjects.init(&m_InitialData, this);
+	objectsHolder::get().loadSceneData(&m_InitialData, this);
 	m_decorations.init(&m_InitialData, this);
 
 
@@ -296,7 +285,7 @@ entity rfct::scene::createDynamicRenderingEntity(std::vector<Vertex>* vertices, 
 		.set<rotationComponent>({});
 }
 
-void rfct::scene::updateTransformData(frameContext* ctx, entity e)
+void rfct::scene::updateTransformData(const frameContext* ctx, entity e)
 {
 	glm::mat4 model = getModelMatrixFromEntity(e);
 	m_RenderData.updateMat(ctx, e.get<dynamicSSBOIndexComponent>()->indexInSSBO, &model);
@@ -314,13 +303,6 @@ void rfct::scene::updateDirection(bool facingRight)
 	epicRotatingTriangle.set<scaleComponent>(*scale);
 }
 
-void rfct::scene::startDialogue(const std::string& path, frameContext* ctx)
-{
-	ctx->state = gameState::stateDialogue;
-	m_currentlyPlayingDialogue = new dialogue(path);
-	m_currentlyPlayingDialogue->fullLoad();
-}
-
 void rfct::scene::resetScene(frameContext* ctx)
 {
 	epicRotatingTriangle.get_mut<playerLifeComponent>()->alive = true;
@@ -328,5 +310,5 @@ void rfct::scene::resetScene(frameContext* ctx)
 	epicRotatingTriangle.get_mut<positionComponent>()->position = m_InitialData.spawnPoints[0].position;
 	epicRotatingTriangle.get_mut<velocityComponent>()->velocity = {0,0};
 	epicRotatingTriangle.get_mut<playerStateComponent>()->state = playerState::normal;
-	m_dynamicObjects.reset(ctx);
+	objectsHolder::get().reset(ctx);
 }

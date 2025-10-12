@@ -3,6 +3,11 @@
 #include "world_p/components.h"
 
 namespace rfct{
+	struct nearestObject {
+		entity object = entity();
+		glm::vec2 closestPosition = { 0,0 };
+		int vineIndex = -1; // -2 if block, -1 if no object found
+	};
 	struct BVHnode {
 		glm::vec2 min;
 		glm::vec2 max;

@@ -152,7 +152,6 @@ void rfct::dialogue::updateImage(frameContext* ctx)
 	glm::vec2 spriteSheetTextureCoords = currentCycle.indices[cycleSpriteIndex];
 	glm::vec2 texMin = { spriteSheetTextureCoords.y * oneOverColumnCount, spriteSheetTextureCoords.x * oneOverRowCount };
 	glm::vec2 texMax = { (spriteSheetTextureCoords.y+1) * oneOverColumnCount, (spriteSheetTextureCoords.x+1) * oneOverRowCount };
-	// RFCT_INFO("spritesheet texture ({}, {}) min, max: ({}, {}), ({}, {})", spriteSheetTextureCoords.y, spriteSheetTextureCoords.x, texMin.x, texMin.y, texMax.x, texMax.y);
 
 	renderer::getRen().getUIPipeline().addImage({ 10, 300 }, { 110, 400 }, &(currentSpritesheet->spriteSheetImage), texMin, texMax);
 

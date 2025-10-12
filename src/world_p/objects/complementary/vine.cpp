@@ -6,6 +6,11 @@
 #include "world_p/components.h"
 #include "world_p/object_components.h"
 #include <random>
+//debug
+#include "renderer_p/debug/debug_draw.h"
+
+
+#include "world_p/physics/physics.h"
 
 #define RFCT_VINE_CONSTRAINS_ITERATIONS 10
 
@@ -13,6 +18,11 @@ float len(const glm::vec2& vector) {
 	return std::sqrt((vector.x * vector.x) + (vector.y * vector.y));
 }
 namespace rfct {
+	std::vector<vine> vinesVec;
+	entity vineClosestToPlayer;
+	int nearestVineEdgeToPlayerIndex;
+	glm::vec2 nearestVineEdgeToPlayerPosition;
+
 	void onCollision_Vine_StaticObj(entity vineEntity, entity collidedWith, glm::vec2 resolution) {
 		// narrow phase
 
@@ -122,8 +132,10 @@ namespace rfct {
 		std::vector<glm::vec2>& previousPositions = vineEntity.get_mut<vinePositionsComponent>()->previousPosition;
 
 		glm::vec2 playerVel = glm::vec2(player.get<inputVelocityComponent>()->velocity);
+
 		glm::vec2 desiredMove = playerVel * 0.1f * fixedDeltaTime;
 		desiredMove.y = -.1f;
+
 
 		glm::vec2 playerPos = player.get<positionComponent>()->position;
 		glm::vec2 whereWeWantTheEdgeIndexToBeAtTheEnd = playerPos + desiredMove;
@@ -175,6 +187,62 @@ namespace rfct {
 		}
 	}
 }
+
+namespace rfct {
+
+	void vines::initSystem() {
+
+	};
+	void vines::spawnData(scene* s, sceneSerializedData* sd) {
+
+		vinesVec.reserve(sd->vines.size());
+		for (vineInfo& vi : sd->vines) {
+			vinesVec.push_back(vine(vi.start, vi.end, vi.numEdges, s));
+		}
+		nearestVineEdgeToPlayerIndex = -1;
+	};
+	void vines::resetLevel(const frameContext* ctx) {
+
+		for (vine& v : vinesVec) {
+			v.reset();
+		}
+	};
+	void vines::updateVisuals(const frameContext* ctx) {
+
+		for (vine& v : vinesVec) {
+			v.draw(ctx);
+		}
+	};
+	void vines::updateSystem(frameContext* ctx) {
+		if (ctx->fixedUpdateTimes) {
+			if (nearestVineEdgeToPlayerIndex != -1) {
+				if (vineClosestToPlayer.get<vineStateComponent>()->holdingToThis) {
+					ctx->scene->getPlayer().get_mut<positionComponent>()->position = simulateVinePlayerIsHolding(ctx->scene->getPlayer(), vineClosestToPlayer, nearestVineEdgeToPlayerIndex, ctx);
+				}
+			}
+		}
+		for (vine& v : vinesVec) {
+			v.update(ctx);
+		}
+	};
+	void vines::cleanupSystem() {
+
+	}
+	void vines::onStartHolding(nearestObject& nearest)
+	{
+		vineClosestToPlayer = nearest.object;
+		vineClosestToPlayer.get_mut<vineStateComponent>()->holdingToThis = true;
+		nearestVineEdgeToPlayerIndex = nearest.vineIndex;
+	}
+	void vines::onEndHolding()
+	{
+		nearestVineEdgeToPlayerIndex = -1;
+		if (vineClosestToPlayer != flecs::entity::null())
+			vineClosestToPlayer.get_mut<vineStateComponent>()->holdingToThis = false;
+	}
+}
+
+
 glm::vec3 getColorWithFluctuate(float maxFluct = 0.2f, const glm::vec3& basicColor = glm::vec3(0.7098f, 0.9020f, 0.1137f)) {
 	static std::mt19937 gen(std::random_device{}());
 	std::uniform_real_distribution<float> dist(-maxFluct * 0.5f, maxFluct * 0.5f);

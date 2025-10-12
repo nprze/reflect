@@ -25,7 +25,7 @@ namespace rfct {
         float oneBoneLenght;
     };
     struct interactionDistanceComponent {
-        float inetrationDistanceSquared;
+        float interationDistanceSquared;
     };
     struct dialoguePathComponent {
         std::string dialoguePath;

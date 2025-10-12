@@ -497,9 +497,7 @@ void rfct::playerController::normalJumpUpdate()
 
 void rfct::playerController::endHold(scene* sc)
 {
-	sc->getObjectHolder().nearestVineEdgeToPlayerIndex = -1;
-	if (sc->getObjectHolder().vineClosestToPlayer != flecs::entity::null())
-		sc->getObjectHolder().vineClosestToPlayer.get_mut<vineStateComponent>()->holdingToThis = false;
+	objectsHolder::get().onEndHolding();
 	player.get_mut<gravityComponent>()->gravityEnabled = true;
 
 	holdCooldown = 0.4f;
@@ -517,9 +515,7 @@ bool rfct::playerController::checkHold(scene* scen)
 		else if (nearestObjectToHold.vineIndex >= 0) {
 			stateComp->state = playerState::holdingVines;
 			
-			scen->getObjectHolder().vineClosestToPlayer = nearestObjectToHold.object;
-			scen->getObjectHolder().vineClosestToPlayer.get_mut<vineStateComponent>()->holdingToThis = true;
-			scen->getObjectHolder().nearestVineEdgeToPlayerIndex = nearestObjectToHold.vineIndex;
+			objectsHolder::get().onStartHolding(stateComp->state, nearestObjectToHold);
 		}
 		else {
 			return false;
@@ -560,7 +556,7 @@ void rfct::playerController::startDash(frameContext* ctx)
 	dashVelocity.x += (dash45upInput + dash45downInput) * ((float)1 / std::sqrt(2)) * dashSpeed;
 	dashVelocity.y += (dash45upInput - dash45downInput) * ((float)1 / std::sqrt(2)) * dashSpeed;
 
-	ctx->scene->getObjectHolder().onPlayerDashObjects(ctx, player, facingRight);
+	ctx->scene->getObjectHolder().onPlayerDash(ctx, player, facingRight);
 	ctx->scene->getDecorationHolder().onPlayerDashDecorations(ctx, player, facingRight);
 	kindlingsToSpawnThisDash = 3;
 	stateComp->allowToJump = false;

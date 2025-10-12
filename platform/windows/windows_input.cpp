@@ -3,6 +3,7 @@
 #include "key_bindings.h"
 #include <glm/glm.hpp>
 #include "input.h"
+
 namespace rfct {
 	input input::s_input;
 	GLFWwindow* window = nullptr;

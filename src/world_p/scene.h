@@ -9,7 +9,6 @@
 namespace rfct {
 	class world;
 	struct frameContext;
-	class dialogue;
 	class scene {
 	public:
 		scene(world* worldArg);
@@ -35,17 +34,16 @@ namespace rfct {
 		entity createDynamicRect(dynamicBoxColliderComponent* bounds, glm::vec3 color = glm::vec3(1.f, 1.f, 1.f));
 		entity createDynamicMesh(dynamicBoxColliderComponent* bounds, const std::string& path);
 		entity createDynamicRenderingEntity(std::vector<Vertex>* vertices, glm::mat4* model, uint32_t numVertices = 0);
-		void updateTransformData(frameContext* ctx, entity entityToUpdate); // entity must contain positionComponent, rotationComponent and scaleComponent
+		void updateTransformData(const frameContext* ctx, entity entityToUpdate); // entity must contain positionComponent, rotationComponent and scaleComponent
 		void createPlayerEntity(const glm::vec2& spawnPoint);
 		void updateDirection(bool facingRight);
 
-		void startDialogue(const std::string& path, frameContext* ctx);
 
 		void resetScene(frameContext* ctx);
 
 		entity getPlayer() { return epicRotatingTriangle; }
 
-		objectsHolder& getObjectHolder() { return m_dynamicObjects; }
+		objectsHolder& getObjectHolder() { return objectsHolder::get(); }
 		decorationHolder& getDecorationHolder() { return m_decorations; }
 		world* getWorld() { return m_World; }
 
@@ -55,12 +53,9 @@ namespace rfct {
 	private: 
 		world* m_World;
 
-		objectsHolder m_dynamicObjects;
 		decorationHolder m_decorations;
 
 		entity epicRotatingTriangle;
-
-		dialogue* m_currentlyPlayingDialogue = nullptr;
 
 		std::vector<std::pair<entity, bool>> m_pendingEntityDeletions;
 

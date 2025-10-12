@@ -1,13 +1,9 @@
 #pragma once
 #include <glm/glm.hpp>
 #include "world_p/components.h"
+#include "world_p/physics/physics.h"
 
 namespace rfct {
-	struct nearestObject {
-		entity object = entity();
-		glm::vec2 closestPosition = {0,0};
-		int vineIndex = -1; // -2 if block, -1 if no object found
-	};
 	constexpr float maxWalkVelocity = 0.3f;
 	constexpr float dashFullTime = 0.2f;
 	struct frameContext;
