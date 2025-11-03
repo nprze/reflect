@@ -2,6 +2,7 @@
 #include <string>
 #include "context.h"
 #include "scene.h"
+#include "render_data.h"
 namespace rfct {
 	class scene;
 	class world {
@@ -16,10 +17,14 @@ namespace rfct {
 		void cleanWorld();
 		void onUpdate(frameContext& context);
         void addScreenTransform(float degree);
+		sceneRenderData& getRenderData() {
+			return *m_RenderData;
+		};
 	private:
 		world() = default;
 		~world() = default;
 		scene* m_currentScene;
+		sceneRenderData* m_RenderData;
     public:
         float screenViewTransformDegrees = 0;
 	};

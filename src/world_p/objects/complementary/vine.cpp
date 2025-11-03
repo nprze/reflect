@@ -17,8 +17,20 @@
 float len(const glm::vec2& vector) {
 	return std::sqrt((vector.x * vector.x) + (vector.y * vector.y));
 }
+glm::vec3 getColorWithFluctuate(float maxFluct = 0.2f, const glm::vec3& basicColor = glm::vec3(0.7098f, 0.9020f, 0.1137f)) {
+	static std::mt19937 gen(std::random_device{}());
+	std::uniform_real_distribution<float> dist(-maxFluct * 0.5f, maxFluct * 0.5f);
+	float fluc = dist(gen);
+	return basicColor + glm::vec3{ fluc, fluc, fluc };
+}
+
 namespace rfct {
-	std::vector<vine> vinesVec;
+
+	static flecs::query<vineStateComponent, vinePositionsComponent, vineLenghtComponent, dynamicBoxColliderComponent, positionComponent> vineQuery;
+	static flecs::query<vinePositionsComponent, vineVerticesComponent, positionComponent> vineVerticesQuery;
+
+	constexpr glm::vec2 vineGravity = { 0.f, -15.f };
+
 	entity vineClosestToPlayer;
 	int nearestVineEdgeToPlayerIndex;
 	glm::vec2 nearestVineEdgeToPlayerPosition;
@@ -123,6 +135,18 @@ namespace rfct {
 		return { posMin, vineIndex };
 	}
 
+	void constructBoundingBox(dynamicBoxColliderComponent* boundingBox, const vinePositionsComponent* vinePos)
+	{
+		boundingBox->min = { FLT_MAX, FLT_MAX };
+		boundingBox->max = { FLT_MIN, FLT_MIN };
+		for (const glm::vec2& pos : vinePos->positions) {
+			boundingBox->max.x = std::max(pos.x, boundingBox->max.x);
+			boundingBox->max.y = std::max(pos.y, boundingBox->max.y);
+
+			boundingBox->min.x = std::min(pos.x, boundingBox->min.x);
+			boundingBox->min.y = std::min(pos.y, boundingBox->min.y);
+		}
+	}
 	glm::vec2 simulateVinePlayerIsHolding(entity player,entity vineEntity, int vineEdgeIndex, const frameContext* fc)
 	{
 		auto vinePosCom = vineEntity.get_mut<vinePositionsComponent>();
@@ -170,48 +194,178 @@ namespace rfct {
 				positions[0] = glm::vec2(0.f, -.01f);
 			}
 		}
-		constructBoundingBox(vineEntity);
+		constructBoundingBox(vineEntity.get_mut<dynamicBoxColliderComponent>(), vineEntity.get<vinePositionsComponent>());
 		return positions[vineEdgeIndex] + vineBasePos;
-	}
-	void constructBoundingBox(entity vineEntity)
-	{
-		dynamicBoxColliderComponent* boundingBox = vineEntity.get_mut<dynamicBoxColliderComponent>();
-		boundingBox->min = { FLT_MAX, FLT_MAX };
-		boundingBox->max = { FLT_MIN, FLT_MIN };
-		for (const glm::vec2& pos : vineEntity.get<vinePositionsComponent>()->positions) {
-			boundingBox->max.x = std::max(pos.x, boundingBox->max.x);
-			boundingBox->max.y = std::max(pos.y, boundingBox->max.y);
-
-			boundingBox->min.x = std::min(pos.x, boundingBox->min.x);
-			boundingBox->min.y = std::min(pos.y, boundingBox->min.y);
-		}
 	}
 }
 
 namespace rfct {
 
 	void vines::initSystem() {
+		vineQuery =
+			ecs::get().query_builder<vineStateComponent, vinePositionsComponent, vineLenghtComponent, dynamicBoxColliderComponent, positionComponent>()
+			.build();
+		vineVerticesQuery =
+			ecs::get().query_builder<vinePositionsComponent, vineVerticesComponent, positionComponent>()
+			.build();
 
 	};
 	void vines::spawnData(scene* s, sceneSerializedData* sd) {
-
-		vinesVec.reserve(sd->vines.size());
 		for (vineInfo& vi : sd->vines) {
-			vinesVec.push_back(vine(vi.start, vi.end, vi.numEdges, s));
+
+			vinePositionsComponent vpCom = {};
+			vineBasePositionsComponent vbpCom = {};
+			vpCom.positions.reserve(vi.numEdges);
+			vpCom.previousPosition.reserve(vi.numEdges);
+			vbpCom.basePositions.reserve(vi.numEdges);
+			glm::vec2 start = { 0.f,0.f };
+			glm::vec2 end = vi.end - vi.start;
+			glm::vec2 dir = glm::normalize(end);
+			float oneLineLen = len(end) / (vi.numEdges - 1);
+			for (uint32_t i = 0; i < vi.numEdges; i++) {
+				vpCom.positions.push_back((i * oneLineLen) * dir);
+				vpCom.previousPosition.push_back((i * oneLineLen) * dir);
+				vbpCom.basePositions.push_back((i * oneLineLen) * dir);
+			}
+
+			staticObjCollisionCallbackComponent colCallback;
+			colCallback.handler = onCollision_Vine_StaticObj;
+			dynamicObjCollisionCallbackComponent dynColCallback;
+			dynColCallback.handler = onCollision_Vine_DynamicObj;
+
+			vineVerticesComponent verts;
+			verts.vertices.resize(12 * (vi.numEdges - 1));
+			
+			// set vertices colors
+			for (uint32_t i = 0; i < (vi.numEdges - 1); ++i) {
+				glm::vec3 black = { 0.f,0.f,0.f };
+				verts.vertices[i * 12 + 0].color = black;
+				verts.vertices[i * 12 + 1].color = black;
+				verts.vertices[i * 12 + 2].color = black;
+				verts.vertices[i * 12 + 3].color = black;
+				verts.vertices[i * 12 + 4].color = black;
+				verts.vertices[i * 12 + 5].color = black;
+
+				glm::vec3 fluctuate = getColorWithFluctuate();
+				verts.vertices[i * 12 + 6].color = fluctuate;
+				verts.vertices[i * 12 + 7].color = fluctuate;
+				verts.vertices[i * 12 + 8].color = fluctuate;
+
+				fluctuate = getColorWithFluctuate();
+				verts.vertices[i * 12 + 9].color = fluctuate;
+				verts.vertices[i * 12 + 10].color = fluctuate;
+				verts.vertices[i * 12 + 11].color = fluctuate;
+			}
+			glm::mat4 transform = glm::translate(glm::mat4(1.f), { vi.start, 0.f });
+			objectLocation ol = s->getRenderData().addDynamicObject(&verts.vertices, &transform);
+
+			frameContext simpleCtx = {};
+			for (uint8_t i = 1; i < RFCT_FRAMES_IN_FLIGHT; i++) {
+				simpleCtx.frame = i;
+				s->getRenderData().updateMat(&simpleCtx, ol.indexInSSBO, &transform);
+			}
+
+			
+			entity e = ecs::get().entity<>()
+				.child_of(s->sceneEntity)
+				.set<dynamicSSBOIndexComponent>({ ol.indexInSSBO })
+				.set<vertexRenderInfoComponent>({ ol.verticesCount, ol.vertexBufferOffset })
+
+				.set<positionComponent>({ vi.start })
+				.set<gravityComponent>({ 0.f,false,0.f })
+				.set<velocityComponent>({ {0.f, 0.f} })
+
+				.set<staticObjCollisionCallbackComponent>(colCallback)
+				.set<dynamicObjCollisionCallbackComponent>(dynColCallback)
+				.set<dynamicBoxColliderComponent>({})
+				.set<dynamicObjectTypeComponent>({ dynamicObjectType::Vine })
+
+				.set<vinePositionsComponent>(vpCom)
+				.set<vineBasePositionsComponent>(vbpCom)
+				.set<vineStateComponent>({ false })
+				.set<vineLenghtComponent>({ oneLineLen })
+				.set<vineVerticesComponent>(verts);
+			constructBoundingBox(e.get_mut<dynamicBoxColliderComponent>(), e.get<vinePositionsComponent>());
 		}
 		nearestVineEdgeToPlayerIndex = -1;
 	};
 	void vines::resetLevel(const frameContext* ctx) {
+		vineQuery.each([&](flecs::entity e, vineStateComponent& sc, vinePositionsComponent& positions, vineLenghtComponent& en, dynamicBoxColliderComponent& boc, positionComponent& pos) {
 
-		for (vine& v : vinesVec) {
-			v.reset();
-		}
+			std::vector<glm::vec2>& previousPositions = positions.previousPosition;
+			std::vector<glm::vec2>& basePositions = e.get_mut<vineBasePositionsComponent>()->basePositions;
+
+			for (uint32_t i = 0; i < positions.positions.size(); ++i) {
+				positions.positions[i] = basePositions[i];
+				previousPositions[i] = basePositions[i];
+			}
+			});
 	};
 	void vines::updateVisuals(const frameContext* ctx) {
+		
+		vineVerticesQuery.each([&](flecs::entity e, vinePositionsComponent& pos, vineVerticesComponent& verts, positionComponent& posComp) {
+			std::vector<glm::vec2>& positions = pos.positions;
+			glm::vec2 start = posComp.position;
+			glm::vec3 white = { 1.f,1.f,1.f };
+			glm::vec3 blue = { 0.f,0.f,1.f };
+			glm::vec3 yellow = { 1.f,1.f,0.f };
 
-		for (vine& v : vinesVec) {
-			v.draw(ctx);
-		}
+			uint32_t segmentCount = positions.size() - 1;
+
+
+			float thickness = 0.1f;
+
+			// official
+			for (uint32_t i = 0; i < segmentCount; i++) {
+				glm::vec2 p0 = positions[i];
+				glm::vec2 p1 = positions[i + 1];
+
+				glm::vec2 dir = glm::normalize(p1 - p0);
+
+				glm::vec2 normal = glm::vec2(-dir.y, dir.x) * thickness * 0.5f;
+				float lenNormal = glm::length(normal);
+
+				constexpr float between = 0.75f;
+				constexpr float oneMinusBetween = (float)(1.f - between);
+
+
+				// background triangles
+				glm::vec3 bg0 = glm::vec3(p0 - (normal * (1 + oneMinusBetween)) - dir * lenNormal * oneMinusBetween, 0.1f);
+				glm::vec3 bg1 = glm::vec3(p0 + (normal * (1 + oneMinusBetween)) - dir * lenNormal * oneMinusBetween, 0.1f);
+				glm::vec3 bg2 = glm::vec3(p1 - (normal * (1 + oneMinusBetween)) + dir * lenNormal * oneMinusBetween, 0.1f);
+				glm::vec3 bg3 = glm::vec3(p1 + (normal * (1 + oneMinusBetween)) + dir * lenNormal * oneMinusBetween, 0.1f);
+
+				verts.vertices[i * 12 + 0].pos = bg0;
+				verts.vertices[i * 12 + 1].pos = bg1;
+				verts.vertices[i * 12 + 2].pos = bg2;
+
+				verts.vertices[i * 12 + 3].pos = bg1;
+				verts.vertices[i * 12 + 4].pos = bg2;
+				verts.vertices[i * 12 + 5].pos = bg3;
+
+
+
+				// color triangles
+				glm::vec3 v0 = glm::vec3(p0 - normal, 0.1f);
+				glm::vec3 v1 = glm::vec3(p0 + normal * between, 0.1f);
+				glm::vec3 v2 = glm::vec3(p0 + normal, 0.1f);
+				glm::vec3 v3 = glm::vec3(p1 - normal, 0.1f);
+				glm::vec3 v4 = glm::vec3(p1 - normal * between, 0.1f);
+				glm::vec3 v5 = glm::vec3(p1 + normal, 0.1f);
+
+
+				verts.vertices[i * 12 + 6].pos = v2;
+				verts.vertices[i * 12 + 7].pos = v4;
+				verts.vertices[i * 12 + 8].pos = v5;
+
+				verts.vertices[i * 12 + 9].pos = v0;
+				verts.vertices[i * 12 + 10].pos = v1;
+				verts.vertices[i * 12 + 11].pos = v3;
+
+				ctx->scene->getRenderData().updateDynamicVertices(ctx, e.get<vertexRenderInfoComponent>()->vertexBufferOffset, verts.vertices.data(), verts.vertices.size() * sizeof(Vertex));
+
+			}
+			});
 	};
 	void vines::updateSystem(frameContext* ctx) {
 		if (ctx->fixedUpdateTimes) {
@@ -220,9 +374,40 @@ namespace rfct {
 					ctx->scene->getPlayer().get_mut<positionComponent>()->position = simulateVinePlayerIsHolding(ctx->scene->getPlayer(), vineClosestToPlayer, nearestVineEdgeToPlayerIndex, ctx);
 				}
 			}
-		}
-		for (vine& v : vinesVec) {
-			v.update(ctx);
+
+			vineQuery.each([&](flecs::entity e, vineStateComponent& sc, vinePositionsComponent& pos, vineLenghtComponent& vl, dynamicBoxColliderComponent& boc, positionComponent& posComp) {
+				if (sc.holdingToThis)return;
+				std::vector<glm::vec2>& positions = pos.positions;
+				std::vector<glm::vec2>& previousPositions = pos.previousPosition;
+				float oneBoneLenght = vl.oneBoneLenght;
+				for (uint8_t i = 0; i < ctx->fixedUpdateTimes; ++i) {
+					for (uint32_t j = 0; j < positions.size(); ++j) {
+						glm::vec2 vel = positions[j] - previousPositions[j];
+						previousPositions[j] = positions[j];
+						vel *= 0.99f;
+						positions[j] += vel;
+						positions[j] += vineGravity * fixedDeltaTime * fixedDeltaTime;
+					}
+
+					positions[0] = { 0.f,-.01f };
+					previousPositions[0] = { 0.f,-0.01f };
+
+					for (int iter = 0; iter < RFCT_VINE_CONSTRAINS_ITERATIONS; ++iter) {
+						for (uint32_t i = 1; i < positions.size(); ++i) {
+
+							glm::vec2 dir = positions[i] - positions[i - 1];
+							float dist = glm::length(dir);
+							float diff = (dist - oneBoneLenght) / dist;
+
+							positions[i - 1] += dir * 0.5f * diff;
+							positions[i] -= dir * 0.5f * diff;
+						}
+						positions[0] = glm::vec2(0.f, -.01f);
+					}
+
+				}
+				constructBoundingBox(&boc, &pos);
+				});
 		}
 	};
 	void vines::cleanupSystem() {
@@ -242,197 +427,3 @@ namespace rfct {
 	}
 }
 
-
-glm::vec3 getColorWithFluctuate(float maxFluct = 0.2f, const glm::vec3& basicColor = glm::vec3(0.7098f, 0.9020f, 0.1137f)) {
-	static std::mt19937 gen(std::random_device{}());
-	std::uniform_real_distribution<float> dist(-maxFluct * 0.5f, maxFluct * 0.5f);
-	float fluc = dist(gen);
-	return basicColor + glm::vec3{ fluc, fluc, fluc };
-}
-
-rfct::vine::vine(const glm::vec2& startArg, const glm::vec2& endArg, const int numEdges, scene* parentScene):m_vertices((numEdges-1) * 3 * 4, Vertex())
-{
-	vinePositionsComponent vpCom = {};
-	vineBasePositionsComponent vbpCom = {};
-	vpCom.positions.reserve(numEdges);
-	vpCom.previousPosition.reserve(numEdges);
-	vbpCom.basePositions.reserve(numEdges);
-	glm::vec2 start = { 0.f,0.f };
-	glm::vec2 end = endArg - startArg;
-	glm::vec2 dir = glm::normalize(end);
-	float oneLineLen = len(end) / (numEdges - 1);
-	for (uint32_t i = 0; i < numEdges; i++) {
-		vpCom.positions.push_back((i * oneLineLen) * dir);
-		vpCom.previousPosition.push_back((i * oneLineLen) * dir);
-		vbpCom.basePositions.push_back((i * oneLineLen) * dir);
-	}
-
-	staticObjCollisionCallbackComponent colCallback;
-	colCallback.handler = onCollision_Vine_StaticObj;
-	dynamicObjCollisionCallbackComponent dynColCallback;
-	dynColCallback.handler = onCollision_Vine_DynamicObj;
-
-
-	// set vertices colors
-	for (uint32_t i = 0; i < (numEdges - 1); ++i) {
-		glm::vec3 black = { 0.f,0.f,0.f };
-		m_vertices[i * 12 + 0].color = black;
-		m_vertices[i * 12 + 1].color = black;
-		m_vertices[i * 12 + 2].color = black;
-		m_vertices[i * 12 + 3].color = black;
-		m_vertices[i * 12 + 4].color = black;
-		m_vertices[i * 12 + 5].color = black;
-
-		glm::vec3 fluctuate = getColorWithFluctuate();
-		m_vertices[i * 12 + 6].color = fluctuate;
-		m_vertices[i * 12 + 7].color = fluctuate;
-		m_vertices[i * 12 + 8].color = fluctuate;
-
-		fluctuate = getColorWithFluctuate();
-		m_vertices[i * 12 + 9].color = fluctuate;
-		m_vertices[i * 12 + 10].color = fluctuate;
-		m_vertices[i * 12 + 11].color = fluctuate;
-	}
-	glm::mat4 transform = glm::translate(glm::mat4(1.f), { startArg, 0.f});
-	objectLocation ol = parentScene->m_RenderData.addDynamicObject(&m_vertices, &transform);
-
-	frameContext simpleCtx = {};
-	for (uint8_t i = 1; i < RFCT_FRAMES_IN_FLIGHT; i++) {
-		simpleCtx.frame = i;
-		parentScene->m_RenderData.updateMat(&simpleCtx, ol.indexInSSBO, &transform);
-	}
-
-
-	m_vineEntity = ecs::get().entity<>()
-		.child_of(parentScene->sceneEntity)
-		.set<dynamicSSBOIndexComponent>({ ol.indexInSSBO })
-		.set<vertexRenderInfoComponent>({ ol.verticesCount, ol.vertexBufferOffset })
-		.set<vinePositionsComponent>(vpCom)
-		.set<vineBasePositionsComponent>(vbpCom)
-		.set<positionComponent>({ startArg })
-		.set<gravityComponent>({ 0.f,false,0.f })
-		.set<velocityComponent>({ {0.f, 0.f} })
-		.set<staticObjCollisionCallbackComponent>(colCallback)
-		.set<dynamicObjCollisionCallbackComponent>(dynColCallback)
-		.set<dynamicBoxColliderComponent>({})
-		.set<dynamicObjectTypeComponent>({ dynamicObjectType::Vine })
-		.set<vineStateComponent>({ false })
-		.set<vineLenghtComponent>({ oneLineLen });
-	constructBoundingBox(m_vineEntity);
-}
-
-void rfct::vine::update(const frameContext* fc)
-{
-	if (fc->fixedUpdateTimes) {
-		if (m_vineEntity.get<vineStateComponent>()->holdingToThis)return;
-		std::vector<glm::vec2>& positions = m_vineEntity.get_mut<vinePositionsComponent>()->positions;
-		std::vector<glm::vec2>& previousPositions = m_vineEntity.get_mut<vinePositionsComponent>()->previousPosition;
-		float oneBoneLenght = m_vineEntity.get<vineLenghtComponent>()->oneBoneLenght;
-		for (uint8_t i = 0; i < fc->fixedUpdateTimes; ++i) {
-			for (uint32_t j = 0; j < positions.size();++j) {
-				glm::vec2 vel = positions[j] - previousPositions[j];
-				previousPositions[j] = positions[j];
-				vel *= 0.99f;
-				positions[j] += vel;
-				positions[j] += m_gravity * fixedDeltaTime * fixedDeltaTime;
-			}
-
-			positions[0] = { 0.f,-.01f };
-			previousPositions[0] = { 0.f,-0.01f };
-
-			for (int iter = 0; iter < RFCT_VINE_CONSTRAINS_ITERATIONS; ++iter) {
-				for (uint32_t i = 1; i < positions.size(); ++i) {
-
-					glm::vec2 dir = positions[i] - positions[i - 1];
-					float dist = glm::length(dir);
-					float diff = (dist - oneBoneLenght) / dist;
-
-					positions[i - 1] += dir * 0.5f * diff;
-					positions[i] -= dir * 0.5f * diff;
-				}
-				positions[0] = glm::vec2(0.f,-.01f);
-			}
-
-		}
-		constructBoundingBox(m_vineEntity);
-	}
-}
-
-void rfct::vine::reset()
-{
-	std::vector<glm::vec2>& positions = m_vineEntity.get_mut<vinePositionsComponent>()->positions;
-	std::vector<glm::vec2>& previousPositions = m_vineEntity.get_mut<vinePositionsComponent>()->previousPosition;
-	std::vector<glm::vec2>& basePositions = m_vineEntity.get_mut<vineBasePositionsComponent>()->basePositions;
-
-	for (uint32_t i = 0; i < positions.size(); ++i) {
-		positions[i] = basePositions[i];
-		previousPositions[i] = basePositions[i];
-	}
-}
-
-void rfct::vine::draw(const frameContext* fc)
-{
-
-	glm::vec2 start = m_vineEntity.get<positionComponent>()->position;
-	glm::vec3 white = { 1.f,1.f,1.f };
-	glm::vec3 blue = { 0.f,0.f,1.f };
-	glm::vec3 yellow = { 1.f,1.f,0.f };
-
-	auto& positions = m_vineEntity.get<vinePositionsComponent>()->positions;
-	uint32_t segmentCount = positions.size() - 1;
-
-
-	float thickness = 0.1f; 
-	
-	// official
-	for (uint32_t i = 0; i < segmentCount; i++) {
-		glm::vec2 p0 = positions[i];
-		glm::vec2 p1 = positions[i + 1];
-
-		glm::vec2 dir = glm::normalize(p1 - p0);
-
-		glm::vec2 normal = glm::vec2(-dir.y, dir.x) * thickness * 0.5f;
-		float lenNormal = glm::length(normal);
-
-		constexpr float between = 0.75f;
-		constexpr float oneMinusBetween = (float)(1.f - between);
-
-
-		// background triangles
-		glm::vec3 bg0 = glm::vec3(p0 - (normal * (1 + oneMinusBetween)) - dir * lenNormal * oneMinusBetween, 0.1f);
-		glm::vec3 bg1 = glm::vec3(p0 + (normal * (1 + oneMinusBetween)) - dir * lenNormal * oneMinusBetween, 0.1f);
-		glm::vec3 bg2 = glm::vec3(p1 - (normal * (1 + oneMinusBetween)) + dir * lenNormal * oneMinusBetween, 0.1f);
-		glm::vec3 bg3 = glm::vec3(p1 + (normal * (1 + oneMinusBetween)) + dir * lenNormal * oneMinusBetween, 0.1f);
-
-
-		m_vertices[i * 12 + 0].pos = bg0;
-		m_vertices[i * 12 + 1].pos = bg1;
-		m_vertices[i * 12 + 2].pos = bg2;
-
-		m_vertices[i * 12 + 3].pos = bg1;
-		m_vertices[i * 12 + 4].pos = bg2;
-		m_vertices[i * 12 + 5].pos = bg3;
-
-
-
-		// color triangles
-		glm::vec3 v0 = glm::vec3(p0 - normal, 0.1f);
-		glm::vec3 v1 = glm::vec3(p0 + normal * between, 0.1f);
-		glm::vec3 v2 = glm::vec3(p0 + normal, 0.1f);
-		glm::vec3 v3 = glm::vec3(p1 - normal, 0.1f);
-		glm::vec3 v4 = glm::vec3(p1 - normal * between, 0.1f);
-		glm::vec3 v5 = glm::vec3(p1 + normal, 0.1f);
-
-
-		m_vertices[i * 12 + 6].pos = v2;
-		m_vertices[i * 12 + 7].pos = v4;
-		m_vertices[i * 12 + 8].pos = v5;
-
-		m_vertices[i * 12 + 9].pos= v0;
-		m_vertices[i * 12 + 10].pos = v1;
-		m_vertices[i * 12 + 11].pos = v3;
-
-		fc->scene->getRenderData().updateDynamicVertices(fc, m_vineEntity.get<vertexRenderInfoComponent>()->vertexBufferOffset, m_vertices.data(), m_vertices.size() * sizeof(Vertex));
-
-	}
-}

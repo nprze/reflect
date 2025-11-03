@@ -87,3 +87,10 @@ void rfct::objectsHolder::onEndHolding()
 {
 	m_vineSystem.onEndHolding();
 }
+
+void rfct::objectsHolder::switchScene(scene* newScene)
+{
+	entity se = newScene->sceneEntity;
+	m_jumpBoostSystem.rebuildQuery(se);
+	m_enemySystem.rebuildQuery(se);
+}

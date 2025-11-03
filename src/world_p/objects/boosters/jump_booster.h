@@ -8,5 +8,7 @@ namespace rfct {
 		void updateVisuals(const frameContext* ctx);
 		void updateSystem(frameContext* ctx);
 		void cleanupSystem();
+
+		void rebuildQuery(entity scene);
 	};
 }

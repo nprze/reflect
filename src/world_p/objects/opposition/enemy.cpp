@@ -212,5 +212,14 @@ namespace rfct {
 			cmd.draw(currentAnim->trianglesPerFrame[en.animIndex] * 3, 1, 0, 0);
 
 			});
-	};
+	}
+	void enemies::rebuildQuery(entity scene)
+	{
+		enemyQuery.~query();
+		enemyQuery =
+			ecs::get().query_builder<velocityComponent, positionComponent, scaleComponent, enemyComponent>()
+			.with(flecs::ChildOf, scene)
+			.build();
+	}
+	;
 }

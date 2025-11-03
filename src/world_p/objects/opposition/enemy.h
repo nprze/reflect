@@ -14,5 +14,6 @@ namespace rfct {
 		void cleanupSystem();
 
 		void drawFrameAnimSprites(vk::CommandBuffer& cmd, frameContext* ctx);
+		void rebuildQuery(entity scene);
 	};
 }

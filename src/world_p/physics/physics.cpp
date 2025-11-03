@@ -185,10 +185,11 @@ void rfct::buildBVH(flecs::query<T> qr, std::vector<BVHnode>* BVHnodes)
         return a.mortonCode < b.mortonCode;
         });
 
+    if (entries.size() != 0) {
+        BVHnodes->reserve(entries.size() * 2 - 1);
 
-    BVHnodes->reserve(entries.size() * 2 - 1);
-
-    createSubTree(entries, 0, entries.size()-1, BVHnodes);
+        createSubTree(entries, 0, entries.size() - 1, BVHnodes);
+    }
 }
 
 
@@ -232,10 +233,10 @@ void rfct::buildDynamicBVH(flecs::query<dynamicBoxColliderComponent, positionCom
         return a.mortonCode < b.mortonCode;
         });
 
-
-    BVHnodes->reserve(entries.size() * 2 - 1);
-
-    createSubTree(entries, 0, entries.size() - 1, BVHnodes);
+    if (entries.size() != 0) {
+        BVHnodes->reserve(entries.size() * 2 - 1);
+        createSubTree(entries, 0, entries.size() - 1, BVHnodes);
+    }
 }
 
 // collision functions

@@ -14,6 +14,9 @@ namespace rfct {
 	public:
 		sceneRenderData();
 		~sceneRenderData();
+		void clearAllData();
+
+
 		void updateMat(const frameContext* ctx, const uint32_t& objIndexInSSBO, glm::mat4* mat);
 		void updateDynamicVertices(const frameContext* ctx, const size_t objBufferOffset, void* vertices, const size_t size);
 		uint32_t addStaticMat(void* data);

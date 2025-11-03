@@ -126,6 +126,13 @@ rfct::sceneRenderData::~sceneRenderData()
 	destroyDescriptorSetLayout();
 }
 
+void rfct::sceneRenderData::clearAllData()
+{
+	m_matsCounterStatic = 0;
+	m_matsCounterDynamic = 0;
+	m_matricesFreeIndices.clear();
+}
+
 void rfct::sceneRenderData::updateMat(const frameContext* ctx, const uint32_t& objIndexInSSBO, glm::mat4* mat)
 {
 	char* finalPtr = (char*)m_mappedMatsDataDynamic[ctx->frame] + objIndexInSSBO * sizeof(glm::mat4);

@@ -13,8 +13,8 @@ void rfct::decorationHolder::init(sceneSerializedData* serializeData, scene* par
 
 rfct::decorationHolder::~decorationHolder()
 {
-	cleanupSmokes();
-	cleanupKindlings();
+	//cleanupSmokes();
+	//cleanupKindlings();
 }
 
 void rfct::decorationHolder::onPlayerDashDecorations(frameContext* fc, const entity entityPlayer, const bool facingRight) {

@@ -17,8 +17,8 @@ namespace rfct {
 		void onUpdate(frameContext* context);
 		void updateUI(frameContext* context);
 		void loadScene(const std::string& path);
-		inline void unloadScene() {};
-		inline sceneRenderData& getRenderData() { return m_RenderData; };
+		void unloadScene();
+		sceneRenderData& getRenderData();
 
 		// all static entities can only be created during loadScene() and their render data should not change (that includes position, color, size etc.)
 		entity createStaticMesh(const std::string& path, glm::vec2 size, glm::vec2 pos, const glm::vec3& color); // loads mesh from .txt file (path should be pointing to a .txt). pos is left top coord.
@@ -38,6 +38,7 @@ namespace rfct {
 		void createPlayerEntity(const glm::vec2& spawnPoint);
 		void updateDirection(bool facingRight);
 
+		bool isPlayerOutsideScene();
 
 		void resetScene(frameContext* ctx);
 
@@ -49,7 +50,7 @@ namespace rfct {
 
 		entity camera;
 		entity sceneEntity; // root of all objects in this scene. 
-		sceneRenderData m_RenderData;
+		
 	private: 
 		world* m_World;
 

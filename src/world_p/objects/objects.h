@@ -26,6 +26,8 @@ namespace rfct{
 		void onStartHolding(playerState state, nearestObject& nearest);
 		void onEndHolding();
 
+		void switchScene(scene* newScene);
+
 
 		
 		// systems

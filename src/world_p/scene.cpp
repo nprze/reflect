@@ -16,16 +16,27 @@
 #include "player/player_animations.h"
 #include "assets/dialogue_serialize_data.h"
 #include "objects/objects.h"
+#include "world.h"
 
 const float maxVelocityX = 100;
 rfct::scene::scene(world* worldArg) : m_World(worldArg)
 {
+	auto& world = ecs::get();
+
+	sceneEntity = world.entity().add<sceneComponent>();
+
+	int i = 0;
+	world.each([&](flecs::entity e) {
+		i++;
+		RFCT_INFO("Entity: {}", e.name().c_str());
+		});
+	RFCT_INFO("Total entities: {}", i);
+
 	
 }
 
 rfct::scene::~scene()
 {
-	cleanupQueries();
 }
 namespace rfct{
 	void drawGridLines(int n, int start_from = 0, const glm::vec3 colorPositive = { 0.6f,0.6f,0.6f }, const glm::vec3 colorNegative = { 0.4f,0.4f,0.4f }) {
@@ -97,8 +108,7 @@ void rfct::scene::loadScene(const std::string& path)
 	AssetsManager::get().loadScene(path, &m_InitialData);
 
 
-	sceneEntity = ecs::get().entity<sceneComponent>();
-	createQueries(sceneEntity);
+	//createQueries(sceneEntity);
 
 	camera = ecs::get().entity()
 		.child_of(sceneEntity)
@@ -106,7 +116,7 @@ void rfct::scene::loadScene(const std::string& path)
 		.set<rotationComponent>({ {0.f, 0.f, 0.f} })
 		.set<cameraComponent>({ 45.0f, renderer::getRen().getAspectRatio(), 0.1f, 100.0f });
 	setCamera(camera);
-	m_RenderData.startTransferStatic();
+	m_World->getRenderData().startTransferStatic();
 	//createStaticBackgroundMesh("background/20x20-0.txt", { 0.06f, 0.04f,0.04f });
 	for (rectangle r : m_InitialData.rectangles) {
 		glm::vec2 min = r.min;
@@ -133,7 +143,8 @@ void rfct::scene::loadScene(const std::string& path)
 	const dynamicBoxColliderComponent* bounds = epicRotatingTriangle.get<dynamicBoxColliderComponent>();
 	playerAnimations::get().initHairAnim(bounds->max.x - bounds->min.x, bounds->max.y - bounds->min.y);
 
-	m_RenderData.endTransferStatic();
+	m_World->getRenderData().endTransferStatic();
+
 	buildStaticObjBVH();
 	buildDynamicObjBVH();
 
@@ -141,6 +152,16 @@ void rfct::scene::loadScene(const std::string& path)
 	m_pendingEntityDeletions.reserve(20);
 
 	m_InitialData.rectangles.clear();
+}
+
+void rfct::scene::unloadScene()
+{
+	m_World->getRenderData().clearAllData();
+}
+
+rfct::sceneRenderData& rfct::scene::getRenderData()
+{
+	return m_World->getRenderData();
 }
 
 
@@ -159,7 +180,7 @@ entity rfct::scene::createStaticMesh(const std::string& path, glm::vec2 size, gl
 
 	transform1.pos.position = pos;
 	glm::mat4 model = getModelMatrixFromTransform(transform1);
-	objectLocation ol = m_RenderData.addStaticObject(&mesh1.m_Vertices, &model);
+	objectLocation ol = m_World->getRenderData().addStaticObject(&mesh1.m_Vertices, &model);
 	staticSSBOIndexComponent ssboIndex = { ol.indexInSSBO };
 	return ecs::get().entity<>()
 		.child_of(sceneEntity)
@@ -177,7 +198,7 @@ entity rfct::scene::createStaticBackgroundMesh(const std::string& path, const gl
 
 
 	glm::mat4 model = glm::mat4(1.f);
-	objectLocation ol = m_RenderData.addStaticObject(&mesh1.m_Vertices, &model);
+	objectLocation ol = m_World->getRenderData().addStaticObject(&mesh1.m_Vertices, &model);
 	staticSSBOIndexComponent ssboIndex = { ol.indexInSSBO };
 	return ecs::get().entity<>()
 		.child_of(sceneEntity)
@@ -228,7 +249,7 @@ entity rfct::scene::createDynamicMesh(dynamicBoxColliderComponent* bounds, const
 
 entity rfct::scene::createStaticRenderingEntity(std::vector<Vertex>* vertices, glm::mat4* model)
 {
-	objectLocation ol = m_RenderData.addStaticObject(vertices, model); 
+	objectLocation ol = m_World->getRenderData().addStaticObject(vertices, model);
 	staticSSBOIndexComponent ssboIndex = { ol.indexInSSBO };
 	return ecs::get().entity<>()
 		.child_of(sceneEntity)
@@ -241,13 +262,13 @@ entity rfct::scene::createStaticRenderingEntity(std::vector<Vertex>* vertices, g
 
 void rfct::scene::deleteDynamicEntity(entity e)
 {
-	m_RenderData.removeDynamicEntity(e);
+	m_World->getRenderData().removeDynamicEntity(e);
 	e.destruct();
 }
 
 void rfct::scene::deleteAnimatedEntity(entity e)
 {
-	m_RenderData.removeAnimatedEntity(e);
+	m_World->getRenderData().removeAnimatedEntity(e);
 	e.destruct();
 }
 
@@ -274,7 +295,7 @@ void rfct::scene::resolvePendingDynamicEnitityDeletions()
 
 entity rfct::scene::createDynamicRenderingEntity(std::vector<Vertex>* vertices, glm::mat4* model, uint32_t numVertices)
 {
-	objectLocation ol = m_RenderData.addDynamicObject(vertices, model, true, {}, numVertices);
+	objectLocation ol = m_World->getRenderData().addDynamicObject(vertices, model, true, {}, numVertices);
 	dynamicSSBOIndexComponent ssboIndex = { ol.indexInSSBO };
 
 	return ecs::get().entity<>()
@@ -288,7 +309,7 @@ entity rfct::scene::createDynamicRenderingEntity(std::vector<Vertex>* vertices, 
 void rfct::scene::updateTransformData(const frameContext* ctx, entity e)
 {
 	glm::mat4 model = getModelMatrixFromEntity(e);
-	m_RenderData.updateMat(ctx, e.get<dynamicSSBOIndexComponent>()->indexInSSBO, &model);
+	m_World->getRenderData().updateMat(ctx, e.get<dynamicSSBOIndexComponent>()->indexInSSBO, &model);
 }
 
 void rfct::scene::createPlayerEntity(const glm::vec2& spawnPoint)
@@ -301,6 +322,14 @@ void rfct::scene::updateDirection(bool facingRight)
 	scaleComponent* scale = epicRotatingTriangle.get_mut<scaleComponent>();
 	scale->scale.x = scale->scale.x* (facingRight? (scale->scale.x < 0 ? -1 : 1) :(scale->scale.x>0?-1:1));
 	epicRotatingTriangle.set<scaleComponent>(*scale);
+}
+
+bool rfct::scene::isPlayerOutsideScene()
+{
+	glm::vec2 pos = epicRotatingTriangle.get<positionComponent>()->position;
+	if (pos.x > m_InitialData.width || pos.x < 0) return true;
+	if (pos.y > m_InitialData.height || pos.y < 0) return true;
+	return false;
 }
 
 void rfct::scene::resetScene(frameContext* ctx)

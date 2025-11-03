@@ -1,6 +1,7 @@
 #pragma once
 #include <glm/glm.hpp>
 #include "assets/frame_animation.h"
+#include "renderer_p/rasterizer_pipeline/vertex.h"
 
 namespace flecs {
     class world;
@@ -13,6 +14,10 @@ namespace rfct {
     struct vinePositionsComponent {
         std::vector<glm::vec2> previousPosition;
         std::vector<glm::vec2> positions;
+    };
+
+    struct vineVerticesComponent {
+        std::vector<Vertex> vertices;
     };
 
     struct vineBasePositionsComponent {

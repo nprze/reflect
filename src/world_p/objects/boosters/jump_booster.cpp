@@ -113,4 +113,12 @@ namespace rfct {
 	void jumpBoosters::cleanupSystem() {
 		jumpBoosterQuery.~query();
 	}
+	void jumpBoosters::rebuildQuery(entity scene)
+	{
+		jumpBoosterQuery.~query();
+		jumpBoosterQuery =
+			ecs::get().query_builder<scaleComponent, dynamicBoxColliderComponent, jumpBoosterComponent>()
+			.with(flecs::ChildOf, scene)
+			.build();
+	}
 }
