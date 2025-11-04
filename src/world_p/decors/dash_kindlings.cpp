@@ -74,11 +74,9 @@ void rfct::initKindlingsVars(scene* parentScene)
 
     kindlingParticlesComponentsQuery =
         ecs::get().query_builder<kindlingParticleComponent, sinusoidFloatComponent, angularVelocityComponent, positionComponent, rotationComponent, scaleComponent>()
-        .with(flecs::ChildOf, parentScene->sceneEntity)
         .build();
     kindlingParticlesQuery =
         ecs::get().query_builder<kindlingParticleComponent, dynamicSSBOIndexComponent, positionComponent, rotationComponent, scaleComponent>()
-        .with(flecs::ChildOf, parentScene->sceneEntity)
         .build();
 }
 

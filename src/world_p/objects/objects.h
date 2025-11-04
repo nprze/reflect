@@ -1,6 +1,4 @@
 #pragma once
-#include "context.h"
-#include "renderer_p/frame_anim/anim_buffer.h"
 
 // surely good
 #include "core/cigarettes.h"
@@ -12,21 +10,22 @@
 
 namespace rfct{
 	struct sceneSerializedData;
-	struct objectsHolder {
-		~objectsHolder();
+	struct objectSystems {
 		void init();
 		void cleanup();
+		void createAllQueries();
+		void cleanupAllQueries();
 		void loadSceneData(sceneSerializedData* serializeData, scene* parentScene);
 		void update(frameContext* fc);
 		void updateVisuals(frameContext* fc);
 		void customDrawObjects(vk::CommandBuffer& cmd, frameContext* ctx);
-		void reset(frameContext* fc);
+		void respawn(frameContext* fc);
 		
 		void onPlayerDash(frameContext* fc, const entity entityPlayer, const bool facingRight); // to be called before physics update
 		void onStartHolding(playerState state, nearestObject& nearest);
 		void onEndHolding();
 
-		void switchScene(scene* newScene);
+		void onSwitchScene();
 
 
 		
@@ -38,8 +37,8 @@ namespace rfct{
 		spikes m_spikeSystem;
 		jumpBoosters m_jumpBoostSystem;
 	private:
-		static objectsHolder instance;
+		static objectSystems instance;
 	public:
-		static objectsHolder& get() { return instance; }
+		static objectSystems& get() { return instance; }
 	};
 }

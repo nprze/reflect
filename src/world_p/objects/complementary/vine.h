@@ -10,11 +10,13 @@ namespace rfct {
 	struct nearestObject;
 	struct vines : objectSystem {
 		void initSystem();
+		void createQueries();
+		void deleteQueries();
 		void spawnData(scene* s, sceneSerializedData* sd);
 		void resetLevel(const frameContext* ctx);
 		void updateVisuals(const frameContext* ctx);
 		void updateSystem(frameContext* ctx);
-		void cleanupSystem();
+		inline void cleanupSystem() {};
 
 		void onStartHolding(nearestObject& nearest);
 		void onEndHolding();
@@ -26,7 +28,7 @@ namespace rfct {
 	public:
 		vine(const glm::vec2& start, const glm::vec2& end, const int numEdges, scene* parentScene);
 		void update(const frameContext* fc);
-		void reset();
+		void respawn();
 		void draw(const frameContext* fc);
 	private:
 		entity m_vineEntity;

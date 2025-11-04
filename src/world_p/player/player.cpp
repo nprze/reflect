@@ -54,7 +54,6 @@ entity rfct::playerController::createPlayer(scene* sc, const glm::vec2& spawnPoi
 	staticObjCollisionCallbackComponent colCallback;
 	colCallback.handler = onCollision_Player_StaticObj;
 	player = ecs::get().entity<>()
-		.child_of(sc->sceneEntity)
 		.set<dynamicSSBOIndexComponent>({ 1 })
 		.set<rotationComponent>({})
 		.set<scaleComponent>(trans.scale)
@@ -431,7 +430,7 @@ void rfct::playerController::update(frameContext* ctx)
 		dash45downInput = 0.f;
 		arrowUpDownInput = 0.f;
 	}
-	// reset after applying
+	// respawn after applying
 	jumpInput = 0;
 	hold = false;
 	ctx->scene->updateDirection(facingRight);
@@ -497,7 +496,7 @@ void rfct::playerController::normalJumpUpdate()
 
 void rfct::playerController::endHold(scene* sc)
 {
-	objectsHolder::get().onEndHolding();
+	objectSystems::get().onEndHolding();
 	player.get_mut<gravityComponent>()->gravityEnabled = true;
 
 	holdCooldown = 0.4f;
@@ -515,7 +514,7 @@ bool rfct::playerController::checkHold(scene* scen)
 		else if (nearestObjectToHold.vineIndex >= 0) {
 			stateComp->state = playerState::holdingVines;
 			
-			objectsHolder::get().onStartHolding(stateComp->state, nearestObjectToHold);
+			objectSystems::get().onStartHolding(stateComp->state, nearestObjectToHold);
 		}
 		else {
 			return false;

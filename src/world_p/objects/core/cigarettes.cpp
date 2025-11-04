@@ -78,8 +78,9 @@ namespace rfct {
             cigaretteModelVertices[i].color = white;
         }
 
-
-        // query
+    }
+    void cigarettes::createQueries()
+    {
         cigaretteComponentsQuery =
             ecs::get().query_builder<cigaretteUpdateComponent, positionComponent, velocityComponent, angularVelocityComponent, rotationComponent>()
             .build();
@@ -87,7 +88,11 @@ namespace rfct {
         cigaretteMatricesQuery =
             ecs::get().query_builder<cigaretteUpdateComponent, dynamicSSBOIndexComponent, positionComponent, rotationComponent, scaleComponent>()
             .build();
-
+    }
+    void cigarettes::deleteQueries()
+    {
+        cigaretteComponentsQuery.~query();
+        cigaretteMatricesQuery.~query();
     }
     void cigarettes::spawnData(scene* s, sceneSerializedData* sd)
     {
@@ -139,11 +144,6 @@ namespace rfct {
 
             }
             });
-    }
-    void cigarettes::cleanupSystem()
-    {
-        cigaretteComponentsQuery.~query();
-        cigaretteMatricesQuery.~query();
     }
     void cigarettes::onDash(frameContext* fc, const entity entityPlayer, const bool facingRight)
     {

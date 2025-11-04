@@ -59,12 +59,4 @@ namespace rfct {
 			spikeEntity.set<dynamicObjCollisionCallbackComponent>(dynColCallback);
 		}
 	};
-	void spikes::resetLevel(const frameContext* ctx) {
-	};
-	void spikes::updateVisuals(const frameContext* ctx) {
-	};
-	void spikes::updateSystem(frameContext* ctx) {
-	};
-	void spikes::cleanupSystem() {
-	}
 }

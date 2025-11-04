@@ -63,9 +63,16 @@ namespace rfct {
 	void enemies::initSystem()
 	{
 		animBuffer.init(10000);
+	}
+
+	void enemies::createQueries()
+	{
 		enemyQuery =
 			ecs::get().query_builder<velocityComponent, positionComponent, scaleComponent, enemyComponent>()
 			.build();
+	}
+	void enemies::deleteQueries() {
+		enemyQuery.~query();
 	}
 
 	void enemies::spawnData(scene* s, sceneSerializedData* sd) {
@@ -108,7 +115,6 @@ namespace rfct {
 			eComp.frameIndex = 0;
 
 			entity enemy = ecs::get().entity<>()
-				.child_of(s->sceneEntity)
 				.set<dynamicSSBOIndexComponent>({ ssboMatrixIndex })
 				.set<rotationComponent>({ trans.rot })
 				.set<scaleComponent>({ trans.scale })
@@ -198,7 +204,7 @@ namespace rfct {
 
 	void enemies::cleanupSystem() {
 		animBuffer.cleanup();
-		enemyQuery.~query();
+		deleteQueries();
 	}
 
 	void enemies::drawFrameAnimSprites(vk::CommandBuffer& cmd, frameContext* ctx)
@@ -213,13 +219,4 @@ namespace rfct {
 
 			});
 	}
-	void enemies::rebuildQuery(entity scene)
-	{
-		enemyQuery.~query();
-		enemyQuery =
-			ecs::get().query_builder<velocityComponent, positionComponent, scaleComponent, enemyComponent>()
-			.with(flecs::ChildOf, scene)
-			.build();
-	}
-	;
 }

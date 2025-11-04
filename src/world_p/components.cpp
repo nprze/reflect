@@ -14,7 +14,6 @@ namespace rfct {
 	}
 	void registerComponents()
 	{
-		ecs::get().component<sceneComponent>();
 		ecs::get().component<cameraComponent>();
 		ecs::get().component<positionComponent>();
 		ecs::get().component<position3DComponent>();

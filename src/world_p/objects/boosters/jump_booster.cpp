@@ -50,11 +50,14 @@ namespace rfct {
 
 
 namespace rfct {
-	void jumpBoosters::initSystem() {
+	void jumpBoosters::createQueries() {
 		jumpBoosterQuery =
 			ecs::get().query_builder<scaleComponent, dynamicBoxColliderComponent, jumpBoosterComponent>()
 			.build();
-	};
+	}
+	void jumpBoosters::deleteQueries() {
+		jumpBoosterQuery.~query();
+	}
 	void jumpBoosters::spawnData(scene* s, sceneSerializedData* sd) {
 		uint8_t i = 0;
 		for (const JumpBoosterInfo& e : sd->boosters) {
@@ -110,15 +113,4 @@ namespace rfct {
 			ctx->scene->updateTransformData(ctx, e);
 			});
 	};
-	void jumpBoosters::cleanupSystem() {
-		jumpBoosterQuery.~query();
-	}
-	void jumpBoosters::rebuildQuery(entity scene)
-	{
-		jumpBoosterQuery.~query();
-		jumpBoosterQuery =
-			ecs::get().query_builder<scaleComponent, dynamicBoxColliderComponent, jumpBoosterComponent>()
-			.with(flecs::ChildOf, scene)
-			.build();
-	}
 }

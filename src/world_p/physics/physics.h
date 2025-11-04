@@ -19,7 +19,7 @@ namespace rfct{
 	extern std::vector<BVHnode> DynamicObjsBVHnodes;
 	struct frameContext;
 	// setup
-	void createQueries(entity sceneEntity);
+	void createQueries();
 	void cleanupQueries();
 	void buildStaticObjBVH();
 	void buildDynamicObjBVH();

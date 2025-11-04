@@ -22,8 +22,6 @@ namespace rfct {
 }
 
 namespace rfct {
-	void npcs::initSystem() {
-	};
 	void npcs::spawnData(scene* s, sceneSerializedData* sd) {
 		for (NPCInfo npcInfo : sd->npcs) {
 			dynamicBoxColliderComponent boc = { npcInfo.min, npcInfo.max };

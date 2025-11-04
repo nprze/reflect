@@ -7,6 +7,7 @@ namespace rfct {
 		{
 			return world;
 		}
+		static void recreateWorld();
 	private:
 		static flecs::world world;
 	};

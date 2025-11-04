@@ -50,9 +50,6 @@ namespace rfct {
         dynamicObjectType type;
         bool passable = true;
     };
-	struct sceneComponent {
-		std::string name;
-	};
     struct cameraComponent {
         float fov, aspectRatio, nearPlane, farPlane;
     };

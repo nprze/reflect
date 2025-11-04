@@ -11,111 +11,45 @@
 #include "player/player.h"
 #include "renderer_p/mesh/mesh.h"
 #include "assets/assets_manager.h"
-#include "ui.h"
-#include <stb_image/stb_image.h>
 #include "player/player_animations.h"
 #include "assets/dialogue_serialize_data.h"
 #include "objects/objects.h"
 #include "world.h"
 
-const float maxVelocityX = 100;
 rfct::scene::scene(world* worldArg) : m_World(worldArg)
-{
-	auto& world = ecs::get();
-
-	sceneEntity = world.entity().add<sceneComponent>();
-
-	int i = 0;
-	world.each([&](flecs::entity e) {
-		i++;
-		RFCT_INFO("Entity: {}", e.name().c_str());
-		});
-	RFCT_INFO("Total entities: {}", i);
-
-	
-}
-
-rfct::scene::~scene()
-{
-}
-namespace rfct{
-	void drawGridLines(int n, int start_from = 0, const glm::vec3 colorPositive = { 0.6f,0.6f,0.6f }, const glm::vec3 colorNegative = { 0.4f,0.4f,0.4f }) {
-		const float z_coord = 0.0f;
-
-		// We need (n + 1) vertical + (n + 1) horizontal lines
-		int totalLines = 2 * (n + 1);
-		debugLine* lines = debugDraw::requestLines(totalLines);
-
-		int lineIndex = 0;
-
-		// Draw vertical lines (parallel to Y-axis)
-		for (int i = 0; i <= n; ++i) {
-			float x = start_from + i;
-			glm::vec3 color = (x < 0) ? colorNegative : colorPositive;
-
-			lines[lineIndex].vertices[0].pos = { x, start_from, z_coord };
-			lines[lineIndex].vertices[1].pos = { x,  start_from+n, z_coord };
-			lines[lineIndex].vertices[0].color = color;
-			lines[lineIndex].vertices[1].color = color;
-
-			++lineIndex;
-		}
-
-		// Draw horizontal lines (parallel to X-axis)
-		for (int i = 0; i <= n; ++i) {
-			float y = start_from + i;
-			glm::vec3 color = (y < 0) ? colorNegative : colorPositive;
-
-			lines[lineIndex].vertices[0].pos = { start_from, y, z_coord };
-			lines[lineIndex].vertices[1].pos = { start_from+n, y, z_coord };
-			lines[lineIndex].vertices[0].color = color;
-			lines[lineIndex].vertices[1].color = color;
-
-			++lineIndex;
-		}
-	}
-}
+{}
 
 void rfct::scene::onUpdate(frameContext* context)
 {
 	RFCT_PROFILE_SCOPE("scene update");
-	if (!epicRotatingTriangle.get<playerLifeComponent>()->alive) {
+	if (!playerEntity.get<playerLifeComponent>()->alive) {
 		resetScene(context);
 	}
 	playerController::get().update(context);
-	objectsHolder::get().update(context);
+	objectSystems::get().update(context);
 	m_decorations.update(context);
 	buildDynamicObjBVH();
 	updatePhysics(context);
-	updateUI(context);
-	playerAnimations::get().update(epicRotatingTriangle.get<velocityComponent>()->velocity, epicRotatingTriangle.get<positionComponent>()->position, *context, epicRotatingTriangle);
-	updateTransformData(context, epicRotatingTriangle);
+	playerAnimations::get().update(playerEntity.get<velocityComponent>()->velocity, playerEntity.get<positionComponent>()->position, *context, playerEntity);
+	updateTransformData(context, playerEntity);
 
-	cameraComponentOnUpdate(context->dt, epicRotatingTriangle);
+	cameraComponentOnUpdate(context->dt, playerEntity);
 
-	objectsHolder::get().updateVisuals(context);
+	objectSystems::get().updateVisuals(context);
 	resolvePendingDynamicEnitityDeletions();
-}
-
-void rfct::scene::updateUI(frameContext* context)
-{
-	RFCT_PROFILE_SCOPE("UI update");
-	UpdateUI(context);
 }
 
 void rfct::scene::loadScene(const std::string& path)
 {
 	AssetsManager::get().loadScene(path, &m_InitialData);
 
-
-	//createQueries(sceneEntity);
-
 	camera = ecs::get().entity()
-		.child_of(sceneEntity)
 		.set<position3DComponent>({ { 0.f,  0.f, 20.f} })
 		.set<rotationComponent>({ {0.f, 0.f, 0.f} })
 		.set<cameraComponent>({ 45.0f, renderer::getRen().getAspectRatio(), 0.1f, 100.0f });
 	setCamera(camera);
+
+
 	m_World->getRenderData().startTransferStatic();
 	//createStaticBackgroundMesh("background/20x20-0.txt", { 0.06f, 0.04f,0.04f });
 	for (rectangle r : m_InitialData.rectangles) {
@@ -129,18 +63,18 @@ void rfct::scene::loadScene(const std::string& path)
 		color.b = std::stoi(r.color.substr(4, 2), nullptr, 16);
 		createStaticMesh("building_blocks/" + r.file, size, r.min, color);
 	}
-	createPlayerEntity(m_InitialData.spawnPoints[0].position);
 
+	playerEntity = playerController::get().createPlayer(this, m_InitialData.spawnPoints[0].position);
 
 	// init dynamic objects
-	objectsHolder::get().loadSceneData(&m_InitialData, this);
+	objectSystems::get().loadSceneData(&m_InitialData, this);
 	m_decorations.init(&m_InitialData, this);
 
 
 	//if (m_InitialData.vines.size() != 0) hasVines = true;
 
 	// init player hair anim
-	const dynamicBoxColliderComponent* bounds = epicRotatingTriangle.get<dynamicBoxColliderComponent>();
+	const dynamicBoxColliderComponent* bounds = playerEntity.get<dynamicBoxColliderComponent>();
 	playerAnimations::get().initHairAnim(bounds->max.x - bounds->min.x, bounds->max.y - bounds->min.y);
 
 	m_World->getRenderData().endTransferStatic();
@@ -183,7 +117,6 @@ entity rfct::scene::createStaticMesh(const std::string& path, glm::vec2 size, gl
 	objectLocation ol = m_World->getRenderData().addStaticObject(&mesh1.m_Vertices, &model);
 	staticSSBOIndexComponent ssboIndex = { ol.indexInSSBO };
 	return ecs::get().entity<>()
-		.child_of(sceneEntity)
 		.set<staticSSBOIndexComponent>({ ol.indexInSSBO })
 		.set<vertexRenderInfoComponent>({ ol.verticesCount, ol.vertexBufferOffset })
 		.set<positionComponent>({})
@@ -201,7 +134,6 @@ entity rfct::scene::createStaticBackgroundMesh(const std::string& path, const gl
 	objectLocation ol = m_World->getRenderData().addStaticObject(&mesh1.m_Vertices, &model);
 	staticSSBOIndexComponent ssboIndex = { ol.indexInSSBO };
 	return ecs::get().entity<>()
-		.child_of(sceneEntity)
 		.set<staticSSBOIndexComponent>({ ol.indexInSSBO })
 		.set<vertexRenderInfoComponent>({ ol.verticesCount, ol.vertexBufferOffset })
 		.set<positionComponent>({});
@@ -252,7 +184,6 @@ entity rfct::scene::createStaticRenderingEntity(std::vector<Vertex>* vertices, g
 	objectLocation ol = m_World->getRenderData().addStaticObject(vertices, model);
 	staticSSBOIndexComponent ssboIndex = { ol.indexInSSBO };
 	return ecs::get().entity<>()
-		.child_of(sceneEntity)
 		.set<staticSSBOIndexComponent>({ ol.indexInSSBO })
 		.set<vertexRenderInfoComponent>({ ol.verticesCount, ol.vertexBufferOffset })
 		.set<positionComponent>({})
@@ -299,7 +230,6 @@ entity rfct::scene::createDynamicRenderingEntity(std::vector<Vertex>* vertices, 
 	dynamicSSBOIndexComponent ssboIndex = { ol.indexInSSBO };
 
 	return ecs::get().entity<>()
-		.child_of(sceneEntity)
 		.set<dynamicSSBOIndexComponent>({ ol.indexInSSBO })
 		.set<vertexRenderInfoComponent>({ ol.verticesCount, ol.vertexBufferOffset })
 		.set<positionComponent>({})
@@ -312,21 +242,16 @@ void rfct::scene::updateTransformData(const frameContext* ctx, entity e)
 	m_World->getRenderData().updateMat(ctx, e.get<dynamicSSBOIndexComponent>()->indexInSSBO, &model);
 }
 
-void rfct::scene::createPlayerEntity(const glm::vec2& spawnPoint)
-{
-	epicRotatingTriangle = playerController::get().createPlayer(this, spawnPoint);
-}
-
 void rfct::scene::updateDirection(bool facingRight)
 {
-	scaleComponent* scale = epicRotatingTriangle.get_mut<scaleComponent>();
+	scaleComponent* scale = playerEntity.get_mut<scaleComponent>();
 	scale->scale.x = scale->scale.x* (facingRight? (scale->scale.x < 0 ? -1 : 1) :(scale->scale.x>0?-1:1));
-	epicRotatingTriangle.set<scaleComponent>(*scale);
+	playerEntity.set<scaleComponent>(*scale);
 }
 
 bool rfct::scene::isPlayerOutsideScene()
 {
-	glm::vec2 pos = epicRotatingTriangle.get<positionComponent>()->position;
+	glm::vec2 pos = playerEntity.get<positionComponent>()->position;
 	if (pos.x > m_InitialData.width || pos.x < 0) return true;
 	if (pos.y > m_InitialData.height || pos.y < 0) return true;
 	return false;
@@ -334,10 +259,10 @@ bool rfct::scene::isPlayerOutsideScene()
 
 void rfct::scene::resetScene(frameContext* ctx)
 {
-	epicRotatingTriangle.get_mut<playerLifeComponent>()->alive = true;
+	playerEntity.get_mut<playerLifeComponent>()->alive = true;
 	playerController::get().endHold(this);
-	epicRotatingTriangle.get_mut<positionComponent>()->position = m_InitialData.spawnPoints[0].position;
-	epicRotatingTriangle.get_mut<velocityComponent>()->velocity = {0,0};
-	epicRotatingTriangle.get_mut<playerStateComponent>()->state = playerState::normal;
-	objectsHolder::get().reset(ctx);
+	playerEntity.get_mut<positionComponent>()->position = m_InitialData.spawnPoints[0].position;
+	playerEntity.get_mut<velocityComponent>()->velocity = {0,0};
+	playerEntity.get_mut<playerStateComponent>()->state = playerState::normal;
+	objectSystems::get().respawn(ctx);
 }

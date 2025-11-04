@@ -202,14 +202,21 @@ namespace rfct {
 namespace rfct {
 
 	void vines::initSystem() {
+
+	}
+	void vines::createQueries()
+	{
 		vineQuery =
 			ecs::get().query_builder<vineStateComponent, vinePositionsComponent, vineLenghtComponent, dynamicBoxColliderComponent, positionComponent>()
 			.build();
 		vineVerticesQuery =
 			ecs::get().query_builder<vinePositionsComponent, vineVerticesComponent, positionComponent>()
 			.build();
-
 	};
+	void vines::deleteQueries() {
+		vineQuery.~query();
+		vineVerticesQuery.~query();
+	}
 	void vines::spawnData(scene* s, sceneSerializedData* sd) {
 		for (vineInfo& vi : sd->vines) {
 
@@ -267,7 +274,6 @@ namespace rfct {
 
 			
 			entity e = ecs::get().entity<>()
-				.child_of(s->sceneEntity)
 				.set<dynamicSSBOIndexComponent>({ ol.indexInSSBO })
 				.set<vertexRenderInfoComponent>({ ol.verticesCount, ol.vertexBufferOffset })
 
@@ -410,9 +416,6 @@ namespace rfct {
 				});
 		}
 	};
-	void vines::cleanupSystem() {
-
-	}
 	void vines::onStartHolding(nearestObject& nearest)
 	{
 		vineClosestToPlayer = nearest.object;

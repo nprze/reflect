@@ -84,11 +84,9 @@ void rfct::initSmokeVars(scene* parentScene)
     }
     smokeParticlesComponentsQuery =
         ecs::get().query_builder<smokeParticleComponent, smokeDisperseComponent, sinusoidFloatComponent, angularVelocityComponent, positionComponent, rotationComponent, scaleComponent>()
-        .with(flecs::ChildOf, parentScene->sceneEntity)
         .build();
     smokeParticlesQuery =
         ecs::get().query_builder<smokeDisperseComponent, dynamicSSBOIndexComponent, positionComponent, rotationComponent, scaleComponent>()
-        .with(flecs::ChildOf, parentScene->sceneEntity)
         .build();
 }
 

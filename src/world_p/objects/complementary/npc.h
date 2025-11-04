@@ -7,7 +7,9 @@ namespace rfct {
 	void updateNpc(frameContext* ctx, entity npcEntity);
 
 	struct npcs : objectSystem {
-		void initSystem();
+		inline void initSystem() {};
+		inline void createQueries() {};
+		inline void deleteQueries() {};
 		void spawnData(scene* s, sceneSerializedData* sd);
 		void resetLevel(const frameContext* ctx);
 		void updateVisuals(const frameContext* ctx);

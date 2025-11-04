@@ -26,35 +26,28 @@ namespace rfct
     std::vector<BVHnode> DynamicObjsBVHnodes;
 }
 // Queries helper
-void rfct::createQueries(entity sceneEntity) {
+void rfct::createQueries() {
     RFCT_PROFILE_SCOPE("init physics");
     gravityVelocityPositionBoxQuery =
         ecs::get().query_builder<gravityComponent, velocityComponent, positionComponent, dynamicBoxColliderComponent, staticObjCollisionCallbackComponent>()
-        .with(flecs::ChildOf, sceneEntity)
         .build();
     staticCircleCollisionQuery =
         ecs::get().query_builder<positionComponent, dynamicCircleColliderComponent, staticObjCollisionCallbackComponent>()
-        .with(flecs::ChildOf, sceneEntity)
         .build();
     dynamicBoxesQuery =
         ecs::get().query_builder<positionComponent, dynamicBoxColliderComponent, dynamicObjCollisionCallbackComponent>()
-        .with(flecs::ChildOf, sceneEntity)
         .build();
     dynamicCirclesQuery =
         ecs::get().query_builder<positionComponent, dynamicCircleColliderComponent, dynamicObjCollisionCallbackComponent>()
-        .with(flecs::ChildOf, sceneEntity)
         .build();
     staticBoxColliderQuery =
         ecs::get().query_builder<staticBoxColliderComponent>()
-        .with(flecs::ChildOf, sceneEntity)
         .build();
     dynamicBoxColliderQuery =
         ecs::get().query_builder<dynamicBoxColliderComponent, positionComponent>()
-        .with(flecs::ChildOf, sceneEntity)
         .build();
     dynamicCircleColliderQuery =
         ecs::get().query_builder<dynamicCircleColliderComponent, positionComponent>()
-        .with(flecs::ChildOf, sceneEntity)
         .build();
 }
 

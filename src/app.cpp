@@ -12,8 +12,6 @@ m_Renderer(RFCT_RENDERER_ARGUMENTS_VAR)
 	input::getInput().init();
 	playerAnimations::get().loadAnimations();
 	isAppMinimised = false;
-	registerComponents();
-
 
 	world::getWorld().initWorld("");
 
