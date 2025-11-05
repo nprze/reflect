@@ -17,10 +17,8 @@ void rfct::world::initWorld(const std::string& path)
 void rfct::world::loadScene(const std::string& path)
 {
 	RFCT_PROFILE_FUNCTION();
-	registerComponents();
 	m_RenderData = new sceneRenderData();
 	m_currentScene = new scene(this);
-	createQueries();
 	m_currentScene->loadScene(path);
 }
 
@@ -40,7 +38,6 @@ void rfct::world::onUpdate(frameContext& context)
 		m_currentScene->unloadScene();
 		m_RenderData->clearAllData();
 		delete m_currentScene;
-		objectSystems::get().onSwitchScene();
 
 		m_currentScene = new scene(this);
 		loadScene("scenes/load-test.txt");

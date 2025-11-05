@@ -13,8 +13,6 @@ namespace rfct{
 	struct objectSystems {
 		void init();
 		void cleanup();
-		void createAllQueries();
-		void cleanupAllQueries();
 		void loadSceneData(sceneSerializedData* serializeData, scene* parentScene);
 		void update(frameContext* fc);
 		void updateVisuals(frameContext* fc);
@@ -25,7 +23,6 @@ namespace rfct{
 		void onStartHolding(playerState state, nearestObject& nearest);
 		void onEndHolding();
 
-		void onSwitchScene();
 
 
 		

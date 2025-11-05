@@ -10,7 +10,11 @@ namespace flecs {
 	class entity;
 }
 namespace rfct {
-    float randF();
+    inline float randF() {
+        static uint32_t seed = rand();
+        seed = 1664525u * seed + 1013904223u;
+        return (seed >> 8) * (1.0f / 16777216.0f);
+    }
     class scene;
 	struct frameContext;
 
@@ -43,8 +47,6 @@ namespace rfct {
         uint32_t verticesCount;
         size_t vertexBufferOffset;
     };
-
-    void registerComponents();
 
     struct dynamicObjectTypeComponent {
         dynamicObjectType type;

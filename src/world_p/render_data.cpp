@@ -263,24 +263,24 @@ void rfct::sceneRenderData::removeDynamicObject(const dynamicSSBOIndexComponent&
 
 void rfct::sceneRenderData::removeDynamicEntity(entity e)
 {
-	const dynamicSSBOIndexComponent* ssbo = e.get<dynamicSSBOIndexComponent>();
-	const vertexRenderInfoComponent* vData = e.get<vertexRenderInfoComponent>();
+	dynamicSSBOIndexComponent& ssbo = ecs::get().get<dynamicSSBOIndexComponent>(e);
+	vertexRenderInfoComponent& vData = ecs::get().get<vertexRenderInfoComponent>(e);
 	frameContext noCtx = {};
-	removeDynamicObject(*ssbo, *vData, true, &noCtx);
+	removeDynamicObject(ssbo, vData, true, &noCtx);
 	for (uint8_t i = 1; i < RFCT_FRAMES_IN_FLIGHT; i++) {
 		noCtx.frame = i;
-		removeDynamicObject(*ssbo, *vData, false, &noCtx);
+		removeDynamicObject(ssbo, vData, false, &noCtx);
 	}
 }
 
 void rfct::sceneRenderData::removeAnimatedEntity(entity e)
 {
-	const dynamicSSBOIndexComponent* ssbo = e.get<dynamicSSBOIndexComponent>();
+	const dynamicSSBOIndexComponent& ssbo = ecs::get().get<dynamicSSBOIndexComponent>(e);
 
-	m_matricesFreeIndices.push_back(ssbo->indexInSSBO);
+	m_matricesFreeIndices.push_back(ssbo.indexInSSBO);
 
 	for (uint8_t i = 0; i < RFCT_FRAMES_IN_FLIGHT; i++) {
-		char* finalPtr = ((char*)m_mappedMatsDataDynamic[i]) + (ssbo->indexInSSBO * sizeof(glm::mat4));
+		char* finalPtr = ((char*)m_mappedMatsDataDynamic[i]) + (ssbo.indexInSSBO * sizeof(glm::mat4));
 		memset(finalPtr, 0, sizeof(glm::mat4));
 	}
 }

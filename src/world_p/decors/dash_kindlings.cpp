@@ -13,9 +13,6 @@ namespace rfct {
 
 
     constexpr float angularDamping = 0.94f;
-
-    static flecs::query<kindlingParticleComponent, sinusoidFloatComponent, angularVelocityComponent, positionComponent, rotationComponent, scaleComponent> kindlingParticlesComponentsQuery;
-    static flecs::query<kindlingParticleComponent, dynamicSSBOIndexComponent, positionComponent, rotationComponent, scaleComponent> kindlingParticlesQuery;
 }
 
 std::vector<rfct::Vertex> kindlingVertices [3];
@@ -69,21 +66,10 @@ void rfct::initKindlingsVars(scene* parentScene)
         kindlingVertices[i][3 + 1].color = color;
         kindlingVertices[i][3 + 2].color = color;
     }
-
-
-
-    kindlingParticlesComponentsQuery =
-        ecs::get().query_builder<kindlingParticleComponent, sinusoidFloatComponent, angularVelocityComponent, positionComponent, rotationComponent, scaleComponent>()
-        .build();
-    kindlingParticlesQuery =
-        ecs::get().query_builder<kindlingParticleComponent, dynamicSSBOIndexComponent, positionComponent, rotationComponent, scaleComponent>()
-        .build();
 }
 
 void rfct::cleanupKindlings()
 {
-    kindlingParticlesComponentsQuery.~query();
-    kindlingParticlesQuery.~query();
 }
 
 void rfct::spawnKindling(frameContext* fc, const glm::vec2& position, const glm::vec2& playerVel , uint32_t var)
@@ -93,20 +79,17 @@ void rfct::spawnKindling(frameContext* fc, const glm::vec2& position, const glm:
         entity kindling = fc->scene->createDynamicRenderingEntity(&kindlingVertices[2 - var], &transMat);
         glm::vec2 per = glm::normalize(glm::cross(glm::vec3(-playerVel, 0.f), glm::vec3(0, 0, 1)));
         glm::vec2 dir = glm::normalize(-playerVel + (per * glm::linearRand(-0.3f, 0.3f)));
-        kindling.set<kindlingParticleComponent>({ dir, 0.5f, 0.f });
-        kindling.set<sinusoidFloatComponent>({
-                glm::linearRand(0.5f, 2.0f),
-                glm::linearRand(0.5f, 3.0f),
-                glm::linearRand(0.f, 6.28f)
-            });
 
-        kindling.set<angularVelocityComponent>({ glm::linearRand(-10.f, 10.f) });
+        entt::registry& reg = ecs::get();
 
-        kindling.set<positionComponent>({ position });
-        kindling.set<rotationComponent>({});
-        kindling.set<scaleComponent>({ {0, 0} });
+        reg.emplace<kindlingParticleComponent>(kindling, kindlingParticleComponent{ dir, 0.5f, 0.f});
+        reg.emplace<sinusoidFloatComponent>(kindling, sinusoidFloatComponent{ glm::linearRand(0.5f, 2.0f), glm::linearRand(0.5f, 3.0f), glm::linearRand(0.f, 6.28f) });
+        reg.emplace<angularVelocityComponent>(kindling, angularVelocityComponent{ {glm::linearRand(-10.f, 10.f)} });
+        reg.emplace<positionComponent>(kindling, positionComponent{ {position} });
+        reg.emplace<rotationComponent>(kindling, rotationComponent{ {} });
+        reg.emplace<scaleComponent>(kindling, scaleComponent{ {0, 0} });
+        reg.emplace<dynamicObjectTypeComponent>(kindling, dynamicObjectTypeComponent{ {dynamicObjectType::Kindling} });
 
-        kindling.set<dynamicObjectTypeComponent>({ dynamicObjectType::Kindling });
     }
 }
 
@@ -114,7 +97,8 @@ void rfct::updateKindlings(frameContext* ctx)
 {
     std::vector<entity> toBeRemovedEnt;
     for (uint8_t i = 0; i < ctx->fixedUpdateTimes; i++) {
-        kindlingParticlesComponentsQuery.each([&](flecs::entity smokeParticle, kindlingParticleComponent& particleData, sinusoidFloatComponent& sinFloat, angularVelocityComponent& angVel, positionComponent& pos, rotationComponent& rot, scaleComponent& sc) {
+        auto kindlingParticlesComponentsQuery = ecs::get().view<kindlingParticleComponent, sinusoidFloatComponent, angularVelocityComponent, positionComponent, rotationComponent, scaleComponent>();
+        for (auto [smokeParticle, particleData, sinFloat, angVel, pos, rot, sc] : kindlingParticlesComponentsQuery.each()) {
             if (particleData.currentProgress < particleData.fullLenght) {
                 particleData.currentProgress += fixedDeltaTime;
 
@@ -139,10 +123,10 @@ void rfct::updateKindlings(frameContext* ctx)
             else {
                 toBeRemovedEnt.push_back(smokeParticle);
             }
-            });
+            };
     }
     for (entity e : toBeRemovedEnt) {
-        if (ecs::get().is_valid(e)) {
+        if (e != entt::null) {
             ctx->scene->deleteDynamicEntity(e);
         }
     }
@@ -151,8 +135,9 @@ void rfct::updateKindlings(frameContext* ctx)
 void rfct::updateKindlingMatrices(frameContext* ctx)
 {
     sceneRenderData& rd = ctx->scene->getRenderData();
-    kindlingParticlesQuery.each([&](flecs::entity smokeParticle, kindlingParticleComponent& dis, dynamicSSBOIndexComponent& ssboData, positionComponent& pos, rotationComponent& rot, scaleComponent& sc) {
-            glm::mat4 mat = getModelMatrix(pos, rot, sc);
-            rd.updateMat(ctx, ssboData.indexInSSBO, &mat);
-        });
+    auto kindlingParticlesComponentsQuery = ecs::get().view<kindlingParticleComponent, dynamicSSBOIndexComponent, positionComponent, rotationComponent, scaleComponent>();
+    for (auto [smokeParticle, dis, ssboData, pos, rot, sc] : kindlingParticlesComponentsQuery.each()) {
+        glm::mat4 mat = getModelMatrix(pos, rot, sc);
+        rd.updateMat(ctx, ssboData.indexInSSBO, &mat);
+    };
 }

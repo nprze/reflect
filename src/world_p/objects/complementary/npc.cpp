@@ -22,49 +22,71 @@ namespace rfct {
 }
 
 namespace rfct {
-	void npcs::spawnData(scene* s, sceneSerializedData* sd) {
-		for (NPCInfo npcInfo : sd->npcs) {
-			dynamicBoxColliderComponent boc = { npcInfo.min, npcInfo.max };
-			entity npcEntity = s->createDynamicRect(&boc);
-			npcEntity.set<dynamicObjectTypeComponent>({ dynamicObjectType::NPC });
-			npcEntity.set<interactionDistanceComponent>({ npcInfo.interatcionRadius * npcInfo.interatcionRadius });
-			npcEntity.set<dialoguePathComponent>({ npcInfo.dialogueFile });
-			npcEntity.set<positionComponent>({ (boc.min + boc.max) * 0.5f });
-			npcsVec.push_back(npcEntity);
-		}
-	};
-	void npcs::resetLevel(const frameContext* ctx) {
-	};
-	void npcs::updateVisuals(const frameContext* ctx) {
-	};
-	void npcs::updateSystem(frameContext* ctx) {
-		if (ctx->state == gameState::gameplay) {
-			for (entity& npcEntity : npcsVec) {
-				if (ctx->fixedUpdateTimes) {
-					float dist = distanceSquared(&(ctx->scene->getPlayer()).get<positionComponent>()->position, &npcEntity.get<positionComponent>()->position);
-					float wantedDist = npcEntity.get<interactionDistanceComponent>()->interationDistanceSquared;
-					if (dist <= wantedDist) {
-						if (input::getInput().hold && ctx->scene->getPlayer().get<playerStateComponent>()->grounded) {
-							ctx->state = gameState::stateDialogue;
-							startDialogue(npcEntity.get<dialoguePathComponent>()->dialoguePath);
-						}
-						else {
-							debugDraw::drawText("talk to me", { 100.f, 100.f }, .3f);
-						}
-					}
-				}
-			}
-		}
+    void npcs::spawnData(scene* s, sceneSerializedData* sd) {
+        auto& reg = ecs::get();
 
-		if (ctx->state == gameState::stateDialogue) {
-			if (m_currentlyPlayingDialogue->update(ctx)) {
-				delete m_currentlyPlayingDialogue;
-				m_currentlyPlayingDialogue = nullptr;
-				ctx->state = gameState::gameplay;
-			}
-		}
+        for (const NPCInfo& npcInfo : sd->npcs) {
+            dynamicBoxColliderComponent boc = { npcInfo.min, npcInfo.max };
 
-	};
+            entt::entity npcEntity = s->createDynamicRect(&boc);
+
+            reg.emplace<dynamicObjectTypeComponent>(npcEntity, dynamicObjectType::NPC);
+            reg.emplace<interactionDistanceComponent>(
+                npcEntity, npcInfo.interatcionRadius * npcInfo.interatcionRadius
+            );
+            reg.emplace<dialoguePathComponent>(npcEntity, npcInfo.dialogueFile);
+            reg.emplace_or_replace<positionComponent>(npcEntity, (boc.min + boc.max) * 0.5f);
+
+            npcsVec.push_back(npcEntity);
+        }
+    };
+
+    void npcs::resetLevel(const frameContext* ctx) {
+    };
+
+    void npcs::updateVisuals(const frameContext* ctx) {
+    };
+
+    void npcs::updateSystem(frameContext* ctx) {
+        auto& reg = ecs::get();
+
+        if (ctx->state == gameState::gameplay) {
+            for (entt::entity npcEntity : npcsVec) {
+                if (ctx->fixedUpdateTimes) {
+                    const auto& playerPos = reg.get<positionComponent>(ctx->scene->getPlayer());
+                    const auto& npcPos = reg.get<positionComponent>(npcEntity);
+
+                    float dist = distanceSquared(&playerPos.position, &npcPos.position);
+
+                    float wantedDist = reg.get<interactionDistanceComponent>(npcEntity)
+                        .interationDistanceSquared;
+
+                    if (dist <= wantedDist) {
+                        const auto& playerState = reg.get<playerStateComponent>(ctx->scene->getPlayer());
+
+                        if (input::getInput().hold && playerState.grounded) {
+                            ctx->state = gameState::stateDialogue;
+
+                            const auto& dialogue = reg.get<dialoguePathComponent>(npcEntity);
+                            startDialogue(dialogue.dialoguePath);
+                        }
+                        else {
+                            debugDraw::drawText("talk to me", { 100.f, 100.f }, .3f);
+                        }
+                    }
+                }
+            }
+        }
+
+        if (ctx->state == gameState::stateDialogue) {
+            if (m_currentlyPlayingDialogue->update(ctx)) {
+                delete m_currentlyPlayingDialogue;
+                m_currentlyPlayingDialogue = nullptr;
+                ctx->state = gameState::gameplay;
+            }
+        }
+    };
+
 	void npcs::cleanupSystem() {
 		if (m_currentlyPlayingDialogue) {
 			delete m_currentlyPlayingDialogue;

@@ -26,9 +26,6 @@ glm::vec3 getColorWithFluctuate(float maxFluct = 0.2f, const glm::vec3& basicCol
 
 namespace rfct {
 
-	static flecs::query<vineStateComponent, vinePositionsComponent, vineLenghtComponent, dynamicBoxColliderComponent, positionComponent> vineQuery;
-	static flecs::query<vinePositionsComponent, vineVerticesComponent, positionComponent> vineVerticesQuery;
-
 	constexpr glm::vec2 vineGravity = { 0.f, -15.f };
 
 	entity vineClosestToPlayer;
@@ -37,14 +34,14 @@ namespace rfct {
 
 	void onCollision_Vine_StaticObj(entity vineEntity, entity collidedWith, glm::vec2 resolution) {
 		// narrow phase
-
- 		auto vinePosCom = vineEntity.get_mut<vinePositionsComponent>();
-		auto vineBasePos = vineEntity.get<positionComponent>()->position;
+		entt::registry& reg = ecs::get();
+ 		auto& vinePosCom = reg.get<vinePositionsComponent>(vineEntity);
+		glm::vec2 vineBasePos = reg.get<positionComponent>(vineEntity).position;
 		 
-		const glm::vec2& objectMin = collidedWith.get<staticBoxColliderComponent>()->min;
-		const glm::vec2& objectMax = collidedWith.get<staticBoxColliderComponent>()->max;
+		const glm::vec2& objectMin = reg.get<staticBoxColliderComponent>(collidedWith).min;
+		const glm::vec2 & objectMax = reg.get<staticBoxColliderComponent>(collidedWith).max;
 
-		std::vector<glm::vec2>& positions = vinePosCom->positions;
+		std::vector<glm::vec2>& positions = vinePosCom.positions;
 
 		for (glm::vec2& p : positions) {
 			glm::vec2 worldPos = vineBasePos + p;
@@ -78,15 +75,26 @@ namespace rfct {
 	}
 	void onCollision_Vine_DynamicObj(entity vineEntity, entity collidedWith) {
 		// narrow phase
-		if(collidedWith.get<dynamicObjectTypeComponent>()->passable) return;
-		if (vineEntity.get<vineStateComponent>()->holdingToThis) return; // update separately
-		glm::vec2 playerMin = collidedWith.get_mut<dynamicBoxColliderComponent>()->min + collidedWith.get<positionComponent>()->position;
-		glm::vec2 playerMax = collidedWith.get_mut<dynamicBoxColliderComponent>()->max + collidedWith.get<positionComponent>()->position;
+		entt::registry& reg = ecs::get();
+		if (reg.get<dynamicObjectTypeComponent>(collidedWith).passable)
+			return;
 
-		auto vinePosCom = vineEntity.get_mut<vinePositionsComponent>();
-		auto vineBasePos = vineEntity.get<positionComponent>()->position;
+		if (reg.get<vineStateComponent>(vineEntity).holdingToThis)
+			return; // update separately
 
-		std::vector<glm::vec2>& positions = vinePosCom->positions;
+		glm::vec2 playerMin =
+			reg.get<dynamicBoxColliderComponent>(collidedWith).min +
+			reg.get<positionComponent>(collidedWith).position;
+
+		glm::vec2 playerMax =
+			reg.get<dynamicBoxColliderComponent>(collidedWith).max +
+			reg.get<positionComponent>(collidedWith).position;
+
+		auto& vinePosCom = reg.get<vinePositionsComponent>(vineEntity);
+		auto& vineBasePos = reg.get<positionComponent>(vineEntity).position;
+
+
+		std::vector<glm::vec2>& positions = vinePosCom.positions;
 
 		for (glm::vec2& p : positions) {
 			glm::vec2 worldPos = vineBasePos + p;
@@ -123,45 +131,50 @@ namespace rfct {
 		glm::vec2 posMin = glm::vec2(FLT_MAX);
 		float distMin = FLT_MAX;
 		int curVine = 0;
-		int vineIndex = 0;
-		for (const glm::vec2& edgePos : vine.get<vinePositionsComponent>()->positions) {
-			if (len(PlayerPos - (edgePos + vine.get<positionComponent>()->position)) < distMin) {
-				posMin = edgePos + vine.get<positionComponent>()->position;
-				distMin = len(PlayerPos - (edgePos + vine.get<positionComponent>()->position));
+		int vineIndex = 0; 
+		for (const glm::vec2& edgePos : ecs::get().get<vinePositionsComponent>(vine).positions) {
+			const auto& vinePos = ecs::get().get<positionComponent>(vine).position;
+
+			float dist = len(PlayerPos - (edgePos + vinePos));
+			if (dist < distMin) {
+				posMin = edgePos + vinePos;
+				distMin = dist;
 				vineIndex = curVine;
 			}
+
 			curVine++;
 		}
 		return { posMin, vineIndex };
 	}
 
-	void constructBoundingBox(dynamicBoxColliderComponent* boundingBox, const vinePositionsComponent* vinePos)
+	void constructBoundingBox(dynamicBoxColliderComponent& boundingBox, const vinePositionsComponent& vinePos)
 	{
-		boundingBox->min = { FLT_MAX, FLT_MAX };
-		boundingBox->max = { FLT_MIN, FLT_MIN };
-		for (const glm::vec2& pos : vinePos->positions) {
-			boundingBox->max.x = std::max(pos.x, boundingBox->max.x);
-			boundingBox->max.y = std::max(pos.y, boundingBox->max.y);
+		boundingBox.min = { FLT_MAX, FLT_MAX };
+		boundingBox.max = { FLT_MIN, FLT_MIN };
+		for (const glm::vec2& pos : vinePos.positions) {
+			boundingBox.max.x = std::max(pos.x, boundingBox.max.x);
+			boundingBox.max.y = std::max(pos.y, boundingBox.max.y);
 
-			boundingBox->min.x = std::min(pos.x, boundingBox->min.x);
-			boundingBox->min.y = std::min(pos.y, boundingBox->min.y);
+			boundingBox.min.x = std::min(pos.x, boundingBox.min.x);
+			boundingBox.min.y = std::min(pos.y, boundingBox.min.y);
 		}
 	}
 	glm::vec2 simulateVinePlayerIsHolding(entity player,entity vineEntity, int vineEdgeIndex, const frameContext* fc)
 	{
-		auto vinePosCom = vineEntity.get_mut<vinePositionsComponent>();
-		auto vineBasePos = vineEntity.get<positionComponent>()->position;
+		entt::registry& reg = ecs::get();
+		auto& vinePosCom = reg.get<vinePositionsComponent>(vineEntity);
+		auto vineBasePos = reg.get<positionComponent>(vineEntity).position;
 
-		std::vector<glm::vec2>& positions = vineEntity.get_mut<vinePositionsComponent>()->positions;
-		std::vector<glm::vec2>& previousPositions = vineEntity.get_mut<vinePositionsComponent>()->previousPosition;
+		std::vector<glm::vec2>& positions = reg.get<vinePositionsComponent>(vineEntity).positions;
+		std::vector<glm::vec2>& previousPositions = reg.get<vinePositionsComponent>(vineEntity).previousPosition;
 
-		glm::vec2 playerVel = glm::vec2(player.get<inputVelocityComponent>()->velocity);
+		glm::vec2 playerVel = reg.get<inputVelocityComponent>(player).velocity;
 
 		glm::vec2 desiredMove = playerVel * 0.1f * fixedDeltaTime;
-		desiredMove.y = -.1f;
+		desiredMove.y = -0.1f;
 
+		glm::vec2 playerPos = reg.get<positionComponent>(player).position;
 
-		glm::vec2 playerPos = player.get<positionComponent>()->position;
 		glm::vec2 whereWeWantTheEdgeIndexToBeAtTheEnd = playerPos + desiredMove;
 		glm::vec2 generalDirection = whereWeWantTheEdgeIndexToBeAtTheEnd - (positions[vineEdgeIndex] + vineBasePos);
 
@@ -186,7 +199,7 @@ namespace rfct {
 
 					glm::vec2 dir = positions[i] - positions[i - 1];
 					float dist = glm::length(dir);
-					float diff = (dist - vineEntity.get<vineLenghtComponent>()->oneBoneLenght) / dist;
+					float diff = (dist - ecs::get().get<vineLenghtComponent>(vineEntity).oneBoneLenght) / dist;
 
 					positions[i - 1] += dir * 0.5f * diff;
 					positions[i] -= dir * 0.5f * diff;
@@ -194,7 +207,7 @@ namespace rfct {
 				positions[0] = glm::vec2(0.f, -.01f);
 			}
 		}
-		constructBoundingBox(vineEntity.get_mut<dynamicBoxColliderComponent>(), vineEntity.get<vinePositionsComponent>());
+		constructBoundingBox(ecs::get().get<dynamicBoxColliderComponent>(vineEntity), ecs::get().get<vinePositionsComponent>(vineEntity));
 		return positions[vineEdgeIndex] + vineBasePos;
 	}
 }
@@ -203,19 +216,6 @@ namespace rfct {
 
 	void vines::initSystem() {
 
-	}
-	void vines::createQueries()
-	{
-		vineQuery =
-			ecs::get().query_builder<vineStateComponent, vinePositionsComponent, vineLenghtComponent, dynamicBoxColliderComponent, positionComponent>()
-			.build();
-		vineVerticesQuery =
-			ecs::get().query_builder<vinePositionsComponent, vineVerticesComponent, positionComponent>()
-			.build();
-	};
-	void vines::deleteQueries() {
-		vineQuery.~query();
-		vineVerticesQuery.~query();
 	}
 	void vines::spawnData(scene* s, sceneSerializedData* sd) {
 		for (vineInfo& vi : sd->vines) {
@@ -272,44 +272,49 @@ namespace rfct {
 				s->getRenderData().updateMat(&simpleCtx, ol.indexInSSBO, &transform);
 			}
 
-			
-			entity e = ecs::get().entity<>()
-				.set<dynamicSSBOIndexComponent>({ ol.indexInSSBO })
-				.set<vertexRenderInfoComponent>({ ol.verticesCount, ol.vertexBufferOffset })
+			entt::registry& reg = ecs::get();
 
-				.set<positionComponent>({ vi.start })
-				.set<gravityComponent>({ 0.f,false,0.f })
-				.set<velocityComponent>({ {0.f, 0.f} })
+			entity e = ecs::get().create();
 
-				.set<staticObjCollisionCallbackComponent>(colCallback)
-				.set<dynamicObjCollisionCallbackComponent>(dynColCallback)
-				.set<dynamicBoxColliderComponent>({})
-				.set<dynamicObjectTypeComponent>({ dynamicObjectType::Vine })
+			reg.emplace<dynamicSSBOIndexComponent>(e, dynamicSSBOIndexComponent{ { ol.indexInSSBO } });
+			reg.emplace<vertexRenderInfoComponent>(e, vertexRenderInfoComponent{ ol.verticesCount, ol.vertexBufferOffset });
 
-				.set<vinePositionsComponent>(vpCom)
-				.set<vineBasePositionsComponent>(vbpCom)
-				.set<vineStateComponent>({ false })
-				.set<vineLenghtComponent>({ oneLineLen })
-				.set<vineVerticesComponent>(verts);
-			constructBoundingBox(e.get_mut<dynamicBoxColliderComponent>(), e.get<vinePositionsComponent>());
+			reg.emplace<positionComponent>(e, positionComponent{ { vi.start } });
+			reg.emplace<gravityComponent>(e, gravityComponent{ 0.f, false, 0.f });
+			reg.emplace<velocityComponent>(e, velocityComponent{ { 0.f, 0.f } });
+
+			reg.emplace<staticObjCollisionCallbackComponent>(e, staticObjCollisionCallbackComponent{ colCallback });
+			reg.emplace<dynamicObjCollisionCallbackComponent>(e, dynamicObjCollisionCallbackComponent{ dynColCallback });
+			reg.emplace<dynamicBoxColliderComponent>(e, dynamicBoxColliderComponent{ {} });
+			reg.emplace<dynamicObjectTypeComponent>(e, dynamicObjectTypeComponent{ { dynamicObjectType::Vine } });
+
+			reg.emplace<vinePositionsComponent>(e, vinePositionsComponent{ vpCom });
+			reg.emplace<vineBasePositionsComponent>(e, vineBasePositionsComponent{ vbpCom });
+			reg.emplace<vineStateComponent>(e, vineStateComponent{ { false } });
+			reg.emplace<vineLenghtComponent>(e, vineLenghtComponent{ { oneLineLen } });
+			reg.emplace<vineVerticesComponent>(e, vineVerticesComponent{ verts });
+
+			constructBoundingBox(reg.get<dynamicBoxColliderComponent>(e), reg.get<vinePositionsComponent>(e));
 		}
 		nearestVineEdgeToPlayerIndex = -1;
 	};
 	void vines::resetLevel(const frameContext* ctx) {
-		vineQuery.each([&](flecs::entity e, vineStateComponent& sc, vinePositionsComponent& positions, vineLenghtComponent& en, dynamicBoxColliderComponent& boc, positionComponent& pos) {
+		auto vineQuery = ecs::get().view<vineStateComponent, vinePositionsComponent, vineLenghtComponent, dynamicBoxColliderComponent, positionComponent>();
+		for (auto [ent, sc, positions, en, boc, pos] : vineQuery.each()) {
 
 			std::vector<glm::vec2>& previousPositions = positions.previousPosition;
-			std::vector<glm::vec2>& basePositions = e.get_mut<vineBasePositionsComponent>()->basePositions;
+			std::vector<glm::vec2>& basePositions = ecs::get().get<vineBasePositionsComponent>(ent).basePositions;
 
 			for (uint32_t i = 0; i < positions.positions.size(); ++i) {
 				positions.positions[i] = basePositions[i];
 				previousPositions[i] = basePositions[i];
 			}
-			});
+			};
 	};
 	void vines::updateVisuals(const frameContext* ctx) {
-		
-		vineVerticesQuery.each([&](flecs::entity e, vinePositionsComponent& pos, vineVerticesComponent& verts, positionComponent& posComp) {
+
+		auto vineQuery = ecs::get().view<vinePositionsComponent, vineVerticesComponent, positionComponent>();
+		for (auto [ent, pos, verts, posComp] : vineQuery.each()) {
 			std::vector<glm::vec2>& positions = pos.positions;
 			glm::vec2 start = posComp.position;
 			glm::vec3 white = { 1.f,1.f,1.f };
@@ -368,20 +373,21 @@ namespace rfct {
 				verts.vertices[i * 12 + 10].pos = v1;
 				verts.vertices[i * 12 + 11].pos = v3;
 
-				ctx->scene->getRenderData().updateDynamicVertices(ctx, e.get<vertexRenderInfoComponent>()->vertexBufferOffset, verts.vertices.data(), verts.vertices.size() * sizeof(Vertex));
+				ctx->scene->getRenderData().updateDynamicVertices(ctx, ecs::get().get<vertexRenderInfoComponent>(ent).vertexBufferOffset, verts.vertices.data(), verts.vertices.size() * sizeof(Vertex));
 
 			}
-			});
+		};
 	};
 	void vines::updateSystem(frameContext* ctx) {
 		if (ctx->fixedUpdateTimes) {
 			if (nearestVineEdgeToPlayerIndex != -1) {
-				if (vineClosestToPlayer.get<vineStateComponent>()->holdingToThis) {
-					ctx->scene->getPlayer().get_mut<positionComponent>()->position = simulateVinePlayerIsHolding(ctx->scene->getPlayer(), vineClosestToPlayer, nearestVineEdgeToPlayerIndex, ctx);
+				if (ecs::get().get<vineStateComponent>(vineClosestToPlayer).holdingToThis) {
+					ecs::get().get<positionComponent>(ctx->scene->getPlayer()).position = simulateVinePlayerIsHolding(ctx->scene->getPlayer(), vineClosestToPlayer, nearestVineEdgeToPlayerIndex, ctx);
 				}
 			}
 
-			vineQuery.each([&](flecs::entity e, vineStateComponent& sc, vinePositionsComponent& pos, vineLenghtComponent& vl, dynamicBoxColliderComponent& boc, positionComponent& posComp) {
+			auto vineQuery = ecs::get().view<vineStateComponent, vinePositionsComponent, vineLenghtComponent, dynamicBoxColliderComponent, positionComponent>();
+			for (auto [ent, sc, pos, vl, boc, position] : vineQuery.each()) {
 				if (sc.holdingToThis)return;
 				std::vector<glm::vec2>& positions = pos.positions;
 				std::vector<glm::vec2>& previousPositions = pos.previousPosition;
@@ -412,21 +418,21 @@ namespace rfct {
 					}
 
 				}
-				constructBoundingBox(&boc, &pos);
-				});
+				constructBoundingBox(boc, pos);
+				};
 		}
 	};
 	void vines::onStartHolding(nearestObject& nearest)
 	{
 		vineClosestToPlayer = nearest.object;
-		vineClosestToPlayer.get_mut<vineStateComponent>()->holdingToThis = true;
+		ecs::get().get<vineStateComponent>(vineClosestToPlayer).holdingToThis = true;
 		nearestVineEdgeToPlayerIndex = nearest.vineIndex;
 	}
 	void vines::onEndHolding()
 	{
 		nearestVineEdgeToPlayerIndex = -1;
-		if (vineClosestToPlayer != flecs::entity::null())
-			vineClosestToPlayer.get_mut<vineStateComponent>()->holdingToThis = false;
+		if (vineClosestToPlayer != entt::null)
+			ecs::get().get<vineStateComponent>(vineClosestToPlayer).holdingToThis = false;
 	}
 }
 

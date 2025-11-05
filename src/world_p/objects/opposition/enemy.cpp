@@ -16,44 +16,55 @@ namespace rfct {
 
 	animationBuffer animBuffer;
 
-	static flecs::query<velocityComponent, positionComponent, scaleComponent, enemyComponent> enemyQuery;
 	void onCollision_Enemy_StaticObj(entity enemy, entity collidedWith, glm::vec2 resolution) {
-		positionComponent* pos = enemy.get_mut<positionComponent>();
-		pos->position += resolution;
-		velocityComponent* vel = enemy.get_mut<velocityComponent>();
+		ecs::get().get<positionComponent>(enemy).position += resolution;
+		velocityComponent& vel = ecs::get().get<velocityComponent>(enemy);
 		if (resolution.x != 0) {
-			vel->velocity.x = 0.f;
-			enemyComponent* enComp = enemy.get_mut<enemyComponent>();
-			if (enComp->turningTime == 0.f)
-				enComp->turningTime = oneTurnTime;
+			vel.velocity.x = 0.f;
+			enemyComponent& enComp = ecs::get().get<enemyComponent>(enemy);
+			if (enComp.turningTime == 0.f)
+				enComp.turningTime = oneTurnTime;
 		}
 		else if (resolution.y != 0) {
-			vel->velocity.y = 0.f;
+			vel.velocity.y = 0.f;
 
 		}
 	}
 	void onCollision_Enemy_DynamicObj(entity enemy, entity collidedWith) {
-		if (collidedWith.get<dynamicObjectTypeComponent>()->passable) return;
-		const dynamicBoxColliderComponent* playerCol = collidedWith.get<dynamicBoxColliderComponent>();
-		const positionComponent* playerPos = collidedWith.get<positionComponent>();
-		const dynamicBoxColliderComponent* enemyCol = enemy.get<dynamicBoxColliderComponent>();
-		positionComponent* enemyPos = enemy.get_mut<positionComponent>();
-		glm::vec2 resolution = ResolveAABBCollision(enemyPos->position + enemyCol->min, enemyPos->position + enemyCol->max, playerCol->min + playerPos->position, playerCol->max + playerPos->position);
-		enemyPos->position += resolution;
-		velocityComponent* vel = enemy.get_mut<velocityComponent>();
+		entt::registry& reg = ecs::get();
+		if (reg.get<dynamicObjectTypeComponent>(collidedWith).passable)
+			return;
+
+		const auto& playerCol = reg.get<dynamicBoxColliderComponent>(collidedWith);
+		const auto& playerPos = reg.get<positionComponent>(collidedWith);
+		const auto& enemyCol = reg.get<dynamicBoxColliderComponent>(enemy);
+		auto& enemyPos = reg.get<positionComponent>(enemy);
+
+		glm::vec2 resolution = ResolveAABBCollision(
+			enemyPos.position + enemyCol.min,
+			enemyPos.position + enemyCol.max,
+			playerCol.min + playerPos.position,
+			playerCol.max + playerPos.position
+		);
+
+		enemyPos.position += resolution;
+
+		auto& vel = reg.get<velocityComponent>(enemy);
+
 		if (resolution.y == 0) {
-			vel->velocity.x = 0.f;
-			enemyComponent* enComp = enemy.get_mut<enemyComponent>();
-			if (enComp->turningTime == 0.f)
-				enComp->turningTime = oneTurnTime;
+			vel.velocity.x = 0.f;
+
+			auto& enComp = reg.get<enemyComponent>(enemy);
+			if (enComp.turningTime == 0.f)
+				enComp.turningTime = oneTurnTime;
 		}
 		else if (resolution.x == 0) {
-			vel->velocity.y = 0.f;
-
+			vel.velocity.y = 0.f;
 		}
-		if (collidedWith.get<dynamicObjectTypeComponent>()->type == dynamicObjectType::Player) {
+
+		if (reg.get<dynamicObjectTypeComponent>(collidedWith).type == dynamicObjectType::Player) {
 			if (!(resolution.x == 0 && resolution.y == 0)) {
-				collidedWith.get_mut<playerLifeComponent>()->alive = false;
+				reg.get<playerLifeComponent>(collidedWith).alive = false;
 			}
 		}
 	}
@@ -63,16 +74,6 @@ namespace rfct {
 	void enemies::initSystem()
 	{
 		animBuffer.init(10000);
-	}
-
-	void enemies::createQueries()
-	{
-		enemyQuery =
-			ecs::get().query_builder<velocityComponent, positionComponent, scaleComponent, enemyComponent>()
-			.build();
-	}
-	void enemies::deleteQueries() {
-		enemyQuery.~query();
 	}
 
 	void enemies::spawnData(scene* s, sceneSerializedData* sd) {
@@ -113,19 +114,19 @@ namespace rfct {
 
 			eComp.animIndex = 0;
 			eComp.frameIndex = 0;
-
-			entity enemy = ecs::get().entity<>()
-				.set<dynamicSSBOIndexComponent>({ ssboMatrixIndex })
-				.set<rotationComponent>({ trans.rot })
-				.set<scaleComponent>({ trans.scale })
-				.set<positionComponent>({ trans.pos })
-				.set<gravityComponent>({ 0.97, true, 3.f })
-				.set<velocityComponent>({ glm::vec2(0.f,0.f) })
-				.set<dynamicBoxColliderComponent>(bounds)
-				.set<staticObjCollisionCallbackComponent>(colCallback)
-				.set<dynamicObjCollisionCallbackComponent>(dynColCallback)
-				.set<enemyComponent>(eComp)
-				.set<dynamicObjectTypeComponent>({ dynamicObjectType::Enemy, false });
+			entt::registry& reg = ecs::get();
+			entity enemy = ecs::get().create();
+			reg.emplace<dynamicSSBOIndexComponent>(enemy, dynamicSSBOIndexComponent{ { ssboMatrixIndex } });
+			reg.emplace<rotationComponent>(enemy, rotationComponent{ trans.rot });
+			reg.emplace<scaleComponent>(enemy, scaleComponent{ trans.scale });
+			reg.emplace<positionComponent>(enemy, positionComponent{ trans.pos });
+			reg.emplace<gravityComponent>(enemy, gravityComponent{ 0.97, true, 3.f });
+			reg.emplace<velocityComponent>(enemy, velocityComponent{ { glm::vec2(0.f, 0.f) } });
+			reg.emplace<dynamicBoxColliderComponent>(enemy, dynamicBoxColliderComponent{ bounds });
+			reg.emplace<staticObjCollisionCallbackComponent>(enemy, staticObjCollisionCallbackComponent{ colCallback });
+			reg.emplace<dynamicObjCollisionCallbackComponent>(enemy, dynamicObjCollisionCallbackComponent{ dynColCallback });
+			reg.emplace<enemyComponent>(enemy, enemyComponent{ eComp });
+			reg.emplace<dynamicObjectTypeComponent>(enemy, dynamicObjectTypeComponent{ dynamicObjectType::Enemy, false });
 
 		}
 	};
@@ -133,14 +134,17 @@ namespace rfct {
 	void enemies::resetLevel(const frameContext* ctx) {};
 
 	void enemies::updateVisuals(const frameContext* ctx) {
-		enemyQuery.each([&](flecs::entity e, velocityComponent& vel, positionComponent& pos, scaleComponent& sc, enemyComponent& en) {
-			ctx->scene->updateTransformData(ctx, e);
-			});
+
+		auto enemyQuery = ecs::get().view<velocityComponent, positionComponent, scaleComponent, enemyComponent>();
+		for (auto [ent, vel, pos, sc, en] : enemyQuery.each()) {
+			ctx->scene->updateTransformData(ctx, ent);
+		}
 	};
 
 	void enemies::updateSystem(frameContext* ctx) {
 
-		enemyQuery.each([&](flecs::entity e, velocityComponent& vel, positionComponent& pos, scaleComponent& sc, enemyComponent& en) {
+		auto enemyQuery = ecs::get().view<velocityComponent, positionComponent, scaleComponent, enemyComponent>();
+		for (auto [ent, vel, pos, sc, en] : enemyQuery.each()) {
 
 			frameAnimation* currentAnim = (frameAnimation*)((char*)&en.walkFrameAnim + (en.animIndex * sizeof(frameAnimation)));
 			en.turningTime = std::clamp(en.turningTime - ctx->dt, 0.f, oneTurnTime);
@@ -198,25 +202,25 @@ namespace rfct {
 				if (en.turningTime == 0.f)
 					en.turningTime = oneTurnTime;
 			}
-			}
-		);
+		};
 	};
 
 	void enemies::cleanupSystem() {
 		animBuffer.cleanup();
-		deleteQueries();
 	}
 
 	void enemies::drawFrameAnimSprites(vk::CommandBuffer& cmd, frameContext* ctx)
 	{
 		vk::Buffer vertexBuffers[] = { animBuffer.getBuffer() };
-		enemyQuery.each([&](flecs::entity e, velocityComponent& vel, positionComponent& pos, scaleComponent& sc, enemyComponent& en) {
+
+		auto enemyQuery = ecs::get().view<velocityComponent, positionComponent, scaleComponent, enemyComponent>();
+		for (auto [ent, vel, pos, sc, en] : enemyQuery.each()) {
 
 			frameAnimation* currentAnim = (frameAnimation*)((char*)&en.walkFrameAnim + (en.animIndex * sizeof(frameAnimation)));
 			vk::DeviceSize offsets[] = { currentAnim->bufferOffsetInBytes + en.bufferOffset };
 			cmd.bindVertexBuffers(0, 1, vertexBuffers, offsets);
 			cmd.draw(currentAnim->trianglesPerFrame[en.animIndex] * 3, 1, 0, 0);
 
-			});
+		};
 	}
 }

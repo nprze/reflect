@@ -16,7 +16,7 @@ namespace rfct {
 		entity createPlayer(scene* sc, const glm::vec2& spawnPoint);
 		void update(frameContext* ctx);
 		void endHold(scene* sc);
-		entity belowBlock = flecs::entity::null();
+		entity belowBlock = entt::null;
 	private:
 		entity player;
 		float walkSpeed;
@@ -56,13 +56,6 @@ namespace rfct {
 		float dashCooldown;
 		float holdCooldown;
 		float holdJumpCooldown;
-	private:
-		// to simplify
-		positionComponent* posComp;
-		velocityComponent* velComp;
-		playerStateComponent* stateComp;
-		inputVelocityComponent* inputVelComp;
-
 	private:
 		nearestObject findObjectToHold();
 

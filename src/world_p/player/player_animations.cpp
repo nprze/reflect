@@ -44,28 +44,29 @@ void rfct::playerAnimations::unloadAnimations()
 void rfct::playerAnimations::update(const glm::vec2& playerVel, const glm::vec2& playerPos, frameContext& ctx, entity player)
 {
 	RFCT_PROFILE_SCOPE("player animation update");
+	entt::registry& reg = ecs::get();
 
-	const playerStateComponent* ps = player.get<playerStateComponent>();
-	const inputVelocityComponent* ivel = player.get<inputVelocityComponent>();
-	const velocityComponent* pvel = player.get<velocityComponent>();
+	const playerStateComponent& ps =reg.get<playerStateComponent>(player);
+	const inputVelocityComponent& ivel =reg.get<inputVelocityComponent>(player);
+	const velocityComponent& pvel =reg.get<velocityComponent>(player);
 	dashRotationAnimationTime = std::clamp(dashRotationAnimationTime - ctx.dt, 0.f, 10.f);
 	if (dashRotationAnimationTime > 0.f) {
 		float x = std::clamp((dashFullTime - dashRotationAnimationTime) / dashFullTime, 0.f, 1.f); // dash progress
 		float rot = (angleMax) * (-std::pow(x, 1) + 1);
-		player.get_mut<rotationComponent>()->rotation.z = rot;
+		reg.get<rotationComponent>(player).rotation.z = rot;
 
 	}
 	else {
-		player.get_mut<rotationComponent>()->rotation.z = 0.0f;
+		reg.get<rotationComponent>(player).rotation.z = 0.0f;
 	}
 	constexpr float velocityTreshold = 0.03f;
-	switch (ps->state) {
+	switch (ps.state) {
 	case playerState::normal: {
-		if (pvel->velocity.y < -velocityTreshold) {
+		if (pvel.velocity.y < -velocityTreshold) {
 			// falling
 			changeIfNotCurrent(&m_jumpFall);
 		}
-		else if (pvel->velocity.y > velocityTreshold) {
+		else if (pvel.velocity.y > velocityTreshold) {
 			// going up, but not necesarily jumping, eg.jump booster
 			changeIfNotCurrent(&m_jumpTurnover);
 
@@ -73,7 +74,7 @@ void rfct::playerAnimations::update(const glm::vec2& playerVel, const glm::vec2&
 		else {
 			ifThisChangeToThat(&m_jumpFall, &m_jumpReturn);
 			if (!isThisPlaying(&m_jumpReturn)) {
-				if (std::abs(ivel->velocity.x) > 0.1f) {
+				if (std::abs(ivel.velocity.x) > 0.1f) {
 					changeIfNotCurrent(&m_walking);
 				}
 				else {
@@ -84,14 +85,14 @@ void rfct::playerAnimations::update(const glm::vec2& playerVel, const glm::vec2&
 		break;
 	}
 	case playerState::jumping: {
-		if (pvel->velocity.y != 0.f || ivel->velocity.y != 0.f) {
+		if (pvel.velocity.y != 0.f || ivel.velocity.y != 0.f) {
 			if (!isAnyJumpAnimPlaying()) changeAnimation(&m_jumpUp);
-			if (between(pvel->velocity.y, 0.6f, 3.f)) { changeIfNotCurrent(&m_jumpUp); }
-			if (between(pvel->velocity.y, -0.3f, 0.6f)) { ifThisChangeToThat(&m_jumpUp, &m_jumpTurnover); }
-			if (between(pvel->velocity.y, -10.f, -0.3f)) { ifThisChangeToThat(&m_jumpTurnover , &m_jumpFall); }
+			if (between(pvel.velocity.y, 0.6f, 3.f)) { changeIfNotCurrent(&m_jumpUp); }
+			if (between(pvel.velocity.y, -0.3f, 0.6f)) { ifThisChangeToThat(&m_jumpUp, &m_jumpTurnover); }
+			if (between(pvel.velocity.y, -10.f, -0.3f)) { ifThisChangeToThat(&m_jumpTurnover, &m_jumpFall); }
 		}
 		else {
-			if (isAnyJumpAnimPlaying()) { 
+			if (isAnyJumpAnimPlaying()) {
 				changeIfNotCurrent(&m_jumpReturn);
 			}
 		}
@@ -99,10 +100,10 @@ void rfct::playerAnimations::update(const glm::vec2& playerVel, const glm::vec2&
 	}
 	case playerState::dashing: {
 		glm::vec2 dir = playerController::get().dashVelocity;
-		if (dir.x == 0.f && dir.y!= 0.f) {
+		if (dir.x == 0.f && dir.y != 0.f) {
 			if (dir.y > 0.f)
 				changeIfNotCurrent(&m_dashUp);
-			else 
+			else
 				changeIfNotCurrent(&m_dashDown);
 		}
 		else {
@@ -120,7 +121,7 @@ void rfct::playerAnimations::update(const glm::vec2& playerVel, const glm::vec2&
 		break;
 	}
 	case playerState::holdingBlocks: {
-		if (pvel->velocity.y != 0.f) {
+		if (pvel.velocity.y != 0.f) {
 			changeIfNotCurrent(&m_climb);
 		}
 		else {
@@ -129,73 +130,9 @@ void rfct::playerAnimations::update(const glm::vec2& playerVel, const glm::vec2&
 		break;
 	}
 	default: {
-		RFCT_CRITICAL("state unknown: {}", (uint8_t)ps->state);
+		RFCT_CRITICAL("state unknown: {}", (uint8_t)ps.state);
 	}
 	}
-	/*
-	const playerDashStateComponent* dc = player.get<playerDashStateComponent>();
-	if (dc->dashing) {
-		if (m_currentAnimation != &m_dashStart && m_currentAnimation != &m_dashEnd) {
-			changeAnimation(&m_dashStart);
-		}
-		else {
-			if (m_currentAnimation->endedPlaying) {
-				changeAnimation(&m_dashEnd);
-			}
-		}
-	}
-	else {
-		if (!player.get<playerStateComponent>()->grounded) {
-			if (m_currentAnimation == &m_walking || m_currentAnimation == &m_idle) {
-				// change anim
-				changeAnimation(&m_jumpStart);
-			}
-			else {
-				if (m_currentAnimation == &m_jumpStart) {
-					if (m_jumpStart.endedPlaying) {
-						changeAnimation(&m_jumpUp);
-					}
-				}
-				else {
-					if (m_currentAnimation == &m_jumpUp) {
-						if (playerVel.y < 1.f) {
-							changeAnimation(&m_jumpTurnover);
-						}
-					}
-					else {
-						if (m_currentAnimation == &m_jumpTurnover) {
-							if (playerVel.y <= 0.1f) {
-								changeAnimation(&m_jumpFall);
-							}
-
-						}
-					}
-				}
-			}
-		}
-		else {
-			if (m_currentAnimation == &m_jumpFall) {
-				changeAnimation(&m_jumpReturn);
-			}
-			else {
-				if (m_currentAnimation == &m_jumpReturn && !m_jumpReturn.endedPlaying) {
-					// just update normally
-				}
-				else {
-					if (std::abs(playerVel.x) > 0.1f) {
-						if (m_currentAnimation != &m_walking) {
-							changeAnimation(&m_walking);
-						}
-					}
-					else {
-						if (m_currentAnimation != &m_idle) {
-							changeAnimation(&m_idle);
-						}
-					}
-				}
-			}
-		}
-	}*/
 
 	m_timeSinceFrameChanged += ctx.dt;
 	if (m_timeSinceFrameChanged > m_currentAnimation->timePerFrame) {

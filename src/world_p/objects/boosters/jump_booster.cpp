@@ -1,5 +1,4 @@
 #include "jump_booster.h"
-#include <flecs/flecs.h>
 #include "world_p/components.h"
 #include "world_p/object_components.h"
 #include "world_p/transform.h"
@@ -9,12 +8,13 @@
 
 namespace rfct {
 	constexpr float boostAnimTime = 0.5f;
-	static flecs::query<scaleComponent, dynamicBoxColliderComponent, jumpBoosterComponent> jumpBoosterQuery;
 	void onCollision_JumpBooster_DynamicObj(entity enemy, entity collidedWith) {
-		if (collidedWith.get<dynamicObjectTypeComponent>()->type != dynamicObjectType::Player) return;
-		collidedWith.get_mut<velocityComponent>()->velocity.y = 3.f;
-		collidedWith.get_mut<playerStateComponent>()->dashCharges = 1;
-		enemy.get_mut<jumpBoosterComponent>()->timeSinceBoost = 0.f;
+		entt::registry& reg = ecs::get();
+		if (reg.get<dynamicObjectTypeComponent>(collidedWith).type != dynamicObjectType::Player) return;
+
+		reg.get<velocityComponent>(collidedWith).velocity.y = 3.f;
+		reg.get<playerStateComponent>(collidedWith).dashCharges = 1;
+		reg.get<jumpBoosterComponent>(enemy).timeSinceBoost = 0.0f;
 	}
 
 	std::vector<Vertex> jumpBoosterVertices = {
@@ -50,14 +50,6 @@ namespace rfct {
 
 
 namespace rfct {
-	void jumpBoosters::createQueries() {
-		jumpBoosterQuery =
-			ecs::get().query_builder<scaleComponent, dynamicBoxColliderComponent, jumpBoosterComponent>()
-			.build();
-	}
-	void jumpBoosters::deleteQueries() {
-		jumpBoosterQuery.~query();
-	}
 	void jumpBoosters::spawnData(scene* s, sceneSerializedData* sd) {
 		uint8_t i = 0;
 		for (const JumpBoosterInfo& e : sd->boosters) {
@@ -76,19 +68,19 @@ namespace rfct {
 
 			jumpBoosterComponent eComp = {};
 
-
-
+			entt::registry& reg = ecs::get();
 			entity jump = s->createDynamicRenderingEntity((i % 2) ? &jumpBoosterVertices1 : &jumpBoosterVertices, &model);
-			jump
-				.set<rotationComponent>({ trans.rot })
-				.set<scaleComponent>({ trans.scale })
-				.set<positionComponent>({ trans.pos })
-				.set<gravityComponent>({ 0.97, false, 3.f })
-				.set<velocityComponent>({ glm::vec2(0.f,0.f) })
-				.set<dynamicBoxColliderComponent>(bounds)
-				.set<dynamicObjCollisionCallbackComponent>(dynColCallback)
-				.set<jumpBoosterComponent>(eComp)
-				.set<dynamicObjectTypeComponent>({ dynamicObjectType::JumpBooster, false });
+
+			reg.emplace_or_replace<rotationComponent>(jump, rotationComponent{ trans.rot });
+			reg.emplace_or_replace<scaleComponent>(jump, scaleComponent{ trans.scale });
+			reg.emplace_or_replace<positionComponent>(jump, positionComponent{ trans.pos });
+			reg.emplace_or_replace<gravityComponent>(jump, gravityComponent{ 0.97, false, 3.f });
+			reg.emplace_or_replace<velocityComponent>(jump, velocityComponent{ glm::vec2(0.f, 0.f) });
+			reg.emplace_or_replace<dynamicBoxColliderComponent>(jump, bounds);
+			reg.emplace_or_replace<dynamicObjCollisionCallbackComponent>(jump, dynColCallback);
+			reg.emplace_or_replace<jumpBoosterComponent>(jump, eComp);
+			reg.emplace_or_replace<dynamicObjectTypeComponent>(jump, dynamicObjectTypeComponent{ dynamicObjectType::JumpBooster, false });
+
 			i++;
 		}
 	};
@@ -97,7 +89,8 @@ namespace rfct {
 	void jumpBoosters::updateVisuals(const frameContext* ctx) {
 	};
 	void jumpBoosters::updateSystem(frameContext* ctx) {
-		jumpBoosterQuery.each([&](flecs::entity e, scaleComponent& sc, dynamicBoxColliderComponent& box, jumpBoosterComponent& en) {
+		auto jumpBoosterQuery = ecs::get().view<scaleComponent, dynamicBoxColliderComponent, jumpBoosterComponent, dynamicSSBOIndexComponent>();
+		for (auto [ent, sc, box, en, i] : jumpBoosterQuery.each()) {
 			glm::vec2 heightPlus = { 0,0 };
 			en.timeSinceBoost += (en.timeSinceBoost == -1.f ? 0.f : 1.f) * ctx->fixedUpdateTimes * fixedDeltaTime;
 			if (en.timeSinceBoost >= boostAnimTime) {
@@ -110,7 +103,7 @@ namespace rfct {
 			sc.scale.y = 1.0f + heightPlus.y;
 			sc.scale.x = 1.0f - (heightPlus.y * 0.3);
 
-			ctx->scene->updateTransformData(ctx, e);
-			});
+			ctx->scene->updateTransformData(ctx, ent);
+		};
 	};
 }

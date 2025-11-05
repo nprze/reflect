@@ -5,8 +5,6 @@
 namespace rfct {
 	struct objectSystem {
 		virtual void initSystem() = 0;
-		virtual void createQueries() = 0;
-		virtual void deleteQueries() = 0;
 		virtual void spawnData(scene* s, sceneSerializedData* sd) = 0;
 		virtual void resetLevel(const frameContext* ctx) = 0;
 		virtual void updateVisuals(const frameContext* ctx) = 0;

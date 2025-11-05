@@ -7,8 +7,6 @@ namespace rfct {
 
 	struct enemies : objectSystem {
 		void initSystem();
-		void createQueries() override;
-		void deleteQueries() override;
 		void spawnData(scene* s, sceneSerializedData* sd);
 		void resetLevel(const frameContext* ctx);
 		void updateVisuals(const frameContext* ctx);

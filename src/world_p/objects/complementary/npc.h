@@ -8,8 +8,6 @@ namespace rfct {
 
 	struct npcs : objectSystem {
 		inline void initSystem() {};
-		inline void createQueries() {};
-		inline void deleteQueries() {};
 		void spawnData(scene* s, sceneSerializedData* sd);
 		void resetLevel(const frameContext* ctx);
 		void updateVisuals(const frameContext* ctx);

@@ -12,15 +12,15 @@ namespace rfct {
 	static entity cameraEntity;
     static glm::mat4 projectionMatrix;
 
-    void recalculateProjectionMatrix(const cameraComponent* cam) {
+    void recalculateProjectionMatrix(cameraComponent& cam) {
         glm::mat4 screenRot = glm::rotate(glm::mat4(1), glm::radians(world::getWorld().screenViewTransformDegrees), glm::vec3(0.0f, 0.0f, 1.0f));
-        projectionMatrix = screenRot* glm::perspective(glm::radians(cam->fov), cam->aspectRatio, cam->nearPlane, cam->farPlane);
+        projectionMatrix = screenRot* glm::perspective(glm::radians(cam.fov), cam.aspectRatio, cam.nearPlane, cam.farPlane);
     }
 
     void setCamera(entity camera)
     {
 		cameraEntity = camera;
-		recalculateProjectionMatrix(camera.get<cameraComponent>());
+		recalculateProjectionMatrix(ecs::get().get<cameraComponent>(camera));
     }
     void cameraComponentOnUpdate(float dt, entity player)
     {
@@ -30,30 +30,38 @@ namespace rfct {
             cameraEntity.get_mut<positionComponent>()->position.x += dt * input::getInput().cameraXAxis;
             cameraEntity.get_mut<positionComponent>()->position.y += dt * input::getInput().cameraYAxis;
         }
-        else*/  {
+        else*/
             //glm::vec2 playerPos = { 2,7 };
-            glm::vec2 playerPos = player.get<positionComponent>()->position;
-            cameraEntity.get_mut<position3DComponent>()->position.x = playerPos.x;
-            cameraEntity.get_mut<position3DComponent>()->position.y = playerPos.y;
-        }
+        entt::registry& reg = ecs::get();
+        glm::vec2 playerPos = reg.get<positionComponent>(player).position;
+
+        // Move camera to player
+        auto& camPos3D = reg.get<position3DComponent>(cameraEntity);
+        camPos3D.position.x = playerPos.x;
+        camPos3D.position.y = playerPos.y;
+
+        // Handle framebuffer resize
         if (rfct::renderer::getRen().getRenderImagesManager().getSwapChain().framebufferResized) {
-            cameraEntity.get_mut<cameraComponent>()->aspectRatio = renderer::getRen().getAspectRatio();
-			recalculateProjectionMatrix(cameraEntity.get<cameraComponent>());
+            auto& camComp = reg.get<cameraComponent>(cameraEntity);
+            camComp.aspectRatio = renderer::getRen().getAspectRatio();
+            recalculateProjectionMatrix(camComp);
         }
-        recalculateProjectionMatrix(cameraEntity.get<cameraComponent>());
+
+        // Always recalc projection
+        recalculateProjectionMatrix(reg.get<cameraComponent>(cameraEntity));
 
     }
 
     const glm::mat4 flipY = glm::scale(glm::mat4(1.0f), glm::vec3(1, -1, 1));
     glm::mat4 getViewMatrix() {
         glm::mat4 model = glm::mat4(1.0f);
-        const position3DComponent* position = cameraEntity.get<position3DComponent>();
-        model = glm::translate(model, (glm::vec3)position->position);
-        const rotationComponent* rotation = cameraEntity.get<rotationComponent>();
+        position3DComponent& position = ecs::get().get<position3DComponent>(cameraEntity);
+        model = glm::translate(model, (glm::vec3)position.position);
+        rotationComponent& rotation = ecs::get().get<rotationComponent>(cameraEntity);
 
-        glm::mat4 rotationMat = glm::yawPitchRoll(rotation->rotation.x, rotation->rotation.y, 0.f);
+        glm::mat4 rotationMat = glm::yawPitchRoll(rotation.rotation.x, rotation.rotation.y, 0.f);
         glm::vec3 direction = glm::vec3(rotationMat * glm::vec4(0, 0, -1, 1));
-        return flipY * glm::lookAt(position->position, position->position + direction, glm::vec3(0, 1, 0));
+        return flipY * glm::lookAt(position.position, position.position + direction, glm::vec3(0, 1, 0));
     }
     glm::mat4 getVPMatrix() {
 

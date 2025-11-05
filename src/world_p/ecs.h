@@ -1,14 +1,13 @@
 #pragma once
-#include "flecs/flecs.h"
+#include "entt/entt.hpp"
 namespace rfct {
 	class ecs {
 	public:
-		inline static flecs::world& get()
+		inline static entt::registry& get()
 		{
-			return world;
+			return registry;
 		}
-		static void recreateWorld();
 	private:
-		static flecs::world world;
+		static entt::registry registry;
 	};
 }

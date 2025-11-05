@@ -23,14 +23,12 @@ namespace rfct {
     std::vector<entity> cigarettesVec;
     uint8_t lastCigaretteIndex = 0;
 
-    static flecs::query<cigaretteUpdateComponent, positionComponent, velocityComponent, angularVelocityComponent, rotationComponent> cigaretteComponentsQuery;
-    static flecs::query<cigaretteUpdateComponent, dynamicSSBOIndexComponent, positionComponent, rotationComponent, scaleComponent> cigaretteMatricesQuery;
 
 
     std::vector<rfct::Vertex> cigaretteModelVertices;
     void cigarettes::initSystem()
     {
-        cigarettesVec.assign(cigarettesMaxCount, entity::null());
+        cigarettesVec.assign(cigarettesMaxCount, entt::null);
 
         // vertices
         cigaretteModelVertices.resize(12);
@@ -79,21 +77,6 @@ namespace rfct {
         }
 
     }
-    void cigarettes::createQueries()
-    {
-        cigaretteComponentsQuery =
-            ecs::get().query_builder<cigaretteUpdateComponent, positionComponent, velocityComponent, angularVelocityComponent, rotationComponent>()
-            .build();
-
-        cigaretteMatricesQuery =
-            ecs::get().query_builder<cigaretteUpdateComponent, dynamicSSBOIndexComponent, positionComponent, rotationComponent, scaleComponent>()
-            .build();
-    }
-    void cigarettes::deleteQueries()
-    {
-        cigaretteComponentsQuery.~query();
-        cigaretteMatricesQuery.~query();
-    }
     void cigarettes::spawnData(scene* s, sceneSerializedData* sd)
     {
     }
@@ -101,23 +84,26 @@ namespace rfct {
     {
         for (entity& e : cigarettesVec)
         {
-            if (e!= entity::null())
+            if (e!= entt::null)
                 ctx->scene->deleteDynamicEntity(e);
-            e = entity::null();
+            e = entt::null;
         }
     }
     void cigarettes::updateVisuals(const frameContext* ctx) {
         sceneRenderData& rd = ctx->scene->getRenderData();
-        cigaretteMatricesQuery.each([&](flecs::entity cigaretteEntity, cigaretteUpdateComponent& upd, dynamicSSBOIndexComponent& ssboData, positionComponent& pos, rotationComponent& rot, scaleComponent& sc) {
+
+        auto gravityVelocityPositionBoxQuery = ecs::get().view<cigaretteUpdateComponent, dynamicSSBOIndexComponent, positionComponent, rotationComponent, scaleComponent>();
+        for (auto [ent, upd, ssboData, pos, rot, sc] : gravityVelocityPositionBoxQuery.each()) {
             glm::mat4 mat = getModelMatrix(pos, rot, sc);
             rd.updateMat(ctx, ssboData.indexInSSBO, &mat);
-            });
+        };
 
     }
     void cigarettes::updateSystem(frameContext* ctx)
     {
         sceneRenderData& rd = ctx->scene->getRenderData();
-        cigaretteComponentsQuery.each([&](flecs::entity cigaretteEntity, cigaretteUpdateComponent& update, positionComponent& pos, velocityComponent& velocity, angularVelocityComponent& angVel, rotationComponent& rotation) {
+        auto cigaretteComponentsQuery = ecs::get().view<cigaretteUpdateComponent, positionComponent, velocityComponent, angularVelocityComponent, rotationComponent>();
+        for (auto [cigaretteEntity, update, pos, velocity, angVel, rotation] : cigaretteComponentsQuery.each()) {
             if (update.shouldBeUpdated) {
                 for (uint8_t i = 0; i < ctx->fixedUpdateTimes; ++i) {
                     // Apply gravity
@@ -143,12 +129,12 @@ namespace rfct {
                 }
 
             }
-            });
+            };
     }
     void cigarettes::onDash(frameContext* fc, const entity entityPlayer, const bool facingRight)
     {
         entity newCigarette = constructCigarette(fc, entityPlayer, facingRight);
-        if (cigarettesVec[lastCigaretteIndex] != entity::null()) {
+        if (cigarettesVec[lastCigaretteIndex] != entt::null) {
             fc->scene->deleteDynamicEntity(cigarettesVec[lastCigaretteIndex]);
         }
         cigarettesVec[lastCigaretteIndex] = (newCigarette);
@@ -159,19 +145,20 @@ namespace rfct {
 namespace rfct {
     void onCollision_Cigarette_StaticObj(entity cigarette, entity collidedWith, glm::vec2 resolution)
     {
-        auto* rot = cigarette.get_mut<rotationComponent>();
-        auto* pos = cigarette.get_mut<positionComponent>();
-        auto* vel = cigarette.get_mut<velocityComponent>();
-        auto* angVel = cigarette.get_mut<angularVelocityComponent>();
+        entt::registry& reg = ecs::get();
+        auto& rot = reg.get<rotationComponent>(cigarette);
+        auto& pos = reg.get<positionComponent>(cigarette);
+        auto& vel = reg.get<velocityComponent>(cigarette);
+        auto& angVel = reg.get<angularVelocityComponent>(cigarette);
 
-        auto* collidedWithAABB = collidedWith.get<staticBoxColliderComponent>();
+        auto& collidedWithAABB = reg.get<staticBoxColliderComponent>(collidedWith);
 
 
-        pos->position += resolution;
+        pos.position += resolution;
 
-        if (!cigarette.get<cigaretteUpdateComponent>()->spawnedSmoke) {
-            cigarette.get_mut<cigaretteUpdateComponent>()->spawnedSmoke = true;
-            cigarette.get_mut<cigaretteUpdateComponent>()->shouldSpawnSmoke = true;
+        if (!reg.get<cigaretteUpdateComponent>(cigarette).spawnedSmoke) {
+            reg.get<cigaretteUpdateComponent>(cigarette).spawnedSmoke = true;
+            reg.get<cigaretteUpdateComponent>(cigarette).shouldSpawnSmoke = true;
         }
     }
 }
@@ -180,18 +167,20 @@ namespace rfct {
 entity rfct::cigarettes::constructCigarette(const frameContext* fc, const entity entityPlayer, const bool facingRight)
 {
     constexpr float min_val = std::min(betweenVer, betweenHor);
+    entt::registry& reg = ecs::get();
 
-    glm::mat4 transMat = glm::translate(glm::mat4(1.f), glm::vec3(entityPlayer.get<positionComponent>()->position, 0.f));
+    glm::mat4 transMat = glm::translate(glm::mat4(1.f), glm::vec3(reg.get<positionComponent>(entityPlayer).position, 0.f));
     entity newCigarette = fc->scene->createDynamicRenderingEntity(&cigaretteModelVertices, &transMat);
-    newCigarette.set<cigaretteUpdateComponent>({ true });
-    newCigarette.set<positionComponent>({ entityPlayer.get<positionComponent>()->position });
-    newCigarette.set<velocityComponent>({ .5f * glm::vec2{facingRight ? -1.f : 1.f, 1.f} });
-    newCigarette.set<angularVelocityComponent>({ randF() * 20.f + 20.f });
-    newCigarette.set<staticObjCollisionCallbackComponent>({ onCollision_Cigarette_StaticObj });
-    newCigarette.set<gravityComponent>({ 0.90f, false, 4.f });
-    newCigarette.set<dynamicObjectTypeComponent>({ dynamicObjectType::Cigarette });
-    newCigarette.set<dynamicBoxColliderComponent>({ { -min_val, -min_val}, { min_val, min_val} });
-    newCigarette.set<rotationComponent>({});
-    newCigarette.set<scaleComponent>({});
+    reg.emplace_or_replace<cigaretteUpdateComponent>(newCigarette, cigaretteUpdateComponent{ { true } });
+    reg.emplace_or_replace<positionComponent>(newCigarette, positionComponent{ { reg.get<positionComponent>(entityPlayer).position } });
+    reg.emplace_or_replace<velocityComponent>(newCigarette, velocityComponent{ { .5f * glm::vec2{facingRight ? -1.f : 1.f, 1.f} } });
+    reg.emplace_or_replace<angularVelocityComponent>(newCigarette, angularVelocityComponent{ { randF() * 20.f + 20.f } });
+    reg.emplace_or_replace<staticObjCollisionCallbackComponent>(newCigarette, staticObjCollisionCallbackComponent{ { onCollision_Cigarette_StaticObj } });
+    reg.emplace_or_replace<gravityComponent>(newCigarette, gravityComponent{ 0.90f, false, 4.f });
+    reg.emplace_or_replace<dynamicObjectTypeComponent>(newCigarette, dynamicObjectTypeComponent{ { dynamicObjectType::Cigarette } });
+    reg.emplace_or_replace<dynamicBoxColliderComponent>(newCigarette, dynamicBoxColliderComponent{  { -min_val, -min_val }, { min_val, min_val } });
+    reg.emplace_or_replace<rotationComponent>(newCigarette, rotationComponent{ {} });
+    reg.emplace_or_replace<scaleComponent>(newCigarette, scaleComponent{ {} });
+
     return newCigarette;
 }

@@ -10,8 +10,6 @@ namespace rfct {
 	struct nearestObject;
 	struct vines : objectSystem {
 		void initSystem();
-		void createQueries();
-		void deleteQueries();
 		void spawnData(scene* s, sceneSerializedData* sd);
 		void resetLevel(const frameContext* ctx);
 		void updateVisuals(const frameContext* ctx);

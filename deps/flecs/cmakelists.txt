@@ -1,8 +1,0 @@
-cmake_minimum_required(VERSION 3.16)
-
-project(flecs)
-
-add_library(flecs STATIC "flecs.c")
-
-target_compile_definitions(flecs PUBLIC FLECS_CUSTOM_BUILD FLECS_CPP)
-target_compile_definitions(flecs PUBLIC FLECS_NO_SYSTEM FLECS_NO_TIMER FLECS_NO_DOC FLECS_NO_REST FLECS_NO_META)

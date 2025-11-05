@@ -8,8 +8,6 @@ namespace rfct {
 
     struct cigarettes : public objectSystem {
         void initSystem() override;
-        void createQueries() override;
-        void deleteQueries() override;
         void spawnData(scene* s, sceneSerializedData* sd) override;
         void resetLevel(const frameContext* ctx) override;
         void updateVisuals(const frameContext* ctx) override;

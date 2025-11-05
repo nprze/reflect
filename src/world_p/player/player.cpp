@@ -53,21 +53,22 @@ entity rfct::playerController::createPlayer(scene* sc, const glm::vec2& spawnPoi
 
 	staticObjCollisionCallbackComponent colCallback;
 	colCallback.handler = onCollision_Player_StaticObj;
-	player = ecs::get().entity<>()
-		.set<dynamicSSBOIndexComponent>({ 1 })
-		.set<rotationComponent>({})
-		.set<scaleComponent>(trans.scale)
-		.set<positionComponent>({ spawnPoint })
-		.set<gravityComponent>({})
-		//.set<dynamicCircleColliderComponent>({ {0,-0.245f}, .25f })
-		.set<velocityComponent>({ glm::vec2(0.f,0.f) })
-		.set<inputVelocityComponent>({ glm::vec2(0.f,0.f) })
-		.set<staticObjCollisionCallbackComponent>(colCallback)
-		.set<dynamicBoxColliderComponent>(bounds)
-		.set<playerStateComponent>({})
-		.set<playerDashStateComponent>({})
-		.set<dynamicObjectTypeComponent>({ dynamicObjectType::Player, false })
-		.set<playerLifeComponent>({ true });
+	entt::registry& reg = ecs::get();
+	player = reg.create();
+	reg.emplace<dynamicSSBOIndexComponent>(player, dynamicSSBOIndexComponent{ 1 });
+	reg.emplace<rotationComponent>(player, rotationComponent{});
+	reg.emplace<scaleComponent>(player, trans.scale);
+	reg.emplace<positionComponent>(player, positionComponent{ spawnPoint });
+	reg.emplace<gravityComponent>(player, gravityComponent{});
+	reg.emplace<dynamicCircleColliderComponent>(player, dynamicCircleColliderComponent{ {0,-0.245f}, .25f });
+	reg.emplace<velocityComponent>(player, velocityComponent{ glm::vec2(0.f,0.f) });
+	reg.emplace<inputVelocityComponent>(player, inputVelocityComponent{ glm::vec2(0.f,0.f) });
+	reg.emplace<staticObjCollisionCallbackComponent>(player, colCallback);
+	reg.emplace<dynamicBoxColliderComponent>(player, bounds);
+	reg.emplace<playerStateComponent>(player, playerStateComponent{});
+	reg.emplace<playerDashStateComponent>(player, playerDashStateComponent{});
+	reg.emplace<dynamicObjectTypeComponent>(player, dynamicObjectTypeComponent{ dynamicObjectType::Player, false });
+	reg.emplace<playerLifeComponent>(player, playerLifeComponent{ true });
 
 	return player;
 }
@@ -91,8 +92,9 @@ void rfct::playerController::update(frameContext* ctx)
 	// colliders
 	if (false) {
 		// draw box
-		const positionComponent* pos = player.get<positionComponent>();
-		const dynamicBoxColliderComponent* boc = player.get<dynamicBoxColliderComponent>();
+		
+		const positionComponent* pos = &ecs::get().get<positionComponent>(player);
+		const dynamicBoxColliderComponent* boc = &ecs::get().get<dynamicBoxColliderComponent>(player);
 		debugLine* lines = debugDraw::requestLines(4);
 		lines[0].vertices[0].pos = { pos->position.x + boc->min.x, pos->position.y + boc->min.y, 0 };
 		lines[0].vertices[1].pos = { pos->position.x + boc->min.x, pos->position.y + boc->max.y, 0 };
@@ -113,7 +115,7 @@ void rfct::playerController::update(frameContext* ctx)
 
 		// draw circle
 		const int segments = 20;
-		const dynamicCircleColliderComponent* circ = player.get<dynamicCircleColliderComponent>();
+		const dynamicCircleColliderComponent* circ = &ecs::get().get<dynamicCircleColliderComponent>(player);
 		lines = debugDraw::requestLines(segments);
 
 		const float step = 2.0f * 3.14159265359f / segments;
@@ -138,8 +140,8 @@ void rfct::playerController::update(frameContext* ctx)
 	// object to hold
 	if (false){
 		if (nearestObjectToHold.vineIndex == -2) {
-			const staticBoxColliderComponent* col = nearestObjectToHold.object.get<staticBoxColliderComponent>();
-			drawAABB(col->min, col->max, 0);
+			const staticBoxColliderComponent& col = ecs::get().get<staticBoxColliderComponent>(nearestObjectToHold.object);
+			drawAABB(col.min, col.max, 0);
 			debugLine* lines = debugDraw::requestLines(2);
 			lines[0].vertices[0].pos = { nearestObjectToHold.closestPosition - glm::vec2{0, 0.5f}, 0 };
 			lines[0].vertices[1].pos = { nearestObjectToHold.closestPosition + glm::vec2{0, 0.5f}, 0 };
@@ -155,7 +157,6 @@ void rfct::playerController::update(frameContext* ctx)
 			
 		}
 		if (nearestObjectToHold.vineIndex >= 0) {
-			const positionComponent* pos = player.get<positionComponent>();
 			debugLine* lines = debugDraw::requestLines(2);
 			lines[0].vertices[0].pos = { nearestObjectToHold.closestPosition - glm::vec2{0, 50}, 0 };
 			lines[0].vertices[1].pos = { nearestObjectToHold.closestPosition + glm::vec2{0, 50}, 0 };
@@ -171,14 +172,14 @@ void rfct::playerController::update(frameContext* ctx)
 	}
 	// last frame velocity
 	if (false) {
-		drawPlayervelocity(player.get<inputVelocityComponent>()->velocity, player.get<positionComponent>()->position);
-		drawPlayervelocity(player.get<velocityComponent>()->velocity, player.get<positionComponent>()->position);
+		drawPlayervelocity(ecs::get().get<inputVelocityComponent>(player).velocity, ecs::get().get<positionComponent>(player).position);
+		drawPlayervelocity(ecs::get().get<velocityComponent>(player).velocity, ecs::get().get<positionComponent>(player).position);
 	}
 	// below block
 	if (true) {
-		if (belowBlock != flecs::entity::null() && player.get<velocityComponent>()->velocity.y == 0) {
-			const dynamicBoxColliderComponent* col = belowBlock.get<dynamicBoxColliderComponent>();
-			drawAABB(col->min, col->max, 0);
+		if (belowBlock != entt::null && ecs::get().get<velocityComponent>(player).velocity.y == 0) {
+			const dynamicBoxColliderComponent col = ecs::get().get<dynamicBoxColliderComponent>(belowBlock);
+			drawAABB(col.min, col.max, 0);
 		}
 	}
 
@@ -187,12 +188,12 @@ void rfct::playerController::update(frameContext* ctx)
 	}
 
 	// normal update
-	playerStateComponent* state = player.get_mut<playerStateComponent>();
+	playerStateComponent& state = ecs::get().get<playerStateComponent>(player);
 	walkHorizontalInput = 0;
 
 	arrowUpDownInput = input::getInput().upDown;
 
-	if ((input::getInput().dashX || input::getInput().dashY || input::getInput().dash45up || input::getInput().dash45down || input::getInput().dashDefault) && player.get<playerStateComponent>()->dashCharges>0 && dashCooldown <= 0.f) {
+	if ((input::getInput().dashX || input::getInput().dashY || input::getInput().dash45up || input::getInput().dash45down || input::getInput().dashDefault) && state.dashCharges>0 && dashCooldown <= 0.f) {
 		if (input::getInput().dashX) {
 			dashHorizontalInput = input::getInput().dashX;
 			anyDash = true;
@@ -226,7 +227,7 @@ void rfct::playerController::update(frameContext* ctx)
 	}
 
 	// jump
-	if (input::getInput().jump && player.get<playerStateComponent>()->allowToJump) {
+	if (input::getInput().jump && state.allowToJump) {
 		jumpInput = input::getInput().jump;
 	}
 
@@ -234,47 +235,50 @@ void rfct::playerController::update(frameContext* ctx)
 
 	// fixedUpdate
 	for (uint32_t i = 0; i < ctx->fixedUpdateTimes; ++i) {
-		inputVelComp = player.get_mut<inputVelocityComponent>();
-		glm::vec2& inputVel = inputVelComp->velocity;
+		
+		inputVelocityComponent& inputVelComp = ecs::get().get<inputVelocityComponent>(player);
+		glm::vec2& inputVel = inputVelComp.velocity;
 		inputVel = glm::vec2(0.f, 0.f);
 
-		posComp = player.get_mut<positionComponent>();
-		velComp = player.get_mut<velocityComponent>();
-		stateComp = player.get_mut<playerStateComponent>();
+		positionComponent& posComp = ecs::get().get<positionComponent>(player);
+		velocityComponent& velComp = ecs::get().get<velocityComponent>(player);
+		playerStateComponent& stateComp = ecs::get().get<playerStateComponent>(player);
+
+		gravityComponent& grav = ecs::get().get<gravityComponent>(player);
 
 		dashCooldown = std::clamp(dashCooldown - fixedDeltaTime, 0.f, 3.f);
 		holdCooldown = std::clamp(holdCooldown - fixedDeltaTime, 0.f, 3.f);
 		holdJumpCooldown = std::clamp(holdJumpCooldown - fixedDeltaTime, 0.f, .5f);
 
-		switch (stateComp->state)
+		switch (stateComp.state)
 		{
 		case (playerState::normal): {
-			if (velComp->velocity.y == 0) {
+			if (velComp.velocity.y == 0) {
 				timeYNotZero = 0;
-				stateComp->allowToJump = true;
+				stateComp.allowToJump = true;
 				if (dashCooldown == 0.f) {
-					stateComp->dashCharges = 1;
+					stateComp.dashCharges = 1;
 				}
 			}
 			else {
 				timeYNotZero += fixedDeltaTime;
 				if (timeYNotZero == fixedDeltaTime) {
-					velComp->velocity.x += (facingRight ? 1.f : -1.f) * 0.6f;
+					velComp.velocity.x += (facingRight ? 1.f : -1.f) * 0.6f;
 				}
-				if (timeYNotZero > fixedDeltaTime * 3 && stateComp->allowToJump) {
-					stateComp->allowToJump = false;
+				if (timeYNotZero > fixedDeltaTime * 3 && stateComp.allowToJump) {
+					stateComp.allowToJump = false;
 				}
 			}
 
 			normalWalkUpdate();
 			if (jumpInput != 0) {
 				startedJumpingTime = 0.f;
-				stateComp->state = playerState::jumping;
+				stateComp.state = playerState::jumping;
 			}
 			if (!checkHold(ctx->scene)) {
 				if (anyDash) {
 					dashTime = 0.f;
-					stateComp->state = playerState::dashing;
+					stateComp.state = playerState::dashing;
 				}
 			}
 			break;
@@ -289,30 +293,31 @@ void rfct::playerController::update(frameContext* ctx)
 				// update dash
 				dashVelocity *= 0.9f - std::clamp(dashTime * 2.f, 0.f, 0.9f);
 				if (glm::length(dashVelocity) >= 0.1f) {
-					velComp->velocity = dashVelocity;
+					velComp.velocity = dashVelocity;
 					inputVel = dashVelocity;
 				}
 
 
 				// update kindlings
-				playerDashStateComponent* dc = player.get_mut<playerDashStateComponent>();
-				player.get_mut<gravityComponent>()->gravityEnabled = false;
-				dc->dashing = true;
-				dc->dashProgress = dashTime / dashFullTime;
+				
+				playerDashStateComponent& dc = ecs::get().get<playerDashStateComponent>(player);
+				grav.gravityEnabled = false;
+				dc.dashing = true;
+				dc.dashProgress = dashTime / dashFullTime;
 
-				if (dc->dashProgress > 0.1f && kindlingsToSpawnThisDash == 3) {
+				if (dc.dashProgress > 0.1f && kindlingsToSpawnThisDash == 3) {
 					kindlingsToSpawnThisDash -= 1;
-					spawnKindling(ctx, player.get_mut<positionComponent>()->position, velComp->velocity, kindlingsToSpawnThisDash);
+					spawnKindling(ctx, posComp.position, velComp.velocity, kindlingsToSpawnThisDash);
 				}
 				else {
-					if (dc->dashProgress > 0.3f && kindlingsToSpawnThisDash == 2) {
+					if (dc.dashProgress > 0.3f && kindlingsToSpawnThisDash == 2) {
 						kindlingsToSpawnThisDash -= 1;
-						spawnKindling(ctx, player.get_mut<positionComponent>()->position, velComp->velocity, kindlingsToSpawnThisDash);
+						spawnKindling(ctx, posComp.position, velComp.velocity, kindlingsToSpawnThisDash);
 					}
 					else {
-						if (dc->dashProgress > 0.9f && kindlingsToSpawnThisDash == 1) {
+						if (dc.dashProgress > 0.9f && kindlingsToSpawnThisDash == 1) {
 							kindlingsToSpawnThisDash -= 1;
-							spawnKindling(ctx, player.get_mut<positionComponent>()->position, velComp->velocity, kindlingsToSpawnThisDash);
+							spawnKindling(ctx, posComp.position, velComp.velocity, kindlingsToSpawnThisDash);
 						}
 					}
 
@@ -323,41 +328,41 @@ void rfct::playerController::update(frameContext* ctx)
 				dashCooldown = .2f;
 				// end dash
 				dashTime = 0.f;
-				player.get_mut<gravityComponent>()->gravityEnabled = true;
-				stateComp->state = playerState::normal;
+				ecs::get().get<gravityComponent>(player).gravityEnabled = true;
+				stateComp.state = playerState::normal;
 			}
 			break;
 		}
 		case (playerState::jumping): {
 			normalWalkUpdate();
 			normalJumpUpdate();
-			if (velComp->velocity.y == 0.f) {
-				stateComp->allowToJump = true;
-				stateComp->state = playerState::normal;
+			if (velComp.velocity.y == 0.f) {
+				stateComp.allowToJump = true;
+				stateComp.state = playerState::normal;
 			}
 
 			// hold priority over dash
 			if (!checkHold(ctx->scene)) {
 				if (anyDash) {
 					dashTime = 0.f;
-					stateComp->state = playerState::dashing;
+					stateComp.state = playerState::dashing;
 				}
 			}
 			break;
 		}
 		case (playerState::holdingVines): {
 			normalWalkUpdate();
-			stateComp->allowToJump = false;
-			player.get_mut<gravityComponent>()->gravityEnabled = false;
+			stateComp.allowToJump = false;
+			grav.gravityEnabled = false;
 			if (!hold) {
-				stateComp->state = playerState::normal;
+				stateComp.state = playerState::normal;
 			}
 			if (anyDash) {
 				dashTime = 0.f;
-				stateComp->state = playerState::dashing;
+				stateComp.state = playerState::dashing;
 			}
 
-			if (stateComp->state != playerState::holdingVines) {
+			if (stateComp.state != playerState::holdingVines) {
 				endHold(ctx->scene);
 			}
 			break;
@@ -366,46 +371,46 @@ void rfct::playerController::update(frameContext* ctx)
 			holdingTime += fixedDeltaTime;
 			nearestObjectToHold = findObjectToHold();
 			if (
-				(nearestObjectToHold.closestPosition.y < posComp->position.y) || (nearestObjectToHold.closestPosition.y > posComp->position.y)) {
-				stateComp->state = playerState::normal;
-				posComp->position.y += std::abs(nearestObjectToHold.closestPosition.x - posComp->position.x) * 0.9f;
+				(nearestObjectToHold.closestPosition.y < posComp.position.y) || (nearestObjectToHold.closestPosition.y > posComp.position.y)) {
+				stateComp.state = playerState::normal;
+				posComp.position.y += std::abs(nearestObjectToHold.closestPosition.x - posComp.position.x) * 0.9f;
 			}
 			if (!hold) {
-				stateComp->state = playerState::normal;
+				stateComp.state = playerState::normal;
 			}
-			stateComp->allowToJump = true;
-			player.get_mut<gravityComponent>()->gravityEnabled = false;
+			stateComp.allowToJump = true;
+			grav.gravityEnabled = false;
 			if (jumpInput != 0 && holdJumpCooldown == 0.f) {
 				startedJumpingTime = 0.f;
-				stateComp->state = playerState::jumping;
+				stateComp.state = playerState::jumping;
 			}
 
 			float move = arrowUpDownInput;
 			move = std::clamp(move, -maxVelocityX * 0.75f, maxVelocityX * 0.75f);
-			velComp->velocity.y = move;
-			velComp->velocity.x = 0;
+			velComp.velocity.y = move;
+			velComp.velocity.x = 0;
 
 			if (anyDash) {
 				dashTime = 0.f;
-				stateComp->state = playerState::dashing;
+				stateComp.state = playerState::dashing;
 			}
 
-			if (stateComp->state != playerState::holdingBlocks) {
-				if (stateComp->state == playerState::normal) {
+			if (stateComp.state != playerState::holdingBlocks) {
+				if (stateComp.state == playerState::normal) {
 					if (holdingTime >= fixedDeltaTime * 10.f) {
-						player.get_mut<positionComponent>()->position.x += (facingRight ? 1.f : -1.f) * 0.3f;
-						player.get_mut<positionComponent>()->position.y += 0.1f;
-						//velComp->velocity.y += .1f;
+						posComp.position.x += (facingRight ? 1.f : -1.f) * 0.3f;
+						posComp.position.y += 0.1f;
+						//velComp.velocity.y += .1f;
 					}
 					else {
 						RFCT_INFO("WIERD ASS SITUATION");
-						velComp->velocity.x -= (facingRight ? 1.f : -1.f) * 0.6f;
+						velComp.velocity.x -= (facingRight ? 1.f : -1.f) * 0.6f;
 
 					}
 				}
-				player.get_mut<gravityComponent>()->gravityEnabled = true;
+				grav.gravityEnabled = true;
 				holdCooldown = 0.25f;
-				//velComp->velocity.y += .5f;
+				//velComp.velocity.y += .5f;
 				holdJumpCooldown = 0.5f;
 				holdingTime = 0.f;
 			}
@@ -415,10 +420,10 @@ void rfct::playerController::update(frameContext* ctx)
 			break;
 		}
 		 
-		if (velComp->velocity.x > 0) {
+		if (velComp.velocity.x > 0) {
 			facingRight = true;
 		}
-		else if (velComp->velocity.x<0) {
+		else if (velComp.velocity.x<0) {
 			facingRight = false;
 		}
 
@@ -442,22 +447,24 @@ rfct::nearestObject rfct::playerController::findObjectToHold()
 	nearestObject returnVal;
 	// proritize vines
 	returnVal.object = findTheNearestVineToPlayer(player);
-	if (returnVal.object != flecs::entity::null()) {
-		std::pair<glm::vec2, int> vineEdgePos = getNearestEdgePos((player.get<positionComponent>()->position), returnVal.object);
+	positionComponent& posComp = ecs::get().get<positionComponent>(player);
+	if (returnVal.object != entt::null) {
+		std::pair<glm::vec2, int> vineEdgePos = getNearestEdgePos(posComp.position, returnVal.object);
 		returnVal.closestPosition = vineEdgePos.first;
-		if (len(returnVal.closestPosition - posComp->position) < forgivenessVine) {
+		if (len(returnVal.closestPosition - posComp.position) < forgivenessVine) {
 			returnVal.vineIndex = vineEdgePos.second;
 			return returnVal;
 		}
 	}
 	// vine is too far, fallback to block
 	returnVal.object = findTheNearestBlockToPlayer(player);
-	const staticBoxColliderComponent* boc = returnVal.object.get<staticBoxColliderComponent>();
-	returnVal.closestPosition = nearestPointOnAABB(posComp->position, boc->min, boc->max);
-	if (len(returnVal.closestPosition - posComp->position) < (forgivenessVine * 0.5f) && 
-		(std::abs((returnVal.closestPosition - posComp->position).x) > std::abs((returnVal.closestPosition - posComp->position).y)))
+	
+	const staticBoxColliderComponent& boc = ecs::get().get<staticBoxColliderComponent>(returnVal.object);
+	returnVal.closestPosition = nearestPointOnAABB(posComp.position, boc.min, boc.max);
+	if (len(returnVal.closestPosition - posComp.position) < (forgivenessVine * 0.5f) && 
+		(std::abs((returnVal.closestPosition - posComp.position).x) > std::abs((returnVal.closestPosition - posComp.position).y)))
 	{
-		player.get_mut<positionComponent>()->position.x = returnVal.closestPosition.x - 0.25f * ((returnVal.closestPosition.x - posComp->position.x)>0?1.f:-1.f);
+		posComp.position.x = returnVal.closestPosition.x - 0.25f * ((returnVal.closestPosition.x - posComp.position.x)>0?1.f:-1.f);
 		returnVal.vineIndex = -2;
 		return returnVal;
 	}
@@ -478,8 +485,9 @@ void rfct::playerController::normalWalkUpdate()
 
 	// walk apply
 	walkVelocity *= 0.80f;
-	inputVelComp->velocity.x += walkVelocity;
-	velComp->velocity.x = walkVelocity;
+	
+	ecs::get().get<inputVelocityComponent>(player).velocity.x += walkVelocity;
+	ecs::get().get<velocityComponent>(player).velocity.x = walkVelocity;
 }
 
 void rfct::playerController::normalJumpUpdate()
@@ -490,37 +498,41 @@ void rfct::playerController::normalJumpUpdate()
 	}
 	startedJumpingTime += fixedDeltaTime;
 	float inputMultiplayer = std::clamp(- std::sqrt(7.f * startedJumpingTime) + 1.f, 0.f, 1.f);
-	velComp->velocity.y += inputMultiplayer * jumpInput * jumpSpeed;
-	inputVelComp->velocity.y += inputMultiplayer * jumpInput * jumpSpeed;
+	ecs::get().get<velocityComponent>(player).velocity.y += inputMultiplayer * jumpInput * jumpSpeed;
+	ecs::get().get<inputVelocityComponent>(player).velocity.y += inputMultiplayer * jumpInput * jumpSpeed;
 }
 
 void rfct::playerController::endHold(scene* sc)
 {
 	objectSystems::get().onEndHolding();
-	player.get_mut<gravityComponent>()->gravityEnabled = true;
+	ecs::get().get<gravityComponent>(player).gravityEnabled = true;
 
 	holdCooldown = 0.4f;
-	velComp->velocity.y += 2.f;
+	ecs::get().get<velocityComponent>(player).velocity.y += 2.f;
 }
 
 
 bool rfct::playerController::checkHold(scene* scen)
 {
+	playerStateComponent& stateComp = ecs::get().get<playerStateComponent>(player);
+	positionComponent& posComp = ecs::get().get<positionComponent>(player);
+	velocityComponent& velComp = ecs::get().get<velocityComponent>(player);
 	if (hold && holdCooldown == 0.f) {
 		nearestObjectToHold = findObjectToHold();
 		if (nearestObjectToHold.vineIndex == -2) {
-			stateComp->state = playerState::holdingBlocks;
+			
+			stateComp.state = playerState::holdingBlocks;
 		}
 		else if (nearestObjectToHold.vineIndex >= 0) {
-			stateComp->state = playerState::holdingVines;
+			stateComp.state = playerState::holdingVines;
 			
-			objectSystems::get().onStartHolding(stateComp->state, nearestObjectToHold);
+			objectSystems::get().onStartHolding(stateComp.state, nearestObjectToHold);
 		}
 		else {
 			return false;
 		}
-		facingRight = (nearestObjectToHold.closestPosition.x - posComp->position.x) > 0;
-		velComp->velocity = {0,0};
+		facingRight = (nearestObjectToHold.closestPosition.x - posComp.position.x) > 0;
+		velComp.velocity = {0,0};
 		return true;
 	}
 	else {
@@ -546,9 +558,9 @@ bool rfct::playerController::checkHold(scene* scen)
 
 void rfct::playerController::startDash(frameContext* ctx)
 {
-	player.get_mut<playerStateComponent>()->dashCharges--;
-	player.get_mut<velocityComponent>()->velocity = { 0.f,0.f };
-	velComp->velocity = { 0,0 };
+	ecs::get().get<playerStateComponent>(player).dashCharges--;
+	ecs::get().get<velocityComponent>(player).velocity = { 0.f,0.f };
+	ecs::get().get<velocityComponent>(player).velocity = { 0,0 };
 	dashVelocity = { 0, 0 };
 	dashVelocity.y += dashVerticalInput * dashSpeed * boostPureHorizontalVertical;
 	dashVelocity.x += dashHorizontalInput * dashSpeed * boostPureHorizontalVertical;
@@ -558,17 +570,17 @@ void rfct::playerController::startDash(frameContext* ctx)
 	ctx->scene->getObjectHolder().onPlayerDash(ctx, player, facingRight);
 	ctx->scene->getDecorationHolder().onPlayerDashDecorations(ctx, player, facingRight);
 	kindlingsToSpawnThisDash = 3;
-	stateComp->allowToJump = false;
-	player.get_mut<gravityComponent>()->gravityEnabled = false;
+	
+	ecs::get().get<playerStateComponent>(player).allowToJump = false;
+	ecs::get().get<gravityComponent>(player).gravityEnabled = false;
 }
 
 void rfct::onCollision_Player_StaticObj(entity player, entity collidedWith, glm::vec2 resolution)
 {
-	positionComponent* pos = player.get_mut<positionComponent>();
-	pos->position += resolution;
+	ecs::get().get<positionComponent>(player).position += resolution;
 
-	velocityComponent* vel = player.get_mut<velocityComponent>();
-	inputVelocityComponent* ivel = player.get_mut<inputVelocityComponent>();
+	velocityComponent& vel = ecs::get().get<velocityComponent>(player);
+	inputVelocityComponent& ivel = ecs::get().get<inputVelocityComponent>(player);
 	/*
 	if (resolution.x != 0.0f && resolution.y != 0.0f) {
 		// circle collision. zero velocity on x only when real change.
@@ -580,25 +592,25 @@ void rfct::onCollision_Player_StaticObj(entity player, entity collidedWith, glm:
 	{
 		if (resolution.x != 0.0f) {
 
-			vel->velocity.x = 0.0f;
+			vel.velocity.x = 0.0f;
 		}
 	}
 	if (resolution.y != 0.0f) {
 		if (resolution.y > 0.0f) {
 			// Landed on something
-			vel->velocity.y = 0.0f;
-			ivel->velocity.y = 0.0f;
+			vel.velocity.y = 0.0f;
+			ivel.velocity.y = 0.0f;
 		}
 		else {
 			// Hit your head on a ceiling: only stop upward motion
-			if (vel->velocity.y > 0.0f) {
-				vel->velocity.y = -vel->velocity.y * 0.3f;
-				ivel->velocity.y = 0.0f;
+			if (vel.velocity.y > 0.0f) {
+				vel.velocity.y = -vel.velocity.y * 0.3f;
+				ivel.velocity.y = 0.0f;
 			}
 		}
 	}
 	if (resolution.y > 0)
 	{
-		player.get_mut<playerStateComponent>()->grounded = true;
+		ecs::get().get<playerStateComponent>(player).grounded = true;
 	}
 }

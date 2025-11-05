@@ -10,8 +10,9 @@ namespace rfct {
 }
 namespace rfct {
 	void onCollision_Spike_DynamicObj(entity vineEntity, entity collidedWith) {
-		if (collidedWith.get<dynamicObjectTypeComponent>()->type != dynamicObjectType::Player) return;
-		collidedWith.get_mut<playerLifeComponent>()->alive = false;
+		
+		if (ecs::get().get<dynamicObjectTypeComponent>(collidedWith).type != dynamicObjectType::Player) return;
+		ecs::get().get<playerLifeComponent>(collidedWith).alive = false;
 	}
 }
 
@@ -52,11 +53,13 @@ namespace rfct {
 			boc.max -= alongTheSpawn * 0.05f;
 			boc.min += alongTheSpawn * 0.05f;
 
-			spikeEntity.set<dynamicBoxColliderComponent>(boc);
-			spikeEntity.set<dynamicObjectTypeComponent>({ dynamicObjectType::Spike });
+			entt::registry& reg = ecs::get();
+
+			reg.emplace_or_replace<dynamicBoxColliderComponent>(spikeEntity, boc);
+			reg.emplace_or_replace<dynamicObjectTypeComponent>(spikeEntity, dynamicObjectTypeComponent{ dynamicObjectType::Spike });
 			dynamicObjCollisionCallbackComponent dynColCallback;
 			dynColCallback.handler = onCollision_Spike_DynamicObj;
-			spikeEntity.set<dynamicObjCollisionCallbackComponent>(dynColCallback);
+			reg.emplace_or_replace<dynamicObjCollisionCallbackComponent>(spikeEntity, dynColCallback);
 		}
 	};
 }

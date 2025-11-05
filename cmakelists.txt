@@ -140,9 +140,6 @@ if(PLATFORM_WINDOWS)
     target_link_libraries(reflect PUBLIC glfw)
 endif()
 
-add_subdirectory(deps/flecs)
-target_link_libraries(reflect PUBLIC flecs)
-
 if(PLATFORM_ANDROID)
     target_include_directories(reflect PRIVATE deps/Vulkan-Headers/include)
 endif()

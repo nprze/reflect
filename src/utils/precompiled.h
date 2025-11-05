@@ -9,8 +9,9 @@
 #include <array>
 #include <stdint.h>
 #include "sizes.h"
-#include "flecs/flecs.h"
+#include "entt/entt.hpp"
+#include "world_p/ecs.h"
 
-using entity = flecs::entity;
+using entity = entt::entity;
 
 constexpr float fixedDeltaTime = 1.f / 60.f;

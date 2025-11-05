@@ -3,8 +3,6 @@
 #include "world_p/components.h"
 
 namespace rfct {	
-	static flecs::query<deathAnimParticle> kindlingParticlesComponentsQuery;
-	static flecs::query<deathAnimParticle, dynamicSSBOIndexComponent> kindlingParticlesQuery;
 }
 
 void rfct::initPlayerDeathAnimVars()

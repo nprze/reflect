@@ -14,8 +14,6 @@ void rfct::objectSystems::init()
 	m_vineSystem.initSystem();
 	m_enemySystem.initSystem();
 	m_cigSystem.initSystem();
-
-	createAllQueries();
 }
 
 void rfct::objectSystems::cleanup()
@@ -26,31 +24,7 @@ void rfct::objectSystems::cleanup()
 	m_npcSystem.cleanupSystem();
 	m_spikeSystem.cleanupSystem();
 	m_jumpBoostSystem.cleanupSystem();
-
-	cleanupAllQueries();
 }
-
-void rfct::objectSystems::createAllQueries()
-{
-	m_jumpBoostSystem.createQueries();
-	m_spikeSystem.createQueries();
-	m_npcSystem.createQueries();
-	m_vineSystem.createQueries();
-	m_enemySystem.createQueries();
-	m_cigSystem.createQueries();
-}
-
-void rfct::objectSystems::cleanupAllQueries()
-{
-	m_jumpBoostSystem.deleteQueries();
-	m_spikeSystem.deleteQueries();
-	m_npcSystem.deleteQueries();
-	m_vineSystem.deleteQueries();
-	m_enemySystem.deleteQueries();
-	m_cigSystem.deleteQueries();
-}
-
-
 void rfct::objectSystems::loadSceneData(sceneSerializedData* serializeData, scene* parentScene)
 {
 	m_cigSystem.spawnData(parentScene, serializeData);
@@ -104,13 +78,4 @@ void rfct::objectSystems::onStartHolding(playerState state, nearestObject& neare
 void rfct::objectSystems::onEndHolding()
 {
 	m_vineSystem.onEndHolding();
-}
-
-void rfct::objectSystems::onSwitchScene()
-{
-	cleanupAllQueries();
-	
-	ecs::recreateWorld();
-
-	createAllQueries();
 }

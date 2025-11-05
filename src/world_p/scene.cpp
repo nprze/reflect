@@ -22,7 +22,8 @@ rfct::scene::scene(world* worldArg) : m_World(worldArg)
 void rfct::scene::onUpdate(frameContext* context)
 {
 	RFCT_PROFILE_SCOPE("scene update");
-	if (!playerEntity.get<playerLifeComponent>()->alive) {
+	entt::registry& reg = ecs::get();
+	if (!reg.get<playerLifeComponent>(playerEntity).alive) {
 		resetScene(context);
 	}
 	playerController::get().update(context);
@@ -30,7 +31,7 @@ void rfct::scene::onUpdate(frameContext* context)
 	m_decorations.update(context);
 	buildDynamicObjBVH();
 	updatePhysics(context);
-	playerAnimations::get().update(playerEntity.get<velocityComponent>()->velocity, playerEntity.get<positionComponent>()->position, *context, playerEntity);
+	playerAnimations::get().update(reg.get<velocityComponent>(playerEntity).velocity, reg.get<positionComponent>(playerEntity).position, *context, playerEntity);
 	updateTransformData(context, playerEntity);
 
 	cameraComponentOnUpdate(context->dt, playerEntity);
@@ -42,13 +43,14 @@ void rfct::scene::onUpdate(frameContext* context)
 void rfct::scene::loadScene(const std::string& path)
 {
 	AssetsManager::get().loadScene(path, &m_InitialData);
+	
+	entt::registry& reg = ecs::get();
 
-	camera = ecs::get().entity()
-		.set<position3DComponent>({ { 0.f,  0.f, 20.f} })
-		.set<rotationComponent>({ {0.f, 0.f, 0.f} })
-		.set<cameraComponent>({ 45.0f, renderer::getRen().getAspectRatio(), 0.1f, 100.0f });
+	camera = reg.create();
+	reg.emplace<position3DComponent>(camera, position3DComponent{ { 0.f,  0.f, 20.f} });
+	reg.emplace<rotationComponent>(camera, rotationComponent{ {0.f, 0.f, 0.f} });
+	reg.emplace<cameraComponent>(camera, cameraComponent{ 45.0f, renderer::getRen().getAspectRatio(), 0.1f, 100.0f });
 	setCamera(camera);
-
 
 	m_World->getRenderData().startTransferStatic();
 	//createStaticBackgroundMesh("background/20x20-0.txt", { 0.06f, 0.04f,0.04f });
@@ -74,8 +76,9 @@ void rfct::scene::loadScene(const std::string& path)
 	//if (m_InitialData.vines.size() != 0) hasVines = true;
 
 	// init player hair anim
-	const dynamicBoxColliderComponent* bounds = playerEntity.get<dynamicBoxColliderComponent>();
-	playerAnimations::get().initHairAnim(bounds->max.x - bounds->min.x, bounds->max.y - bounds->min.y);
+	;
+	const dynamicBoxColliderComponent& bounds = reg.get<dynamicBoxColliderComponent>(playerEntity);
+	playerAnimations::get().initHairAnim(bounds.max.x - bounds.min.x, bounds.max.y - bounds.min.y);
 
 	m_World->getRenderData().endTransferStatic();
 
@@ -116,13 +119,16 @@ entity rfct::scene::createStaticMesh(const std::string& path, glm::vec2 size, gl
 	glm::mat4 model = getModelMatrixFromTransform(transform1);
 	objectLocation ol = m_World->getRenderData().addStaticObject(&mesh1.m_Vertices, &model);
 	staticSSBOIndexComponent ssboIndex = { ol.indexInSSBO };
-	return ecs::get().entity<>()
-		.set<staticSSBOIndexComponent>({ ol.indexInSSBO })
-		.set<vertexRenderInfoComponent>({ ol.verticesCount, ol.vertexBufferOffset })
-		.set<positionComponent>({})
-		.set<rotationComponent>({})
-		.set<scaleComponent>(transform1.scale)
-		.set<staticBoxColliderComponent>(collider);
+
+	entt::registry& reg = ecs::get();
+	entity e = reg.create();
+	reg.emplace<staticSSBOIndexComponent>(e, staticSSBOIndexComponent{ ol.indexInSSBO });
+	reg.emplace<vertexRenderInfoComponent>(e, vertexRenderInfoComponent{ ol.verticesCount, ol.vertexBufferOffset });
+	reg.emplace<positionComponent>(e, positionComponent{});
+	reg.emplace<rotationComponent>(e, rotationComponent{});
+	reg.emplace<scaleComponent>(e, transform1.scale);
+	reg.emplace<staticBoxColliderComponent>(e, collider);
+	return e;
 }
 
 entity rfct::scene::createStaticBackgroundMesh(const std::string& path, const glm::vec3& color, const float zMin, const float zMax)
@@ -133,10 +139,12 @@ entity rfct::scene::createStaticBackgroundMesh(const std::string& path, const gl
 	glm::mat4 model = glm::mat4(1.f);
 	objectLocation ol = m_World->getRenderData().addStaticObject(&mesh1.m_Vertices, &model);
 	staticSSBOIndexComponent ssboIndex = { ol.indexInSSBO };
-	return ecs::get().entity<>()
-		.set<staticSSBOIndexComponent>({ ol.indexInSSBO })
-		.set<vertexRenderInfoComponent>({ ol.verticesCount, ol.vertexBufferOffset })
-		.set<positionComponent>({});
+	entt::registry& reg = ecs::get();
+	entity e = reg.create();
+	reg.emplace<staticSSBOIndexComponent>(e, staticSSBOIndexComponent{ ol.indexInSSBO });
+	reg.emplace<vertexRenderInfoComponent>(e, vertexRenderInfoComponent{ ol.verticesCount, ol.vertexBufferOffset });
+	reg.emplace<positionComponent>(e, positionComponent{});
+	return e;
 }
 
 entity rfct::scene::createStaticRect(staticBoxColliderComponent* bounds, glm::vec3 color)
@@ -151,7 +159,9 @@ entity rfct::scene::createStaticRect(staticBoxColliderComponent* bounds, glm::ve
 	};
 	transform trans = {};
 	glm::mat4 model = getModelMatrixFromTransform(trans);
-	return createStaticRenderingEntity(&vertices, &model).set<staticBoxColliderComponent>(*bounds);
+	entity e = createStaticRenderingEntity(&vertices, &model);
+	ecs::get().emplace<staticBoxColliderComponent>(e, *bounds);
+	return e;
 }
 
 entity rfct::scene::createDynamicRect(dynamicBoxColliderComponent* bounds, glm::vec3 color)
@@ -166,7 +176,9 @@ entity rfct::scene::createDynamicRect(dynamicBoxColliderComponent* bounds, glm::
 	};
 	transform trans = {};
 	glm::mat4 model = getModelMatrixFromTransform(trans);
-	return createDynamicRenderingEntity(&vertices, &model).set<dynamicBoxColliderComponent>(*bounds);
+	entity e = createDynamicRenderingEntity(&vertices, &model);
+	ecs::get().emplace<dynamicBoxColliderComponent>(e, *bounds);
+	return e;
 }
 
 entity rfct::scene::createDynamicMesh(dynamicBoxColliderComponent* bounds, const std::string& path)
@@ -176,31 +188,37 @@ entity rfct::scene::createDynamicMesh(dynamicBoxColliderComponent* bounds, const
 	transform trans = {};
 
 	glm::mat4 model = getModelMatrixFromTransform(trans);
-	return createDynamicRenderingEntity(&mesh1.m_Vertices, &model).set<dynamicBoxColliderComponent>(*bounds);
+	entity e = createDynamicRenderingEntity(&mesh1.m_Vertices, &model);
+	ecs::get().emplace<dynamicBoxColliderComponent>(e, *bounds);
+	return e;
 }
 
 entity rfct::scene::createStaticRenderingEntity(std::vector<Vertex>* vertices, glm::mat4* model)
 {
 	objectLocation ol = m_World->getRenderData().addStaticObject(vertices, model);
 	staticSSBOIndexComponent ssboIndex = { ol.indexInSSBO };
-	return ecs::get().entity<>()
-		.set<staticSSBOIndexComponent>({ ol.indexInSSBO })
-		.set<vertexRenderInfoComponent>({ ol.verticesCount, ol.vertexBufferOffset })
-		.set<positionComponent>({})
-		.set<rotationComponent>({})
-		.set<scaleComponent>({});
+
+
+	entt::registry& reg = ecs::get();
+	entity e = reg.create();
+	reg.emplace<staticSSBOIndexComponent>(e, staticSSBOIndexComponent{ ol.indexInSSBO });
+	reg.emplace<vertexRenderInfoComponent>(e, vertexRenderInfoComponent{ ol.verticesCount, ol.vertexBufferOffset });
+	reg.emplace<positionComponent>(e, positionComponent{});
+	reg.emplace<rotationComponent>(e, rotationComponent{});
+	reg.emplace<scaleComponent>(e, scaleComponent{});
+	return e;
 }
 
 void rfct::scene::deleteDynamicEntity(entity e)
 {
 	m_World->getRenderData().removeDynamicEntity(e);
-	e.destruct();
+	ecs::get().destroy(e);
 }
 
 void rfct::scene::deleteAnimatedEntity(entity e)
 {
 	m_World->getRenderData().removeAnimatedEntity(e);
-	e.destruct();
+	ecs::get().destroy(e);
 }
 
 void rfct::scene::addPendingDynamicEnitityDeletion(entity e)
@@ -229,29 +247,32 @@ entity rfct::scene::createDynamicRenderingEntity(std::vector<Vertex>* vertices, 
 	objectLocation ol = m_World->getRenderData().addDynamicObject(vertices, model, true, {}, numVertices);
 	dynamicSSBOIndexComponent ssboIndex = { ol.indexInSSBO };
 
-	return ecs::get().entity<>()
-		.set<dynamicSSBOIndexComponent>({ ol.indexInSSBO })
-		.set<vertexRenderInfoComponent>({ ol.verticesCount, ol.vertexBufferOffset })
-		.set<positionComponent>({})
-		.set<rotationComponent>({});
+	entt::registry& reg = ecs::get();
+	entity e = reg.create();
+	reg.emplace<staticSSBOIndexComponent>(e, staticSSBOIndexComponent{ ol.indexInSSBO });
+	reg.emplace<vertexRenderInfoComponent>(e, vertexRenderInfoComponent{ ol.verticesCount, ol.vertexBufferOffset });
+	reg.emplace<positionComponent>(e, positionComponent{});
+	reg.emplace<rotationComponent>(e, rotationComponent{});
+	return e;
 }
 
 void rfct::scene::updateTransformData(const frameContext* ctx, entity e)
 {
 	glm::mat4 model = getModelMatrixFromEntity(e);
-	m_World->getRenderData().updateMat(ctx, e.get<dynamicSSBOIndexComponent>()->indexInSSBO, &model);
+	m_World->getRenderData().updateMat(ctx, ecs::get().get<dynamicSSBOIndexComponent>(e).indexInSSBO, &model);
 }
 
 void rfct::scene::updateDirection(bool facingRight)
 {
-	scaleComponent* scale = playerEntity.get_mut<scaleComponent>();
-	scale->scale.x = scale->scale.x* (facingRight? (scale->scale.x < 0 ? -1 : 1) :(scale->scale.x>0?-1:1));
-	playerEntity.set<scaleComponent>(*scale);
+	
+	scaleComponent& scale = ecs::get().get<scaleComponent>(playerEntity);
+	scale.scale.x = scale.scale.x* (facingRight? (scale.scale.x < 0 ? -1 : 1) :(scale.scale.x>0?-1:1));
 }
 
 bool rfct::scene::isPlayerOutsideScene()
 {
-	glm::vec2 pos = playerEntity.get<positionComponent>()->position;
+	
+	glm::vec2 pos = ecs::get().get<positionComponent>(playerEntity).position;
 	if (pos.x > m_InitialData.width || pos.x < 0) return true;
 	if (pos.y > m_InitialData.height || pos.y < 0) return true;
 	return false;
@@ -259,10 +280,10 @@ bool rfct::scene::isPlayerOutsideScene()
 
 void rfct::scene::resetScene(frameContext* ctx)
 {
-	playerEntity.get_mut<playerLifeComponent>()->alive = true;
+	ecs::get().get<playerLifeComponent>(playerEntity).alive = true;
 	playerController::get().endHold(this);
-	playerEntity.get_mut<positionComponent>()->position = m_InitialData.spawnPoints[0].position;
-	playerEntity.get_mut<velocityComponent>()->velocity = {0,0};
-	playerEntity.get_mut<playerStateComponent>()->state = playerState::normal;
+	ecs::get().get<positionComponent>(playerEntity).position = m_InitialData.spawnPoints[0].position;
+	ecs::get().get<velocityComponent>(playerEntity).velocity = {0,0};
+	ecs::get().get<playerStateComponent>(playerEntity).state = playerState::normal;
 	objectSystems::get().respawn(ctx);
 }
