@@ -36,9 +36,9 @@ void rfct::world::onUpdate(frameContext& context)
 {
 	if (m_currentScene->isPlayerOutsideScene()) {
 		m_currentScene->unloadScene();
-		m_RenderData->clearAllData();
 		delete m_currentScene;
 		ecs::get().clear();
+		m_RenderData->clearAllData();
 
 		m_currentScene = new scene(this);
 		loadScene("scenes/showcase.txt");

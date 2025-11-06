@@ -8,6 +8,7 @@ namespace rfct {
 		vulkanVertexBuffer() = default;
 		vulkanVertexBuffer(vk::DeviceSize);
 		~vulkanVertexBuffer();
+		inline void resetBufferOffset() { m_BufferOffset = 0; }
 
 		inline const vk::Buffer& getBuffer() { return m_Buffer.buffer; }
 		size_t copyData(const std::vector<Vertex>& vertices);

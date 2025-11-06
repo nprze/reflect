@@ -23,7 +23,7 @@ namespace rfct {
 		world() = default;
 		~world() = default;
 		scene* m_currentScene;
-		sceneRenderData* m_RenderData;
+		sceneRenderData* m_RenderData = nullptr;
     public:
         float screenViewTransformDegrees = 0;
 	};

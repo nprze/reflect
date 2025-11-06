@@ -129,10 +129,13 @@ void rfct::sceneRenderData::clearAllData()
 {
 	m_matsCounterStatic = 0;
 	m_matsCounterDynamic = 0;
-	m_matricesFreeIndices.clear();
 	m_verticesCountStaticObj = 0;
 	m_verticesCountDynamicObj = 0;
+
+	m_matricesFreeIndices.clear();
 	m_freeVertices.clear();
+
+	m_VertexBufferStatic.resetBufferOffset();
 }
 
 void rfct::sceneRenderData::updateMat(const frameContext* ctx, const uint32_t& objIndexInSSBO, glm::mat4* mat)
