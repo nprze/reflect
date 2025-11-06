@@ -10,6 +10,7 @@ namespace rfct {
         void initSystem() override;
         void spawnData(scene* s, sceneSerializedData* sd) override;
         void resetLevel(const frameContext* ctx) override;
+        //void onLevelSwitch(scene* scen) override;
         void updateVisuals(const frameContext* ctx) override;
         void updateSystem(frameContext* ctx) override;
         inline void cleanupSystem() override {};

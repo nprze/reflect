@@ -11,13 +11,13 @@ rfct::world rfct::world::currentWorld;
 void rfct::world::initWorld(const std::string& path)
 {
 	objectSystems::get().init();
+	m_RenderData = new sceneRenderData();
 	loadScene("scenes/load-test.txt");
 }
  
 void rfct::world::loadScene(const std::string& path)
 {
 	RFCT_PROFILE_FUNCTION();
-	m_RenderData = new sceneRenderData();
 	m_currentScene = new scene(this);
 	m_currentScene->loadScene(path);
 }
@@ -38,9 +38,10 @@ void rfct::world::onUpdate(frameContext& context)
 		m_currentScene->unloadScene();
 		m_RenderData->clearAllData();
 		delete m_currentScene;
+		ecs::get().clear();
 
 		m_currentScene = new scene(this);
-		loadScene("scenes/load-test.txt");
+		loadScene("scenes/showcase.txt");
 		context.scene = m_currentScene;
 		//objectSystems::get().switchScene(m_currentScene);
 	}

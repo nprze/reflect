@@ -89,11 +89,12 @@ void rfct::scene::loadScene(const std::string& path)
 	m_pendingEntityDeletions.reserve(20);
 
 	m_InitialData.rectangles.clear();
+	
+	//getRenderData().clearAllData();
 }
 
 void rfct::scene::unloadScene()
 {
-	m_World->getRenderData().clearAllData();
 }
 
 rfct::sceneRenderData& rfct::scene::getRenderData()
@@ -245,11 +246,10 @@ void rfct::scene::resolvePendingDynamicEnitityDeletions()
 entity rfct::scene::createDynamicRenderingEntity(std::vector<Vertex>* vertices, glm::mat4* model, uint32_t numVertices)
 {
 	objectLocation ol = m_World->getRenderData().addDynamicObject(vertices, model, true, {}, numVertices);
-	dynamicSSBOIndexComponent ssboIndex = { ol.indexInSSBO };
 
 	entt::registry& reg = ecs::get();
 	entity e = reg.create();
-	reg.emplace<staticSSBOIndexComponent>(e, staticSSBOIndexComponent{ ol.indexInSSBO });
+	reg.emplace<dynamicSSBOIndexComponent>(e, dynamicSSBOIndexComponent{ ol.indexInSSBO });
 	reg.emplace<vertexRenderInfoComponent>(e, vertexRenderInfoComponent{ ol.verticesCount, ol.vertexBufferOffset });
 	reg.emplace<positionComponent>(e, positionComponent{});
 	reg.emplace<rotationComponent>(e, rotationComponent{});

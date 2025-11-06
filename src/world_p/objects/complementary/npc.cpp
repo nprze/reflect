@@ -16,7 +16,6 @@ void rfct::updateNpc(frameContext* ctx, entity npcEntity) {
 
 
 namespace rfct {
-	std::vector<entity> npcsVec;
 
 	dialogue* m_currentlyPlayingDialogue = nullptr;
 }
@@ -36,13 +35,19 @@ namespace rfct {
             );
             reg.emplace<dialoguePathComponent>(npcEntity, npcInfo.dialogueFile);
             reg.emplace_or_replace<positionComponent>(npcEntity, (boc.min + boc.max) * 0.5f);
-
-            npcsVec.push_back(npcEntity);
         }
     };
 
     void npcs::resetLevel(const frameContext* ctx) {
-    };
+    }/*
+    void npcs::onLevelSwitch(scene* scen)
+    {
+        auto vineQuery = ecs::get().view<dialoguePathComponent>();
+        for (auto [ent, sc] : vineQuery.each()) {
+            scen->deleteDynamicEntity(ent);
+        }
+    }
+    ;*/
 
     void npcs::updateVisuals(const frameContext* ctx) {
     };
@@ -51,15 +56,14 @@ namespace rfct {
         auto& reg = ecs::get();
 
         if (ctx->state == gameState::gameplay) {
-            for (entt::entity npcEntity : npcsVec) {
+            auto gravityVelocityPositionBoxQuery = ecs::get().view<positionComponent, interactionDistanceComponent, dialoguePathComponent>();
+            for (auto [npcEntity, npcPos, inter, dial] : gravityVelocityPositionBoxQuery.each()) {
                 if (ctx->fixedUpdateTimes) {
                     const auto& playerPos = reg.get<positionComponent>(ctx->scene->getPlayer());
-                    const auto& npcPos = reg.get<positionComponent>(npcEntity);
 
                     float dist = distanceSquared(&playerPos.position, &npcPos.position);
 
-                    float wantedDist = reg.get<interactionDistanceComponent>(npcEntity)
-                        .interationDistanceSquared;
+                    float wantedDist = inter.interationDistanceSquared;
 
                     if (dist <= wantedDist) {
                         const auto& playerState = reg.get<playerStateComponent>(ctx->scene->getPlayer());
@@ -67,8 +71,7 @@ namespace rfct {
                         if (input::getInput().hold && playerState.grounded) {
                             ctx->state = gameState::stateDialogue;
 
-                            const auto& dialogue = reg.get<dialoguePathComponent>(npcEntity);
-                            startDialogue(dialogue.dialoguePath);
+                            startDialogue(dial.dialoguePath);
                         }
                         else {
                             debugDraw::drawText("talk to me", { 100.f, 100.f }, .3f);

@@ -131,7 +131,14 @@ namespace rfct {
 		}
 	};
 
-	void enemies::resetLevel(const frameContext* ctx) {};
+	void enemies::resetLevel(const frameContext* ctx) {}
+	/*void enemies::onLevelSwitch(scene* scen)
+	{
+		auto enemyQuery = ecs::get().view<enemyComponent>();
+		for (auto [ent, ve] : enemyQuery.each()) {
+			scen->deleteAnimatedEntity(ent);
+		}
+	};*/
 
 	void enemies::updateVisuals(const frameContext* ctx) {
 

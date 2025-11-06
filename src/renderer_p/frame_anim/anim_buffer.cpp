@@ -9,7 +9,7 @@ rfct::animationBuffer::animationBuffer()
 void rfct::animationBuffer::init(size_t bufferSizeInTriangles)
 {
 	buffer = (VulkanBuffer*)malloc(sizeof(VulkanBuffer));
-	new (buffer) VulkanBuffer(bufferSizeInTriangles * 3 * sizeof(Vertex), vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eTransferDst, VMA_MEMORY_USAGE_GPU_ONLY);
+	new (buffer) VulkanBuffer("animation", bufferSizeInTriangles * 3 * sizeof(Vertex), vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eTransferDst, VMA_MEMORY_USAGE_GPU_ONLY);
 	trianglesLeftInBuffer = bufferSizeInTriangles;
 	maxTriangles = bufferSizeInTriangles;
 }

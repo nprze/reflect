@@ -5,7 +5,7 @@
 
 namespace rfct {
 	struct glyphsRenderData {
-		inline glyphsRenderData(uint32_t size) :buffer(size, vk::BufferUsageFlagBits::eVertexBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU), bufferOffset(0), vertexCount(0) {
+		inline glyphsRenderData(uint32_t size) :buffer("glyphsRenderData", size, vk::BufferUsageFlagBits::eVertexBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU), bufferOffset(0), vertexCount(0) {
  			bufferMappedMemory = buffer.Map();
 		};
 		inline ~glyphsRenderData() 

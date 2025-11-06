@@ -39,7 +39,7 @@ namespace rfct {
 	};
 
 	struct debugDrawVertexBuffer{
-		debugDrawVertexBuffer(uint32_t size) :buffer(size, vk::BufferUsageFlagBits::eVertexBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU), bufferOffset(0), vertexCount(0) {
+		debugDrawVertexBuffer(uint32_t size) :buffer("debugDrawVertex",size, vk::BufferUsageFlagBits::eVertexBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU), bufferOffset(0), vertexCount(0) {
 			bufferMappedMemory = buffer.Map();
 		};
 		~debugDrawVertexBuffer() { buffer.Unmap(); };

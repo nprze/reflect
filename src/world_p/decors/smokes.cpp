@@ -105,11 +105,11 @@ void rfct::spawnSmoke(frameContext* fc, const glm::vec2& position, const glm::ve
         glm::vec2 randomDir = glm::normalize(glm::linearRand(direction, glm::vec2(-direction.x, direction.y))) * (0.8f + randF() * 0.4f);
         reg.emplace<smokeParticleComponent>(smoke, smokeParticleComponent{ {randomDir} });
         reg.emplace<smokeDisperseComponent>(smoke, smokeDisperseComponent{(float)(glm::linearRand(0.5, 1.5)), 0.f});
-        reg.emplace<positionComponent>(smoke, positionComponent{ {spawnPos} });
+        reg.emplace_or_replace<positionComponent>(smoke, positionComponent{ {spawnPos} });
         reg.emplace<sinusoidFloatComponent>(smoke, sinusoidFloatComponent{ glm::linearRand(0.5f, 2.0f), glm::linearRand(0.5f, 3.0f), glm::linearRand(0.f, 6.28f) });
         reg.emplace<angularVelocityComponent>(smoke, angularVelocityComponent{ {glm::linearRand(-60.f, 60.f)} });
-        reg.emplace<rotationComponent>(smoke, rotationComponent{ {} });
-        reg.emplace<scaleComponent>(smoke, scaleComponent{ {0, 0} });
+        reg.emplace_or_replace<rotationComponent>(smoke, rotationComponent{ {} });
+        reg.emplace_or_replace<scaleComponent>(smoke, scaleComponent{ {0, 0} });
         reg.emplace<dynamicObjectTypeComponent>(smoke, dynamicObjectTypeComponent{ {dynamicObjectType::Smoke} });
 
     }
@@ -142,10 +142,9 @@ void rfct::setColors(float* is)
 
 void rfct::updateSmokes(frameContext* ctx)
 {
-    std::vector<entity> toBeRemovedEnt;
     for (uint8_t i = 0; i < ctx->fixedUpdateTimes; i++) {
-        auto smokeParticlesComponentsQuery = ecs::get().view<smokeParticleComponent, smokeDisperseComponent, sinusoidFloatComponent, angularVelocityComponent, positionComponent, rotationComponent, scaleComponent>();
-        for (auto [smokeParticle, particleDir, disperse, smokeFloat, angVel, pos, rot, sc] : smokeParticlesComponentsQuery.each()) {
+        auto smokeParticlesComponentsQuery = ecs::get().view<smokeParticleComponent, smokeDisperseComponent, sinusoidFloatComponent, angularVelocityComponent, positionComponent, rotationComponent, scaleComponent, dynamicSSBOIndexComponent>();
+        for (auto [smokeParticle, particleDir, disperse, smokeFloat, angVel, pos, rot, sc, ssbo] : smokeParticlesComponentsQuery.each()) {
             if (disperse.currentProgress < disperse.fullLenght) {
                 disperse.currentProgress += fixedDeltaTime;
                 float progressPercentage = disperse.currentProgress / disperse.fullLenght;
@@ -167,21 +166,18 @@ void rfct::updateSmokes(frameContext* ctx)
                 rot.rotation.z += angVel.zAngularVelocity * fixedDeltaTime;
             }
             else {
-                toBeRemovedEnt.push_back(smokeParticle);
+                ctx->scene->getRenderData().removeDynamicEntity(smokeParticle);
+                ecs::get().destroy(smokeParticle);
             }
         };
-    }
-    for (entity e : toBeRemovedEnt) {
-        if(e!=entt::null)
-            ctx->scene->deleteDynamicEntity(e);
     }
 }
 
 void rfct::updateSmokeMatrices(frameContext* ctx)
 {
     sceneRenderData& rd = ctx->scene->getRenderData();
-    auto smokeParticlesQuery = ecs::get().view<smokeDisperseComponent, dynamicSSBOIndexComponent, positionComponent, rotationComponent, scaleComponent>();
-    for (auto [smokeParticle, dis, ssboData, pos, rot, sc] : smokeParticlesQuery.each()) {
+    auto smokeParticlesQuery = ecs::get().view<smokeDisperseComponent, dynamicSSBOIndexComponent, positionComponent, rotationComponent, scaleComponent, dynamicSSBOIndexComponent>();
+    for (auto [smokeParticle, dis, ssboData, pos, rot, sc,ssbo] : smokeParticlesQuery.each()) {
         glm::mat4 mat = getModelMatrix(pos, rot, sc);
         rd.updateMat(ctx, ssboData.indexInSSBO, &mat);
     };

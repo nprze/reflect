@@ -1,7 +1,7 @@
 #include "vulkan_buffer.h"
 #include "renderer_p/renderer.h"
 
-rfct::VulkanBuffer::VulkanBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, VmaMemoryUsage memoryUsage, VkMemoryPropertyFlags requiredFlags, VmaAllocationCreateFlags allocFlags)
+rfct::VulkanBuffer::VulkanBuffer(const char* name, vk::DeviceSize size, vk::BufferUsageFlags usage, VmaMemoryUsage memoryUsage, VkMemoryPropertyFlags requiredFlags, VmaAllocationCreateFlags allocFlags)
 {
     VmaAllocator allocator = renderer::getRen().getAllocator();
     VkBufferCreateInfo bufferCreateInfo{};
@@ -11,7 +11,8 @@ rfct::VulkanBuffer::VulkanBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage
     VmaAllocationCreateInfo allocCreateInfo{};
     allocCreateInfo.usage = memoryUsage;
     allocCreateInfo.requiredFlags = requiredFlags;
-    allocCreateInfo.flags = allocFlags;
+    allocCreateInfo.flags = allocFlags | VMA_ALLOCATION_CREATE_USER_DATA_COPY_STRING_BIT;
+    allocCreateInfo.pUserData = (void*)name;
 
 
 

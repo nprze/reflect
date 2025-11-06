@@ -84,14 +84,20 @@ namespace rfct {
     {
         for (entity& e : cigarettesVec)
         {
-            if (e!= entt::null)
+            if(ecs::get().valid(e))
                 ctx->scene->deleteDynamicEntity(e);
-            e = entt::null;
         }
     }
+    /*
+    void cigarettes::onLevelSwitch(scene* scen)
+    {
+        auto gravityVelocityPositionBoxQuery = ecs::get().view<cigaretteUpdateComponent>();
+        for (auto [ent, upd] : gravityVelocityPositionBoxQuery.each()) {
+            scen->deleteDynamicEntity(ent);
+        }
+    }*/
     void cigarettes::updateVisuals(const frameContext* ctx) {
         sceneRenderData& rd = ctx->scene->getRenderData();
-
         auto gravityVelocityPositionBoxQuery = ecs::get().view<cigaretteUpdateComponent, dynamicSSBOIndexComponent, positionComponent, rotationComponent, scaleComponent>();
         for (auto [ent, upd, ssboData, pos, rot, sc] : gravityVelocityPositionBoxQuery.each()) {
             glm::mat4 mat = getModelMatrix(pos, rot, sc);
@@ -133,10 +139,10 @@ namespace rfct {
     }
     void cigarettes::onDash(frameContext* fc, const entity entityPlayer, const bool facingRight)
     {
-        entity newCigarette = constructCigarette(fc, entityPlayer, facingRight);
-        if (cigarettesVec[lastCigaretteIndex] != entt::null) {
+        if (ecs::get().valid(cigarettesVec[lastCigaretteIndex])) {
             fc->scene->deleteDynamicEntity(cigarettesVec[lastCigaretteIndex]);
         }
+        entity newCigarette = constructCigarette(fc, entityPlayer, facingRight);
         cigarettesVec[lastCigaretteIndex] = (newCigarette);
         lastCigaretteIndex = (lastCigaretteIndex + 1) % cigarettesMaxCount;
     }
@@ -174,13 +180,14 @@ entity rfct::cigarettes::constructCigarette(const frameContext* fc, const entity
     reg.emplace_or_replace<cigaretteUpdateComponent>(newCigarette, cigaretteUpdateComponent{ { true } });
     reg.emplace_or_replace<positionComponent>(newCigarette, positionComponent{ { reg.get<positionComponent>(entityPlayer).position } });
     reg.emplace_or_replace<velocityComponent>(newCigarette, velocityComponent{ { .5f * glm::vec2{facingRight ? -1.f : 1.f, 1.f} } });
+    reg.emplace_or_replace<rotationComponent>(newCigarette, rotationComponent{});
     reg.emplace_or_replace<angularVelocityComponent>(newCigarette, angularVelocityComponent{ { randF() * 20.f + 20.f } });
     reg.emplace_or_replace<staticObjCollisionCallbackComponent>(newCigarette, staticObjCollisionCallbackComponent{ { onCollision_Cigarette_StaticObj } });
     reg.emplace_or_replace<gravityComponent>(newCigarette, gravityComponent{ 0.90f, false, 4.f });
     reg.emplace_or_replace<dynamicObjectTypeComponent>(newCigarette, dynamicObjectTypeComponent{ { dynamicObjectType::Cigarette } });
     reg.emplace_or_replace<dynamicBoxColliderComponent>(newCigarette, dynamicBoxColliderComponent{  { -min_val, -min_val }, { min_val, min_val } });
     reg.emplace_or_replace<rotationComponent>(newCigarette, rotationComponent{ {} });
-    reg.emplace_or_replace<scaleComponent>(newCigarette, scaleComponent{ {} });
+    reg.emplace_or_replace<scaleComponent>(newCigarette, scaleComponent{ });
 
     return newCigarette;
 }

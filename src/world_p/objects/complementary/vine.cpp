@@ -28,7 +28,7 @@ namespace rfct {
 
 	constexpr glm::vec2 vineGravity = { 0.f, -15.f };
 
-	entity vineClosestToPlayer;
+	entity vineClosestToPlayer = entt::null;
 	int nearestVineEdgeToPlayerIndex;
 	glm::vec2 nearestVineEdgeToPlayerPosition;
 
@@ -310,11 +310,19 @@ namespace rfct {
 				previousPositions[i] = basePositions[i];
 			}
 			};
-	};
+	}
+	/*void vines::onLevelSwitch(scene* scen)
+	{
+		auto vineQuery = ecs::get().view<vineStateComponent>();
+		for (auto [ent, sc] : vineQuery.each()) {
+			scen->deleteDynamicEntity(ent);
+		}
+	}
+	;*/
 	void vines::updateVisuals(const frameContext* ctx) {
 
-		auto vineQuery = ecs::get().view<vinePositionsComponent, vineVerticesComponent, positionComponent>();
-		for (auto [ent, pos, verts, posComp] : vineQuery.each()) {
+		auto vineQuery = ecs::get().view<vinePositionsComponent, vineVerticesComponent, positionComponent, vertexRenderInfoComponent>();
+		for (auto [ent, pos, verts, posComp, renInfo] : vineQuery.each()) {
 			std::vector<glm::vec2>& positions = pos.positions;
 			glm::vec2 start = posComp.position;
 			glm::vec3 white = { 1.f,1.f,1.f };
@@ -373,8 +381,7 @@ namespace rfct {
 				verts.vertices[i * 12 + 10].pos = v1;
 				verts.vertices[i * 12 + 11].pos = v3;
 
-				ctx->scene->getRenderData().updateDynamicVertices(ctx, ecs::get().get<vertexRenderInfoComponent>(ent).vertexBufferOffset, verts.vertices.data(), verts.vertices.size() * sizeof(Vertex));
-
+				ctx->scene->getRenderData().updateDynamicVertices(ctx, renInfo.vertexBufferOffset, verts.vertices.data(), verts.vertices.size() * sizeof(Vertex));
 			}
 		};
 	};
@@ -431,8 +438,10 @@ namespace rfct {
 	void vines::onEndHolding()
 	{
 		nearestVineEdgeToPlayerIndex = -1;
-		if (vineClosestToPlayer != entt::null)
+		if (vineClosestToPlayer != entt::null) {
 			ecs::get().get<vineStateComponent>(vineClosestToPlayer).holdingToThis = false;
+			vineClosestToPlayer = entt::null;
+		}
 	}
 }
 

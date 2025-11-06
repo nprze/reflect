@@ -85,8 +85,8 @@ void rfct::spawnKindling(frameContext* fc, const glm::vec2& position, const glm:
         reg.emplace<kindlingParticleComponent>(kindling, kindlingParticleComponent{ dir, 0.5f, 0.f});
         reg.emplace<sinusoidFloatComponent>(kindling, sinusoidFloatComponent{ glm::linearRand(0.5f, 2.0f), glm::linearRand(0.5f, 3.0f), glm::linearRand(0.f, 6.28f) });
         reg.emplace<angularVelocityComponent>(kindling, angularVelocityComponent{ {glm::linearRand(-10.f, 10.f)} });
-        reg.emplace<positionComponent>(kindling, positionComponent{ {position} });
-        reg.emplace<rotationComponent>(kindling, rotationComponent{ {} });
+        reg.emplace_or_replace<positionComponent>(kindling, positionComponent{ {position} });
+        reg.emplace_or_replace<rotationComponent>(kindling, rotationComponent{ {} });
         reg.emplace<scaleComponent>(kindling, scaleComponent{ {0, 0} });
         reg.emplace<dynamicObjectTypeComponent>(kindling, dynamicObjectTypeComponent{ {dynamicObjectType::Kindling} });
 
@@ -95,10 +95,9 @@ void rfct::spawnKindling(frameContext* fc, const glm::vec2& position, const glm:
 
 void rfct::updateKindlings(frameContext* ctx)
 {
-    std::vector<entity> toBeRemovedEnt;
     for (uint8_t i = 0; i < ctx->fixedUpdateTimes; i++) {
-        auto kindlingParticlesComponentsQuery = ecs::get().view<kindlingParticleComponent, sinusoidFloatComponent, angularVelocityComponent, positionComponent, rotationComponent, scaleComponent>();
-        for (auto [smokeParticle, particleData, sinFloat, angVel, pos, rot, sc] : kindlingParticlesComponentsQuery.each()) {
+        auto kindlingParticlesComponentsQuery = ecs::get().view<kindlingParticleComponent, sinusoidFloatComponent, angularVelocityComponent, positionComponent, rotationComponent, scaleComponent, dynamicSSBOIndexComponent>();
+        for (auto [smokeParticle, particleData, sinFloat, angVel, pos, rot, sc, ssbo] : kindlingParticlesComponentsQuery.each()) {
             if (particleData.currentProgress < particleData.fullLenght) {
                 particleData.currentProgress += fixedDeltaTime;
 
@@ -121,14 +120,10 @@ void rfct::updateKindlings(frameContext* ctx)
                 rot.rotation.z += angVel.zAngularVelocity * fixedDeltaTime;
             }
             else {
-                toBeRemovedEnt.push_back(smokeParticle);
+                ctx->scene->getRenderData().removeDynamicEntity(smokeParticle);
+                ecs::get().destroy(smokeParticle);
             }
             };
-    }
-    for (entity e : toBeRemovedEnt) {
-        if (e != entt::null) {
-            ctx->scene->deleteDynamicEntity(e);
-        }
     }
 }
 

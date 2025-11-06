@@ -12,6 +12,7 @@ namespace rfct {
 		void initSystem();
 		void spawnData(scene* s, sceneSerializedData* sd);
 		void resetLevel(const frameContext* ctx);
+		//void onLevelSwitch(scene* sc);
 		void updateVisuals(const frameContext* ctx);
 		void updateSystem(frameContext* ctx);
 		inline void cleanupSystem() {};
