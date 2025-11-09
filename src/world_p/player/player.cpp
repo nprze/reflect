@@ -6,6 +6,7 @@
 #include "renderer_p/debug/debug_draw.h"
 #include "world_p/scene.h"
 #include "world_p/physics/physics.h"
+#include "world_p/physics/collision.h"
 #include "world_p/transform.h"
 #include "world_p/ecs.h"
 #include "world_p/decors/dash_kindlings.h"
@@ -60,7 +61,6 @@ entity rfct::playerController::createPlayer(scene* sc, const glm::vec2& spawnPoi
 	reg.emplace<scaleComponent>(player, trans.scale);
 	reg.emplace<positionComponent>(player, positionComponent{ spawnPoint });
 	reg.emplace<gravityComponent>(player, gravityComponent{});
-	reg.emplace<dynamicCircleColliderComponent>(player, dynamicCircleColliderComponent{ {0,-0.245f}, .25f });
 	reg.emplace<velocityComponent>(player, velocityComponent{ glm::vec2(0.f,0.f) });
 	reg.emplace<inputVelocityComponent>(player, inputVelocityComponent{ glm::vec2(0.f,0.f) });
 	reg.emplace<staticObjCollisionCallbackComponent>(player, colCallback);
@@ -111,30 +111,6 @@ void rfct::playerController::update(frameContext* ctx)
 		for (uint8_t i = 0; i < 4; i++) {
 			lines[i].vertices[0].color = { 0.8f, 0.8f, 0.8f };
 			lines[i].vertices[1].color = { 0.8f, 0.8f, 0.8f };
-		}
-
-		// draw circle
-		const int segments = 20;
-		const dynamicCircleColliderComponent* circ = &ecs::get().get<dynamicCircleColliderComponent>(player);
-		lines = debugDraw::requestLines(segments);
-
-		const float step = 2.0f * 3.14159265359f / segments;
-
-		for (int i = 0; i < segments; i++) {
-			float angle1 = i * step;
-			float angle2 = (i + 1) * step;
-
-			float x1 = pos->position.x + circ->offsetFromCenter.x + circ->radius * cosf(angle1);
-			float y1 = pos->position.y + circ->offsetFromCenter.y + circ->radius * sinf(angle1);
-
-			float x2 = pos->position.x + circ->offsetFromCenter.x + circ->radius * cosf(angle2);
-			float y2 = pos->position.y + circ->offsetFromCenter.y + circ->radius * sinf(angle2);
-
-			lines[i].vertices[0].pos = { x1, y1, 0.0f };
-			lines[i].vertices[1].pos = { x2, y2, 0.0f };
-
-			lines[i].vertices[0].color = { 0.8f, 0.4f, 0.4f };
-			lines[i].vertices[1].color = { 0.8f, 0.4f, 0.4f };
 		}
 	}
 	// object to hold

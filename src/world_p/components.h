@@ -95,13 +95,6 @@ namespace rfct {
         glm::vec2 min;
         glm::vec2 max;
     };
-    struct dynamicCircleColliderComponent { // center at positionComponent
-        glm::vec2 offsetFromCenter;
-        float radius;
-    };
-    struct staticCircleColliderComponent {
-        float radius;
-    };
 
 
 	struct velocityComponent {

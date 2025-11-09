@@ -12,7 +12,7 @@ void rfct::world::initWorld(const std::string& path)
 {
 	objectSystems::get().init();
 	m_RenderData = new sceneRenderData();
-	loadScene("scenes/sc.txt");
+	loadScene("scenes/showcase.txt");
 }
  
 void rfct::world::loadScene(const std::string& path)
@@ -42,24 +42,23 @@ void rfct::world::onUpdate(frameContext& context)
 
 		loadScene("scenes/showcase.txt");
 		context.scene = m_currentScene;
-		//objectSystems::get().switchScene(m_currentScene);
 	}
-	//auto jobs = std::make_shared<rfct::jobTracker>();
-	//jobSystem::get().KickJob([&]() {
-	//	RFCT_PROFILE_SCOPE("Debug Draw");
-        debugDraw::drawText("FPS: " + std::to_string(int(1 / context.dt)), glm::vec2(0, 0), 0.2);
-	//	}, *jobs);
-	//jobSystem::get().KickJob([&]() {
-	//	RFCT_PROFILE_SCOPE("Scene update");
+	auto jobs = std::make_shared<rfct::jobTracker>();
+	jobSystem::get().KickJob([&]() {
+		RFCT_PROFILE_SCOPE("Debug Draw");
+      debugDraw::drawText("FPS: " + std::to_string(int(1 / context.dt)), glm::vec2(0, 0), 0.2);
+		}, *jobs);
+	jobSystem::get().KickJob([&]() {
+		RFCT_PROFILE_SCOPE("Scene update");
         m_currentScene->onUpdate(&context);
-	//	}, *jobs);
+		}, *jobs);
 #ifdef ANDROID_BUILD
     jobSystem::get().KickJob([&]() {
         RFCT_PROFILE_SCOPE("android UI update");
 		input::getInput().drawButtons();
     }, *jobs);
 #endif
-	//jobs->waitAll();
+	jobs->waitAll();
 }
 
 

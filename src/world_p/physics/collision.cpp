@@ -70,42 +70,6 @@ glm::vec2 rfct::ResolveAABBCollision(const glm::vec2& aMin, const glm::vec2& aMa
     }
 }
 
-glm::vec2 rfct::ResolveAABBCircleCollision(const dynamicCircleColliderComponent& dynamic, const staticBoxColliderComponent& staticCol)
-{
-
-    glm::vec2 center = dynamic.offsetFromCenter;
-
-    glm::vec2 closest = glm::clamp(center, staticCol.min, staticCol.max);
-
-    glm::vec2 diff = center - closest;
-    float dist2 = glm::dot(diff, diff);
-
-    // Circle center is outside box
-    if (dist2 > 0.0f) {
-        float dist = std::sqrt(dist2);
-        if (dist < dynamic.radius) {
-            glm::vec2 normal = diff / dist;
-            float penetration = dynamic.radius - dist;
-            return normal * penetration;
-        }
-    }
-    // Circle center inside box
-    else {
-        float left = center.x - staticCol.min.x;
-        float right = staticCol.max.x - center.x;
-        float down = center.y - staticCol.min.y;
-        float up = staticCol.max.y - center.y;
-
-        float minPen = std::min({ left, right, down, up });
-        if (minPen == left)   return glm::vec2(dynamic.radius - left, 0);
-        if (minPen == right)  return glm::vec2(-(dynamic.radius - right), 0);
-        if (minPen == down)   return glm::vec2(0, dynamic.radius - down);
-        if (minPen == up)     return glm::vec2(0, -(dynamic.radius - up));
-    }
-
-    return glm::vec2(0.0f);
-}
-
 bool rfct::checkRayStatic(BVHnode& node, const glm::vec2& rayStart, const glm::vec2& rayEnd)
 {
 

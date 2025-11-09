@@ -17,11 +17,6 @@ namespace rfct {
         return (aMin.x <= bMax.x && aMax.x >= bMin.x &&
             aMin.y <= bMax.y && aMax.y >= bMin.y);
     }
-    inline bool checkCollisionAABBCircle(const glm::vec2& aMin, const glm::vec2& aMax, const glm::vec2& circleCenter, float radius) {
-        glm::vec2 nearest = nearestPointOnAABB(circleCenter, aMin, aMax);
-        float distSq = glm::dot(nearest - circleCenter, nearest - circleCenter);
-        return distSq <= radius * radius;
-    }
     inline bool checkIntersectRayAABB(const glm::vec2& ro, const glm::vec2& rd, const glm::vec2& aabbMin, const glm::vec2& aabbMax)
     {
         glm::vec2 invDir;
@@ -69,7 +64,6 @@ namespace rfct {
 
     glm::vec2 ResolveAABBCollision(const dynamicBoxColliderComponent& dynamic, const staticBoxColliderComponent& staticCol);
     glm::vec2 ResolveAABBCollision(const glm::vec2& aMin, const glm::vec2& aMax, const glm::vec2& bMin, const glm::vec2& bMax); // returns what should be applied to a to resolve :)
-    glm::vec2 ResolveAABBCircleCollision(const dynamicCircleColliderComponent& dynamic, const staticBoxColliderComponent& staticCol);
 
 
     bool checkRayStatic(BVHnode& node, const glm::vec2& rayStart, const glm::vec2& rayEnd);

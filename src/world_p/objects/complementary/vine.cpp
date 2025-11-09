@@ -390,38 +390,39 @@ namespace rfct {
 
 			auto vineQuery = ecs::get().view<vineStateComponent, vinePositionsComponent, vineLenghtComponent, dynamicBoxColliderComponent, positionComponent>();
 			for (auto [ent, sc, pos, vl, boc, position] : vineQuery.each()) {
-				if (sc.holdingToThis)return;
-				std::vector<glm::vec2>& positions = pos.positions;
-				std::vector<glm::vec2>& previousPositions = pos.previousPosition;
-				float oneBoneLenght = vl.oneBoneLenght;
-				for (uint8_t i = 0; i < ctx->fixedUpdateTimes; ++i) {
-					for (uint32_t j = 0; j < positions.size(); ++j) {
-						glm::vec2 vel = positions[j] - previousPositions[j];
-						previousPositions[j] = positions[j];
-						vel *= 0.99f;
-						positions[j] += vel;
-						positions[j] += vineGravity * fixedDeltaTime * fixedDeltaTime;
-					}
-
-					positions[0] = { 0.f,-.01f };
-					previousPositions[0] = { 0.f,-0.01f };
-
-					for (int iter = 0; iter < RFCT_VINE_CONSTRAINS_ITERATIONS; ++iter) {
-						for (uint32_t i = 1; i < positions.size(); ++i) {
-
-							glm::vec2 dir = positions[i] - positions[i - 1];
-							float dist = glm::length(dir);
-							float diff = (dist - oneBoneLenght) / dist;
-
-							positions[i - 1] += dir * 0.5f * diff;
-							positions[i] -= dir * 0.5f * diff;
+				if (!sc.holdingToThis) {
+					std::vector<glm::vec2>& positions = pos.positions;
+					std::vector<glm::vec2>& previousPositions = pos.previousPosition;
+					float oneBoneLenght = vl.oneBoneLenght;
+					for (uint8_t i = 0; i < ctx->fixedUpdateTimes; ++i) {
+						for (uint32_t j = 0; j < positions.size(); ++j) {
+							glm::vec2 vel = positions[j] - previousPositions[j];
+							previousPositions[j] = positions[j];
+							vel *= 0.99f;
+							positions[j] += vel;
+							positions[j] += vineGravity * fixedDeltaTime * fixedDeltaTime;
 						}
-						positions[0] = glm::vec2(0.f, -.01f);
-					}
 
-				}
-				constructBoundingBox(boc, pos);
+						positions[0] = { 0.f,-.01f };
+						previousPositions[0] = { 0.f,-0.01f };
+
+						for (int iter = 0; iter < RFCT_VINE_CONSTRAINS_ITERATIONS; ++iter) {
+							for (uint32_t i = 1; i < positions.size(); ++i) {
+
+								glm::vec2 dir = positions[i] - positions[i - 1];
+								float dist = glm::length(dir);
+								float diff = (dist - oneBoneLenght) / dist;
+
+								positions[i - 1] += dir * 0.5f * diff;
+								positions[i] -= dir * 0.5f * diff;
+							}
+							positions[0] = glm::vec2(0.f, -.01f);
+						}
+
+					}
+					constructBoundingBox(boc, pos);
 				};
+			}
 		}
 	};
 	void vines::onStartHolding(nearestObject& nearest)
