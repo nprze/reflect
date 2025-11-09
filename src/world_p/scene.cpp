@@ -245,7 +245,7 @@ void rfct::scene::resolvePendingDynamicEnitityDeletions()
 
 entity rfct::scene::createDynamicRenderingEntity(std::vector<Vertex>* vertices, glm::mat4* model, uint32_t numVertices)
 {
-	objectLocation ol = m_World->getRenderData().addDynamicObject(vertices, model, true, {}, numVertices);
+	objectLocation ol = m_World->getRenderData().addDynamicObject(vertices, model, {}, numVertices);
 
 	entt::registry& reg = ecs::get();
 	entity e = reg.create();

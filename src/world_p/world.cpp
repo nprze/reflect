@@ -12,7 +12,7 @@ void rfct::world::initWorld(const std::string& path)
 {
 	objectSystems::get().init();
 	m_RenderData = new sceneRenderData();
-	loadScene("scenes/load-test.txt");
+	loadScene("scenes/sc.txt");
 }
  
 void rfct::world::loadScene(const std::string& path)
@@ -40,7 +40,6 @@ void rfct::world::onUpdate(frameContext& context)
 		ecs::get().clear();
 		m_RenderData->clearAllData();
 
-		m_currentScene = new scene(this);
 		loadScene("scenes/showcase.txt");
 		context.scene = m_currentScene;
 		//objectSystems::get().switchScene(m_currentScene);

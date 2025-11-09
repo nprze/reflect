@@ -266,11 +266,6 @@ namespace rfct {
 			glm::mat4 transform = glm::translate(glm::mat4(1.f), { vi.start, 0.f });
 			objectLocation ol = s->getRenderData().addDynamicObject(&verts.vertices, &transform);
 
-			frameContext simpleCtx = {};
-			for (uint8_t i = 1; i < RFCT_FRAMES_IN_FLIGHT; i++) {
-				simpleCtx.frame = i;
-				s->getRenderData().updateMat(&simpleCtx, ol.indexInSSBO, &transform);
-			}
 
 			entt::registry& reg = ecs::get();
 
@@ -296,7 +291,7 @@ namespace rfct {
 
 			constructBoundingBox(reg.get<dynamicBoxColliderComponent>(e), reg.get<vinePositionsComponent>(e));
 		}
-		nearestVineEdgeToPlayerIndex = -1;
+ 		nearestVineEdgeToPlayerIndex = -1;
 	};
 	void vines::resetLevel(const frameContext* ctx) {
 		auto vineQuery = ecs::get().view<vineStateComponent, vinePositionsComponent, vineLenghtComponent, dynamicBoxColliderComponent, positionComponent>();
