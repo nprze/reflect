@@ -1,3 +1,4 @@
+anim
 background
 building_blocks
 dialogues
@@ -7,6 +8,8 @@ scenes
 shaders
 UI
 world
+anim/enemy
+anim/jump_boost
 dialogues/characters
 dialogues/characters/test
 player/walkAnim

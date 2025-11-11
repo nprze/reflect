@@ -132,13 +132,13 @@ void rfct::sceneLoader::loadScene(const std::string& path, sceneSerializedData* 
                 dirString.pop_back();
             }
             if (dirString == "up") {
-                spk.dir = SpikeDirection::up;
+                spk.dir = SpikeDirection::SpikeDirUp;
             }else if (dirString == "down") {
-                spk.dir = SpikeDirection::down;
+                spk.dir = SpikeDirection::SpikeDirDown;
             }else if (dirString == "right") {
-                spk.dir = SpikeDirection::right;
+                spk.dir = SpikeDirection::SpikeDirRight;
             }else if (dirString == "left") {
-                spk.dir = SpikeDirection::left;
+                spk.dir = SpikeDirection::SpikeDirLeft;
             }
             out->spikes.push_back(std::move(spk));
         }

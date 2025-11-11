@@ -3,18 +3,18 @@
 #include <glm/glm.hpp>
 namespace rfct {
     enum SpikeDirection {
-        up,
-        down,
-        right,
-        left
+        SpikeDirUp,
+        SpikeDirDown,
+        SpikeDirRight,
+        SpikeDirLeft
     };
     inline glm::vec2 getMoveDir(SpikeDirection dir) {
         glm::vec2 returnVal = {0,0};
-        if (dir <= SpikeDirection::down) {
-            returnVal.y = (dir == SpikeDirection::up ? 1: -1);
+        if (dir <= SpikeDirection::SpikeDirDown) {
+            returnVal.y = (dir == SpikeDirection::SpikeDirUp ? 1: -1);
         }
         else {
-            returnVal.x = (dir == SpikeDirection::right ? 1: -1);
+            returnVal.x = (dir == SpikeDirection::SpikeDirRight ? 1: -1);
         }
         return returnVal;
     }

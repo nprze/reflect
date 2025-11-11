@@ -174,27 +174,14 @@ void android_main(android_app* state) {
                 // Get the action for this pointer
                 int actionMasked = AMotionEvent_getAction(event) & AMOTION_EVENT_ACTION_MASK;
 
-                // If it's a pointer index action (like POINTER_DOWN/POINTER_UP)
-                if (actionMasked == AMOTION_EVENT_ACTION_POINTER_DOWN ||
-                    actionMasked == AMOTION_EVENT_ACTION_POINTER_UP) {
-                    int actionIndex = (AMotionEvent_getAction(event) & AMOTION_EVENT_ACTION_POINTER_INDEX_MASK)
-                            >> AMOTION_EVENT_ACTION_POINTER_INDEX_SHIFT;
-                    if (i == actionIndex) {
-                        inputEvent.action = actionMasked;
-                    } else {
-                        inputEvent.action = AMOTION_EVENT_ACTION_MOVE;
-                    }
-                } else {
-                    inputEvent.action = actionMasked;
-                }
+                inputEvent.action = actionMasked;
 
                 // Add to the input queue
                 rfct::InputQueue::eventQueue.push_back(inputEvent);
             }
-
+            //RFCT_INFO("motion event");
             return 1; // Event handled
         }
-
         return 0; // Not a motion event
         };
 

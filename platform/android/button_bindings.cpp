@@ -202,7 +202,6 @@ void rfct::joystick::updateDir()
         moveDirection = dir::DirUndefined;
     }
     if (gameplayButtonBindings::buttonBindings.dashBttn.isClicked) {
-        RFCT_INFO("dashing!");
         if (glm::length(direction) > 0.1 * intractionRadius) {
             direction = glm::normalize(lastTouchPos - position);
             float angle = atan2(direction.y, direction.x);
