@@ -40,6 +40,7 @@ namespace rfct {
         frameAnimation loadAnimation(const std::string& path, animationBuffer* location, uint32_t matrixIndex = 1);
         void createDummyImage(image* imageOut);
         vk::CommandPool& getCommandPool();
+        std::string getPath() { return m_Path; };
     private:
         vk::CommandPool m_AssetsCommandPool;
         std::string m_Path;

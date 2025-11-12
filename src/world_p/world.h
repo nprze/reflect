@@ -3,9 +3,13 @@
 #include "context.h"
 #include "scene.h"
 #include "render_data.h"
+
+//only for debug
+#include "sound_p/sound.h"
 namespace rfct {
 	class scene;
 	class world {
+		sound bg;
 	private:
 		static world currentWorld;
 	public:
