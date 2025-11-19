@@ -1,38 +1,55 @@
 #include "sound.h"
+#include "assets/assets_manager.h"
+
 rfct::soundPlayer rfct::soundPlayer::instance;
+
 rfct::soundPlayer::soundPlayer()
 {
-    ma_engine_config config = ma_engine_config_init();
-
-    if (ma_engine_init(&config, &m_engine) != MA_SUCCESS) {
-        RFCT_CRITICAL("Failed to init engine");
+    m_soundMemory = createArena(sizeof(ma_sound) * 10);
+    ma_result result;
+    result = ma_engine_init(NULL, &m_engine);
+    if (result != MA_SUCCESS) {
+        RFCT_CRITICAL("Failed to init audio engine");
     }
+
 }
 
 rfct::soundPlayer::~soundPlayer()
 {
     ma_engine_uninit(&m_engine);
+    deleteArena(&m_soundMemory);
 }
 
-rfct::sound rfct::soundPlayer::loadSound(const std::string& path)
+rfct::sound rfct::soundPlayer::loadSound(const std::string& soundPath)
 {
-	sound s;
-
-    RFCT_ASSERT(ma_sound_init_from_file(&m_engine, path.c_str(), 0, nullptr, nullptr, &s.internalSound) == MA_SUCCESS);
-
-    s.isIntitialized = true;
-
-    return s;
-}
-
-void rfct::sound::play()
-{
-    ma_sound_start(&internalSound);
-}
-
-rfct::sound::~sound()
-{
-    if (isIntitialized) {
-        ma_sound_uninit(&internalSound);
+    sound soundData;
+    soundData.memory = (ma_sound*)m_soundMemory.allocMemoryArena(sizeof(ma_sound));
+    ma_result result;
+    result = ma_sound_init_from_file(&m_engine, soundPath.c_str(), 0, NULL, NULL, soundData.memory);
+    if (result != MA_SUCCESS) {
+        RFCT_ERROR("Failed to load sound: {}", soundPath.c_str());
     }
+    return soundData;
+}
+
+void rfct::soundPlayer::playSound(sound& sound)
+{
+    ma_sound_start(sound.memory);
+}
+
+void rfct::soundPlayer::deleteSound(sound& sound)
+{
+    ma_sound_uninit(sound.memory);
+}
+
+void rfct::soundManager::loadSounds()
+{
+    background = soundPlayer::get().loadSound(AssetsManager::get().getPath() + "/" + "sound/sample-background.wav");
+    swoosh = soundPlayer::get().loadSound(AssetsManager::get().getPath() + "/" + "sound/swoosh.wav");
+}
+
+void rfct::soundManager::unloadSounds()
+{
+    soundPlayer::get().deleteSound(background);
+    soundPlayer::get().deleteSound(swoosh);
 }

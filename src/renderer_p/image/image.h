@@ -6,13 +6,12 @@ namespace rfct {
 		fontAtlas,
         ui
     };
-    class image {
+    struct image {
     public:
         image(const std::string& path);
         ~image();
         void transitionImageLayout(vk::CommandBuffer commandBuffer, vk::ImageLayout oldLayout, vk::ImageLayout newLayout);
         void copyBufferToImage(vk::CommandBuffer commandBuffer, vk::Buffer buffer);
-
     public:
         uint32_t width;
         uint32_t height;

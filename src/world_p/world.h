@@ -4,12 +4,9 @@
 #include "scene.h"
 #include "render_data.h"
 
-//only for debug
-#include "sound_p/sound.h"
 namespace rfct {
 	class scene;
 	class world {
-		sound bg;
 	private:
 		static world currentWorld;
 	public:
@@ -20,9 +17,7 @@ namespace rfct {
 		void cleanWorld();
 		void onUpdate(frameContext& context);
         void addScreenTransform(float degree);
-		sceneRenderData& getRenderData() {
-			return *m_RenderData;
-		};
+		sceneRenderData& getRenderData() { return *m_RenderData; };
 	private:
 		world() = default;
 		~world() = default;

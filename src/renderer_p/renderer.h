@@ -12,7 +12,7 @@
 
 namespace rfct {
 	constexpr vk::SampleCountFlagBits msaaSamples = vk::SampleCountFlagBits::e4;
-	struct SurfaceWrapper { // surface works a little bit sussy on android (this handles the calls java makes on surface holder change)
+	struct SurfaceWrapper { // surface works a little differently on android
 		vk::SurfaceKHR surface;
         SurfaceWrapper(vk::SurfaceKHR surfaceArg);
         void newSurface(vk::SurfaceKHR surfaceArg);

@@ -2,7 +2,7 @@
 #include <glm/glm.hpp>
 
 using collisionHandler = void(*)(entity, entity, glm::vec2);
-using dynamicCollisionHandler = void(*)(entity, entity); // the second entity must have EITHER dynamic box collider or dynamic circle collider
+using dynamicCollisionHandler = void(*)(entity, entity); // the second entity must have dynamic box collider
 using rayHitCallback = void(*)(entity, entity); // the second entity must have static box collider. the first one is the ray
 
 namespace flecs {

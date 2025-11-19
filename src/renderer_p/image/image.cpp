@@ -25,6 +25,7 @@ rfct::image::~image()
 }
 void rfct::image::transitionImageLayout(vk::CommandBuffer commandBuffer, vk::ImageLayout oldLayout, vk::ImageLayout newLayout)
 {
+    RFCT_PROFILE_FUNCTION();
     vk::ImageMemoryBarrier barrier{};
     barrier.oldLayout = oldLayout;
     barrier.newLayout = newLayout;

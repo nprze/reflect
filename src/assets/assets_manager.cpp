@@ -19,11 +19,21 @@
 #include "renderer_p/frame_anim/anim_buffer.h"
 
 namespace rfct {
+    AssetsManager AssetsManager::instance;
+
+    void AssetsManager::init(std::string path)
+    {
+#ifdef WINDOWS_BUILD
+        m_Path = std::string(RFCT_ASSETS_DIR);
+#else // android
+        m_Path = path;
+#endif // WINDOWS_BUILD
+    }
+
     void AssetsManager::uploadVertices(const std::vector<Vertex>& vertices, VulkanBuffer* buffer, vk::DeviceSize offset)
     {
         vk::DeviceSize bufferSize = vertices.size() * sizeof(Vertex);
 
-        // 1. Create a staging buffer
         VkBufferCreateInfo stagingBufferInfo = {
             .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
             .size = bufferSize,
@@ -48,7 +58,6 @@ namespace rfct {
             RFCT_CRITICAL("Failed to create staging buffer!");
         }
 
-        // 2. Copy data to the staging buffer
         void* data;
         vmaMapMemory(renderer::getRen().getAllocator(), stagingBufferAllocation, &data);
         memcpy(data, vertices.data(), (size_t)bufferSize);
@@ -93,18 +102,6 @@ namespace rfct {
         renderer::getRen().getDevice().freeCommandBuffers(m_AssetsCommandPool, commandBuffer);
     }
 
-
-    AssetsManager AssetsManager::instance;
-
-    void AssetsManager::init(std::string path)
-    {
-#ifdef WINDOWS_BUILD
-        m_Path = std::string(RFCT_ASSETS_DIR);
-#else
-        // android
-        m_Path = path;
-#endif // WINDOWS_BUILD
-    }
 
     void AssetsManager::cleanup()
     {
@@ -641,7 +638,7 @@ namespace rfct {
         }
     }
 
-    frameAnimation AssetsManager::loadAnimation(const std::string& path, animationBuffer* loc, uint32_t matrixIndex)
+    void AssetsManager::loadAnimation(const std::string& path, frameAnimation* animOut, animationBuffer* loc, uint32_t matrixIndex)
     {
         std::string finalPath = m_Path + "/" + path;
         std::ifstream file(finalPath);
@@ -718,15 +715,13 @@ namespace rfct {
         uploadVertices(vertices, location.buffer, location.offsetInBytes);
         
 
-        frameAnimation anim;
-        anim.buffer = location.buffer;
-        anim.bufferOffsetInBytes = location.offsetInBytes;
-        anim.cycleTime = cycleTime;
-        anim.frameCount = keyFrameCount;
-        anim.shouldBeRepeated = repeatAnimation;
-        anim.trianglesPerFrame = std::move(trianglesCount);
-        anim.timePerFrame = cycleTime / keyFrameCount;
-        return anim;
+        animOut->buffer = location.buffer;
+        animOut->bufferOffsetInBytes = location.offsetInBytes;
+        animOut->cycleTime = cycleTime;
+        animOut->frameCount = keyFrameCount;
+        animOut->shouldBeRepeated = repeatAnimation;
+        animOut->trianglesPerFrame = std::move(trianglesCount);
+        animOut->timePerFrame = cycleTime / keyFrameCount;
     }
 
     void AssetsManager::createDummyImage(image* imageOut)

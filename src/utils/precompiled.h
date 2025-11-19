@@ -11,6 +11,7 @@
 #include "sizes.h"
 #include "entt/entt.hpp"
 #include "world_p/ecs.h"
+#include "alloc.h"
 
 using entity = entt::entity;
 

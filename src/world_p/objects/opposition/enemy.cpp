@@ -104,13 +104,13 @@ namespace rfct {
 			uint32_t ssboMatrixIndex = s->getRenderData().addDynamicMat(&noCtx, &model);
 
 			iss >> singleAnimName;
-			eComp.walkFrameAnim = AssetsManager::get().loadAnimation(singleAnimName + ".txt", &animBuffer, ssboMatrixIndex);
+			AssetsManager::get().loadAnimation(singleAnimName + ".txt", &eComp.walkFrameAnim, &animBuffer, ssboMatrixIndex);
 
 			iss >> singleAnimName;
-			eComp.turnFrameAnim = AssetsManager::get().loadAnimation(singleAnimName + ".txt", &animBuffer, ssboMatrixIndex);
+			AssetsManager::get().loadAnimation(singleAnimName + ".txt", &eComp.turnFrameAnim, &animBuffer, ssboMatrixIndex);
 
 			iss >> singleAnimName;
-			eComp.dieFrameAnim = AssetsManager::get().loadAnimation(singleAnimName + ".txt", &animBuffer, ssboMatrixIndex);
+			AssetsManager::get().loadAnimation(singleAnimName + ".txt", &eComp.dieFrameAnim, &animBuffer, ssboMatrixIndex);
 
 			eComp.animIndex = 0;
 			eComp.frameIndex = 0;

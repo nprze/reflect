@@ -1,6 +1,6 @@
 #pragma once
 namespace rfct {
-    class vulkanShader
+    struct vulkanShader
     {
     public:
         vulkanShader(const std::string& spirvFilePath);

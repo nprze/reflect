@@ -7,16 +7,16 @@
 
 
 namespace rfct {
-    class vulkanShader;
-    class image;
+    struct vulkanShader;
+    struct image;
     class font;
     struct buildingBlockMesh;
     struct frameAnimation;
     struct animationBuffer;
     class VulkanBuffer;
 
-    // this class exist because the path for assets waries by platform.
-    // in java android app code, the data from assets folder is copied to the app local data folder where the data can be freely read/modified.
+    // this class exist because the path for assets varies by platform.
+    // in android app code, the data from assets folder is copied to the app local data folder where the data can be freely read/modified.
     class AssetsManager {
         static AssetsManager instance;
     public:
@@ -37,10 +37,13 @@ namespace rfct {
 
         void uploadVertices(const std::vector<Vertex>& vertices, VulkanBuffer* buffer, vk::DeviceSize offset); // helper function
 
-        frameAnimation loadAnimation(const std::string& path, animationBuffer* location, uint32_t matrixIndex = 1);
+        void loadAnimation(const std::string& path, frameAnimation* animOut, animationBuffer* location, uint32_t matrixIndex = 1);
         void createDummyImage(image* imageOut);
+        
+        
         vk::CommandPool& getCommandPool();
         std::string getPath() { return m_Path; };
+
     private:
         vk::CommandPool m_AssetsCommandPool;
         std::string m_Path;
