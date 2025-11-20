@@ -4,7 +4,7 @@
 #include "player/player.h"
 #include "objects/objects.h"
 #include "decors/decorations.h"
-#include "assets/scene_serialize_data.h"
+#include "assets/serialize_structures/scene_serialize_data.h"
 
 namespace rfct {
 	class world;
@@ -14,7 +14,7 @@ namespace rfct {
 		scene(world* worldArg);
 
 		void onUpdate(frameContext* context);
-		void loadScene(const std::string& path);
+		void initScene(const std::string& path);
 		void unloadScene();
 		sceneRenderData& getRenderData();
 

@@ -18,7 +18,7 @@ void rfct::world::loadScene(const std::string& path)
 {
 	RFCT_PROFILE_FUNCTION();
 	m_currentScene = new scene(this);
-	m_currentScene->loadScene(path);
+	m_currentScene->initScene(path);
 }
 
 

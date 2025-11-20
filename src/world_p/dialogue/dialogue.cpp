@@ -1,5 +1,5 @@
 #include "dialogue.h"
-#include "assets/assets_manager.h"
+#include "assets/object_load.h"
 #include "context.h"
 #include "renderer_p/debug/debug_draw.h"
 #include "input.h"
@@ -7,7 +7,7 @@
 
 rfct::dialogue::dialogue(const std::string& dialoguePath)
 {
-	AssetsManager::get().loadDialogue("dialogues/"+dialoguePath+".txt", &m_serializeData);
+	loadDialogue("dialogues/"+dialoguePath+".txt", &m_serializeData);
 	RFCT_INFO("dialogue participant count: {}", m_serializeData.participants.size());
 	nodeIndex = 0;
 }
@@ -199,7 +199,7 @@ void rfct::dialogue::onChangeCycle()
 rfct::characterSpritesheet::characterSpritesheet(const std::string& characterName, const std::string& spritesheetName): spriteSheetImage("dialogues/characters/"+characterName+"/"+spritesheetName+".png")
 {
 	dialogueSpritesheetSerializeData sd;
-	AssetsManager::get().loadDialogueSpriteSheet("dialogues/characters/" + characterName + "/" + spritesheetName + ".txt", &sd);
+	loadDialogueSpriteSheet("dialogues/characters/" + characterName + "/" + spritesheetName + ".txt", &sd);
 	cycles = std::move(sd.cycles);
 	rowCount = sd.rowCount;
 	columnCount = sd.columnCount;

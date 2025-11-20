@@ -1,16 +1,15 @@
 #include "image.h"
-
+#include "assets/image_load.h"
 #include "renderer_p/renderer.h"
-#include "assets/assets_manager.h"
 
 rfct::image::image(const std::string& path)
 {
 	if (path.empty()) {
-		AssetsManager::get().createDummyImage(this);
+        createDummyImage(this);
 		return;
     }
     else {
-        AssetsManager::get().loadImage(path, this);
+        loadImage(path, this);
     }
 }
 

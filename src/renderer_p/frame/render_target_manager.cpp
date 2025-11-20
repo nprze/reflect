@@ -1,11 +1,11 @@
 #include "render_target_manager.h"
+#include "assets/assets_utils.h"
 #include "renderer_p/renderer.h"
-#include "assets/assets_manager.h"
-namespace rfct {
 
+namespace rfct {
     void transformImage(vk::Image im, vk::ImageLayout newLayout) {
         vk::CommandBufferAllocateInfo allocInfo(
-            AssetsManager::get().getCommandPool(),
+            getAssetsCommandPool(),
             vk::CommandBufferLevel::ePrimary,
             1
         );
@@ -59,7 +59,7 @@ namespace rfct {
         renderer::getRen().getDeviceWrapper().getQueueManager().submitGraphics(submitInfo, fence);
         RFCT_VULKAN_CHECK(renderer::getRen().getDevice().waitForFences(fence, VK_TRUE, UINT64_MAX));
 
-        renderer::getRen().getDevice().freeCommandBuffers(AssetsManager::get().getCommandPool(), commandBuffer);
+        renderer::getRen().getDevice().freeCommandBuffers(getAssetsCommandPool(), commandBuffer);
         renderer::getRen().getDevice().destroyFence(fence);
     }
 

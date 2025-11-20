@@ -7,7 +7,7 @@
 #include "world_p/physics/collision.h"
 #include "world_p/world.h"
 #include "renderer_p/frame_anim/anim_buffer.h"
-#include "assets/assets_manager.h"
+#include "assets/mesh_load.h"
 #include "world_p/objects/objects.h"
 
 namespace rfct {
@@ -104,13 +104,13 @@ namespace rfct {
 			uint32_t ssboMatrixIndex = s->getRenderData().addDynamicMat(&noCtx, &model);
 
 			iss >> singleAnimName;
-			AssetsManager::get().loadAnimation(singleAnimName + ".txt", &eComp.walkFrameAnim, &animBuffer, ssboMatrixIndex);
+			loadAnimation(singleAnimName + ".txt", &eComp.walkFrameAnim, &animBuffer, ssboMatrixIndex);
 
 			iss >> singleAnimName;
-			AssetsManager::get().loadAnimation(singleAnimName + ".txt", &eComp.turnFrameAnim, &animBuffer, ssboMatrixIndex);
+			loadAnimation(singleAnimName + ".txt", &eComp.turnFrameAnim, &animBuffer, ssboMatrixIndex);
 
 			iss >> singleAnimName;
-			AssetsManager::get().loadAnimation(singleAnimName + ".txt", &eComp.dieFrameAnim, &animBuffer, ssboMatrixIndex);
+			loadAnimation(singleAnimName + ".txt", &eComp.dieFrameAnim, &animBuffer, ssboMatrixIndex);
 
 			eComp.animIndex = 0;
 			eComp.frameIndex = 0;

@@ -3,7 +3,7 @@
 #include "job_system_p/job_system.h"
 #include "frame/frame_data.h"
 #include "world_p/scene.h"
-#include "assets/assets_manager.h"
+#include "assets/assets_utils.h"
 
 namespace rfct {
     renderer* renderer::ren = nullptr;
@@ -94,7 +94,7 @@ void rfct::renderer::updateWindow(RFCT_NATIVE_WINDOW_ANDROID RFCT_NATIVE_WINDOW_
 };
 
 rfct::renderer::~renderer() {
-    AssetsManager::get().cleanup();
+    cleanupAssetsCommandPool();
 };
 
 void rfct::renderer::render(frameContext& frameContext)

@@ -1,5 +1,5 @@
 #include "sound.h"
-#include "assets/assets_manager.h"
+#include "assets/assets_utils.h"
 
 rfct::soundPlayer rfct::soundPlayer::instance;
 rfct::soundManager rfct::soundManager::instance;
@@ -44,8 +44,8 @@ void rfct::soundPlayer::deleteSound(sound& sound)
 
 void rfct::soundManager::loadSounds()
 {
-    background = soundPlayer::get().loadSound(AssetsManager::get().getPath() + "/" + "sound/sample-background.wav");
-    swoosh = soundPlayer::get().loadSound(AssetsManager::get().getPath() + "/" + "sound/swoosh.mp3");
+    background = soundPlayer::get().loadSound(getAssetsPath() + "/sound/sample-background.wav");
+    swoosh = soundPlayer::get().loadSound(getAssetsPath() + "/sound/swoosh.mp3");
 }
 
 void rfct::soundManager::unloadSounds()

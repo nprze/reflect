@@ -1,10 +1,14 @@
 #include "ui_pipeline.h"
-
 #include "renderer_p/renderer.h"
-#include "assets/assets_manager.h"
 
 
-rfct::UIPipeline::UIPipeline(vk::RenderPass renderPass) : m_vertexShader("shaders/UI/UIimage_vert.spv"), m_fragShader("shaders/UI/UIimage_frag.spv"), m_glyphsRenderData(RFCT_DEBUG_DRAW_VERTEX_BUFFER_MAX_SIZE), m_debugDrawglyphsRenderData(RFCT_DEBUG_DRAW_VERTEX_BUFFER_MAX_SIZE), m_defaultFont("fonts/jetbrainsMono-medium.txt"), m_dummyImage("")
+rfct::UIPipeline::UIPipeline(vk::RenderPass renderPass) 
+    : m_vertexShader("shaders/UI/UIimage_vert.spv"), 
+    m_fragShader("shaders/UI/UIimage_frag.spv"), 
+    m_glyphsRenderData(RFCT_DEBUG_DRAW_VERTEX_BUFFER_MAX_SIZE), 
+    m_debugDrawglyphsRenderData(RFCT_DEBUG_DRAW_VERTEX_BUFFER_MAX_SIZE), 
+    m_defaultFont("fonts/jetbrainsMono-medium.txt"), 
+    m_dummyImage("")
 {
     createPipeline(renderPass);
     createDescriptorSet();

@@ -1,7 +1,7 @@
 #pragma once
-#include "assets/dialogue_serialize_data.h"
+#include "assets/serialize_structures/dialogue_serialize_data.h"
 #include "renderer_p/image/bindable_image.h"
-#include "assets/dialogue_serialize_data.h"
+#include "assets/serialize_structures/dialogue_serialize_data.h"
 
 namespace rfct {
 	constexpr float waitBetweenLines = .5f;

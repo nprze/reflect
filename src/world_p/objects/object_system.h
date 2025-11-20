@@ -1,6 +1,6 @@
 #pragma once
 #include "context.h"
-#include "assets/scene_serialize_data.h"
+#include "assets/serialize_structures/scene_serialize_data.h"
 
 namespace rfct {
 	struct objectSystem {

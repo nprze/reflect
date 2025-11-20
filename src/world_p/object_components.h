@@ -1,6 +1,6 @@
 #pragma once
 #include <glm/glm.hpp>
-#include "assets/frame_animation.h"
+#include "assets/serialize_structures/frame_animation_serialize_data.h"
 #include "renderer_p/rasterizer_pipeline/vertex.h"
 
 namespace flecs {

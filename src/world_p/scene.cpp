@@ -10,9 +10,8 @@
 #include "physics/physics.h"
 #include "player/player.h"
 #include "renderer_p/mesh/mesh.h"
-#include "assets/assets_manager.h"
+#include "assets/object_load.h"
 #include "player/player_animations.h"
-#include "assets/dialogue_serialize_data.h"
 #include "objects/objects.h"
 #include "world.h"
 
@@ -40,9 +39,9 @@ void rfct::scene::onUpdate(frameContext* context)
 	resolvePendingDynamicEnitityDeletions();
 }
 
-void rfct::scene::loadScene(const std::string& path)
+void rfct::scene::initScene(const std::string& path)
 {
-	AssetsManager::get().loadScene(path, &m_InitialData);
+	loadScene(path, &m_InitialData);
 	
 	entt::registry& reg = ecs::get();
 

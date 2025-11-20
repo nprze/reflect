@@ -1,7 +1,7 @@
 #include "player_animations.h"
 #include "renderer_p/rasterizer_pipeline/vertex.h"
 #include "renderer_p/buffer/vulkan_buffer.h"
-#include "assets/assets_manager.h"
+#include "assets/mesh_load.h"
 #include <vma/vk_mem_alloc.h>
 #include "player.h"
 
@@ -16,22 +16,21 @@ void rfct::playerAnimations::loadAnimations()
 {
 	buffer.init(RFCT_PLAYER_ANIMATIONS_VERTEX_BUFFER_TRIANGLE_COUNT);
 
-
-	AssetsManager::get().loadAnimation("player/walkAnim/idle.txt", &m_idle, &buffer);
-	AssetsManager::get().loadAnimation("player/walkAnim/walk.txt", &m_walking, &buffer);
-	AssetsManager::get().loadAnimation("player/walkAnim/jump-start.txt", &m_jumpStart, &buffer);
-	AssetsManager::get().loadAnimation("player/walkAnim/jump-up.txt", &m_jumpUp, &buffer);
-	AssetsManager::get().loadAnimation("player/walkAnim/jump-turnover.txt", &m_jumpTurnover, &buffer);
-	AssetsManager::get().loadAnimation("player/walkAnim/jump-fall.txt", &m_jumpFall, &buffer);
-	AssetsManager::get().loadAnimation("player/walkAnim/jump-return.txt", &m_jumpReturn, &buffer);
-	AssetsManager::get().loadAnimation("player/walkAnim/dash.txt", &m_dash, &buffer);
+	loadAnimation("player/walkAnim/idle.txt", &m_idle, &buffer);
+	loadAnimation("player/walkAnim/walk.txt", &m_walking, &buffer);
+	loadAnimation("player/walkAnim/jump-start.txt", &m_jumpStart, &buffer);
+	loadAnimation("player/walkAnim/jump-up.txt", &m_jumpUp, &buffer);
+	loadAnimation("player/walkAnim/jump-turnover.txt", &m_jumpTurnover, &buffer);
+	loadAnimation("player/walkAnim/jump-fall.txt", &m_jumpFall, &buffer);
+	loadAnimation("player/walkAnim/jump-return.txt", &m_jumpReturn, &buffer);
+	loadAnimation("player/walkAnim/dash.txt", &m_dash, &buffer);
 	m_dash.cycleTime = dashFullTime;
-	AssetsManager::get().loadAnimation("player/walkAnim/dash-up.txt", &m_dashUp, &buffer);
+	loadAnimation("player/walkAnim/dash-up.txt", &m_dashUp, &buffer);
 	m_dashUp.cycleTime = dashFullTime;
-	AssetsManager::get().loadAnimation("player/walkAnim/dash-down.txt", &m_dashDown, &buffer);
+	loadAnimation("player/walkAnim/dash-down.txt", &m_dashDown, &buffer);
 	m_dashDown.cycleTime = dashFullTime;
-	AssetsManager::get().loadAnimation("player/walkAnim/hold.txt", &m_hold, &buffer);
-	AssetsManager::get().loadAnimation("player/walkAnim/climb.txt", &m_climb, &buffer);
+	loadAnimation("player/walkAnim/hold.txt", &m_hold, &buffer);
+	loadAnimation("player/walkAnim/climb.txt", &m_climb, &buffer);
 	
 	m_currentAnimation = &m_idle;
 }

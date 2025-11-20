@@ -1,4 +1,6 @@
-#include "scene_loader.h"
+#include "assets_utils.h"
+#include "object_load.h"
+#include "serialize_structures/scene_serialize_data.h"
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -11,13 +13,12 @@
             out.reserve(count);                                                                                     \
         }                                                                                                           
 
-void rfct::sceneLoader::loadScene(const std::string& path, sceneSerializedData* out)
+void rfct::loadScene(const std::string& path, sceneSerializedData* out)
 {
-    // IO only here
-    std::ifstream file(path);
-    if (!file.is_open()) {
-        RFCT_CRITICAL("Failed to open scene file: {}", path);
-        return;
+
+    std::ifstream file;
+    if (!openAssetFile(path, &file)) {
+        RFCT_CRITICAL("Could not open scene file:  {}", path);
     }
 
     std::string line;

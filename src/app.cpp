@@ -1,6 +1,5 @@
 #include "app.h"
 #include "world_p/world.h"
-#include "assets/assets_manager.h"
 #include "game.h"
 
 bool rfct::reflectApplication::isAppMinimised;

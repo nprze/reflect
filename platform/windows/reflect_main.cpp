@@ -2,12 +2,12 @@
 #include <vld.h>
 #endif // VLD_ENABLE
 #include "app.h"
-#include "assets/assets_manager.h"
+#include "assets/assets_utils.h"
 using namespace rfct;
 
 // entry point on windows
 int main() {
-	AssetsManager::get().init("");
+	rfct::setAssetsPath(std::string(""));
 	reflectApplication();
 	return 0;
 }
