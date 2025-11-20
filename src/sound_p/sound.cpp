@@ -2,8 +2,9 @@
 #include "assets/assets_manager.h"
 
 rfct::soundPlayer rfct::soundPlayer::instance;
+rfct::soundManager rfct::soundManager::instance;
 
-rfct::soundPlayer::soundPlayer()
+void rfct::soundPlayer::initSoundPlayer()
 {
     m_soundMemory = createArena(sizeof(ma_sound) * 10);
     ma_result result;
@@ -11,10 +12,9 @@ rfct::soundPlayer::soundPlayer()
     if (result != MA_SUCCESS) {
         RFCT_CRITICAL("Failed to init audio engine");
     }
-
 }
 
-rfct::soundPlayer::~soundPlayer()
+void rfct::soundPlayer::cleanupSoundPlayer()
 {
     ma_engine_uninit(&m_engine);
     deleteArena(&m_soundMemory);
@@ -45,7 +45,7 @@ void rfct::soundPlayer::deleteSound(sound& sound)
 void rfct::soundManager::loadSounds()
 {
     background = soundPlayer::get().loadSound(AssetsManager::get().getPath() + "/" + "sound/sample-background.wav");
-    swoosh = soundPlayer::get().loadSound(AssetsManager::get().getPath() + "/" + "sound/swoosh.wav");
+    swoosh = soundPlayer::get().loadSound(AssetsManager::get().getPath() + "/" + "sound/swoosh.mp3");
 }
 
 void rfct::soundManager::unloadSounds()

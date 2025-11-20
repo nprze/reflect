@@ -9,7 +9,6 @@ namespace rfct {
 
         void updateWindow(RFCT_APP_ARGS);
 		void update();
-		void updateGameplay(frameContext& ContextArg);
 
         static bool isAppMinimised;
     private:

@@ -1,6 +1,7 @@
 #include "app.h"
 #include "world_p/world.h"
 #include "assets/assets_manager.h"
+#include "game.h"
 
 bool rfct::reflectApplication::isAppMinimised;
 
@@ -10,11 +11,8 @@ m_Renderer(RFCT_RENDERER_ARGUMENTS_VAR)
 	// app init
 	input::getInput().init();
 	isAppMinimised = false;
-
-	world::getWorld().initWorld("");
-
+	initGame();
 	lastState = gameState::gameplay;
-
 #ifdef WINDOWS_BUILD
     update();
 	renderer::getRen().getWindow().show();
@@ -31,18 +29,17 @@ rfct::reflectApplication::~reflectApplication()
 {
 	RFCT_TRACE("app cleanup start");
 	renderer::getRen().getDevice().waitIdle();
-	world::getWorld().cleanWorld();
+	cleanupGame();
 }
 
 void rfct::reflectApplication::update() {
+	// delta time
 	static auto previousTime = std::chrono::high_resolution_clock::now();
 	auto currentTime = std::chrono::high_resolution_clock::now();
 	std::chrono::duration<float> deltaTime = currentTime - previousTime;
 	previousTime = currentTime;
 
-
-
-
+	// context utils
 	currentFrame = (currentFrame + 1) % RFCT_FRAMES_IN_FLIGHT;
 	frameContext context = {
 		.dt = deltaTime.count(),
@@ -59,13 +56,8 @@ void rfct::reflectApplication::update() {
 
 	input::getInput().pollAndParseEvents(&context);
 	if (!isAppMinimised) {
-		updateGameplay(context);
+		updateGame(context);
 		renderer::getRen().render(context);
 	};
 	lastState = context.state;
-}
-
-void rfct::reflectApplication::updateGameplay(frameContext& ContextArg)
-{
-	world::getWorld().onUpdate(ContextArg);
 }

@@ -12,21 +12,23 @@ namespace rfct {
 	public:
 		static soundPlayer& get() { return instance; }
 	private:
-		soundPlayer();
-		~soundPlayer();
 		ma_engine m_engine;
 		arenaAllocation m_soundMemory;
 	public:
+		void initSoundPlayer();
+		void cleanupSoundPlayer();
 		sound loadSound(const std::string& soundPath);
 		void playSound(sound& sound);
 		void deleteSound(sound& sound);
 	};
 
+	inline void play(sound& sound) { soundPlayer::get().playSound(sound); }
+
 	class soundManager { // manages sound effect sounds
 	private:
-		static soundPlayer instance;
+		static soundManager instance;
 	public:
-		static soundPlayer& get() { return instance; }
+		static soundManager& get() { return instance; }
 	public:
 		sound background;
 		sound swoosh;

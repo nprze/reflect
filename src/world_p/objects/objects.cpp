@@ -3,15 +3,11 @@
 #include "world_p/physics/physics.h"
 #include "world_p/ecs.h"
 
-#include "world_p/player/player_animations.h"
-
 rfct::objectSystems rfct::objectSystems::instance;
 
 
 void rfct::objectSystems::init()
 {
-	playerAnimations::get().loadAnimations();
-
 	m_jumpBoostSystem.initSystem();
 	m_spikeSystem.initSystem();
 	m_npcSystem.initSystem();
@@ -28,8 +24,6 @@ void rfct::objectSystems::cleanup()
 	m_npcSystem.cleanupSystem();
 	m_spikeSystem.cleanupSystem();
 	m_jumpBoostSystem.cleanupSystem();
-
-	playerAnimations::get().unloadAnimations();
 }
 void rfct::objectSystems::loadSceneData(sceneSerializedData* serializeData, scene* parentScene)
 {

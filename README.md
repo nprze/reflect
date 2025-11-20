@@ -34,5 +34,5 @@ for now reflect can only run in debug and release configurations
 
 ## author notes
 
-- currently reflect has memory leaks (408bytes), which I can't seem to fix
+- currently reflect has memory leaks (~10), which I can't seem to fix (WASAPI and Vulkan)
 - in case of bugs feel free to drop an issue 

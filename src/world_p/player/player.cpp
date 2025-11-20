@@ -10,6 +10,8 @@
 #include "world_p/transform.h"
 #include "world_p/ecs.h"
 #include "world_p/decors/dash_kindlings.h"
+// sound effects
+#include "sound_p/sound.h"
 
 constexpr float maxVelocityX = 0.6f;
 constexpr float boostPureHorizontalVertical = 1.2f;
@@ -534,6 +536,8 @@ bool rfct::playerController::checkHold(scene* scen)
 
 void rfct::playerController::startDash(frameContext* ctx)
 {
+	play(soundManager::get().swoosh);
+
 	ecs::get().get<playerStateComponent>(player).dashCharges--;
 	ecs::get().get<velocityComponent>(player).velocity = { 0.f,0.f };
 	ecs::get().get<velocityComponent>(player).velocity = { 0,0 };

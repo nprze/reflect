@@ -10,7 +10,6 @@ rfct::world rfct::world::currentWorld;
 
 void rfct::world::initWorld(const std::string& path)
 {
-	objectSystems::get().init();
 	m_RenderData = new sceneRenderData();
 	loadScene("scenes/test.txt");
 }
@@ -27,7 +26,6 @@ void rfct::world::cleanWorld()
 {
 	RFCT_PROFILE_FUNCTION();
 	m_currentScene->unloadScene(); 
-	objectSystems::get().cleanup();
 	delete m_currentScene; 
 	delete m_RenderData;
 }
