@@ -11,7 +11,7 @@ rfct::world rfct::world::currentWorld;
 void rfct::world::initWorld(const std::string& path)
 {
 	m_RenderData = new sceneRenderData();
-	loadScene("scenes/test.txt");
+	loadScene("scenes/serialization-test.txt");
 }
  
 void rfct::world::loadScene(const std::string& path)

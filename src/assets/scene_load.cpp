@@ -11,11 +11,39 @@
             int count;                                                                                              \
             std::from_chars(sv.data() + sizeof(label), sv.data() + sv.size(), count);                               \
             out.reserve(count);                                                                                     \
-        }                                                                                                           
+        }              
+
+#define FILE_STRING(label, out)                                                                                     \
+    { std::getline(file, line);                                                                                     \
+    out = line.substr(sizeof(label) + 2);                                                                           \
+    while (!out.empty() && out.back() == '\r') out.pop_back(); }
+
+#define FILE_VEC2_INT(label, out)                                                                                   \
+std::getline(file, line);                                                                                           \
+{                                                                                                                   \
+    int x, y;                                                                                                       \
+    std::from_chars(line.data() + line.find(label) + sizeof(label) + 1, line.data() + line.find(','), x);           \
+    std::from_chars(line.data() + line.find(',') + 2, line.data() + line.size() - 1, y);                            \
+    out = { x, y };                                                                                                 \
+}
+
+#define FILE_VEC2_FLOAT(label, out)                                                                                 \
+std::getline(file, line);                                                                                           \
+{                                                                                                                   \
+    float xin, yin;                                                                                                 \
+    RFCT_ASSERT(sscanf(line.c_str(), "  " label " (%f, %f)", &xin, &yin) == 2);                                     \
+    out.x = xin;                                                                                                    \
+    out.y = yin;                                                                                                    \
+}                                                                                                                   
+
+#define FILE_INT(label, out) std::getline(file, line); RFCT_ASSERT(sscanf(line.c_str(), "  " label " %d", &out) == 1);
+
+#define FILE_FLOAT(label, out) std::getline(file, line); RFCT_ASSERT(sscanf(line.c_str(), "  " label " %f", &out) == 1);                                                                                  
+
+
 
 void rfct::loadScene(const std::string& path, sceneSerializedData* out)
 {
-
     std::ifstream file;
     if (!openAssetFile(path, &file)) {
         RFCT_CRITICAL("Could not open scene file:  {}", path);
@@ -25,187 +53,87 @@ void rfct::loadScene(const std::string& path, sceneSerializedData* out)
     while (std::getline(file, line)) {
         std::string_view sv(line);
 
-
         if (sv.starts_with("Rect:")) {
             rectangle r{};
-            std::getline(file, line); // color
-            r.color = line.substr(line.find(':') + 2);
 
-            std::getline(file, line); // min
-            {
-                int x, y;
-                std::from_chars(line.data() + 8, line.data() + line.find(','), x);
-                std::from_chars(line.data() + line.find(',') + 2, line.data() + line.size() - 1, y);
-                r.min = { x, y };
-            }
-
-            std::getline(file, line); // max
-            {
-                int x, y;
-                std::from_chars(line.data() + 8, line.data() + line.find(','), x);
-                std::from_chars(line.data() + line.find(',') + 2, line.data() + line.size() - 1, y);
-                r.max = { x, y };
-            }
-
-            std::getline(file, line); // file
-            r.file = line.substr(line.find(':') + 2);
-            if (!r.file.empty() && r.file.back() == '\r') {
-                r.file.pop_back();
-            }
+            FILE_STRING("color:", r.color);
+            FILE_VEC2_INT("min:", r.min);
+            FILE_VEC2_INT("max:", r.max);
+            FILE_STRING("file:", r.file);
 
             out->rectangles.push_back(std::move(r));
         }
         else if (sv.starts_with("Vine:")) {
             vineInfo vn = {};
-            bool vineFullyOk = false;
-            float xin, yin;
-            while (!vineFullyOk) {
-                std::getline(file, line);
-                if (line.find("start:") != std::string::npos) {
 
-                    RFCT_ASSERT(sscanf(line.c_str(), "  start: (%f, %f)", &xin, &yin) == 2);
-                    vn.start.x = xin;
-                    vn.start.y = yin;
-                }
-                else if (line.find("end:") != std::string::npos) {
-                    RFCT_ASSERT(sscanf(line.c_str(), "  end: (%f, %f)", &xin, &yin) == 2);
-                    vn.end.x = xin;
-                    vn.end.y = yin;
-                }
-                else if (line.find("edges:") != std::string::npos) {
-                    RFCT_ASSERT(sscanf(line.c_str(), "  edges: %d", &vn.numEdges) == 1);
-                    vineFullyOk = true;
-                }
-            }
+            FILE_VEC2_FLOAT("start:", vn.start);
+            FILE_VEC2_FLOAT("end:", vn.end);
+            FILE_INT("edges:", vn.numEdges);
+
             out->vines.push_back(vn);
         }
         else if (sv.starts_with("NPC:")) {
             NPCInfo npc{};
 
-            std::getline(file, line); // min
-            {
-                float x = std::stof(line.substr(10, line.find(',') - 10));
-                float y = std::stof(line.substr(line.find(',') + 2, line.size() - line.find(',') - 3));
-                npc.min = { x, y };
-            }
-
-            std::getline(file, line); // max
-            {
-                float x = std::stof(line.substr(8, line.find(',') - 8));
-                float y = std::stof(line.substr(line.find(',') + 2, line.size() - line.find(',') - 3));
-                npc.max = { x, y };
-            }
-
-            std::getline(file, line); // interaction radius
-            float count;
-            RFCT_ASSERT(sscanf(line.c_str(), "  interactionRadius: %f", &count) == 1);
-            npc.interatcionRadius = count;
-
-
-            std::getline(file, line); // file
-            npc.dialogueFile = line.substr(line.find(':') + 2);
-            if (!npc.dialogueFile.empty() && npc.dialogueFile.back() == '\r') {
-                npc.dialogueFile.pop_back();
-            }
+            FILE_VEC2_INT("min:", npc.min);
+            FILE_VEC2_INT("max:", npc.max);
+            FILE_FLOAT("interactionRadius:", npc.interatcionRadius);
+            FILE_STRING("file:", npc.dialogueFile);
 
             out->npcs.push_back(std::move(npc));
         }
         else if (sv.starts_with("Spike:")) {
             SpikeInfo spk{};
+            std::string dirString;
 
-            std::getline(file, line); // min
-            {
-                float x = std::stof(line.substr(10, line.find(',') - 10));
-                float y = std::stof(line.substr(line.find(',') + 2, line.size() - line.find(',') - 3));
-                spk.min = { x, y };
-            }
+            FILE_VEC2_FLOAT("start:", spk.min);
+            FILE_VEC2_FLOAT("end:", spk.max);
+            FILE_STRING("dir:", dirString);
 
-            std::getline(file, line); // max
-            {
-                float x = std::stof(line.substr(8, line.find(',') - 8));
-                float y = std::stof(line.substr(line.find(',') + 2, line.size() - line.find(',') - 3));
-                spk.max = { x, y };
-            }
-
-            std::getline(file, line); // dir
-            std::string dirString = line.substr(line.find(':') + 2);
-            if (!dirString.empty() && dirString.back() == '\r') {
-                dirString.pop_back();
-            }
             if (dirString == "up") {
                 spk.dir = SpikeDirection::SpikeDirUp;
-            }else if (dirString == "down") {
+            }
+            else if (dirString == "down") {
                 spk.dir = SpikeDirection::SpikeDirDown;
-            }else if (dirString == "right") {
+            }
+            else if (dirString == "right") {
                 spk.dir = SpikeDirection::SpikeDirRight;
-            }else if (dirString == "left") {
+            }
+            else if (dirString == "left") {
                 spk.dir = SpikeDirection::SpikeDirLeft;
             }
+
             out->spikes.push_back(std::move(spk));
         }
         else if (sv.starts_with("Enemy:")) {
             BasicEnemyInfo enemy{};
 
-            std::getline(file, line); // position
-            {
-                float x = std::stof(line.substr(13, line.find(',') - 10));
-                float y = std::stof(line.substr(line.find(',') + 2, line.size() - line.find(',') - 3));
-                enemy.position = { x, y };
-            }
+            FILE_VEC2_FLOAT("position:", enemy.position);
+            FILE_VEC2_FLOAT("min:", enemy.min);
+            FILE_VEC2_FLOAT("max:", enemy.max);
+            FILE_STRING("animName:", enemy.animation);
 
-            std::getline(file, line); // min
-            {
-                float x = std::stof(line.substr(8, line.find(',') - 8));
-                float y = std::stof(line.substr(line.find(',') + 2, line.size() - line.find(',') - 3));
-                enemy.min = { x, y };
-            }
-
-            std::getline(file, line); // max
-            {
-                float x = std::stof(line.substr(8, line.find(',') - 8));
-                float y = std::stof(line.substr(line.find(',') + 2, line.size() - line.find(',') - 3));
-                enemy.max = { x, y };
-            }
-
-            std::getline(file, line); // file
-            enemy.animation = line.substr(line.find(':') + 2);
-            if (!enemy.animation.empty() && enemy.animation.back() == '\r') {
-                enemy.animation.pop_back();
-            }
             out->enemies.push_back(std::move(enemy));
         }
         else if (sv.starts_with("JumpBooster:")) {
             JumpBoosterInfo booster{};
 
-            std::getline(file, line); // position
-            {
-                float x = std::stof(line.substr(13, line.find(',') - 10));
-                float y = std::stof(line.substr(line.find(',') + 2, line.size() - line.find(',') - 3));
-                booster.position = { x, y };
-            }
+            FILE_VEC2_FLOAT("position:", booster.position);
 
             out->boosters.push_back(std::move(booster));
         }
         else if (sv.starts_with("DashRecharge:")) {
             DashRechargeInfo recharge{};
 
-            std::getline(file, line); // position
-            {
-                float x = std::stof(line.substr(13, line.find(',') - 10));
-                float y = std::stof(line.substr(line.find(',') + 2, line.size() - line.find(',') - 3));
-                recharge.position = { x, y };
-            }
+            FILE_VEC2_FLOAT("position:", recharge.position);
+
             out->dashRecharge.push_back(std::move(recharge));
         }
         else if (sv.starts_with("SpawnPoint:")) {
             SpawnPointInfo spawn{};
 
-            std::getline(file, line); // position
-            {
-                float x = std::stof(line.substr(13, line.find(',') - 10));
-                float y = std::stof(line.substr(line.find(',') + 2, line.size() - line.find(',') - 3));
-                spawn.position = { x, y };
-            }
+            FILE_VEC2_FLOAT("position:", spawn.position);
+
             out->spawnPoints.push_back(std::move(spawn));
         }
         else if (sv.starts_with("SceneWidth:")) {
