@@ -7,7 +7,7 @@ rfct::UIPipeline::UIPipeline(vk::RenderPass renderPass)
     m_fragShader("shaders/UI/UIimage_frag.spv"), 
     m_glyphsRenderData(RFCT_DEBUG_DRAW_VERTEX_BUFFER_MAX_SIZE), 
     m_debugDrawglyphsRenderData(RFCT_DEBUG_DRAW_VERTEX_BUFFER_MAX_SIZE), 
-    m_defaultFont("fonts/jetbrainsMono-medium.txt"), 
+    m_defaultFont("fonts/3MTrislan.txt"), 
     m_dummyImage("")
 {
     createPipeline(renderPass);
@@ -155,9 +155,6 @@ void rfct::UIPipeline::createDescriptorSet()
 	m_textureIndexMap.reserve(RFCT_UI_TEXTURE_BINDINGS);
 }
 
-
-
-
 void rfct::UIPipeline::draw(frameData& fd, vk::Framebuffer framebuffer, vk::RenderPass renderPass)
 {
     RFCT_PROFILE_FUNCTION();
@@ -165,7 +162,6 @@ void rfct::UIPipeline::draw(frameData& fd, vk::Framebuffer framebuffer, vk::Rend
     {
         return;
     }
-
 
     vk::CommandBuffer commandBuffer = fd.m_uiCommandBuffer.get();
 
@@ -346,7 +342,7 @@ void rfct::UIPipeline::removeImage(bindableImage* image)
     }
 }
 
-float rfct::UIPipeline::addTextVertices(glyphsRenderData* rd, const std::string& text, glm::vec2 position, float scale, font* f)
+float rfct::UIPipeline::addTextVertices(glyphsRenderData* rd, const std::string& text, glm::vec2 position, float scale, const glm::vec3& color, font* f)
 {
     RFCT_PROFILE_FUNCTION();
     if (!f) f = &m_defaultFont;
@@ -376,10 +372,10 @@ float rfct::UIPipeline::addTextVertices(glyphsRenderData* rd, const std::string&
         float u1 = (g->x + g->width) / atlasWidth;
         float v1 = (g->y + g->height) / atlasHeight;
 
-        vertices.push_back({ {x0, y0}, {u0, v0}, textureIndexInShader });
-        vertices.push_back({ {x1, y0}, {u1, v0}, textureIndexInShader });
-        vertices.push_back({ {x1, y1}, {u1, v1}, textureIndexInShader });
-        vertices.push_back({ {x0, y1}, {u0, v1}, textureIndexInShader });
+        vertices.push_back({ {x0, y0}, {u0, v0}, color, textureIndexInShader });
+        vertices.push_back({ {x1, y0}, {u1, v0}, color, textureIndexInShader });
+        vertices.push_back({ {x1, y1}, {u1, v1}, color, textureIndexInShader });
+        vertices.push_back({ {x0, y1}, {u0, v1}, color, textureIndexInShader });
         vertices.push_back(vertices[index]);
         vertices.push_back(vertices[index + 2]);
 
@@ -394,6 +390,14 @@ float rfct::UIPipeline::addTextVertices(glyphsRenderData* rd, const std::string&
     rd->vertexCount += vertices.size();
 
     return cursorX;
+}
+
+float rfct::UIPipeline::addTextVerticesHeight(const std::string& text, glm::vec2 position, float height, const glm::vec3& color, font* f)
+{
+    RFCT_PROFILE_FUNCTION();
+    if (!f) f = &m_defaultFont;
+    float scale = f->fontScale * height ;
+    return addTextVertices(&m_glyphsRenderData, text, position, scale, color, f);
 }
 
 vk::DescriptorSetLayout rfct::UIPipeline::getDescriptorSetLayout()

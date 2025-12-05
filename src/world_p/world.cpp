@@ -5,6 +5,7 @@
 #include "renderer_p/debug/debug_draw.h"
 #include "world_p/objects/objects.h"
 #include "ecs.h"
+#include "ui_p/ui.h"
 
 rfct::world rfct::world::currentWorld;
 
@@ -37,19 +38,20 @@ void rfct::world::onUpdate(frameContext& context)
 		delete m_currentScene;
 		ecs::get().clear();
 		m_RenderData->clearAllData();
-
 		loadScene("scenes/showcase.txt");
 		context.scene = m_currentScene;
 	}
 	auto jobs = std::make_shared<rfct::jobTracker>();
 	jobSystem::get().KickJob([&]() {
-		RFCT_PROFILE_SCOPE("Debug Draw");
-      debugDraw::drawText("FPS: " + std::to_string(int(1 / context.dt)), glm::vec2(0, 0), 0.2);
+		RFCT_PROFILE_SCOPE("UI draw");
+		drawUI(&context);
 		}, *jobs);
-	jobSystem::get().KickJob([&]() {
-		RFCT_PROFILE_SCOPE("Scene update");
-        m_currentScene->onUpdate(&context);
-		}, *jobs);
+	if (context.state == gameState::gameplay || context.state == gameState::stateDialogue) {
+		jobSystem::get().KickJob([&]() {
+			RFCT_PROFILE_SCOPE("Scene update");
+				m_currentScene->onUpdate(&context);
+			}, *jobs);
+	}
 #ifdef ANDROID_BUILD
     jobSystem::get().KickJob([&]() {
         RFCT_PROFILE_SCOPE("android UI update");

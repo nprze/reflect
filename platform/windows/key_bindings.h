@@ -12,5 +12,6 @@ namespace rfct {
 		static int dash_dir_left;
 		static int dash_dir_top;
 		static int dash_dir_bottom;
+		static int menu_select;
 	};
 }

@@ -12,6 +12,7 @@ namespace rfct {
 	int keyBindings::dash_dir_left = GLFW_KEY_A;
 	int keyBindings::dash_dir_top = GLFW_KEY_W;
 	int keyBindings::dash_dir_bottom = GLFW_KEY_S;
+	int keyBindings::menu_select = GLFW_KEY_SPACE;
 #else
 	int keyBindings::menu = GLFW_KEY_ESCAPE;
 	int keyBindings::hold = GLFW_KEY_C;
@@ -23,5 +24,6 @@ namespace rfct {
 	int keyBindings::dash_dir_left = GLFW_KEY_LEFT;
 	int keyBindings::dash_dir_top = GLFW_KEY_UP;
 	int keyBindings::dash_dir_bottom = GLFW_KEY_DOWN;
+	int keyBindings::menu_select = GLFW_KEY_SPACE;
 #endif
 }

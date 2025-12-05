@@ -1,6 +1,7 @@
 # Build files
 build/
 *.sln
+*.slnx
 *.vcxproj.*
 *.vcxproj
 *.vcxproj.filters

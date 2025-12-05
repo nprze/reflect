@@ -1,6 +1,7 @@
 #include "app.h"
 #include "world_p/world.h"
 #include "game.h"
+#include "ui_p/ui.h"
 
 bool rfct::reflectApplication::isAppMinimised;
 
@@ -11,7 +12,6 @@ m_Renderer(RFCT_RENDERER_ARGUMENTS_VAR)
 	input::getInput().init();
 	isAppMinimised = false;
 	initGame();
-	lastState = gameState::gameplay;
 #ifdef WINDOWS_BUILD
     update();
 	renderer::getRen().getWindow().show();
@@ -44,7 +44,7 @@ void rfct::reflectApplication::update() {
 		.dt = deltaTime.count(),
 		.frame = currentFrame,
 		.scene = &world::getWorld().getCurrentScene(),
-		.state = lastState
+		.state = getState()
 	};
 	static float accululator = 0.f;
 	accululator += context.dt;
@@ -58,5 +58,5 @@ void rfct::reflectApplication::update() {
 		updateGame(context);
 		renderer::getRen().render(context);
 	};
-	lastState = context.state;
+	updateLastState(context.state);
 }

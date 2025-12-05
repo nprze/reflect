@@ -5,8 +5,8 @@ namespace rfct {
     struct GlyphVertex {
         glm::vec2 pos;
         glm::vec2 texCoord;
+        glm::vec3 color;
 		int texIndex;
-        int padding; 
 
         static vk::VertexInputBindingDescription getBindingDescription() {
             vk::VertexInputBindingDescription bindingDescription{};
@@ -16,8 +16,8 @@ namespace rfct {
             return bindingDescription;
         }
 
-        static std::array<vk::VertexInputAttributeDescription, 3> getAttributeDescriptions() {
-            std::array<vk::VertexInputAttributeDescription, 3> attributeDescriptions{};
+        static std::array<vk::VertexInputAttributeDescription, 4> getAttributeDescriptions() {
+            std::array<vk::VertexInputAttributeDescription, 4> attributeDescriptions{};
 
             attributeDescriptions[0].binding = 0;
             attributeDescriptions[0].location = 0;
@@ -31,8 +31,13 @@ namespace rfct {
 
             attributeDescriptions[2].binding = 0;
             attributeDescriptions[2].location = 2;
-            attributeDescriptions[2].format = vk::Format::eR32Sint;
-            attributeDescriptions[2].offset = offsetof(GlyphVertex, texIndex);
+            attributeDescriptions[2].format = vk::Format::eR32G32B32Sfloat;
+            attributeDescriptions[2].offset = offsetof(GlyphVertex, color);
+
+            attributeDescriptions[3].binding = 0;
+            attributeDescriptions[3].location = 3;
+            attributeDescriptions[3].format = vk::Format::eR32Sint;
+            attributeDescriptions[3].offset = offsetof(GlyphVertex, texIndex);
 
             return attributeDescriptions;
         }
@@ -55,7 +60,9 @@ namespace rfct {
 			return &it->second;
 		}
 		font(const std::string& path); // path should point to .txt file of a font
+        float getTextWidth(const std::string& text, float scale);
 		bindableImage m_TextureAtlas;
 		std::unordered_map<char, glyph> glyphMap;
+        float fontScale;
 	};
 }

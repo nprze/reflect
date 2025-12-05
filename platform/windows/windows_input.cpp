@@ -14,7 +14,7 @@ namespace rfct {
 		}
 	}
 
-	input::input() :walk(0), openMenu(false), jump(0), dashDefault(0), dashX(0), dash45up(0), dash45down(0), dashY(0), hold(false), windowExtent(nullptr)
+	input::input() :walk(0), jump(0), dashDefault(0), dashX(0), dash45up(0), dash45down(0), dashY(0), hold(false), windowExtent(nullptr)
 	{
 	}
 
@@ -41,22 +41,20 @@ namespace rfct {
 
 		anyClicked = false;
 	
+		openClosePauseMenu = false;
+		selectMenu = false;
+		upDownMenu = 0;
+		leftRightMenu = 0;
 
 		glfwPollEvents();
 
+		if (glfwGetKey(window, keyBindings::menu)) {
+			openClosePauseMenu = true;
+		}
 		switch (context->state)
 		{
 		case gameState::gameplay:
 		{
-			m_timeElapsedSinceStateChanged = std::clamp(m_timeElapsedSinceStateChanged + context->dt, 0.f, 1.f);
-			if (glfwGetKey(window, keyBindings::menu) && m_timeElapsedSinceStateChanged > 0.5f) {
-				//if (m_previousState == gameState::gameplay) m_previousState = gameState::menu;
-				//else if (m_previousState == gameState::menu) m_previousState = gameState::gameplay;
-			}
-
-			/*if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
-				glfwSetWindowShouldClose(window, true);
-			}*/
 			if (glfwGetKey(window, keyBindings::hold) == GLFW_PRESS) {
 				hold = true;
 			}
@@ -121,6 +119,24 @@ namespace rfct {
 		case gameState::stateDialogue: {
 			if (anyClicked) {
 				RFCT_WARN("clicked with dialogue");
+			}
+			break;
+		}
+		case gameState::menu: {
+			if (glfwGetKey(window, keyBindings::dash_dir_top) == GLFW_PRESS) {
+				upDownMenu += 1;
+			}
+			if (glfwGetKey(window, keyBindings::dash_dir_bottom) == GLFW_PRESS) {
+				upDownMenu -= 1;
+			}
+			if (glfwGetKey(window, keyBindings::dash_dir_right) == GLFW_PRESS) {
+				leftRightMenu += 1;
+			}
+			if (glfwGetKey(window, keyBindings::dash_dir_left) == GLFW_PRESS) {
+				leftRightMenu -= 1;
+			}
+			if (glfwGetKey(window, keyBindings::menu_select) == GLFW_PRESS) {
+				selectMenu = true;
 			}
 			break;
 		}
