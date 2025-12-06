@@ -7,8 +7,9 @@ rfct::UIPipeline::UIPipeline(vk::RenderPass renderPass)
     m_fragShader("shaders/UI/UIimage_frag.spv"), 
     m_glyphsRenderData(RFCT_DEBUG_DRAW_VERTEX_BUFFER_MAX_SIZE), 
     m_debugDrawglyphsRenderData(RFCT_DEBUG_DRAW_VERTEX_BUFFER_MAX_SIZE), 
-    m_defaultFont("fonts/3MTrislan.txt"), 
-    m_dummyImage("")
+    m_defaultFont("fonts/3MTrislan.txt"),
+    m_dummyImage(""),
+	m_emptyImage("UI/empty.png")
 {
     createPipeline(renderPass);
     createDescriptorSet();
@@ -225,6 +226,70 @@ void rfct::UIPipeline::draw(frameData& fd, vk::Framebuffer framebuffer, vk::Rend
 float rfct::UIPipeline::debugText(const std::string& text, glm::vec2 startPosition, float scale)
 {
     return addTextVertices(&m_debugDrawglyphsRenderData, text, startPosition, scale);
+}
+
+void rfct::UIPipeline::beginAddingTriangles()
+{
+    m_BufferMappedMemory = (char*)m_glyphsRenderData.buffer.Map();
+
+    widthFactor = static_cast<float>(rfct::renderer::getRen().getRenderImagesManager().getSwapChain().getExtent().width);
+    heightFactor = static_cast<float>(rfct::renderer::getRen().getRenderImagesManager().getSwapChain().getExtent().height);
+}
+
+void rfct::UIPipeline::addTriangleNormalized(const glm::vec2& vec0, const glm::vec2& vec1, const glm::vec2& vec2, const glm::vec3& color, opacity op)
+{
+    GlyphVertex vertices[3];
+    vertices[0].pos = glm::vec2{vec0.x * widthFactor, vec0.y * heightFactor};
+    vertices[1].pos = glm::vec2{vec1.x * widthFactor, vec1.y * heightFactor};
+    vertices[2].pos = glm::vec2{vec2.x * widthFactor, vec2.y * heightFactor};
+
+    switch (op) {
+    case opacity25percent: {
+        vertices[0].texCoord = { 0, 0 };
+        vertices[1].texCoord = { 0.4, 0 };
+        vertices[2].texCoord = { 0, 0.4 };
+        break;
+    }
+    case opacity50percent: {
+        vertices[0].texCoord = { 0.6, 0 };
+        vertices[1].texCoord = { 1.0, 0 };
+        vertices[2].texCoord = { 0.6, 0.4 };
+        break;
+    }
+    case opacity75percent: {
+        vertices[0].texCoord = { 0, 0.6 };
+        vertices[1].texCoord = { 0.4, 0.6 };
+        vertices[2].texCoord = { 0, 1.0 };
+        break;
+    }
+    case opacity100percent: {
+        vertices[0].texCoord = { 0.6, 0.6 };
+        vertices[1].texCoord = { 1.0, 0.6 };
+        vertices[2].texCoord = { 0.6, 1.0 };
+        break;
+    }
+    }
+
+    int texIndex = getTextureIndex(&m_emptyImage, imageUsage::ui);
+
+    vertices[0].texIndex = texIndex;
+    vertices[1].texIndex = texIndex;
+    vertices[2].texIndex = texIndex;
+
+    vertices[0].color = color;
+    vertices[1].color = color;
+    vertices[2].color = color;
+
+    m_BufferMappedMemory += m_glyphsRenderData.bufferOffset;
+    memcpy(m_BufferMappedMemory, vertices, 3 * sizeof(vertices[0]));
+
+    m_glyphsRenderData.bufferOffset += 3 * sizeof(vertices[0]);
+    m_glyphsRenderData.vertexCount += 3;
+}
+
+void rfct::UIPipeline::endAddingTriangles()
+{
+    m_glyphsRenderData.buffer.Unmap();
 }
 
 int rfct::UIPipeline::getTextureIndex(bindableImage* image, imageUsage usage)
