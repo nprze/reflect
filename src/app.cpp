@@ -2,6 +2,7 @@
 #include "world_p/world.h"
 #include "game.h"
 #include "ui_p/ui.h"
+#include "world_p/progress/user_progress.h"
 
 bool rfct::reflectApplication::isAppMinimised;
 
@@ -10,6 +11,7 @@ m_Renderer(RFCT_RENDERER_ARGUMENTS_VAR)
 {
 	// app init
 	input::getInput().init();
+	userSettings().loadUserSettings();
 	isAppMinimised = false;
 	initGame();
 #ifdef WINDOWS_BUILD

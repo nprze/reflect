@@ -51,6 +51,60 @@ namespace rfct {
 	}
 }
 
+// UI logic
+namespace rfct {
+	enum uiLogicState {
+		basePauseMenu,
+		baseSettingsMenu,
+		soundSettingsMenu,
+	};
+}
+
+// draw functions
+namespace rfct {
+	void drawBaseMenu(frameContext* ctx) {
+		if (input::getInput().upDownMenu != 0 && changeSelectionCooldown <= 0.f) {
+			selectedMenuIndex = (selectedMenuIndex - (uint32_t)input::getInput().upDownMenu + 3) % 3;
+			multiplier = -input::getInput().upDownMenu;
+			changeSelectionCooldown = 0.25f;
+		}
+
+		if (input::getInput().selectMenu && changeSelectionCooldown <= 0.f) {
+			changeSelectionCooldown = 0.25f;
+			if (selectedMenuIndex == 0) {
+				timeSinceStateChange = 0.f;
+				ctx->state = beforePauseMenuState;
+			}
+			else if (selectedMenuIndex == 1) { // settings
+				// to be implemented
+			}
+			else if (selectedMenuIndex == 2) { // quit
+				glfwSetWindowShouldClose(rfct::renderer::getRen().getWindow().GetHandle(), true);
+			}
+		}
+
+		// background
+		rfct::renderer::getRen().getUIPipeline().beginAddingTriangles();
+		rfct::renderer::getRen().getUIPipeline().addTriangleNormalized({ 0,0 }, { 1, 0 }, { 0, 1 }, { 0,0,0 }, rfct::opacity::opacity75percent);
+		rfct::renderer::getRen().getUIPipeline().addTriangleNormalized({ 1,1 }, { 1, 0 }, { 0, 1 }, { 0,0,0 }, rfct::opacity::opacity75percent);
+		rfct::renderer::getRen().getUIPipeline().endAddingTriangles();
+
+		// text
+		if (changeSelectionCooldown != 0) {
+			globalOffsetNorm = glm::pow(-4 * changeSelectionCooldown, 2);
+			globalOffsetNorm *= 0.01f * multiplier;
+		}
+		else {
+			globalOffsetNorm = 0.f;
+		}
+		float intensity = glm::sin(globalTime * 3.f) * 0.2f + .8f;
+		addTextCenteredHV("RESUME", (selectedMenuIndex == 0 ? 1.f : 0.5f) * glm::vec3{ intensity, intensity, intensity }, 0.07f);
+		addTextCenteredHV("SETTINGS", (selectedMenuIndex == 1 ? 1.f : 0.5f) * glm::vec3{ intensity, intensity, intensity }, 0.07f);
+		addTextCenteredHV("SAVE AND QUIT", (selectedMenuIndex == 2 ? 1.f : 0.5f) * glm::vec3{ intensity, intensity, intensity }, 0.07f);
+		flushAlignedTextInfos();
+	}
+}
+
 rfct::gameState rfct::getState()
 {
 	if (input::getInput().openClosePauseMenu && timeSinceStateChange>1.f) {
@@ -81,27 +135,7 @@ void rfct::drawUI(frameContext* ctx)
 					static_cast<float>(rfct::renderer::getRen().getRenderImagesManager().getSwapChain().getExtent().height) };
 
 	if (ctx->state == gameState::menu) {
-		if (input::getInput().upDownMenu != 0 && changeSelectionCooldown <= 0.f) {
-			selectedMenuIndex = (selectedMenuIndex - (uint32_t)input::getInput().upDownMenu + 3) % 3;
-			multiplier = -input::getInput().upDownMenu;
-			changeSelectionCooldown = 0.25f;
-		}
-		rfct::renderer::getRen().getUIPipeline().beginAddingTriangles();
-		rfct::renderer::getRen().getUIPipeline().addTriangleNormalized({ 0,0 }, { 1, 0 }, { 0, 1 }, {0,0,0}, rfct::opacity::opacity75percent);
-		rfct::renderer::getRen().getUIPipeline().addTriangleNormalized({ 1,1 }, { 1, 0 }, { 0, 1 }, {0,0,0}, rfct::opacity::opacity75percent);
-		rfct::renderer::getRen().getUIPipeline().endAddingTriangles();
-		float intensity = glm::sin(globalTime * 3.f) * 0.2f + .8f;
-		addTextCenteredHV("RESUME",		(selectedMenuIndex == 0 ? 1.f: 0.5f) * glm::vec3{ intensity, intensity, intensity }, 0.07f);
-		addTextCenteredHV("SETTINGS",	(selectedMenuIndex == 1 ? 1.f: 0.5f) * glm::vec3{ intensity, intensity, intensity }, 0.07f);
-		addTextCenteredHV("QUIT",		(selectedMenuIndex == 2 ? 1.f: 0.5f) * glm::vec3{ intensity, intensity, intensity }, 0.07f);
-		if (changeSelectionCooldown != 0) {
-			globalOffsetNorm = glm::pow(-4*changeSelectionCooldown, 2);
-			globalOffsetNorm *= 0.01f * multiplier;
-		}
-		else {
-			globalOffsetNorm = 0.f;
-		}
-		flushAlignedTextInfos();
+		drawBaseMenu(ctx);
 	}
 	debugDraw::drawText("dt: " + std::to_string(ctx->dt) + "s", glm::vec2(0, 0), 0.08f);
 }
