@@ -3,6 +3,8 @@
 #include <fstream>
 #include <iostream>
 
+rfct::userSettings rfct::userSettings::instance;
+
 #define SETTINGS_GET_STRING(label, out)                                                                                 \
     { std::getline(file, line);                                                                                     \
     out = line.substr(sizeof(label) + 2);                                                                           \
@@ -21,9 +23,9 @@ void rfct::userSettings::loadUserSettings()
     std::ifstream file(finalPath);
 
     if (!file.is_open()) {
-        // doesnt exist - create
+		// create default file
 		dumpUserSettings();
-		std::ifstream file(finalPath);
+		file.open(finalPath);
         if (!file.is_open()) {
             RFCT_CRITICAL("Failed to open user settings file: {}", finalPath);
         }

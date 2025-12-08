@@ -2,15 +2,18 @@
 #include <string>
 #include "input.h"
 #include "renderer_p/renderer.h"
+#include "world_p/progress/user_progress.h"
 
 rfct::gameState beforePauseMenuState = rfct::gameState::gameplay;
 rfct::gameState lastState = rfct::gameState::gameplay;
 float timeSinceStateChange = 0.f;
 glm::vec2 imageExtent = glm::vec2(0, 0);
 float globalTime = 0.f;
-uint32_t selectedMenuIndex = 0;
+
+uint32_t currentMenuElementSelectedIndex = 0;
+uint32_t currentMenuMaxElementIndex = 0;
 float changeSelectionCooldown = 0.f;
-float multiplier = 1.f;
+float upDownEffectMultiplier = 1.f;
 
 // UI aligned
 namespace rfct {
@@ -51,56 +54,151 @@ namespace rfct {
 	}
 }
 
+// UI decorations	
+namespace rfct {
+	struct triangleDecoration {
+		glm::vec2 pos0;
+		glm::vec2 pos1;
+		glm::vec2 pos2;
+		glm::vec2 pos;
+		glm::vec2 dir;
+		glm::vec3 color;
+		float angle;
+	};
+	std::vector<triangleDecoration> triangleDecorations;
+	void defineDecors(uint32_t count) {
+		triangleDecorations.clear();
+		triangleDecorations.reserve(count);
+		for (uint32_t i = 0; i < count; i++) {
+			triangleDecoration decor;
+			decor.pos0 = glm::vec2(0.00f, 0.00f);
+			decor.pos1 = glm::vec2(0.02f, 0.02f);
+			decor.pos2 = glm::vec2(0.02f, -0.02f);
+			decor.pos = glm::vec2(
+				static_cast<float>(rand() % 2000) / 2000.f,
+				static_cast<float>(rand() % 2000) / 2000.f
+			);
+			float intensity = 0.5f + 0.5f * static_cast<float>(rand() % 2000) / 2000.f;
+			decor.color = glm::vec3(intensity, intensity, intensity);
+			decor.angle = static_cast<float>(rand() % 360);
+			decor.dir = glm::normalize(glm::vec2(
+				static_cast<float>(rand() % 2000) / 1000.f - 1.f,
+				static_cast<float>(rand() % 2000) / 1000.f - 1.f
+			));
+			triangleDecorations.push_back(decor);
+		}
+	}
+	void updateDecors(frameContext* ctx) {
+		for (triangleDecoration& decor : triangleDecorations) {
+			decor.angle += ctx->dt * 20.f;
+			glm::mat2 rotationMatrix = glm::mat2(
+				glm::vec2(glm::cos(glm::radians(decor.angle)), -glm::sin(glm::radians(decor.angle))),
+				glm::vec2(glm::sin(glm::radians(decor.angle)), glm::cos(glm::radians(decor.angle)))
+			);
+			float additionalBoost = 0.f;
+			if (changeSelectionCooldown != 0) {
+				additionalBoost = glm::pow(-4 * changeSelectionCooldown, 2);
+				additionalBoost *= -0.001f * upDownEffectMultiplier;
+			}
+			decor.pos.y += additionalBoost;
+
+			decor.pos += decor.dir * ctx->dt * .05f;
+			decor.dir = glm::normalize(decor.dir + glm::vec2(
+				(static_cast<float>(rand() % 2000) / 1000.f - 1.f) * ctx->dt * 4.f,
+				(static_cast<float>(rand() % 2000) / 1000.f - 1.f) * ctx->dt * 4.f
+			));
+			if (decor.pos.x < -0.1f) decor.pos.x = 1.1f;
+			if (decor.pos.x > 1.1f) decor.pos.x = -0.1f;
+			if (decor.pos.y < -0.1f) decor.pos.y = 1.1f;
+			if (decor.pos.y > 1.1f) decor.pos.y = -0.1f;
+
+			glm::vec2 p0 = rotationMatrix * decor.pos0 + decor.pos;
+			glm::vec2 p1 = rotationMatrix * decor.pos1 + decor.pos;
+			glm::vec2 p2 = rotationMatrix * decor.pos2 + decor.pos;
+
+			rfct::renderer::getRen().getUIPipeline().addTriangleNormalized(p0, p1, p2, decor.color, opacity::opacity100percent);
+		}
+	}
+	void cleanupDecors() {
+		triangleDecorations.clear();
+	}
+}
+
 // UI logic
 namespace rfct {
 	enum uiLogicState {
 		basePauseMenu,
-		baseSettingsMenu,
-		soundSettingsMenu,
+		baseSettings,
+		soundSettings,
 	};
+	uiLogicState currentUILogicState = uiLogicState::basePauseMenu;
+}
+
+// menu specific update
+namespace rfct {
+	void switchMenu(uiLogicState newState) {
+		currentUILogicState = newState;
+		currentMenuElementSelectedIndex = 0;
+	}
+	void updateBaseMenu(frameContext* ctx) {
+		if (currentMenuElementSelectedIndex == 0) { // resume
+			timeSinceStateChange = 0.f;
+			ctx->state = beforePauseMenuState;
+		}
+		else if (currentMenuElementSelectedIndex == 1) { // settings
+			switchMenu(uiLogicState::baseSettings);
+			currentMenuMaxElementIndex = 4;
+		}
+		else if (currentMenuElementSelectedIndex == 2) { // quit
+			glfwSetWindowShouldClose(rfct::renderer::getRen().getWindow().GetHandle(), true);
+		}
+	}
+	void updateBaseSettings(frameContext* ctx) {
+		if (currentMenuElementSelectedIndex == 0) { // video
+		}
+		else if (currentMenuElementSelectedIndex == 1) { // sound
+		}
+		else if (currentMenuElementSelectedIndex == 2) { // controls
+		}
+		else if (currentMenuElementSelectedIndex == 3) { // back
+			userSettings::get().dumpUserSettings();
+			switchMenu(uiLogicState::basePauseMenu);
+			currentMenuMaxElementIndex = 3;
+		}
+	}
 }
 
 // draw functions
 namespace rfct {
 	void drawBaseMenu(frameContext* ctx) {
-		if (input::getInput().upDownMenu != 0 && changeSelectionCooldown <= 0.f) {
-			selectedMenuIndex = (selectedMenuIndex - (uint32_t)input::getInput().upDownMenu + 3) % 3;
-			multiplier = -input::getInput().upDownMenu;
-			changeSelectionCooldown = 0.25f;
-		}
-
-		if (input::getInput().selectMenu && changeSelectionCooldown <= 0.f) {
-			changeSelectionCooldown = 0.25f;
-			if (selectedMenuIndex == 0) {
-				timeSinceStateChange = 0.f;
-				ctx->state = beforePauseMenuState;
-			}
-			else if (selectedMenuIndex == 1) { // settings
-				// to be implemented
-			}
-			else if (selectedMenuIndex == 2) { // quit
-				glfwSetWindowShouldClose(rfct::renderer::getRen().getWindow().GetHandle(), true);
-			}
-		}
-
-		// background
-		rfct::renderer::getRen().getUIPipeline().beginAddingTriangles();
-		rfct::renderer::getRen().getUIPipeline().addTriangleNormalized({ 0,0 }, { 1, 0 }, { 0, 1 }, { 0,0,0 }, rfct::opacity::opacity75percent);
-		rfct::renderer::getRen().getUIPipeline().addTriangleNormalized({ 1,1 }, { 1, 0 }, { 0, 1 }, { 0,0,0 }, rfct::opacity::opacity75percent);
-		rfct::renderer::getRen().getUIPipeline().endAddingTriangles();
-
 		// text
 		if (changeSelectionCooldown != 0) {
 			globalOffsetNorm = glm::pow(-4 * changeSelectionCooldown, 2);
-			globalOffsetNorm *= 0.01f * multiplier;
+			globalOffsetNorm *= 0.01f * upDownEffectMultiplier;
 		}
 		else {
 			globalOffsetNorm = 0.f;
 		}
 		float intensity = glm::sin(globalTime * 3.f) * 0.2f + .8f;
-		addTextCenteredHV("RESUME", (selectedMenuIndex == 0 ? 1.f : 0.5f) * glm::vec3{ intensity, intensity, intensity }, 0.07f);
-		addTextCenteredHV("SETTINGS", (selectedMenuIndex == 1 ? 1.f : 0.5f) * glm::vec3{ intensity, intensity, intensity }, 0.07f);
-		addTextCenteredHV("SAVE AND QUIT", (selectedMenuIndex == 2 ? 1.f : 0.5f) * glm::vec3{ intensity, intensity, intensity }, 0.07f);
+		addTextCenteredHV("RESUME", (currentMenuElementSelectedIndex == 0 ? 1.f : 0.5f) * glm::vec3{ intensity, intensity, intensity }, 0.07f);
+		addTextCenteredHV("SETTINGS", (currentMenuElementSelectedIndex == 1 ? 1.f : 0.5f) * glm::vec3{ intensity, intensity, intensity }, 0.07f);
+		addTextCenteredHV("SAVE AND QUIT", (currentMenuElementSelectedIndex == 2 ? 1.f : 0.5f) * glm::vec3{ intensity, intensity, intensity }, 0.07f);
+		flushAlignedTextInfos();
+	}
+	void drawBaseSettings(frameContext* ctx) {
+		// text
+		if (changeSelectionCooldown != 0) {
+			globalOffsetNorm = glm::pow(-4 * changeSelectionCooldown, 2);
+			globalOffsetNorm *= 0.01f * upDownEffectMultiplier;
+		}
+		else {
+			globalOffsetNorm = 0.f;
+		}
+		float intensity = glm::sin(globalTime * 3.f) * 0.2f + .8f;
+		addTextCenteredHV("VIDEO", (currentMenuElementSelectedIndex == 0 ? 1.f : 0.5f) * glm::vec3{ intensity, intensity, intensity }, 0.07f);
+		addTextCenteredHV("SOUND", (currentMenuElementSelectedIndex == 1 ? 1.f : 0.5f) * glm::vec3{ intensity, intensity, intensity }, 0.07f);
+		addTextCenteredHV("CONTROLS", (currentMenuElementSelectedIndex == 2 ? 1.f : 0.5f) * glm::vec3{ intensity, intensity, intensity }, 0.07f);
+		addTextCenteredHV("BACK", (currentMenuElementSelectedIndex == 3 ? 1.f : 0.5f) * glm::vec3{ intensity, intensity, intensity }, 0.07f);
 		flushAlignedTextInfos();
 	}
 }
@@ -109,13 +207,17 @@ rfct::gameState rfct::getState()
 {
 	if (input::getInput().openClosePauseMenu && timeSinceStateChange>1.f) {
 		timeSinceStateChange = 0.f;
-		selectedMenuIndex = 0;
+		currentMenuElementSelectedIndex = 0;
 		if (lastState == gameState::menu) {
 			lastState = beforePauseMenuState;
+			cleanupDecors();
 		}
 		else {
 			beforePauseMenuState = lastState;
 			lastState = gameState::menu;
+			currentUILogicState = uiLogicState::basePauseMenu;
+			currentMenuMaxElementIndex = 3;
+			defineDecors(10);
 		}
 	}
 	return lastState;
@@ -128,15 +230,65 @@ void rfct::updateLastState(gameState newState)
 
 void rfct::drawUI(frameContext* ctx)
 {
+	// general updates
 	timeSinceStateChange += ctx->dt;
 	globalTime += ctx->dt;
 	changeSelectionCooldown = std::clamp(changeSelectionCooldown - ctx->dt, 0.f, 0.25f);
 	imageExtent = { static_cast<float>(rfct::renderer::getRen().getRenderImagesManager().getSwapChain().getExtent().width),
 					static_cast<float>(rfct::renderer::getRen().getRenderImagesManager().getSwapChain().getExtent().height) };
 
+	// text and button draw
 	if (ctx->state == gameState::menu) {
-		drawBaseMenu(ctx);
+		// input updates
+		if (input::getInput().upDownMenu != 0 && changeSelectionCooldown <= 0.f) {
+			currentMenuElementSelectedIndex = (currentMenuElementSelectedIndex - (uint32_t)input::getInput().upDownMenu + currentMenuMaxElementIndex) % currentMenuMaxElementIndex;
+			upDownEffectMultiplier = -input::getInput().upDownMenu;
+			changeSelectionCooldown = 0.25f;
+		}
+
+		// background draw
+		rfct::renderer::getRen().getUIPipeline().beginAddingTriangles();
+		rfct::renderer::getRen().getUIPipeline().addTriangleNormalized({ 0,0 }, { 2, 0 }, { 0, 2 }, { 0,0,0 }, rfct::opacity::opacity75percent);
+		rfct::renderer::getRen().getUIPipeline().addTriangleNormalized({ 2,2 }, { 2, 0 }, { 0, 2 }, { 0,0,0 }, rfct::opacity::opacity75percent);
+		updateDecors(ctx);
+		rfct::renderer::getRen().getUIPipeline().endAddingTriangles();
+
+		switch (currentUILogicState)
+		{
+		case rfct::basePauseMenu: {
+			drawBaseMenu(ctx);
+			break;
+		}
+		case rfct::baseSettings: {
+			drawBaseSettings(ctx);
+			break;
+		}
+		case rfct::soundSettings:
+			break;
+		default:
+			break;
+		}
 	}
-	debugDraw::drawText("dt: " + std::to_string(ctx->dt) + "s", glm::vec2(0, 0), 0.08f);
+
+	if (input::getInput().selectMenu && changeSelectionCooldown <= 0.f) {
+		changeSelectionCooldown = 0.25f;
+		switch (currentUILogicState)
+		{
+		case rfct::basePauseMenu: {
+			updateBaseMenu(ctx);
+			break;
+		}
+		case rfct::baseSettings: {
+			updateBaseSettings(ctx);
+			break;
+		}
+		case rfct::soundSettings:
+			break;
+		default:
+			break;
+		}
+	}
+	int fps = static_cast<int>(std::floor(1.0 / ctx->dt));
+	debugDraw::drawText("fps: " + std::to_string(fps), glm::vec2(0, 0), 0.08f);
 }
 

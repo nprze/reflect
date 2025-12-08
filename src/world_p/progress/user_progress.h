@@ -3,7 +3,9 @@
 
 namespace rfct {
 	class userSettings {
+		static userSettings instance;
 	public:
+		static userSettings& get() { return instance; }
 		void loadUserSettings();
 		void dumpUserSettings();
 		void resetToDefaults();

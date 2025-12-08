@@ -11,7 +11,7 @@ m_Renderer(RFCT_RENDERER_ARGUMENTS_VAR)
 {
 	// app init
 	input::getInput().init();
-	userSettings().loadUserSettings();
+	userSettings::get().loadUserSettings();
 	isAppMinimised = false;
 	initGame();
 #ifdef WINDOWS_BUILD
