@@ -71,14 +71,14 @@ namespace rfct {
 		triangleDecorations.reserve(count);
 		for (uint32_t i = 0; i < count; i++) {
 			triangleDecoration decor;
-			decor.pos0 = glm::vec2(0.00f, 0.00f);
-			decor.pos1 = glm::vec2(0.02f, 0.02f);
-			decor.pos2 = glm::vec2(0.02f, -0.02f);
+			decor.pos0 = glm::vec2(0.00f, 0.00f) * (static_cast<float>(rand() % 1000) / 2000.f + 0.5f);
+			decor.pos1 = glm::vec2(0.02f, 0.02f) * (static_cast<float>(rand() % 1000) / 2000.f + 0.5f);
+			decor.pos2 = glm::vec2(0.02f, -0.02f) * (static_cast<float>(rand() % 1000) / 2000.f + 0.5f);
 			decor.pos = glm::vec2(
-				static_cast<float>(rand() % 2000) / 2000.f,
-				static_cast<float>(rand() % 2000) / 2000.f
+				static_cast<float>(rand() % 1000) / 1000.f,
+				static_cast<float>(rand() % 1000) / 1000.f
 			);
-			float intensity = 0.5f + 0.5f * static_cast<float>(rand() % 2000) / 2000.f;
+			float intensity = 0.1f + 0.5f * static_cast<float>(rand() % 2000) / 2000.f;
 			decor.color = glm::vec3(intensity, intensity, intensity);
 			decor.angle = static_cast<float>(rand() % 360);
 			decor.dir = glm::normalize(glm::vec2(
@@ -89,6 +89,7 @@ namespace rfct {
 		}
 	}
 	void updateDecors(frameContext* ctx) {
+		float aspectRatio = imageExtent.x / imageExtent.y;
 		for (triangleDecoration& decor : triangleDecorations) {
 			decor.angle += ctx->dt * 20.f;
 			glm::mat2 rotationMatrix = glm::mat2(
@@ -98,7 +99,7 @@ namespace rfct {
 			float additionalBoost = 0.f;
 			if (changeSelectionCooldown != 0) {
 				additionalBoost = glm::pow(-4 * changeSelectionCooldown, 2);
-				additionalBoost *= -0.001f * upDownEffectMultiplier;
+				additionalBoost *= -0.004f * upDownEffectMultiplier;
 			}
 			decor.pos.y += additionalBoost;
 
@@ -112,9 +113,9 @@ namespace rfct {
 			if (decor.pos.y < -0.1f) decor.pos.y = 1.1f;
 			if (decor.pos.y > 1.1f) decor.pos.y = -0.1f;
 
-			glm::vec2 p0 = rotationMatrix * decor.pos0 + decor.pos;
-			glm::vec2 p1 = rotationMatrix * decor.pos1 + decor.pos;
-			glm::vec2 p2 = rotationMatrix * decor.pos2 + decor.pos;
+			glm::vec2 p0 = (rotationMatrix * decor.pos0 + decor.pos) * glm::vec2{1, aspectRatio};
+			glm::vec2 p1 = (rotationMatrix * decor.pos1 + decor.pos) * glm::vec2{1, aspectRatio};
+			glm::vec2 p2 = (rotationMatrix * decor.pos2 + decor.pos) * glm::vec2{1, aspectRatio};
 
 			rfct::renderer::getRen().getUIPipeline().addTriangleNormalized(p0, p1, p2, decor.color, opacity::opacity100percent);
 		}
@@ -217,7 +218,7 @@ rfct::gameState rfct::getState()
 			lastState = gameState::menu;
 			currentUILogicState = uiLogicState::basePauseMenu;
 			currentMenuMaxElementIndex = 3;
-			defineDecors(10);
+			defineDecors(5);
 		}
 	}
 	return lastState;

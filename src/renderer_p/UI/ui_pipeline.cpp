@@ -5,7 +5,7 @@
 rfct::UIPipeline::UIPipeline(vk::RenderPass renderPass) 
     : m_vertexShader("shaders/UI/UIimage_vert.spv"), 
     m_fragShader("shaders/UI/UIimage_frag.spv"), 
-    m_glyphsRenderData(RFCT_DEBUG_DRAW_VERTEX_BUFFER_MAX_SIZE), 
+    m_glyphsRenderData(RFCT_MAX_UI_CHARS * 6),
     m_debugDrawglyphsRenderData(RFCT_DEBUG_DRAW_VERTEX_BUFFER_MAX_SIZE), 
     m_defaultFont("fonts/3MTrislan.txt"),
     m_dummyImage(""),
@@ -280,8 +280,7 @@ void rfct::UIPipeline::addTriangleNormalized(const glm::vec2& vec0, const glm::v
     vertices[1].color = color;
     vertices[2].color = color;
 
-    m_BufferMappedMemory += m_glyphsRenderData.bufferOffset;
-    memcpy(m_BufferMappedMemory, vertices, 3 * sizeof(vertices[0]));
+    memcpy(m_BufferMappedMemory + m_glyphsRenderData.bufferOffset, vertices, 3 * sizeof(vertices[0]));
 
     m_glyphsRenderData.bufferOffset += 3 * sizeof(vertices[0]);
     m_glyphsRenderData.vertexCount += 3;

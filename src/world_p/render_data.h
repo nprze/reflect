@@ -30,6 +30,9 @@ namespace rfct {
 		void removeDynamicEntity(entity e); // clears both matrices and vertices
 		void removeAnimatedEntity(entity e); // only clears matrices
 
+		// helpers 
+		bool isMatrixIndexFree(uint32_t index) const;
+		void mergeFreeVertexBlocks();
 
 		vk::UniqueDescriptorPool m_DescriptorPool;
 

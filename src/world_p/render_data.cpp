@@ -128,7 +128,7 @@ rfct::sceneRenderData::~sceneRenderData()
 void rfct::sceneRenderData::clearAllData()
 {
 	m_matsCounterStatic = 0;
-	m_matsCounterDynamic = 2; // 0 and 1 are specially reserved.
+	m_matsCounterDynamic = 0;
 	m_verticesCountStaticObj = 0;
 	m_verticesCountDynamicObj = 0;
 
@@ -136,6 +136,17 @@ void rfct::sceneRenderData::clearAllData()
 	m_freeVertices.clear();
 
 	m_VertexBufferStatic.resetBufferOffset();
+
+	for (uint32_t i = 0; i < RFCT_FRAMES_IN_FLIGHT; ++i) {
+		memset(m_mappedVerticesDataDynamic[i], 0, RFCT_SCENE_DYNAMIC_DRAW_VERTEX_BUFFER_VERTEX_COUNT * sizeof(Vertex));
+		memset(m_mappedMatsDataDynamic[i], 0, sizeof(glm::mat4) * RFCT_MAX_DYNAMIC_OBJ_ON_SCENE);
+	}
+	memset(m_mappedDataStatic, 0, sizeof(glm::mat4) * RFCT_MAX_STATIC_OBJ_ON_SCENE);
+	// reserve matrix index 0 for identity and index 1 for player transform (bcs player uses frame anim)
+	frameContext noCtx = {};
+	glm::mat4 identityMat4 = { 1.f };
+	RFCT_ASSERT(addDynamicMat(&noCtx, &identityMat4) == 0);
+	RFCT_ASSERT(addDynamicMat(&noCtx, &identityMat4) == 1);
 }
 
 void rfct::sceneRenderData::updateMat(const frameContext* ctx, const uint32_t& objIndexInSSBO, glm::mat4* mat)
@@ -187,7 +198,7 @@ uint32_t rfct::sceneRenderData::reserveSuitableVertexBufferLocation(size_t numVe
 			return returnVal;
 		}
 	}
-	RFCT_ASSERT(m_verticesCountDynamicObj + numVertices < RFCT_SCENE_STATIC_DRAW_VERTEX_BUFFER_VERTEX_COUNT);
+	RFCT_ASSERT(m_verticesCountDynamicObj + numVertices < RFCT_SCENE_DYNAMIC_DRAW_VERTEX_BUFFER_VERTEX_COUNT);
 	return m_verticesCountDynamicObj;
 }
 
