@@ -4,14 +4,35 @@
 #include "renderer_p/renderer.h"
 #include "world_p/progress/user_progress.h"
 
+using updateFunc = void(*)(rfct::frameContext*);
+using drawFunc = void(*)(rfct::frameContext*);
+
+enum UIPartsNames {
+	basePauseMenu,
+	baseSettings,
+	soundSettings,
+};
+
+struct UIPart {
+	updateFunc drawFunction;
+	drawFunc updateFunction;
+	uint32_t elementsCount;
+};
+// Parts/ menus
+std::map<UIPartsNames, UIPart> uiParts;
+UIPartsNames currentUIPart = UIPartsNames::basePauseMenu;
+
+// among parts variables
 rfct::gameState beforePauseMenuState = rfct::gameState::gameplay;
 rfct::gameState lastState = rfct::gameState::gameplay;
 float timeSinceStateChange = 0.f;
+
+// utilites/ helpers
 glm::vec2 imageExtent = glm::vec2(0, 0);
 float globalTime = 0.f;
 
+// specific parts variables
 uint32_t currentMenuElementSelectedIndex = 0;
-uint32_t currentMenuMaxElementIndex = 0;
 float changeSelectionCooldown = 0.f;
 float upDownEffectMultiplier = 1.f;
 
@@ -125,30 +146,15 @@ namespace rfct {
 	}
 }
 
-// UI logic
-namespace rfct {
-	enum uiLogicState {
-		basePauseMenu,
-		baseSettings,
-		soundSettings,
-	};
-	uiLogicState currentUILogicState = uiLogicState::basePauseMenu;
-}
-
 // menu specific update
 namespace rfct {
-	void switchMenu(uiLogicState newState) {
-		currentUILogicState = newState;
-		currentMenuElementSelectedIndex = 0;
-	}
 	void updateBaseMenu(frameContext* ctx) {
 		if (currentMenuElementSelectedIndex == 0) { // resume
 			timeSinceStateChange = 0.f;
 			ctx->state = beforePauseMenuState;
 		}
 		else if (currentMenuElementSelectedIndex == 1) { // settings
-			switchMenu(uiLogicState::baseSettings);
-			currentMenuMaxElementIndex = 4;
+			switchUIPart(UIPartsNames::baseSettings);
 		}
 		else if (currentMenuElementSelectedIndex == 2) { // quit
 			glfwSetWindowShouldClose(rfct::renderer::getRen().getWindow().GetHandle(), true);
@@ -163,8 +169,7 @@ namespace rfct {
 		}
 		else if (currentMenuElementSelectedIndex == 3) { // back
 			userSettings::get().dumpUserSettings();
-			switchMenu(uiLogicState::basePauseMenu);
-			currentMenuMaxElementIndex = 3;
+			switchUIPart(UIPartsNames::basePauseMenu);
 		}
 	}
 }
@@ -216,8 +221,7 @@ rfct::gameState rfct::getState()
 		else {
 			beforePauseMenuState = lastState;
 			lastState = gameState::menu;
-			currentUILogicState = uiLogicState::basePauseMenu;
-			currentMenuMaxElementIndex = 3;
+			switchUIPart(UIPartsNames::basePauseMenu);
 			defineDecors(5);
 		}
 	}
@@ -242,7 +246,8 @@ void rfct::drawUI(frameContext* ctx)
 	if (ctx->state == gameState::menu) {
 		// input updates
 		if (input::getInput().upDownMenu != 0 && changeSelectionCooldown <= 0.f) {
-			currentMenuElementSelectedIndex = (currentMenuElementSelectedIndex - (uint32_t)input::getInput().upDownMenu + currentMenuMaxElementIndex) % currentMenuMaxElementIndex;
+			uint32_t elementCount = uiParts[currentUIPart].elementsCount;
+			currentMenuElementSelectedIndex = (currentMenuElementSelectedIndex - (uint32_t)input::getInput().upDownMenu + elementCount) % elementCount;
 			upDownEffectMultiplier = -input::getInput().upDownMenu;
 			changeSelectionCooldown = 0.25f;
 		}
@@ -254,42 +259,25 @@ void rfct::drawUI(frameContext* ctx)
 		updateDecors(ctx);
 		rfct::renderer::getRen().getUIPipeline().endAddingTriangles();
 
-		switch (currentUILogicState)
-		{
-		case rfct::basePauseMenu: {
-			drawBaseMenu(ctx);
-			break;
-		}
-		case rfct::baseSettings: {
-			drawBaseSettings(ctx);
-			break;
-		}
-		case rfct::soundSettings:
-			break;
-		default:
-			break;
-		}
+		uiParts[currentUIPart].drawFunction(ctx);
 	}
 
 	if (input::getInput().selectMenu && changeSelectionCooldown <= 0.f) {
 		changeSelectionCooldown = 0.25f;
-		switch (currentUILogicState)
-		{
-		case rfct::basePauseMenu: {
-			updateBaseMenu(ctx);
-			break;
-		}
-		case rfct::baseSettings: {
-			updateBaseSettings(ctx);
-			break;
-		}
-		case rfct::soundSettings:
-			break;
-		default:
-			break;
-		}
+		uiParts[currentUIPart].updateFunction(ctx);
 	}
 	int fps = static_cast<int>(std::floor(1.0 / ctx->dt));
 	debugDraw::drawText("fps: " + std::to_string(fps), glm::vec2(0, 0), 0.08f);
 }
 
+void rfct::switchUIPart(UIPartsNames part)
+{
+	currentUIPart = part;
+	currentMenuElementSelectedIndex = 0;
+}
+
+void rfct::defineUI()
+{
+	uiParts[basePauseMenu] = { drawBaseMenu, updateBaseMenu, 3 };
+	uiParts[baseSettings] = { drawBaseSettings, updateBaseSettings, 4 };
+}

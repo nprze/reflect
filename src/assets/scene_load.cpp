@@ -136,6 +136,16 @@ void rfct::loadScene(const std::string& path, sceneSerializedData* out)
 
             out->spawnPoints.push_back(std::move(spawn));
         }
+        else if (sv.starts_with("TallGrass:")) {
+            TallGrassInfo grass{};
+
+            FILE_VEC2_FLOAT("position:", grass.position);
+
+            grass.position.x += 0;
+            grass.position.y += 0.5;
+
+            out->tallGrass.push_back(std::move(grass));
+        }
         else if (sv.starts_with("SceneWidth:")) {
             std::from_chars(sv.data() + 12, sv.data() + sv.size(), out->width);
         }
@@ -151,5 +161,6 @@ void rfct::loadScene(const std::string& path, sceneSerializedData* out)
         FILE_COUNT_PART("DashRechargeCount:", out->dashRecharge)
         FILE_COUNT_PART("DashRechargeCount:", out->dashRecharge)
         FILE_COUNT_PART("JumpBoosterCount:", out->boosters)
+        FILE_COUNT_PART("TallGrassCount:", out->tallGrass)
     }
 }

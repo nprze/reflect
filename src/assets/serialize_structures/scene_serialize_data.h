@@ -55,6 +55,9 @@ namespace rfct {
     struct SpawnPointInfo {
         glm::vec2 position;
     };
+    struct TallGrassInfo {
+        glm::vec2 position;
+    };
 	struct sceneSerializedData {
         int width, height;
         std::vector<rectangle> rectangles;
@@ -65,5 +68,6 @@ namespace rfct {
         std::vector<JumpBoosterInfo> boosters;
         std::vector<DashRechargeInfo> dashRecharge;
         std::vector<SpawnPointInfo> spawnPoints;
+        std::vector<TallGrassInfo> tallGrass;
 	};
 }

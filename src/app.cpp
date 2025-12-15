@@ -14,6 +14,7 @@ m_Renderer(RFCT_RENDERER_ARGUMENTS_VAR)
 	userSettings::get().loadUserSettings();
 	isAppMinimised = false;
 	initGame();
+	defineUI();
 #ifdef WINDOWS_BUILD
     update();
 	renderer::getRen().getWindow().show();

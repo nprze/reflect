@@ -82,12 +82,17 @@ namespace rfct {
         uint8_t frameIndex;
         size_t bufferOffset;
     };
-    struct jumpBoosterComponent {
-        float timeSinceBoost = -1.f;
-
-    };
     struct enemyRayComponent {
         entity owner;
     };
 
+    struct jumpBoosterComponent {
+        float timeSinceBoost = -1.f;
+    };
+
+    struct grassComponent {
+        bool beenTouched = false;
+        bool canBeFirst = true;
+		float timeSinceTouched = 0.f;
+    };
 }
