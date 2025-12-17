@@ -58,6 +58,7 @@ void rfct::objectSystems::updateVisuals(frameContext* fc){
 void rfct::objectSystems::customDrawObjects(vk::CommandBuffer& cmd, frameContext* ctx)
 {
 	m_enemySystem.drawFrameAnimSprites(cmd, ctx);
+	// todo: grass should be drawn here to be displayed over
 }
 void rfct::objectSystems::respawn(frameContext* fc)
 {

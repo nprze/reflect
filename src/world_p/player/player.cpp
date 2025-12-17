@@ -154,7 +154,7 @@ void rfct::playerController::update(frameContext* ctx)
 		drawPlayervelocity(ecs::get().get<velocityComponent>(player).velocity, ecs::get().get<positionComponent>(player).position);
 	}
 	// below block
-	if (true) {
+	if (false) {
 		if (belowBlock != entt::null && ecs::get().get<velocityComponent>(player).velocity.y == 0) {
 			const dynamicBoxColliderComponent col = ecs::get().get<dynamicBoxColliderComponent>(belowBlock);
 			drawAABB(col.min, col.max, 0);
@@ -165,54 +165,53 @@ void rfct::playerController::update(frameContext* ctx)
 		hold = true;
 	}
 
-	// normal update
-	playerStateComponent& state = ecs::get().get<playerStateComponent>(player);
-	walkHorizontalInput = 0;
+	// fixedUpdate
+	for (uint32_t i = 0; i < ctx->fixedUpdateTimes; ++i) {
+		// normal update
+		playerStateComponent& state = ecs::get().get<playerStateComponent>(player);
+		walkHorizontalInput = 0;
 
-	arrowUpDownInput = input::getInput().upDown;
+		arrowUpDownInput = input::getInput().upDown;
 
-	if ((input::getInput().dashX || input::getInput().dashY || input::getInput().dash45up || input::getInput().dash45down || input::getInput().dashDefault) && state.dashCharges>0 && dashCooldown <= 0.f) {
-		if (input::getInput().dashX) {
-			dashHorizontalInput = input::getInput().dashX;
-			anyDash = true;
+		if ((input::getInput().dashX || input::getInput().dashY || input::getInput().dash45up || input::getInput().dash45down || input::getInput().dashDefault) && state.dashCharges>0 && dashCooldown <= 0.f) {
+			if (input::getInput().dashX) {
+				dashHorizontalInput = input::getInput().dashX;
+				anyDash = true;
+			}
+			else if (input::getInput().dash45up) {
+				dash45upInput = input::getInput().dash45up;
+				anyDash = true;
+			}
+			else if (input::getInput().dash45down) {
+				dash45downInput = input::getInput().dash45down;
+				anyDash = true;
+			}
+			else if (input::getInput().dashY) {
+				dashVerticalInput = input::getInput().dashY;
+				anyDash = true;
+			}
+			else if (input::getInput().dashDefault) {
+				if (facingRight) dashHorizontalInput = 1;
+				else dashHorizontalInput = -1;
+				anyDash = true;
+			}
 		}
-		else if (input::getInput().dash45up) {
-			dash45upInput = input::getInput().dash45up;
-			anyDash = true;
-		}
-		else if (input::getInput().dash45down) {
-			dash45downInput = input::getInput().dash45down;
-			anyDash = true;
-		}
-		else if (input::getInput().dashY) {
-			dashVerticalInput = input::getInput().dashY;
-			anyDash = true;
-		}
-		else if (input::getInput().dashDefault) {
-			if (facingRight) dashHorizontalInput = 1;
-			else dashHorizontalInput = -1;
-			anyDash = true;
-				
-		}
-	}
 
-	// walk
-	if (input::getInput().walk != walkHorizontalInput) {
-		changingDirectionBoost = 0.5f;
-	}
-	if (input::getInput().walk) {
-		walkHorizontalInput = input::getInput().walk;
-	}
+		// walk
+		if (input::getInput().walk != walkHorizontalInput) {
+			changingDirectionBoost = 0.5f;
+		}
+		if (input::getInput().walk) {
+			walkHorizontalInput = input::getInput().walk;
+		}
 
-	// jump
-	if (input::getInput().jump && state.allowToJump) {
-		jumpInput = input::getInput().jump;
-	}
+		// jump
+		if (input::getInput().jump && state.allowToJump) {
+			jumpInput = input::getInput().jump;
+		}
 
 	
 
-	// fixedUpdate
-	for (uint32_t i = 0; i < ctx->fixedUpdateTimes; ++i) {
 		
 		inputVelocityComponent& inputVelComp = ecs::get().get<inputVelocityComponent>(player);
 		glm::vec2& inputVel = inputVelComp.velocity;
@@ -330,6 +329,7 @@ void rfct::playerController::update(frameContext* ctx)
 		}
 		case (playerState::holdingVines): {
 			normalWalkUpdate();
+			velComp.velocity *= 0.5f;
 			stateComp.allowToJump = false;
 			grav.gravityEnabled = false;
 			if (!hold) {
@@ -405,18 +405,18 @@ void rfct::playerController::update(frameContext* ctx)
 			facingRight = false;
 		}
 
-		// trigger only once
+	}
+	if (ctx->fixedUpdateTimes!=0){
 		anyDash = false;
 		dashHorizontalInput = 0.f;
 		dashVerticalInput = 0.f;
 		dash45upInput = 0.f;
 		dash45downInput = 0.f;
 		arrowUpDownInput = 0.f;
+		jumpInput = 0;
+		hold = false;
+		ctx->scene->updateDirection(facingRight);
 	}
-	// respawn after applying
-	jumpInput = 0;
-	hold = false;
-	ctx->scene->updateDirection(facingRight);
 }
 
 rfct::nearestObject rfct::playerController::findObjectToHold()
@@ -489,7 +489,6 @@ void rfct::playerController::endHold(scene* sc)
 	ecs::get().get<velocityComponent>(player).velocity.y += 2.f;
 }
 
-
 bool rfct::playerController::checkHold(scene* scen)
 {
 	playerStateComponent& stateComp = ecs::get().get<playerStateComponent>(player);
@@ -537,7 +536,7 @@ bool rfct::playerController::checkHold(scene* scen)
 void rfct::playerController::startDash(frameContext* ctx)
 {
 	play(soundManager::get().swoosh);
-
+	RFCT_INFO("dash received input: v:{}, h:{}", dashVerticalInput, dashHorizontalInput);
 	ecs::get().get<playerStateComponent>(player).dashCharges--;
 	ecs::get().get<velocityComponent>(player).velocity = { 0.f,0.f };
 	ecs::get().get<velocityComponent>(player).velocity = { 0,0 };

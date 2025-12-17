@@ -3,6 +3,7 @@
 #include "game.h"
 #include "ui_p/ui.h"
 #include "world_p/progress/user_progress.h"
+#include <thread>
 
 bool rfct::reflectApplication::isAppMinimised;
 
@@ -35,31 +36,38 @@ rfct::reflectApplication::~reflectApplication()
 }
 
 void rfct::reflectApplication::update() {
-	// delta time
-	static auto previousTime = std::chrono::high_resolution_clock::now();
-	auto currentTime = std::chrono::high_resolution_clock::now();
-	std::chrono::duration<float> deltaTime = currentTime - previousTime;
-	previousTime = currentTime;
+    using clock = std::chrono::steady_clock;
 
-	// context utils
-	currentFrame = (currentFrame + 1) % RFCT_FRAMES_IN_FLIGHT;
-	frameContext context = {
-		.dt = deltaTime.count(),
-		.frame = currentFrame,
-		.scene = &world::getWorld().getCurrentScene(),
-		.state = getState()
-	};
-	static float accululator = 0.f;
-	accululator += context.dt;
-	while (accululator >= fixedDeltaTime) {
-		accululator -= fixedDeltaTime;
-		context.fixedUpdateTimes++;
-	}
+    static auto previousTime = clock::now();
+    auto frameStart = clock::now();
 
-	input::getInput().pollAndParseEvents(&context);
-	if (!isAppMinimised) {
-		updateGame(context);
-		renderer::getRen().render(context);
-	};
-	updateLastState(context.state);
+    // Delta time
+    std::chrono::duration<float> deltaTime = frameStart - previousTime;
+    previousTime = frameStart;
+
+    currentFrame = (currentFrame + 1) % RFCT_FRAMES_IN_FLIGHT;
+    frameContext context = {
+        .dt = deltaTime.count(),
+        .frame = currentFrame,
+        .scene = &world::getWorld().getCurrentScene(),
+        .state = getState()
+    };
+
+    static float accumulator = 0.f;
+    accumulator += context.dt;
+    while (accumulator >= fixedDeltaTime) {
+        accumulator -= fixedDeltaTime;
+        context.fixedUpdateTimes++;
+    }
+
+    input::getInput().pollAndParseEvents(&context);
+
+    if (!isAppMinimised) {
+        updateGame(context);
+        renderer::getRen().render(context);
+    }
+
+    updateLastState(context.state);
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
 }

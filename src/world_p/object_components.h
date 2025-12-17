@@ -94,5 +94,6 @@ namespace rfct {
         bool beenTouched = false;
         bool canBeFirst = true;
 		float timeSinceTouched = 0.f;
+        float sign = 1.f;
     };
 }

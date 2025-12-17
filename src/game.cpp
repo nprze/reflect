@@ -25,9 +25,13 @@ void rfct::initGame()
 	play(soundManager::get().background);
 }
 
-void rfct::updateGame(frameContext& ContextArg)
+void rfct::updateGameDynamic(frameContext& ContextArg)
 {
 	world::getWorld().onUpdate(ContextArg);
+}
+
+void rfct::updateGameFixed(frameContext& ContextArg)
+{
 }
 
 void rfct::cleanupGame()

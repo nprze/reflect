@@ -17,7 +17,6 @@ namespace rfct {
 		void update(frameContext* ctx);
 		void endHold(scene* sc);
 		entity belowBlock = entt::null;
-	private:
 		entity player;
 		float walkSpeed;
 		float dashSpeed;
@@ -34,12 +33,9 @@ namespace rfct {
 
 		bool anyDash = false; // for simplicity
 
-
-
 		float changingDirectionBoost;
 		float walkVelocity;
 		bool facingRight;
-
 
 		float timeYNotZero;
 		float startedJumpingTime;
@@ -47,7 +43,6 @@ namespace rfct {
 		float dashTime;
 		glm::vec2 dashVelocity;
 		uint8_t kindlingsToSpawnThisDash;
-
 
 		bool hold;
 		float holdingTime = 0.f;
