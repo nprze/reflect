@@ -2,7 +2,7 @@
 #include "renderer_p/shader/vulkan_shader.h"
 #include "context.h"
 namespace rfct {
-	class sceneRenderData;
+	class renderData;
 	class frameData;
 	class vulkanRasterizerPipeline
 	{

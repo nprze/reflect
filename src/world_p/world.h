@@ -17,12 +17,12 @@ namespace rfct {
 		void cleanWorld();
 		void onUpdate(frameContext& context);
         void addScreenTransform(float degree);
-		sceneRenderData& getRenderData() { return *m_RenderData; };
+		renderData& getRenderData() { return *m_RenderData; };
+		bool switchingScenes = false;
+		void switchScenes(frameContext& ctx);
 	private:
-		world() = default;
-		~world() = default;
 		scene* m_currentScene;
-		sceneRenderData* m_RenderData = nullptr;
+		renderData* m_RenderData = nullptr;
     public:
         float screenViewTransformDegrees = 0;
 	};

@@ -11,7 +11,7 @@ rfct::world rfct::world::currentWorld;
 
 void rfct::world::initWorld(const std::string& path)
 {
-	m_RenderData = new sceneRenderData();
+	m_RenderData = new renderData();
 	loadScene("scenes/cool-scene.txt");
 }
  
@@ -33,35 +33,31 @@ void rfct::world::cleanWorld()
 
 void rfct::world::onUpdate(frameContext& context)
 {
-	if (m_currentScene->isPlayerOutsideScene()) {
-		m_currentScene->unloadScene();
-		delete m_currentScene;
-		ecs::get().clear();
-		m_RenderData->clearAllData();
-		loadScene("scenes/showcase.txt");
-		context.scene = m_currentScene;
-	}
 	auto jobs = std::make_shared<rfct::jobTracker>();
-	jobSystem::get().KickJob([&]() {
-		RFCT_PROFILE_SCOPE("UI draw");
-		drawUI(&context);
-		}, *jobs);
 	if (context.state == gameState::gameplay || context.state == gameState::stateDialogue) {
 		jobSystem::get().KickJob([&]() {
 			RFCT_PROFILE_SCOPE("Scene update");
 				m_currentScene->onUpdate(&context);
 			}, *jobs);
 	}
-#ifdef ANDROID_BUILD
-    jobSystem::get().KickJob([&]() {
-        RFCT_PROFILE_SCOPE("android UI update");
-		input::getInput().drawButtons();
-    }, *jobs);
-#endif
 	jobs->waitAll();
+
+	if (m_currentScene->isPlayerOutsideScene()) {
+		switchingScenes = true;
+	}
 }
 
 
 void rfct::world::addScreenTransform(float degree) {
 	screenViewTransformDegrees = degree;
+}
+
+void rfct::world::switchScenes(frameContext& ctx)
+{
+	m_currentScene->unloadScene();
+	delete m_currentScene;
+	ecs::get().clear();
+	m_RenderData->clearAllData();
+	loadScene("scenes/showcase.txt");
+	ctx.scene = m_currentScene;
 }

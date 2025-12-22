@@ -96,7 +96,7 @@ void rfct::scene::unloadScene()
 {
 }
 
-rfct::sceneRenderData& rfct::scene::getRenderData()
+rfct::renderData& rfct::scene::getRenderData()
 {
 	return m_World->getRenderData();
 }

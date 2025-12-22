@@ -10,6 +10,9 @@ namespace rfct {
         void updateWindow(RFCT_APP_ARGS);
 		void update();
 
+		void loadGameSystems();
+		void cleanGameSystems();
+
         static bool isAppMinimised;
     private:
 		size_t currentFrame = -1; // the frame in flight which resources to use this frame

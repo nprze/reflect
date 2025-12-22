@@ -175,7 +175,7 @@ void rfct::updateSmokes(frameContext* ctx)
 
 void rfct::updateSmokeMatrices(frameContext* ctx)
 {
-    sceneRenderData& rd = ctx->scene->getRenderData();
+    renderData& rd = ctx->scene->getRenderData();
     auto smokeParticlesQuery = ecs::get().view<smokeDisperseComponent, dynamicSSBOIndexComponent, positionComponent, rotationComponent, scaleComponent, dynamicSSBOIndexComponent>();
     for (auto [smokeParticle, dis, ssboData, pos, rot, sc,ssbo] : smokeParticlesQuery.each()) {
         glm::mat4 mat = getModelMatrix(pos, rot, sc);

@@ -16,7 +16,7 @@ namespace rfct {
 		void onUpdate(frameContext* context);
 		void initScene(const std::string& path);
 		void unloadScene();
-		sceneRenderData& getRenderData();
+		renderData& getRenderData();
 
 		// all static entities can only be created during loadScene() and their render data should not change (that includes position, color, size etc.)
 		entity createStaticMesh(const std::string& path, glm::vec2 size, glm::vec2 pos, const glm::vec3& color); // loads mesh from .txt file (path should be pointing to a .txt). pos is left top coord.

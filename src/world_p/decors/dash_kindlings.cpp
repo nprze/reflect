@@ -129,7 +129,7 @@ void rfct::updateKindlings(frameContext* ctx)
 
 void rfct::updateKindlingMatrices(frameContext* ctx)
 {
-    sceneRenderData& rd = ctx->scene->getRenderData();
+    renderData& rd = ctx->scene->getRenderData();
     auto kindlingParticlesComponentsQuery = ecs::get().view<kindlingParticleComponent, dynamicSSBOIndexComponent, positionComponent, rotationComponent, scaleComponent>();
     for (auto [smokeParticle, dis, ssboData, pos, rot, sc] : kindlingParticlesComponentsQuery.each()) {
         glm::mat4 mat = getModelMatrix(pos, rot, sc);

@@ -97,7 +97,7 @@ void rfct::vulkanRasterizerPipeline::createPipeline(vk::RenderPass renderPass)
     // Pipeline layout
     vk::PipelineLayoutCreateInfo pipelineLayoutInfo = {};
     pipelineLayoutInfo.setLayoutCount = 2;
-    vk::DescriptorSetLayout dscSetLayouts[] = { cameraUbo::getDescriptorSetLayout(), sceneRenderData::getDescriptorSetLayout() };
+    vk::DescriptorSetLayout dscSetLayouts[] = { cameraUbo::getDescriptorSetLayout(), renderData::getDescriptorSetLayout() };
     pipelineLayoutInfo.pSetLayouts = dscSetLayouts;
     m_pipelineLayout = renderer::getRen().getDevice().createPipelineLayoutUnique(pipelineLayoutInfo);
 
@@ -129,7 +129,7 @@ void rfct::vulkanRasterizerPipeline::createPipeline(vk::RenderPass renderPass)
 void rfct::vulkanRasterizerPipeline::recordCommandBuffer(frameContext* ctx, frameData& frameData, vk::Framebuffer framebuffer, vk::RenderPass renderPass)
 {
     RFCT_PROFILE_FUNCTION();
-    const sceneRenderData& renderdata = ctx->scene->getRenderData();
+    const renderData& renderdata = ctx->scene->getRenderData();
     vk::CommandBuffer commandBuffer = frameData.m_sceneCommandBuffer.get();
 
     commandBuffer.reset({});

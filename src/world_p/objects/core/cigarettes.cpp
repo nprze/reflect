@@ -97,7 +97,7 @@ namespace rfct {
         }
     }*/
     void cigarettes::updateVisuals(const frameContext* ctx) {
-        sceneRenderData& rd = ctx->scene->getRenderData();
+        renderData& rd = ctx->scene->getRenderData();
         auto gravityVelocityPositionBoxQuery = ecs::get().view<cigaretteUpdateComponent, dynamicSSBOIndexComponent, positionComponent, rotationComponent, scaleComponent>();
         for (auto [ent, upd, ssboData, pos, rot, sc] : gravityVelocityPositionBoxQuery.each()) {
             glm::mat4 mat = getModelMatrix(pos, rot, sc);
@@ -107,7 +107,7 @@ namespace rfct {
     }
     void cigarettes::updateSystem(frameContext* ctx)
     {
-        sceneRenderData& rd = ctx->scene->getRenderData();
+        renderData& rd = ctx->scene->getRenderData();
         auto cigaretteComponentsQuery = ecs::get().view<cigaretteUpdateComponent, positionComponent, velocityComponent, angularVelocityComponent, rotationComponent>();
         for (auto [cigaretteEntity, update, pos, velocity, angVel, rotation] : cigaretteComponentsQuery.each()) {
             if (update.shouldBeUpdated) {

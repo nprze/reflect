@@ -1,4 +1,5 @@
 #pragma once
+#include "job_system_p/job_system.h"
 namespace rfct {
 	enum gameState {
 		undefined,
@@ -15,5 +16,6 @@ namespace rfct {
 		scene* scene; // scene which will be updated
 		gameState state;
 		uint8_t fixedUpdateTimes;
+		jobTracker wholeUpdateTracker; // tracks jobs for whole system updates 
 	};
 }

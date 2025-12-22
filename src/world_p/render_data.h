@@ -6,16 +6,15 @@
 
 namespace rfct {
 	struct frameContext;
-	class sceneRenderData {
+	class renderData {
 	public:
 		static vk::DescriptorSetLayout m_descriptorSetLayout;
 		static vk::DescriptorSetLayout getDescriptorSetLayout();
 		static void destroyDescriptorSetLayout();
 	public:
-		sceneRenderData();
-		~sceneRenderData();
+		renderData();
+		~renderData();
 		void clearAllData();
-
 
 		void updateMat(const frameContext* ctx, const uint32_t& objIndexInSSBO, glm::mat4* mat);
 		void updateDynamicVertices(const frameContext* ctx, const size_t objBufferOffset, void* vertices, const size_t size);
@@ -29,10 +28,6 @@ namespace rfct {
 		void removeDynamicObject(const dynamicSSBOIndexComponent& ssboData, const vertexRenderInfoComponent& vertexRenderInfo, bool addToFreelist = false, const frameContext* ctx = {});
 		void removeDynamicEntity(entity e); // clears both matrices and vertices
 		void removeAnimatedEntity(entity e); // only clears matrices
-
-		// helpers 
-		bool isMatrixIndexFree(uint32_t index) const;
-		void mergeFreeVertexBlocks();
 
 		vk::UniqueDescriptorPool m_DescriptorPool;
 
