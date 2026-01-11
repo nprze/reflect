@@ -93,7 +93,7 @@ void rfct::reflectApplication::update() {
 
     updateLastState(context.state);
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    //std::this_thread::sleep_for(std::chrono::milliseconds(100));
 }
 
 void rfct::reflectApplication::loadGameSystems()
