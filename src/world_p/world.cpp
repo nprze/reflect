@@ -1,7 +1,6 @@
 #include "world.h"
 #include "scene.h"
 #include "input.h"
-#include "job_system_p/job_system.h"
 #include "renderer_p/debug/debug_draw.h"
 #include "world_p/objects/objects.h"
 #include "ecs.h"
@@ -31,20 +30,22 @@ void rfct::world::cleanWorld()
 	delete m_RenderData;
 }
 
-void rfct::world::onUpdate(frameContext& context)
+void rfct::world::worldFixedUpdate(frameContext& context, uint64_t timesToUpdate)
 {
-	auto jobs = std::make_shared<rfct::jobTracker>();
-	if (context.state == gameState::gameplay || context.state == gameState::stateDialogue) {
-		jobSystem::get().KickJob([&]() {
-			RFCT_PROFILE_SCOPE("Scene update");
-				m_currentScene->onUpdate(&context);
-			}, *jobs);
+	while (timesToUpdate-- > 0) {
+		if (context.state == gameState::gameplay || context.state == gameState::stateDialogue) {
+			m_currentScene->FixedUpdate(&context);
+		}
 	}
-	jobs->waitAll();
 
 	if (m_currentScene->isPlayerOutsideScene()) {
 		switchingScenes = true;
 	}
+}
+
+void rfct::world::worldVisualUpdate(frameContext& context)
+{
+	m_currentScene->onUpdate(&context);
 }
 
 

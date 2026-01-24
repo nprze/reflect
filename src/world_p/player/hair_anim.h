@@ -7,7 +7,7 @@ namespace rfct {
 	};
 	struct hairAnimation {
 		void init(glm::vec2 offsetFromPlayerOrigin, float len, uint32_t numEdges);
-		void update(const glm::vec2& playerVel, uint8_t dt);
+		void update(const glm::vec2& playerVel);
 		void draw(const glm::vec2& playerPos);
 
 		uint32_t m_numEdges;

@@ -142,35 +142,34 @@ void rfct::setColors(float* is)
 
 void rfct::updateSmokes(frameContext* ctx)
 {
-    for (uint8_t i = 0; i < ctx->fixedUpdateTimes; i++) {
-        auto smokeParticlesComponentsQuery = ecs::get().view<smokeParticleComponent, smokeDisperseComponent, sinusoidFloatComponent, angularVelocityComponent, positionComponent, rotationComponent, scaleComponent, dynamicSSBOIndexComponent>();
-        for (auto [smokeParticle, particleDir, disperse, smokeFloat, angVel, pos, rot, sc, ssbo] : smokeParticlesComponentsQuery.each()) {
-            if (disperse.currentProgress < disperse.fullLenght) {
-                disperse.currentProgress += fixedDeltaTime;
-                float progressPercentage = disperse.currentProgress / disperse.fullLenght;
-                float curScale = -std::pow(2.f* std::pow(progressPercentage, 1.5f) - 1, 4) + 1;
-                curScale = std::max(curScale, 0.f);
-                sc.scale = { curScale ,curScale };
+	// fixed update
+    auto smokeParticlesComponentsQuery = ecs::get().view<smokeParticleComponent, smokeDisperseComponent, sinusoidFloatComponent, angularVelocityComponent, positionComponent, rotationComponent, scaleComponent, dynamicSSBOIndexComponent>();
+    for (auto [smokeParticle, particleDir, disperse, smokeFloat, angVel, pos, rot, sc, ssbo] : smokeParticlesComponentsQuery.each()) {
+        if (disperse.currentProgress < disperse.fullLenght) {
+            disperse.currentProgress += fixedDeltaTime;
+            float progressPercentage = disperse.currentProgress / disperse.fullLenght;
+            float curScale = -std::pow(2.f* std::pow(progressPercentage, 1.5f) - 1, 4) + 1;
+            curScale = std::max(curScale, 0.f);
+            sc.scale = { curScale ,curScale };
 
-                // Forward motion
-                pos.position += particleDir.direction * fixedDeltaTime;
+            // Forward motion
+            pos.position += particleDir.direction * fixedDeltaTime;
 
-                // Sinusoidal float
-                glm::vec2 perp = glm::normalize(glm::vec2(-particleDir.direction.y, particleDir.direction.x));
-                float t = disperse.currentProgress;
-                float offset = smokeFloat.amplitude * sin(smokeFloat.frequency * t + smokeFloat.phase);
-                pos.position += perp * offset * fixedDeltaTime;
+            // Sinusoidal float
+            glm::vec2 perp = glm::normalize(glm::vec2(-particleDir.direction.y, particleDir.direction.x));
+            float t = disperse.currentProgress;
+            float offset = smokeFloat.amplitude * sin(smokeFloat.frequency * t + smokeFloat.phase);
+            pos.position += perp * offset * fixedDeltaTime;
 
-                // Rotation damping
-                angVel.zAngularVelocity *= angularDamping;
-                rot.rotation.z += angVel.zAngularVelocity * fixedDeltaTime;
-            }
-            else {
-                ctx->scene->getRenderData().removeDynamicEntity(smokeParticle);
-                ecs::get().destroy(smokeParticle);
-            }
-        };
-    }
+            // Rotation damping
+            angVel.zAngularVelocity *= angularDamping;
+            rot.rotation.z += angVel.zAngularVelocity * fixedDeltaTime;
+        }
+        else {
+            ctx->scene->getRenderData().removeDynamicEntity(smokeParticle);
+            ecs::get().destroy(smokeParticle);
+        }
+    };
 }
 
 void rfct::updateSmokeMatrices(frameContext* ctx)

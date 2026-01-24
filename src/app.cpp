@@ -57,15 +57,16 @@ void rfct::reflectApplication::update() {
 
     static float accumulator = 0.f;
     accumulator += context.dt;
-    while (accumulator >= fixedDeltaTime) {
-        accumulator -= fixedDeltaTime;
-        context.fixedUpdateTimes++;
-    }
+    uint64_t timesToUpdate = static_cast<uint64_t>(std::floor(accumulator / fixedDeltaTime));
+    accumulator -= timesToUpdate * fixedDeltaTime;
 
     input::getInput().pollAndParseEvents(&context);
 
     if (!isAppMinimised) {
-        world::getWorld().onUpdate(context);
+        // fixed update
+        fixedUpdate(context, timesToUpdate);
+
+		// ui and visual update and render
         jobSystem::get().KickJob([&]() {
             RFCT_PROFILE_SCOPE("ui draw");
             drawUI(&context);
@@ -76,15 +77,15 @@ void rfct::reflectApplication::update() {
             input::getInput().drawButtons();
             }, context.wholeUpdateTracker);
 #endif
-        while (context.fixedUpdateTimes > 0) {
-			context.fixedUpdateTimes--;
-        }
-
-
+        jobSystem::get().KickJob([&]() {
+            RFCT_PROFILE_SCOPE("world visual update");
+            world::getWorld().worldVisualUpdate(context);
+            }, context.wholeUpdateTracker);
         context.wholeUpdateTracker.waitAll();
 
         renderer::getRen().render(context);
 
+		// check scene switch
         if (world::getWorld().switchingScenes) {
             world::getWorld().switchScenes(context);
             world::getWorld().switchingScenes = false;
@@ -93,7 +94,13 @@ void rfct::reflectApplication::update() {
 
     updateLastState(context.state);
 
-    //std::this_thread::sleep_for(std::chrono::milliseconds(100));
+	// simulate small frame rate
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+}
+
+void rfct::reflectApplication::fixedUpdate(frameContext& ctx, uint64_t times)
+{
+    world::getWorld().worldFixedUpdate(ctx, times);
 }
 
 void rfct::reflectApplication::loadGameSystems()

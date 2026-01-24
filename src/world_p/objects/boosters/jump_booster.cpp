@@ -88,11 +88,11 @@ namespace rfct {
 	};
 	void jumpBoosters::updateVisuals(const frameContext* ctx) {
 	};
-	void jumpBoosters::updateSystem(frameContext* ctx) {
+	void jumpBoosters::updateSystem(frameContext* ctx) { 
 		auto jumpBoosterQuery = ecs::get().view<scaleComponent, dynamicBoxColliderComponent, jumpBoosterComponent, dynamicSSBOIndexComponent>();
 		for (auto [ent, sc, box, en, i] : jumpBoosterQuery.each()) {
 			glm::vec2 heightPlus = { 0,0 };
-			en.timeSinceBoost += (en.timeSinceBoost == -1.f ? 0.f : 1.f) * ctx->fixedUpdateTimes * fixedDeltaTime;
+			en.timeSinceBoost += (en.timeSinceBoost == -1.f ? 0.f : 1.f) * fixedDeltaTime;
 			if (en.timeSinceBoost >= boostAnimTime) {
 				en.timeSinceBoost = -1.f;
 			}

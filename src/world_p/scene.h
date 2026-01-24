@@ -14,6 +14,7 @@ namespace rfct {
 		scene(world* worldArg);
 
 		void onUpdate(frameContext* context);
+		void FixedUpdate(frameContext* context);
 		void initScene(const std::string& path);
 		void unloadScene();
 		renderData& getRenderData();
@@ -27,9 +28,6 @@ namespace rfct {
 
 		void deleteDynamicEntity(entity e);
 		void deleteAnimatedEntity(entity e);
-		void addPendingDynamicEnitityDeletion(entity e);
-		void addPendingAnimatedEnitityDeletion(entity e);
-		void resolvePendingDynamicEnitityDeletions();
 		
 		entity createDynamicRect(dynamicBoxColliderComponent* bounds, glm::vec3 color = glm::vec3(1.f, 1.f, 1.f));
 		entity createDynamicMesh(dynamicBoxColliderComponent* bounds, const std::string& path);

@@ -24,13 +24,16 @@ rfct::decorationHolder::~decorationHolder()
 
 void rfct::decorationHolder::onPlayerDashDecorations(frameContext* fc, const entity entityPlayer, const bool facingRight) {
 }
-void rfct::decorationHolder::update(frameContext* ctx) {
+void rfct::decorationHolder::decorsFixedUpdate(frameContext* ctx) {
 	RFCT_PROFILE_SCOPE("decorations update");
 
 	updateSmokes(ctx);
 	updateKindlings(ctx);
 	updateGrass(ctx);
+}
 
+void rfct::decorationHolder::decorsUpdate(frameContext* ctx)
+{
 	updateSmokeMatrices(ctx);
 	updateKindlingMatrices(ctx);
 }

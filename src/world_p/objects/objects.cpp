@@ -35,10 +35,9 @@ void rfct::objectSystems::loadSceneData(sceneSerializedData* serializeData, scen
 	m_jumpBoostSystem.spawnData(parentScene, serializeData);
 }
 
-void rfct::objectSystems::update(frameContext* fc)
+void rfct::objectSystems::systemsFixedUpdate(frameContext* fc)
 {
 	RFCT_PROFILE_SCOPE("dynamic objects update");
-	// todo: make sure all the systems handle delay (multiple fixed updates in one frame)
 	m_cigSystem.updateSystem(fc);
 	m_enemySystem.updateSystem(fc);
 	m_vineSystem.updateSystem(fc);

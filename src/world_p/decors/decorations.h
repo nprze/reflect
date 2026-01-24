@@ -6,6 +6,7 @@ namespace rfct {
 		void init(sceneSerializedData* serializeData, scene* parentScene);
 		~decorationHolder();
 		void onPlayerDashDecorations(frameContext* fc, const entity entityPlayer, const bool facingRight);
-		void update(frameContext* ctx);
+		void decorsFixedUpdate(frameContext* ctx);
+		void decorsUpdate(frameContext* ctx);
 	};
 }

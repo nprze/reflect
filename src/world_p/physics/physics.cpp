@@ -277,33 +277,29 @@ namespace rfct {
 
 void rfct::updatePhysics(const frameContext* ctx)
 {
-    RFCT_PROFILE_SCOPE("physics update");
-    //drawBVH(0, DynamicObjsBVHnodes.back(), &DynamicObjsBVHnodes);
-    for (uint32_t i = 0; i < ctx->fixedUpdateTimes;++i) {
-        RFCT_PROFILE_SCOPE("physics step");
-        auto gravityVelocityPositionBoxQuery = ecs::get().view<gravityComponent, velocityComponent, positionComponent, dynamicBoxColliderComponent, staticObjCollisionCallbackComponent>();
-        for (auto [ent, gravity, velocity, position, dynamicBox, callback] : gravityVelocityPositionBoxQuery.each()) {
-            if (gravity.gravityEnabled) {
-                velocity.velocity.y += -gravity.gravity * fixedDeltaTime;
-                velocity.velocity.y *= gravity.oneMinusAirResistance;
-            }
-            constexpr float substepTime = (fixedDeltaTime) / (float)substepCount;
-            for (uint32_t substep = 0; substep < substepCount; substep++) {
-                position.position += velocity.velocity * physicsScale * substepTime;
-                dynamicBoxColliderComponent finalBoundingBox = { dynamicBox.min + position.position, dynamicBox.max + position.position };
-                checkForCollision(StaticObjsBVHnodes.back(), finalBoundingBox, callback, ent);
-            }
+    RFCT_PROFILE_SCOPE("physics step");
+    auto gravityVelocityPositionBoxQuery = ecs::get().view<gravityComponent, velocityComponent, positionComponent, dynamicBoxColliderComponent, staticObjCollisionCallbackComponent>();
+    for (auto [ent, gravity, velocity, position, dynamicBox, callback] : gravityVelocityPositionBoxQuery.each()) {
+        if (gravity.gravityEnabled) {
+            velocity.velocity.y += -gravity.gravity * fixedDeltaTime;
+            velocity.velocity.y *= gravity.oneMinusAirResistance;
         }
+        constexpr float substepTime = (fixedDeltaTime) / (float)substepCount;
+        for (uint32_t substep = 0; substep < substepCount; substep++) {
+            position.position += velocity.velocity * physicsScale * substepTime;
+            dynamicBoxColliderComponent finalBoundingBox = { dynamicBox.min + position.position, dynamicBox.max + position.position };
+            checkForCollision(StaticObjsBVHnodes.back(), finalBoundingBox, callback, ent);
+        }
+    }
 
-        // on dynamic objects do not update velocities
+    // on dynamic objects do not update velocities
 
-        auto dynamicBoxesQuery = ecs::get().view<positionComponent, dynamicBoxColliderComponent, dynamicObjCollisionCallbackComponent>();
-        for (auto [ent, position, dynamicBox, callback] : dynamicBoxesQuery.each()) {
-            constexpr float substepTime = (fixedDeltaTime) / (float)substepCount;
-            for (uint32_t substep = 0; substep < substepCount; substep++) {
-                dynamicBoxColliderComponent finalBoundingBox = { dynamicBox.min + position.position, dynamicBox.max + position.position };
-                checkForCollision(DynamicObjsBVHnodes.back(), finalBoundingBox, callback, ent);
-            }
+    auto dynamicBoxesQuery = ecs::get().view<positionComponent, dynamicBoxColliderComponent, dynamicObjCollisionCallbackComponent>();
+    for (auto [ent, position, dynamicBox, callback] : dynamicBoxesQuery.each()) {
+        constexpr float substepTime = (fixedDeltaTime) / (float)substepCount;
+        for (uint32_t substep = 0; substep < substepCount; substep++) {
+            dynamicBoxColliderComponent finalBoundingBox = { dynamicBox.min + position.position, dynamicBox.max + position.position };
+            checkForCollision(DynamicObjsBVHnodes.back(), finalBoundingBox, callback, ent);
         }
     }
 }

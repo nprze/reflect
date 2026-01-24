@@ -28,10 +28,9 @@ void rfct::hairAnimation::init(glm::vec2 offsetFromPlayerOrigin, float len, uint
     m_left = glm::translate(m_left, glm::vec3(m_edges[0].pos, 0.0f));
 }
 
-void rfct::hairAnimation::update(const glm::vec2& playerVel, uint8_t fixedUpdateTimes)
+void rfct::hairAnimation::update(const glm::vec2& playerVel)
 {
-
-    for (uint8_t i = 0; i < fixedUpdateTimes; ++i) {
+	// fixed update
         for (auto& e : m_edges) {
             glm::vec2 vel = e.pos - e.previousPos;
             e.previousPos = e.pos;
@@ -65,7 +64,6 @@ void rfct::hairAnimation::update(const glm::vec2& playerVel, uint8_t fixedUpdate
 
             e.pos += vel * fixedDeltaTime * -0.1f;
         }
-    }
 }
 
 void drawToPoints(rfct::debugTriangle* triangle, const std::vector<rfct::edge>& edges, const glm::vec2& playerPos, uint32_t index0, uint32_t index1, glm::vec3 multipliedPos) {

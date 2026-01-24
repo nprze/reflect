@@ -111,29 +111,26 @@ namespace rfct {
         auto cigaretteComponentsQuery = ecs::get().view<cigaretteUpdateComponent, positionComponent, velocityComponent, angularVelocityComponent, rotationComponent>();
         for (auto [cigaretteEntity, update, pos, velocity, angVel, rotation] : cigaretteComponentsQuery.each()) {
             if (update.shouldBeUpdated) {
-                for (uint8_t i = 0; i < ctx->fixedUpdateTimes; ++i) {
-                    // Apply gravity
-                    velocity.velocity += gravity * fixedDeltaTime;
+                // Apply gravity
+                velocity.velocity += gravity * fixedDeltaTime;
 
-                    // Apply linear damping
-                    velocity.velocity *= linearDamping;
+                // Apply linear damping
+                velocity.velocity *= linearDamping;
 
-                    // position
-                    pos.position += velocity.velocity * fixedDeltaTime;
+                // position
+                pos.position += velocity.velocity * fixedDeltaTime;
 
-                    // angular motion
-                    angVel.zAngularVelocity *= angularDamping;
-                    rotation.rotation.z += angVel.zAngularVelocity * fixedDeltaTime;
-                    if (std::abs(velocity.velocity.x) < 0.1f && std::abs(velocity.velocity.y) < 0.2f) {
-                        update.shouldBeUpdated = false;
-                    }
-                    if (update.shouldSpawnSmoke) {
-                        spawnSmoke(ctx, pos.position);
-                        update.spawnedSmoke = true;
-                        update.shouldSpawnSmoke = false;
-                    }
+                // angular motion
+                angVel.zAngularVelocity *= angularDamping;
+                rotation.rotation.z += angVel.zAngularVelocity * fixedDeltaTime;
+                if (std::abs(velocity.velocity.x) < 0.1f && std::abs(velocity.velocity.y) < 0.2f) {
+                    update.shouldBeUpdated = false;
                 }
-
+                if (update.shouldSpawnSmoke) {
+                    spawnSmoke(ctx, pos.position);
+                    update.spawnedSmoke = true;
+                    update.shouldSpawnSmoke = false;
+                }
             }
             };
     }

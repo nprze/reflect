@@ -22,21 +22,26 @@ void rfct::scene::onUpdate(frameContext* context)
 {
 	RFCT_PROFILE_SCOPE("scene update");
 	entt::registry& reg = ecs::get();
-	if (!reg.get<playerLifeComponent>(playerEntity).alive) {
-		resetScene(context);
-	}
+
+	// dt update
 	playerController::get().update(context);
-	objectSystems::get().update(context);
-	m_decorations.update(context);
-	buildDynamicObjBVH();
-	updatePhysics(context);
 	playerAnimations::get().update(reg.get<velocityComponent>(playerEntity).velocity, reg.get<positionComponent>(playerEntity).position, *context, playerEntity);
 	updateTransformData(context, playerEntity);
-
-	cameraComponentOnUpdate(context->dt, playerEntity);
-
 	objectSystems::get().updateVisuals(context);
-	resolvePendingDynamicEnitityDeletions();
+	m_decorations.decorsUpdate(context);
+	cameraComponentOnUpdate(context->dt, playerEntity);
+}
+
+void rfct::scene::FixedUpdate(frameContext* context)
+{
+	if (!ecs::get().get<playerLifeComponent>(playerEntity).alive) {
+		resetScene(context);
+	}
+	playerController::get().fixedUpdate(context);
+	objectSystems::get().systemsFixedUpdate(context);
+	m_decorations.decorsFixedUpdate(context);
+	buildDynamicObjBVH();
+	updatePhysics(context);
 }
 
 void rfct::scene::initScene(const std::string& path)
@@ -219,27 +224,6 @@ void rfct::scene::deleteAnimatedEntity(entity e)
 {
 	m_World->getRenderData().removeAnimatedEntity(e);
 	ecs::get().destroy(e);
-}
-
-void rfct::scene::addPendingDynamicEnitityDeletion(entity e)
-{
-	m_pendingEntityDeletions.push_back({e, false});
-}
-
-void rfct::scene::addPendingAnimatedEnitityDeletion(entity e)
-{
-	m_pendingEntityDeletions.push_back({ e, true });
-}
-
-void rfct::scene::resolvePendingDynamicEnitityDeletions()
-{
-	for (auto& e : m_pendingEntityDeletions) {
-		if (e.second)
-			deleteAnimatedEntity(e.first);
-		else
-			deleteDynamicEntity(e.first);
-	}
-	m_pendingEntityDeletions.clear();
 }
 
 entity rfct::scene::createDynamicRenderingEntity(std::vector<Vertex>* vertices, glm::mat4* model, uint32_t numVertices)

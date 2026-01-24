@@ -9,6 +9,7 @@ namespace rfct {
 
         void updateWindow(RFCT_APP_ARGS);
 		void update();
+		void fixedUpdate(frameContext& ctx, uint64_t times);
 
 		void loadGameSystems();
 		void cleanGameSystems();

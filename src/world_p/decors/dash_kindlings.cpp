@@ -95,36 +95,35 @@ void rfct::spawnKindling(frameContext* fc, const glm::vec2& position, const glm:
 
 void rfct::updateKindlings(frameContext* ctx)
 {
-    for (uint8_t i = 0; i < ctx->fixedUpdateTimes; i++) {
-        auto kindlingParticlesComponentsQuery = ecs::get().view<kindlingParticleComponent, sinusoidFloatComponent, angularVelocityComponent, positionComponent, rotationComponent, scaleComponent, dynamicSSBOIndexComponent>();
-        for (auto [smokeParticle, particleData, sinFloat, angVel, pos, rot, sc, ssbo] : kindlingParticlesComponentsQuery.each()) {
-            if (particleData.currentProgress < particleData.fullLenght) {
-                particleData.currentProgress += fixedDeltaTime;
+    // in fixed update
+    auto kindlingParticlesComponentsQuery = ecs::get().view<kindlingParticleComponent, sinusoidFloatComponent, angularVelocityComponent, positionComponent, rotationComponent, scaleComponent, dynamicSSBOIndexComponent>();
+    for (auto [smokeParticle, particleData, sinFloat, angVel, pos, rot, sc, ssbo] : kindlingParticlesComponentsQuery.each()) {
+        if (particleData.currentProgress < particleData.fullLenght) {
+            particleData.currentProgress += fixedDeltaTime;
 
-                float progressPercentage = particleData.currentProgress / particleData.fullLenght;
-                float curScale = -std::pow(progressPercentage, 4) + 1;
-                curScale = std::max(curScale, 0.f);
-                sc.scale = { curScale ,curScale };
+            float progressPercentage = particleData.currentProgress / particleData.fullLenght;
+            float curScale = -std::pow(progressPercentage, 4) + 1;
+            curScale = std::max(curScale, 0.f);
+            sc.scale = { curScale ,curScale };
 
-                // Forward motion
-                pos.position += particleData.direction * fixedDeltaTime;
+            // Forward motion
+            pos.position += particleData.direction * fixedDeltaTime;
 
-                // Sinusoidal float
-                glm::vec2 perp = glm::normalize(glm::vec2(-particleData.direction.y, particleData.direction.x));
-                float t = particleData.currentProgress;
-                float offset = sinFloat.amplitude * sin(sinFloat.frequency * t + sinFloat.phase);
-                pos.position += perp * offset * fixedDeltaTime;
+            // Sinusoidal float
+            glm::vec2 perp = glm::normalize(glm::vec2(-particleData.direction.y, particleData.direction.x));
+            float t = particleData.currentProgress;
+            float offset = sinFloat.amplitude * sin(sinFloat.frequency * t + sinFloat.phase);
+            pos.position += perp * offset * fixedDeltaTime;
 
-                // Rotation damping
-                angVel.zAngularVelocity *= angularDamping;
-                rot.rotation.z += angVel.zAngularVelocity * fixedDeltaTime;
-            }
-            else {
-                ctx->scene->getRenderData().removeDynamicEntity(smokeParticle);
-                ecs::get().destroy(smokeParticle);
-            }
-            };
-    }
+            // Rotation damping
+            angVel.zAngularVelocity *= angularDamping;
+            rot.rotation.z += angVel.zAngularVelocity * fixedDeltaTime;
+        }
+        else {
+            ctx->scene->getRenderData().removeDynamicEntity(smokeParticle);
+            ecs::get().destroy(smokeParticle);
+        }
+        };
 }
 
 void rfct::updateKindlingMatrices(frameContext* ctx)

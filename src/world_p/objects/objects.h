@@ -14,7 +14,7 @@ namespace rfct{
 		void init();
 		void cleanup();
 		void loadSceneData(sceneSerializedData* serializeData, scene* parentScene);
-		void update(frameContext* fc);
+		void systemsFixedUpdate(frameContext* fc);
 		void updateVisuals(frameContext* fc);
 		void customDrawObjects(vk::CommandBuffer& cmd, frameContext* ctx);
 		void respawn(frameContext* fc);

@@ -15,7 +15,8 @@ namespace rfct {
 		void loadScene(const std::string& path);
 		inline scene& getCurrentScene() { return *m_currentScene; };
 		void cleanWorld();
-		void onUpdate(frameContext& context);
+		void worldFixedUpdate(frameContext& context, uint64_t timesToUpdate);
+		void worldVisualUpdate(frameContext& context);
         void addScreenTransform(float degree);
 		renderData& getRenderData() { return *m_RenderData; };
 		bool switchingScenes = false;

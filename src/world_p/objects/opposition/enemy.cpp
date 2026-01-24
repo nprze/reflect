@@ -152,7 +152,6 @@ namespace rfct {
 
 		auto enemyQuery = ecs::get().view<velocityComponent, positionComponent, scaleComponent, enemyComponent>();
 		for (auto [ent, vel, pos, sc, en] : enemyQuery.each()) {
-
 			frameAnimation* currentAnim = (frameAnimation*)((char*)&en.walkFrameAnim + (en.animIndex * sizeof(frameAnimation)));
 			en.turningTime = std::clamp(en.turningTime - ctx->dt, 0.f, oneTurnTime);
 			if (en.turningTime != 0.f) {
@@ -165,7 +164,7 @@ namespace rfct {
 			}
 			else {
 				if (en.animIndex == 1) {
-					// switch sides XD
+					// switch sides
 					en.facingRight = !en.facingRight;
 
 					// change anim to walk

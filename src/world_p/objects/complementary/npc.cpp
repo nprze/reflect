@@ -58,24 +58,22 @@ namespace rfct {
         if (ctx->state == gameState::gameplay) {
             auto gravityVelocityPositionBoxQuery = ecs::get().view<positionComponent, interactionDistanceComponent, dialoguePathComponent>();
             for (auto [npcEntity, npcPos, inter, dial] : gravityVelocityPositionBoxQuery.each()) {
-                if (ctx->fixedUpdateTimes) {
-                    const auto& playerPos = reg.get<positionComponent>(ctx->scene->getPlayer());
+                const auto& playerPos = reg.get<positionComponent>(ctx->scene->getPlayer());
 
-                    float dist = distanceSquared(&playerPos.position, &npcPos.position);
+                float dist = distanceSquared(&playerPos.position, &npcPos.position);
 
-                    float wantedDist = inter.interationDistanceSquared;
+                float wantedDist = inter.interationDistanceSquared;
 
-                    if (dist <= wantedDist) {
-                        const auto& playerState = reg.get<playerStateComponent>(ctx->scene->getPlayer());
+                if (dist <= wantedDist) {
+                    const auto& playerState = reg.get<playerStateComponent>(ctx->scene->getPlayer());
 
-                        if (input::getInput().hold && playerState.grounded) {
-                            ctx->state = gameState::stateDialogue;
+                    if (input::getInput().hold && playerState.grounded) {
+                        ctx->state = gameState::stateDialogue;
 
-                            startDialogue(dial.dialoguePath);
-                        }
-                        else {
-                            debugDraw::drawText("talk to me", { 100.f, 100.f }, .3f);
-                        }
+                        startDialogue(dial.dialoguePath);
+                    }
+                    else {
+                        debugDraw::drawText("talk to me", { 100.f, 100.f }, .3f);
                     }
                 }
             }
