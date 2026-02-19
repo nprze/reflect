@@ -95,7 +95,7 @@ void rfct::reflectApplication::update() {
     updateLastState(context.state);
 
 	// simulate small frame rate
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    //std::this_thread::sleep_for(std::chrono::milliseconds(100));
 }
 
 void rfct::reflectApplication::fixedUpdate(frameContext& ctx, uint64_t times)
@@ -120,7 +120,7 @@ void rfct::reflectApplication::loadGameSystems()
         objectSystems::get().init();
         }, *jobs);
     jobs->waitAll();
-    world::getWorld().initWorld("");
+    world::getWorld().initWorld("world/world.txt");
     play(soundManager::get().background);
 }
 

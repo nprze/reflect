@@ -67,6 +67,7 @@ assets/player
 assets/UI
 assets/background
 assets/anim
+assets/world
 build/
 !deps/
 src/utils/reflect_directories.h

@@ -44,6 +44,11 @@ void rfct::scene::FixedUpdate(frameContext* context)
 	updatePhysics(context);
 }
 
+void rfct::scene::postFixedUpdate(frameContext* context)
+{
+	playerController::get().postFixedUpdate(context);
+}
+
 void rfct::scene::initScene(const std::string& path)
 {
 	loadScene(path, &m_InitialData);
@@ -259,6 +264,14 @@ bool rfct::scene::isPlayerOutsideScene()
 	if (pos.x > m_InitialData.width || pos.x < 0) return true;
 	if (pos.y > m_InitialData.height || pos.y < 0) return true;
 	return false;
+}
+
+glm::vec2 rfct::scene::getPlayerCoordsSceneNormalized()
+{
+	glm::vec2 pos = ecs::get().get<positionComponent>(playerEntity).position;
+	pos.x /= m_InitialData.width;
+	pos.y /= m_InitialData.height;
+	return {std::clamp(pos.x, 0.f, 1.f), std::clamp(pos.y, 0.f, 1.f) };
 }
 
 void rfct::scene::resetScene(frameContext* ctx)

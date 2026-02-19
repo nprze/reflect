@@ -5,13 +5,15 @@
 #include "world_p/objects/objects.h"
 #include "ecs.h"
 #include "ui_p/ui.h"
+#include "assets/world_load.h"
 
 rfct::world rfct::world::currentWorld;
 
 void rfct::world::initWorld(const std::string& path)
 {
+	loadWorld(path, &m_serializeData);
 	m_RenderData = new renderData();
-	loadScene("scenes/cool-scene.txt");
+	loadScene("scenes/"+m_serializeData.blocks[m_currentWorldBlockIndex].file + ".txt");
 }
  
 void rfct::world::loadScene(const std::string& path)
@@ -37,6 +39,7 @@ void rfct::world::worldFixedUpdate(frameContext& context, uint64_t timesToUpdate
 			m_currentScene->FixedUpdate(&context);
 		}
 	}
+	m_currentScene->postFixedUpdate(&context);
 
 	if (m_currentScene->isPlayerOutsideScene()) {
 		switchingScenes = true;
@@ -55,10 +58,50 @@ void rfct::world::addScreenTransform(float degree) {
 
 void rfct::world::switchScenes(frameContext& ctx)
 {
+	glm::vec2 coords = m_currentScene->getPlayerCoordsSceneNormalized();
+	coords.y = 1 - coords.y;
+	RFCT_INFO("switching scenes using pos: {}, {}", coords.x, coords.y);
+	uint32_t sceneIndex = getSceneToLoad(coords);
+	if (m_currentWorldBlockIndex == sceneIndex) {
+		m_currentScene->resetScene(&ctx);
+		return;
+	}
+	m_currentWorldBlockIndex = sceneIndex;
+	RFCT_INFO("new scene name: {}", m_serializeData.blocks[m_currentWorldBlockIndex].file);
+
 	m_currentScene->unloadScene();
 	delete m_currentScene;
 	ecs::get().clear();
 	m_RenderData->clearAllData();
-	loadScene("scenes/showcase.txt");
+	loadScene("scenes/"+ m_serializeData.blocks[m_currentWorldBlockIndex].file +".txt");
 	ctx.scene = m_currentScene;
+}
+
+uint32_t rfct::world::getSceneToLoad(glm::vec2& lastBlockExit)
+{
+	uint32_t currentIndex = 0;
+	glm::vec2 levelSize = m_serializeData.blocks[m_currentWorldBlockIndex].max - m_serializeData.blocks[m_currentWorldBlockIndex].min;
+	glm::vec2 pos = m_serializeData.blocks[m_currentWorldBlockIndex].min + (lastBlockExit * levelSize);
+	if (lastBlockExit.x == 1) {
+		pos.x += 1;
+	}
+	if (lastBlockExit.x == 0) {
+		pos.x -= 1;
+	}
+	if (lastBlockExit.y == 1) {
+		pos.y += 1;
+	}
+	if (lastBlockExit.y == 0) {
+		pos.y -= 1;
+	}
+	for (blockSerializeData& b : m_serializeData.blocks) {
+		if (pos.x > b.min.x &&
+			pos.x < b.max.x &&
+			pos.y > b.min.y &&
+			pos.y < b.max.y) {
+			return currentIndex;
+		}
+		currentIndex++;
+	}
+	return m_currentWorldBlockIndex;
 }

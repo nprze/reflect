@@ -15,6 +15,7 @@ namespace rfct {
 
 		void onUpdate(frameContext* context);
 		void FixedUpdate(frameContext* context);
+		void postFixedUpdate(frameContext* context);
 		void initScene(const std::string& path);
 		void unloadScene();
 		renderData& getRenderData();
@@ -36,6 +37,7 @@ namespace rfct {
 		void updateDirection(bool facingRight);
 
 		bool isPlayerOutsideScene();
+		glm::vec2 getPlayerCoordsSceneNormalized(); // get the coordinates of where the current player is. at the left top edge (0,0) at the bottom right (1,1)
 
 		void resetScene(frameContext* ctx);
 

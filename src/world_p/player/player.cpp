@@ -328,6 +328,10 @@ void rfct::playerController::fixedUpdate(frameContext* ctx)
 	else if (velComp.velocity.x < 0) {
 		facingRight = false;
 	}
+}
+
+void rfct::playerController::postFixedUpdate(frameContext* ctx)
+{
 	anyDash = false;
 	dashHorizontalInput = 0.f;
 	dashVerticalInput = 0.f;
@@ -456,7 +460,6 @@ bool rfct::playerController::checkHold(scene* scen)
 void rfct::playerController::startDash(frameContext* ctx)
 {
 	play(soundManager::get().swoosh);
-	RFCT_INFO("dash received input: v:{}, h:{}", dashVerticalInput, dashHorizontalInput);
 	ecs::get().get<playerStateComponent>(player).dashCharges--;
 	ecs::get().get<velocityComponent>(player).velocity = { 0.f,0.f };
 	ecs::get().get<velocityComponent>(player).velocity = { 0,0 };

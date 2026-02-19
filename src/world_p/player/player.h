@@ -16,6 +16,7 @@ namespace rfct {
 		entity createPlayer(scene* sc, const glm::vec2& spawnPoint);
 		void update(frameContext* ctx);
 		void fixedUpdate(frameContext* ctx);
+		void postFixedUpdate(frameContext* ctx);
 		void endHold(scene* sc);
 		entity belowBlock = entt::null;
 		entity player;
