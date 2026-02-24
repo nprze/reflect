@@ -11,6 +11,8 @@
 namespace rfct {
 	static entity cameraEntity;
     static glm::mat4 projectionMatrix;
+    const glm::mat4 flipY = glm::scale(glm::mat4(1.0f), glm::vec3(1, -1, 1));
+	float fov = 45.f;
 
     void recalculateProjectionMatrix(cameraComponent& cam) {
         glm::mat4 screenRot = glm::rotate(glm::mat4(1), glm::radians(world::getWorld().screenViewTransformDegrees), glm::vec3(0.0f, 0.0f, 1.0f));
@@ -22,37 +24,43 @@ namespace rfct {
 		cameraEntity = camera;
 		recalculateProjectionMatrix(ecs::get().get<cameraComponent>(camera));
     }
-    void cameraComponentOnUpdate(float dt, entity player)
+    void cameraComponentOnUpdate(float dt, entity player, int sceneWidth, int sceneHeight)
     {
         RFCT_PROFILE_SCOPE("camera update");
-        /*
-        if (input::getInput().cameraXAxis || input::getInput().cameraYAxis) {
-            cameraEntity.get_mut<positionComponent>()->position.x += dt * input::getInput().cameraXAxis;
-            cameraEntity.get_mut<positionComponent>()->position.y += dt * input::getInput().cameraYAxis;
-        }
-        else*/
-            //glm::vec2 playerPos = { 2,7 };
+
         entt::registry& reg = ecs::get();
         glm::vec2 playerPos = reg.get<positionComponent>(player).position;
-
-        // Move camera to player
         auto& camPos3D = reg.get<position3DComponent>(cameraEntity);
-        camPos3D.position.x = playerPos.x;
-        camPos3D.position.y = playerPos.y;
+        auto& camComp = reg.get<cameraComponent>(cameraEntity);
 
         // Handle framebuffer resize
         if (rfct::renderer::getRen().getRenderImagesManager().getSwapChain().framebufferResized) {
-            auto& camComp = reg.get<cameraComponent>(cameraEntity);
             camComp.aspectRatio = renderer::getRen().getAspectRatio();
             recalculateProjectionMatrix(camComp);
         }
 
+		// get size of camera view in world coords
+        float distance = std::abs(camPos3D.position.z - 0.0f);
+        float fovRad = glm::radians(CameraFOV);
+
+        float visibleHeight = 2.0f * distance * std::tan(fovRad * 0.5f);
+        float visibleWidth = visibleHeight * camComp.aspectRatio;
+
+		glm::vec2 whereCameraShouldBe;
+		if (visibleWidth / 2.f > sceneWidth - visibleWidth / 2.f) visibleWidth = 1.f; // case where scene is smaller than camera view
+		if (visibleHeight / 2.f > sceneHeight - visibleHeight / 2.f) visibleHeight = 1.f;
+        whereCameraShouldBe.x = std::clamp(playerPos.x, visibleWidth / 2.f, sceneWidth - visibleWidth / 2.f);
+        whereCameraShouldBe.y = std::clamp(playerPos.y, visibleHeight / 2.f, sceneHeight - visibleHeight / 2.f);
+
+		glm::vec2 directionToWhereCameraShouldBe = whereCameraShouldBe - glm::vec2(camPos3D.position.x, camPos3D.position.y);
+
+        // Move camera to player
+        camPos3D.position.x+= 4.f * dt * directionToWhereCameraShouldBe.x;
+        camPos3D.position.y+= 4.f * dt * directionToWhereCameraShouldBe.y;
+
         // Always recalc projection
         recalculateProjectionMatrix(reg.get<cameraComponent>(cameraEntity));
-
     }
-
-    const glm::mat4 flipY = glm::scale(glm::mat4(1.0f), glm::vec3(1, -1, 1));
     glm::mat4 getViewMatrix() {
         glm::mat4 model = glm::mat4(1.0f);
         position3DComponent& position = ecs::get().get<position3DComponent>(cameraEntity);

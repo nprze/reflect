@@ -10,6 +10,7 @@ namespace flecs {
 	class entity;
 }
 namespace rfct {
+	const float CameraFOV = 45.f;
     inline float randF() {
         static uint32_t seed = rand();
         seed = 1664525u * seed + 1013904223u;

@@ -23,13 +23,34 @@ void rfct::scene::onUpdate(frameContext* context)
 	RFCT_PROFILE_SCOPE("scene update");
 	entt::registry& reg = ecs::get();
 
+	debugLine* lines = debugDraw::requestLines(4);
+	lines->vertices[0].pos = { 0, 0, 0 };
+	lines->vertices[1].pos = { m_InitialData.width, 0, 0 };
+
+	lines->vertices[2].pos = { m_InitialData.width, 0, 0 };
+	lines->vertices[3].pos = { m_InitialData.width, m_InitialData.height, 0 };
+
+	lines->vertices[4].pos = { m_InitialData.width, m_InitialData.height, 0 };
+	lines->vertices[5].pos = { 0, m_InitialData.height, 0 };
+
+	lines->vertices[6].pos = { 0, m_InitialData.height, 0 };lines->vertices[7].pos = { 0, 0, 0 };
+
+	lines->vertices[0].color = { 1,1,1 };
+	lines->vertices[1].color = { 1,1,1 };
+	lines->vertices[2].color = { 1,1,1 };
+	lines->vertices[3].color = { 1,1,1 };
+	lines->vertices[4].color = { 1,1,1 };
+	lines->vertices[5].color = { 1,1,1 };
+	lines->vertices[6].color = { 1,1,1 };
+	lines->vertices[7].color = { 1,1,1 };
+
 	// dt update
 	playerController::get().update(context);
 	playerAnimations::get().update(reg.get<velocityComponent>(playerEntity).velocity, reg.get<positionComponent>(playerEntity).position, *context, playerEntity);
 	updateTransformData(context, playerEntity);
 	objectSystems::get().updateVisuals(context);
 	m_decorations.decorsUpdate(context);
-	cameraComponentOnUpdate(context->dt, playerEntity);
+	cameraComponentOnUpdate(context->dt, playerEntity, m_InitialData.width, m_InitialData.height);
 }
 
 void rfct::scene::FixedUpdate(frameContext* context)
@@ -55,11 +76,6 @@ void rfct::scene::initScene(const std::string& path)
 	
 	entt::registry& reg = ecs::get();
 
-	camera = reg.create();
-	reg.emplace<position3DComponent>(camera, position3DComponent{ { 0.f,  0.f, 20.f} });
-	reg.emplace<rotationComponent>(camera, rotationComponent{ {0.f, 0.f, 0.f} });
-	reg.emplace<cameraComponent>(camera, cameraComponent{ 45.0f, renderer::getRen().getAspectRatio(), 0.1f, 100.0f });
-	setCamera(camera);
 
 	m_World->getRenderData().startTransferStatic();
 	//createStaticBackgroundMesh("background/20x20-0.txt", { 0.06f, 0.04f,0.04f });
@@ -76,6 +92,12 @@ void rfct::scene::initScene(const std::string& path)
 	}
 
 	playerEntity = playerController::get().createPlayer(this, m_InitialData.spawnPoints[0].position);
+
+	camera = reg.create();
+	reg.emplace<position3DComponent>(camera, position3DComponent{ { m_InitialData.spawnPoints[0].position, 20.f} });
+	reg.emplace<rotationComponent>(camera, rotationComponent{ {0.f, 0.f, 0.f} });
+	reg.emplace<cameraComponent>(camera, cameraComponent{ CameraFOV, renderer::getRen().getAspectRatio(), 0.1f, 100.0f });
+	setCamera(camera);
 
 	// init dynamic objects
 	objectSystems::get().loadSceneData(&m_InitialData, this);
