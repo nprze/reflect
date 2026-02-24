@@ -14,14 +14,14 @@
 #include "sound_p/sound.h"
 
 constexpr float maxVelocityX = 0.6f;
+constexpr float walkSpeed = 6.f;
+constexpr float jumpSpeed = 1.3f;
+constexpr float dashSpeed = 7.f;
 constexpr float boostPureHorizontalVertical = 1.2f;
 
 rfct::playerController rfct::playerController::instance;
 
 rfct::playerController::playerController() :
-	walkSpeed(.06f),
-	jumpSpeed(1.1f),
-	dashSpeed(8.f),
 	arrowUpDownInput(0),
 	walkHorizontalInput(0),
 	jumpInput(0),
@@ -29,9 +29,9 @@ rfct::playerController::playerController() :
 	dashVerticalInput(0),
 	dash45upInput(0),
 	dash45downInput(0),
+
 	walkVelocity(0),
 	dashVelocity(0.f, 0.f),
-	changingDirectionBoost(0),
 	timeYNotZero(0),
 	facingRight(true),
 	nearestObjectToHold(),
@@ -122,10 +122,7 @@ void rfct::playerController::update(frameContext* ctx)
 	}
 
 	walkHorizontalInput = 0;
-	// walk
-	if (input::getInput().walk != walkHorizontalInput) {
-		changingDirectionBoost = 0.5f;
-	}
+	
 	if (input::getInput().walk) {
 		walkHorizontalInput = input::getInput().walk;
 	}
@@ -178,8 +175,10 @@ void rfct::playerController::fixedUpdate(frameContext* ctx)
 
 		normalWalkUpdate();
 		if (jumpInput != 0) {
-			startedJumpingTime = 0.f;
-			stateComp.state = playerState::jumping;
+			if (!(velComp.velocity.y>3.f)) {// freshly from jump booster
+				startedJumpingTime = 0.f;
+				stateComp.state = playerState::jumping;
+			}
 		}
 		if (!checkHold(ctx->scene)) {
 			if (anyDash) {
@@ -254,7 +253,7 @@ void rfct::playerController::fixedUpdate(frameContext* ctx)
 	}
 	case (playerState::holdingVines): {
 		normalWalkUpdate();
-		velComp.velocity *= 0.5f;
+		velComp.velocity *= 0.75f;
 		stateComp.allowToJump = false;
 		grav.gravityEnabled = false;
 		if (!hold) {
@@ -379,14 +378,12 @@ rfct::nearestObject rfct::playerController::findObjectToHold()
 
 void rfct::playerController::normalWalkUpdate()
 {
-	walkVelocity += walkSpeed * walkHorizontalInput;
+	walkVelocity += fixedDeltaTime * walkSpeed * walkHorizontalInput;
 	walkVelocity = std::clamp(walkVelocity, -maxVelocityX, maxVelocityX);
-	walkVelocity += (changingDirectionBoost * changingDirectionBoost * 10) * walkSpeed * walkHorizontalInput;
-	changingDirectionBoost = std::clamp(changingDirectionBoost - fixedDeltaTime, 0.f, 0.5f);
 
 
 	// walk apply
-	walkVelocity *= 0.80f;
+	walkVelocity *= 0.85f;
 	
 	ecs::get().get<inputVelocityComponent>(player).velocity.x += walkVelocity;
 	ecs::get().get<velocityComponent>(player).velocity.x = walkVelocity;

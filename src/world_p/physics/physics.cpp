@@ -9,7 +9,7 @@
 #include <algorithm>
 #include "collision.h"
 
-constexpr float physicsScale = 12.f; // to make applied forces smaller for more readability
+constexpr float physicsScale = 9.f; // to make applied forces smaller for more readability
 constexpr uint32_t substepCount = 5;
 constexpr float dumping = 0.97f;
 

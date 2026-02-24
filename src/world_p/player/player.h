@@ -4,7 +4,6 @@
 #include "world_p/physics/physics.h"
 
 namespace rfct {
-	constexpr float maxWalkVelocity = 0.3f;
 	constexpr float dashFullTime = 0.2f;
 	struct frameContext;
 	void onCollision_Player_StaticObj(entity player, entity collidedWith, glm::vec2 resolution);
@@ -20,9 +19,6 @@ namespace rfct {
 		void endHold(scene* sc);
 		entity belowBlock = entt::null;
 		entity player;
-		float walkSpeed;
-		float dashSpeed;
-		float jumpSpeed;
 
 		float walkHorizontalInput;
 		float jumpInput;
@@ -35,7 +31,6 @@ namespace rfct {
 
 		bool anyDash = false; // for simplicity
 
-		float changingDirectionBoost;
 		float walkVelocity;
 		bool facingRight;
 

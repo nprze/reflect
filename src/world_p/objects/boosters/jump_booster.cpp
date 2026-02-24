@@ -12,7 +12,7 @@ namespace rfct {
 		entt::registry& reg = ecs::get();
 		if (reg.get<dynamicObjectTypeComponent>(collidedWith).type != dynamicObjectType::Player) return;
 
-		reg.get<velocityComponent>(collidedWith).velocity.y = 3.f;
+		reg.get<velocityComponent>(collidedWith).velocity.y = 3.6f;
 		reg.get<playerStateComponent>(collidedWith).dashCharges = 1;
 		reg.get<jumpBoosterComponent>(enemy).timeSinceBoost = 0.0f;
 	}
