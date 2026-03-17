@@ -53,7 +53,6 @@ void rfct::playerAnimations::update(const glm::vec2& playerVel, const glm::vec2&
 		float x = std::clamp((dashFullTime - dashRotationAnimationTime) / dashFullTime, 0.f, 1.f); // dash progress
 		float rot = (angleMax) * (-std::pow(x, 1) + 1);
 		reg.get<rotationComponent>(player).rotation.z = rot;
-
 	}
 	else {
 		reg.get<rotationComponent>(player).rotation.z = 0.0f;
@@ -67,12 +66,18 @@ void rfct::playerAnimations::update(const glm::vec2& playerVel, const glm::vec2&
 		}
 		else if (pvel.velocity.y > velocityTreshold) {
 			// going up, but not necesarily jumping, eg.jump booster
-			changeIfNotCurrent(&m_jumpTurnover);
+			if (pvel.velocity.y < 1.7f) {
+				changeIfNotCurrent(&m_jumpTurnover);
+			}
+			else {
+				changeIfNotCurrent(&m_jumpUp);
+			}
 
 		}
 		else {
 			ifThisChangeToThat(&m_jumpFall, &m_jumpReturn);
-			if (!isThisPlaying(&m_jumpReturn)) {
+			ifThisChangeToThat(&m_jumpTurnover, &m_jumpFall);
+			if (!isThisPlaying(&m_jumpReturn) && !isThisPlaying(&m_jumpFall)) {
 				if (std::abs(ivel.velocity.x) > 0.1f) {
 					changeIfNotCurrent(&m_walking);
 				}
@@ -84,6 +89,7 @@ void rfct::playerAnimations::update(const glm::vec2& playerVel, const glm::vec2&
 		break;
 	}
 	case playerState::jumping: {
+		RFCT_INFO("jumping anim");
 		if (pvel.velocity.y != 0.f || ivel.velocity.y != 0.f) {
 			if (!isAnyJumpAnimPlaying()) changeAnimation(&m_jumpUp);
 			if (between(pvel.velocity.y, 0.6f, 3.f)) { changeIfNotCurrent(&m_jumpUp); }

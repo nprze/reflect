@@ -69,7 +69,7 @@ namespace rfct {
 
         glm::mat4 rotationMat = glm::yawPitchRoll(rotation.rotation.x, rotation.rotation.y, 0.f);
         glm::vec3 direction = glm::vec3(rotationMat * glm::vec4(0, 0, -1, 1));
-        return flipY * glm::lookAt(position.position, position.position + direction, glm::vec3(0, 1, 0));
+        return flipY * glm::lookAt (position.position, position.position + direction, glm::vec3(0, 1, 0));
     }
     glm::mat4 getVPMatrix() {
 

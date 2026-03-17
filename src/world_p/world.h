@@ -27,7 +27,7 @@ namespace rfct {
 		scene* m_currentScene;
 		renderData* m_RenderData = nullptr;
 		worldSerializeData m_serializeData;
-		uint32_t m_currentWorldBlockIndex = 0;
+		uint32_t m_currentWorldBlockIndex = 1;
 		glm::vec2 worldCoords;
     public:
         float screenViewTransformDegrees = 0;

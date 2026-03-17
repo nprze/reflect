@@ -54,7 +54,6 @@ namespace rfct {
 		void normalWalkUpdate();
 		void normalJumpUpdate();
 
-
 		bool checkHold(scene* scen); // returns if holding
 
 		void startDash(frameContext* ctx);

@@ -271,15 +271,16 @@ void rfct::playerController::fixedUpdate(frameContext* ctx)
 	case (playerState::holdingBlocks): {
 		holdingTime += fixedDeltaTime;
 		nearestObjectToHold = findObjectToHold();
-		if (
-			(nearestObjectToHold.closestPosition.y < posComp.position.y) || (nearestObjectToHold.closestPosition.y > posComp.position.y)) {
+		if (((nearestObjectToHold.closestPosition.y < posComp.position.y) || (nearestObjectToHold.closestPosition.y > posComp.position.y))// out of bounds
+			&& (holdingTime >= fixedDeltaTime * 4.f) // to avoid the weird bug
+			) {
 			stateComp.state = playerState::normal;
 			posComp.position.y += std::abs(nearestObjectToHold.closestPosition.x - posComp.position.x) * 0.9f;
 		}
 		if (!hold) {
 			stateComp.state = playerState::normal;
 		}
-		stateComp.allowToJump = true;
+		stateComp.allowToJump = holdJumpCooldown == 0.f;
 		grav.gravityEnabled = false;
 		if (jumpInput != 0 && holdJumpCooldown == 0.f) {
 			startedJumpingTime = 0.f;
@@ -298,21 +299,13 @@ void rfct::playerController::fixedUpdate(frameContext* ctx)
 
 		if (stateComp.state != playerState::holdingBlocks) {
 			if (stateComp.state == playerState::normal) {
-				if (holdingTime >= fixedDeltaTime * 10.f) {
-					posComp.position.x += (facingRight ? 1.f : -1.f) * 0.3f;
-					posComp.position.y += 0.1f;
-					//velComp.velocity.y += .1f;
-				}
-				else {
-					RFCT_INFO("WIERD ASS SITUATION");
-					velComp.velocity.x -= (facingRight ? 1.f : -1.f) * 0.6f;
-
-				}
+				posComp.position.x += (facingRight ? 1.f : -1.f) * 0.3f;
+				posComp.position.y += 0.1f;
 			}
 			grav.gravityEnabled = true;
 			holdCooldown = 0.25f;
 			//velComp.velocity.y += .5f;
-			holdJumpCooldown = 0.5f;
+			holdJumpCooldown = 2.0f;
 			holdingTime = 0.f;
 		}
 		break;
