@@ -9,7 +9,7 @@ namespace rfct {
 		void loadUserSettings();
 		void dumpUserSettings();
 		void resetToDefaults();
-	private:
 		settingsSerializeData seriaizeData;
+	private:
 	};
 }

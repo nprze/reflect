@@ -89,7 +89,6 @@ void rfct::playerAnimations::update(const glm::vec2& playerVel, const glm::vec2&
 		break;
 	}
 	case playerState::jumping: {
-		RFCT_INFO("jumping anim");
 		if (pvel.velocity.y != 0.f || ivel.velocity.y != 0.f) {
 			if (!isAnyJumpAnimPlaying()) changeAnimation(&m_jumpUp);
 			if (between(pvel.velocity.y, 0.6f, 3.f)) { changeIfNotCurrent(&m_jumpUp); }
