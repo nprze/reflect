@@ -4,38 +4,60 @@
 #include "renderer_p/renderer.h"
 #include "world_p/progress/user_progress.h"
 
-using updateFunc = void(*)(rfct::frameContext*, bool select, float leftRight);
-using drawFunc = void(*)(rfct::frameContext*);
+namespace rfct {
+	using ActionFunction = void(*)(rfct::frameContext*);
+	// FAT STRUCT
+	struct UINode {
+		std::string label;
+		enum UINodeType {
+			UINodeType_Menu,
+			UINodeType_IntVariable,
+			UINodeType_ActionButton
+		} type;
+		// menu specific
+		uint32_t previousIndex = 0;
+		uint32_t childrenIndices[8];
+		uint32_t childrenCount = 0;
+		// int var specific
+		uint32_t minValue;
+		uint32_t maxValue;
+		uint32_t* valuePtr;
+		// action button specific
+		ActionFunction action;
+	};
+}
 
-enum UIPartsNames {
-	UIPartsNames_basePauseMenu,
-	UIPartsNames_baseSettings,
-	UIPartsNames_soundSettings,
-};
+// display settings
+constexpr float textScale = 0.07f;
+constexpr float interline = 0.003f;
+constexpr float globalAlignmentStartNorm = 0.5f; // <0,1>, when the horizontal alignment is set to left and this is set to 0.6, it starts drawing from 0.2 of whole image width (same for right)
 
-struct UIPart {
-	drawFunc drawFunction;
-	updateFunc updateFunction;
-	uint32_t elementsCount;
-};
-// Parts/ menus
-std::map<UIPartsNames, UIPart> uiParts;
-UIPartsNames currentUIPart = UIPartsNames::UIPartsNames_basePauseMenu;
+// UI structure
+rfct::UINode UINodes[16];
+uint32_t currentNodeIndex = 0;
 
-// among parts variables
+// state
 rfct::gameState beforePauseMenuState = rfct::gameState::gameplay;
 rfct::gameState lastState = rfct::gameState::gameplay;
 float timeSinceStateChange = 0.f;
 
-// utilites/ helpers
+// helpers
 glm::vec2 imageExtent = glm::vec2(0, 0);
 float globalTime = 0.f;
 
-// specific parts variables
+// animation and selection variables
 uint32_t currentMenuElementSelectedIndex = 0;
 float changeSelectionCooldown = 0.f;
 float upDownEffectMultiplier = 1.f;
 
+// actions
+void actionResume(rfct::frameContext* ctx) {
+	timeSinceStateChange = 0.f;
+	ctx->state = beforePauseMenuState;
+	currentNodeIndex = 0;
+}
+
+/*
 // UI aligned
 namespace rfct {
 	enum HorizontalAlignment {
@@ -43,10 +65,6 @@ namespace rfct {
 		HorizontalAignment_left,
 		HorizontalAignment_middle
 	};
-	float totalHeight = 0.0f;
-	float interline = 0.003f;
-	float globalOffsetNorm = 0.f; // <0,1>
-	float globalAlignmentStartNorm = 0.5f; // <0,1>, when the horizontal alignment is set to left and this is set to 0.6, it starts drawing from 0.2 of whole image width (same for right)
 	struct UIAlignedTextInfo {
 		std::string text;
 		glm::vec3 color;
@@ -54,19 +72,27 @@ namespace rfct {
 		float width = 0.f;
 		HorizontalAlignment horizontalAlignment;
 	};
+
+	constexpr float textScale = 0.07f;
+	constexpr float interline = 0.003f;
+	constexpr float globalAlignmentStartNorm = 0.5f; // <0,1>, when the horizontal alignment is set to left and this is set to 0.6, it starts drawing from 0.2 of whole image width (same for right)
+	
+	float animationOffsetNorm = 0.f; // <0,1>
+	uint32_t alignedTextLineCount = 0;
 	uint32_t lastAlignedTextInfoIndex = 0;
-	UIAlignedTextInfo AlignedTextInfos[8];
-	void addTextCenteredVertical(const std::string& text, const glm::vec3& color, HorizontalAlignment alignment, float heightNormalized = 0.07f) {
+	UIAlignedTextInfo AlignedTextInfos[16];
+
+	void addTextCenteredVertical(const std::string& text, const glm::vec3& color, HorizontalAlignment alignment) {
 		AlignedTextInfos[lastAlignedTextInfoIndex].text = text;
 		AlignedTextInfos[lastAlignedTextInfoIndex].color = color;
-		AlignedTextInfos[lastAlignedTextInfoIndex].height = heightNormalized * imageExtent.y;
-		AlignedTextInfos[lastAlignedTextInfoIndex].width = renderer::getRen().getUIPipeline().getDefaultFont()->getTextWidth(text, heightNormalized * imageExtent.y);
+		AlignedTextInfos[lastAlignedTextInfoIndex].height = textScale * imageExtent.y;
+		AlignedTextInfos[lastAlignedTextInfoIndex].width = renderer::getRen().getUIPipeline().getDefaultFont()->getTextWidth(text, textScale * imageExtent.y);
 		AlignedTextInfos[lastAlignedTextInfoIndex].horizontalAlignment = alignment;
-		totalHeight += (heightNormalized + interline) * imageExtent.y;
+		alignedTextLineCount++;
 		lastAlignedTextInfoIndex++;
 	}
 	void flushAlignedTextInfos() {
-		totalHeight -= interline * imageExtent.y;
+		float totalHeight = ((alignedTextLineCount * textScale) + ((alignedTextLineCount - 1) * interline)) * imageExtent.y;
 		float cursorY = 0.5f * imageExtent.y - (0.5f * totalHeight);
 		for (uint32_t i = 0; i < lastAlignedTextInfoIndex; i++) {
 			float xStart = 0.0f;
@@ -83,12 +109,13 @@ namespace rfct {
 				AlignedTextInfos[i].text, 
 				glm::vec2(
 					xStart,
-					cursorY + (globalOffsetNorm * imageExtent.y)),
+					cursorY + (animationOffsetNorm * imageExtent.y)),
 				AlignedTextInfos[i].height, 
 				AlignedTextInfos[i].color);
 			cursorY += interline * imageExtent.y + AlignedTextInfos[i].height;
 		}
 		lastAlignedTextInfoIndex = 0;
+		alignedTextLineCount = 0;
 		totalHeight = 0.f;
 	}
 }
@@ -202,48 +229,6 @@ namespace rfct {
 	}
 }
 
-// draw functions
-namespace rfct {
-	void drawBaseMenu(frameContext* ctx) {
-		// text
-		if (changeSelectionCooldown != 0) {
-			globalOffsetNorm = glm::pow(-4 * changeSelectionCooldown, 2);
-			globalOffsetNorm *= 0.01f * upDownEffectMultiplier;
-		}
-		else {
-			globalOffsetNorm = 0.f;
-		}
-		float intensity = glm::sin(globalTime * 3.f) * 0.2f + .8f;
-		addTextCenteredVertical("RESUME", (currentMenuElementSelectedIndex == 0 ? 1.f : 0.5f) * glm::vec3{ intensity, intensity, intensity }, HorizontalAignment_middle);
-		addTextCenteredVertical("SETTINGS", (currentMenuElementSelectedIndex == 1 ? 1.f : 0.5f) * glm::vec3{ intensity, intensity, intensity }, HorizontalAignment_middle);
-		addTextCenteredVertical("SAVE AND QUIT", (currentMenuElementSelectedIndex == 2 ? 1.f : 0.5f) * glm::vec3{ intensity, intensity, intensity }, HorizontalAignment_middle);
-		flushAlignedTextInfos();
-	}
-	void drawBaseSettings(frameContext* ctx) {
-		// text
-		if (changeSelectionCooldown != 0) {
-			globalOffsetNorm = glm::pow(-4 * changeSelectionCooldown, 2);
-			globalOffsetNorm *= 0.01f * upDownEffectMultiplier;
-		}
-		else {
-			globalOffsetNorm = 0.f;
-		}
-		float intensity = glm::sin(globalTime * 3.f) * 0.2f + .8f;
-		addTextCenteredVertical("VIDEO", (currentMenuElementSelectedIndex == 0 ? 1.f : 0.5f) * glm::vec3{ intensity, intensity, intensity }, HorizontalAignment_middle);
-		addTextCenteredVertical("SOUND", (currentMenuElementSelectedIndex == 1 ? 1.f : 0.5f) * glm::vec3{ intensity, intensity, intensity }, HorizontalAignment_middle);
-		addTextCenteredVertical("CONTROLS", (currentMenuElementSelectedIndex == 2 ? 1.f : 0.5f) * glm::vec3{ intensity, intensity, intensity }, HorizontalAignment_middle);
-		addTextCenteredVertical("BACK", (currentMenuElementSelectedIndex == 3 ? 1.f : 0.5f) * glm::vec3{ intensity, intensity, intensity }, HorizontalAignment_middle);
-		flushAlignedTextInfos();
-	}
-	void drawSoundSettings(frameContext* ctx) {
-		float intensity = glm::sin(globalTime * 3.f) * 0.2f + .8f;
-		addTextCenteredVertical("MASTER VOLUME", (currentMenuElementSelectedIndex == 1 ? 1.f : 0.5f) * glm::vec3{ intensity, intensity, intensity }, HorizontalAignment_left);
-		std::string currentVolume = std::to_string(int(userSettings::get().seriaizeData.masterVoicePercentage));
-		addTextCenteredVertical(currentVolume.c_str(), (currentMenuElementSelectedIndex == 1 ? 1.f : 0.5f) * glm::vec3{intensity, intensity, intensity}, HorizontalAignment_right);
-		flushAlignedTextInfos();
-	}
-}
-
 rfct::gameState rfct::getState()
 {
 	if (input::getInput().openClosePauseMenu && timeSinceStateChange>1.f) {
@@ -268,42 +253,6 @@ void rfct::updateLastState(gameState newState)
 	lastState = newState;
 }
 
-void rfct::drawUI(frameContext* ctx)
-{
-	// general updates
-	timeSinceStateChange += ctx->dt;
-	globalTime += ctx->dt;
-	changeSelectionCooldown = std::clamp(changeSelectionCooldown - ctx->dt, 0.f, 0.25f);
-	imageExtent = { static_cast<float>(rfct::renderer::getRen().getRenderImagesManager().getSwapChain().getExtent().width),
-					static_cast<float>(rfct::renderer::getRen().getRenderImagesManager().getSwapChain().getExtent().height) };
-
-	// text and button draw
-	if (ctx->state == gameState::menu) {
-		// input updates
-		if (input::getInput().upDownMenu != 0 && changeSelectionCooldown <= 0.f) {
-			uint32_t elementCount = uiParts[currentUIPart].elementsCount;
-			currentMenuElementSelectedIndex = (currentMenuElementSelectedIndex - (uint32_t)input::getInput().upDownMenu + elementCount) % elementCount;
-			upDownEffectMultiplier = -input::getInput().upDownMenu;
-			changeSelectionCooldown = 0.25f;
-		}
-
-		// background draw
-		rfct::renderer::getRen().getUIPipeline().beginAddingTriangles();
-		rfct::renderer::getRen().getUIPipeline().addTriangleNormalized({ 0,0 }, { 2, 0 }, { 0, 2 }, { 0,0,0 }, rfct::opacity::opacity75percent);
-		rfct::renderer::getRen().getUIPipeline().addTriangleNormalized({ 2,2 }, { 2, 0 }, { 0, 2 }, { 0,0,0 }, rfct::opacity::opacity75percent);
-		updateDecors(ctx);
-		rfct::renderer::getRen().getUIPipeline().endAddingTriangles();
-
-		uiParts[currentUIPart].drawFunction(ctx);
-	}
-
-	if ((input::getInput().selectMenu || input::getInput().leftRightMenu != 0) && changeSelectionCooldown <= 0.f) {
-		changeSelectionCooldown = 0.25f;
-		uiParts[currentUIPart].updateFunction(ctx, input::getInput().selectMenu, input::getInput().leftRightMenu);
-	}
-	int fps = static_cast<int>(std::floor(1.0 / ctx->dt));
-	debugDraw::drawText("fps: " + std::to_string(fps), glm::vec2(0, 0), 0.08f);
-}
 
 void rfct::switchUIPart(UIPartsNames part)
 {
@@ -311,9 +260,94 @@ void rfct::switchUIPart(UIPartsNames part)
 	currentMenuElementSelectedIndex = 0;
 }
 
+namespace rfct {
+	void drawBaseMenu(frameContext* ctx, float colorIntensity) {
+		addTextCenteredVertical("RESUME", (currentMenuElementSelectedIndex == 0 ? 1.f : 0.5f) * glm::vec3{ colorIntensity, colorIntensity, colorIntensity }, HorizontalAignment_middle);
+		addTextCenteredVertical("SETTINGS", (currentMenuElementSelectedIndex == 1 ? 1.f : 0.5f) * glm::vec3{ colorIntensity, colorIntensity, colorIntensity }, HorizontalAignment_middle);
+		addTextCenteredVertical("SAVE AND QUIT", (currentMenuElementSelectedIndex == 2 ? 1.f : 0.5f) * glm::vec3{ colorIntensity, colorIntensity, colorIntensity }, HorizontalAignment_middle);
+		flushAlignedTextInfos();
+	}
+	void drawBaseSettings(frameContext* ctx, float colorIntensity) {
+		addTextCenteredVertical("VIDEO", (currentMenuElementSelectedIndex == 0 ? 1.f : 0.5f) * glm::vec3{ colorIntensity, colorIntensity, colorIntensity }, HorizontalAignment_middle);
+		addTextCenteredVertical("SOUND", (currentMenuElementSelectedIndex == 1 ? 1.f : 0.5f) * glm::vec3{ colorIntensity, colorIntensity, colorIntensity }, HorizontalAignment_middle);
+		addTextCenteredVertical("CONTROLS", (currentMenuElementSelectedIndex == 2 ? 1.f : 0.5f) * glm::vec3{ colorIntensity, colorIntensity, colorIntensity }, HorizontalAignment_middle);
+		addTextCenteredVertical("BACK", (currentMenuElementSelectedIndex == 3 ? 1.f : 0.5f) * glm::vec3{ colorIntensity, colorIntensity, colorIntensity }, HorizontalAignment_middle);
+		flushAlignedTextInfos();
+	}
+	void drawSoundSettings(frameContext* ctx, float colorIntensity) {
+		addTextCenteredVertical("MASTER VOLUME", (currentMenuElementSelectedIndex == 1 ? 1.f : 0.5f) * glm::vec3{ colorIntensity, colorIntensity, colorIntensity }, HorizontalAignment_left);
+		std::string currentVolume = std::to_string(int(userSettings::get().seriaizeData.masterVoicePercentage));
+		addTextCenteredVertical(currentVolume.c_str(), (currentMenuElementSelectedIndex == 1 ? 1.f : 0.5f) * glm::vec3{ colorIntensity, colorIntensity, colorIntensity }, HorizontalAignment_right);
+		flushAlignedTextInfos();
+	}
+}*/
+
+void rfct::drawUI(frameContext* ctx)
+{
+	// general updates
+	timeSinceStateChange += ctx->dt;
+	globalTime += ctx->dt;
+	changeSelectionCooldown = std::clamp(changeSelectionCooldown - ctx->dt, 0.f, 0.25f);
+
+	int fps = static_cast<int>(std::floor(1.0 / ctx->dt));
+	debugDraw::drawText("fps: " + std::to_string(fps), glm::vec2(0, 0), 0.08f);
+	if (ctx->state != gameState::menu) return;
+
+	// helper
+	imageExtent = { static_cast<float>(rfct::renderer::getRen().getRenderImagesManager().getSwapChain().getExtent().width), static_cast<float>(rfct::renderer::getRen().getRenderImagesManager().getSwapChain().getExtent().height) };
+
+	// input updates
+	if (input::getInput().upDownMenu != 0 && changeSelectionCooldown <= 0.f) {
+		uint32_t elementCount = UINodes[currentNodeIndex].childrenCount;
+		currentMenuElementSelectedIndex = (currentMenuElementSelectedIndex - (uint32_t)input::getInput().upDownMenu + elementCount) % elementCount;
+		upDownEffectMultiplier = -input::getInput().upDownMenu;
+		changeSelectionCooldown = 0.25f;
+	}
+
+	// background draw
+	rfct::renderer::getRen().getUIPipeline().beginAddingTriangles();
+	rfct::renderer::getRen().getUIPipeline().addTriangleNormalized({ 0,0 }, { 2, 0 }, { 0, 2 }, { 0,0,0 }, rfct::opacity::opacity75percent);
+	rfct::renderer::getRen().getUIPipeline().addTriangleNormalized({ 2,2 }, { 2, 0 }, { 0, 2 }, { 0,0,0 }, rfct::opacity::opacity75percent);
+	//updateDecors(ctx);
+	rfct::renderer::getRen().getUIPipeline().endAddingTriangles();
+
+	if (changeSelectionCooldown != 0) {
+		animationOffsetNorm = glm::pow(-4 * changeSelectionCooldown, 2);
+		animationOffsetNorm *= 0.01f * upDownEffectMultiplier;
+	}
+	else {
+		animationOffsetNorm = 0.f;
+	}
+
+	float intensity = glm::sin(globalTime * 3.f) * 0.2f + .8f;
+	uiParts[currentUIPart].drawFunction(ctx, intensity);
+
+	if ((input::getInput().selectMenu || input::getInput().leftRightMenu != 0) && changeSelectionCooldown <= 0.f) {
+		changeSelectionCooldown = 0.25f;
+		uiParts[currentUIPart].updateFunction(ctx, input::getInput().selectMenu, input::getInput().leftRightMenu);
+	}
+}
+
+
 void rfct::defineUI()
 {
-	uiParts[UIPartsNames_basePauseMenu] = { drawBaseMenu, updateBaseMenu, 3 };
-	uiParts[UIPartsNames_baseSettings] = { drawBaseSettings, updateBaseSettings, 4 };
-	uiParts[UIPartsNames_soundSettings] = { drawSoundSettings, updateSoundSettings, 1 };
+	UINodes[0].label = std::string("PAUSE MENU");
+	UINodes[0].type = UINode::UINodeType::UINodeType_Menu;
+	UINodes[0].previousIndex = -1;
+	UINodes[0].childrenIndices[0] = 1;
+	UINodes[0].childrenIndices[1] = 2;
+	UINodes[0].childrenIndices[2] = 3;
+	UINodes[0].childrenCount = 3;
+
+	UINodes[1].label = std::string("RESUME 0");
+	UINodes[1].type = UINode::UINodeType::UINodeType_ActionButton;
+	UINodes[1].action = actionResume;
+
+	UINodes[2].label = std::string("RESUME 1");
+	UINodes[2].type = UINode::UINodeType::UINodeType_ActionButton;
+	UINodes[2].action = actionResume;
+
+	UINodes[3].label = std::string("RESUME 2");
+	UINodes[3].type = UINode::UINodeType::UINodeType_ActionButton;
+	UINodes[3].action = actionResume;
 }
