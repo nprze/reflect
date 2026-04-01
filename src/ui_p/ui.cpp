@@ -9,6 +9,7 @@ namespace rfct {
 	// FAT STRUCT
 	struct UINode {
 		std::string label;
+		glm::vec3 color = {1.f, 1.f, 1.f};
 		enum UINodeType {
 			UINodeType_Menu,
 			UINodeType_IntVariable,
@@ -49,76 +50,7 @@ float globalTime = 0.f;
 uint32_t currentMenuElementSelectedIndex = 0;
 float changeSelectionCooldown = 0.f;
 float upDownEffectMultiplier = 1.f;
-
-// actions
-void actionResume(rfct::frameContext* ctx) {
-	timeSinceStateChange = 0.f;
-	ctx->state = beforePauseMenuState;
-	currentNodeIndex = 0;
-}
-
-/*
-// UI aligned
-namespace rfct {
-	enum HorizontalAlignment {
-		HorizontalAignment_right,
-		HorizontalAignment_left,
-		HorizontalAignment_middle
-	};
-	struct UIAlignedTextInfo {
-		std::string text;
-		glm::vec3 color;
-		float height = 0.f;
-		float width = 0.f;
-		HorizontalAlignment horizontalAlignment;
-	};
-
-	constexpr float textScale = 0.07f;
-	constexpr float interline = 0.003f;
-	constexpr float globalAlignmentStartNorm = 0.5f; // <0,1>, when the horizontal alignment is set to left and this is set to 0.6, it starts drawing from 0.2 of whole image width (same for right)
-	
-	float animationOffsetNorm = 0.f; // <0,1>
-	uint32_t alignedTextLineCount = 0;
-	uint32_t lastAlignedTextInfoIndex = 0;
-	UIAlignedTextInfo AlignedTextInfos[16];
-
-	void addTextCenteredVertical(const std::string& text, const glm::vec3& color, HorizontalAlignment alignment) {
-		AlignedTextInfos[lastAlignedTextInfoIndex].text = text;
-		AlignedTextInfos[lastAlignedTextInfoIndex].color = color;
-		AlignedTextInfos[lastAlignedTextInfoIndex].height = textScale * imageExtent.y;
-		AlignedTextInfos[lastAlignedTextInfoIndex].width = renderer::getRen().getUIPipeline().getDefaultFont()->getTextWidth(text, textScale * imageExtent.y);
-		AlignedTextInfos[lastAlignedTextInfoIndex].horizontalAlignment = alignment;
-		alignedTextLineCount++;
-		lastAlignedTextInfoIndex++;
-	}
-	void flushAlignedTextInfos() {
-		float totalHeight = ((alignedTextLineCount * textScale) + ((alignedTextLineCount - 1) * interline)) * imageExtent.y;
-		float cursorY = 0.5f * imageExtent.y - (0.5f * totalHeight);
-		for (uint32_t i = 0; i < lastAlignedTextInfoIndex; i++) {
-			float xStart = 0.0f;
-			if (AlignedTextInfos[i].horizontalAlignment == HorizontalAignment_middle) {
-				xStart = (0.5f) * imageExtent.x - 0.5f * AlignedTextInfos[i].width;
-			}
-			else if (AlignedTextInfos[i].horizontalAlignment == HorizontalAignment_left) {
-				xStart = (0.5f * (1 - globalAlignmentStartNorm)) * imageExtent.x;
-			}
-			else if (AlignedTextInfos[i].horizontalAlignment == HorizontalAignment_right) {
-				xStart = (0.5f + (0.5f * globalAlignmentStartNorm)) * imageExtent.x - AlignedTextInfos[i].width;
-			}
-			renderer::getRen().getUIPipeline().addTextVerticesHeight(
-				AlignedTextInfos[i].text, 
-				glm::vec2(
-					xStart,
-					cursorY + (animationOffsetNorm * imageExtent.y)),
-				AlignedTextInfos[i].height, 
-				AlignedTextInfos[i].color);
-			cursorY += interline * imageExtent.y + AlignedTextInfos[i].height;
-		}
-		lastAlignedTextInfoIndex = 0;
-		alignedTextLineCount = 0;
-		totalHeight = 0.f;
-	}
-}
+float animationOffsetNorm = 0.f; // <0,1>
 
 // UI decorations	
 namespace rfct {
@@ -179,9 +111,9 @@ namespace rfct {
 			if (decor.pos.y < -0.1f) decor.pos.y = 1.1f;
 			if (decor.pos.y > 1.1f) decor.pos.y = -0.1f;
 
-			glm::vec2 p0 = (rotationMatrix * decor.pos0 + decor.pos) * glm::vec2{1, aspectRatio};
-			glm::vec2 p1 = (rotationMatrix * decor.pos1 + decor.pos) * glm::vec2{1, aspectRatio};
-			glm::vec2 p2 = (rotationMatrix * decor.pos2 + decor.pos) * glm::vec2{1, aspectRatio};
+			glm::vec2 p0 = (rotationMatrix * decor.pos0 + decor.pos) * glm::vec2{ 1, aspectRatio };
+			glm::vec2 p1 = (rotationMatrix * decor.pos1 + decor.pos) * glm::vec2{ 1, aspectRatio };
+			glm::vec2 p2 = (rotationMatrix * decor.pos2 + decor.pos) * glm::vec2{ 1, aspectRatio };
 
 			rfct::renderer::getRen().getUIPipeline().addTriangleNormalized(p0, p1, p2, decor.color, opacity::opacity100percent);
 		}
@@ -191,57 +123,32 @@ namespace rfct {
 	}
 }
 
-// menu specific update
-namespace rfct {
-	void updateBaseMenu(frameContext* ctx, bool select, float leftRight) {
-		if (!select) return;
-		if (currentMenuElementSelectedIndex == 0) { // resume
-			timeSinceStateChange = 0.f;
-			ctx->state = beforePauseMenuState;
-		}
-		else if (currentMenuElementSelectedIndex == 1) { // settings
-			switchUIPart(UIPartsNames_baseSettings);
-		}
-		else if (currentMenuElementSelectedIndex == 2) { // quit
-			glfwSetWindowShouldClose(rfct::renderer::getRen().getWindow().GetHandle(), true);
-		}
-	}
-	void updateBaseSettings(frameContext* ctx, bool select, float leftRight) {
-		if (!select) return;
-		if (currentMenuElementSelectedIndex == 0) { // video
-		}
-		else if (currentMenuElementSelectedIndex == 1) { // sound
-			userSettings::get().dumpUserSettings();
-			switchUIPart(UIPartsNames_soundSettings);
-		}
-		else if (currentMenuElementSelectedIndex == 2) { // controls
-		}
-		else if (currentMenuElementSelectedIndex == 3) { // back
-			userSettings::get().dumpUserSettings();
-			switchUIPart(UIPartsNames_basePauseMenu);
-		}
-	}
-	void updateSoundSettings(frameContext* ctx, bool select, float leftRight) {
-		if (currentMenuElementSelectedIndex == 0 && leftRight != 0) { // master volume
-			userSettings::get().seriaizeData.masterVoicePercentage = std::clamp(userSettings::get().seriaizeData.masterVoicePercentage + (10 * leftRight), 0.f, 100.f);
-			RFCT_INFO("master volume changed {}", userSettings::get().seriaizeData.masterVoicePercentage);
-		}
-	}
+// actions
+void actionResume(rfct::frameContext* ctx) {
+	timeSinceStateChange = 0.f;
+	ctx->state = beforePauseMenuState;
+	currentNodeIndex = -1;
+	rfct::cleanupDecors();
+}
+void actionQuit(rfct::frameContext* ctx) {
+	rfct::userSettings::get().dumpUserSettings();
+	glfwSetWindowShouldClose(rfct::renderer::getRen().getWindow().GetHandle(), true);
 }
 
 rfct::gameState rfct::getState()
 {
-	if (input::getInput().openClosePauseMenu && timeSinceStateChange>1.f) {
+	if (input::getInput().openClosePauseMenu && timeSinceStateChange > 1.f) {
 		timeSinceStateChange = 0.f;
 		currentMenuElementSelectedIndex = 0;
 		if (lastState == gameState::menu) {
 			lastState = beforePauseMenuState;
+			currentNodeIndex = -1;
 			cleanupDecors();
 		}
 		else {
 			beforePauseMenuState = lastState;
 			lastState = gameState::menu;
-			switchUIPart(UIPartsNames_basePauseMenu);
+			currentNodeIndex = 0;
 			defineDecors(5);
 		}
 	}
@@ -253,35 +160,6 @@ void rfct::updateLastState(gameState newState)
 	lastState = newState;
 }
 
-
-void rfct::switchUIPart(UIPartsNames part)
-{
-	currentUIPart = part;
-	currentMenuElementSelectedIndex = 0;
-}
-
-namespace rfct {
-	void drawBaseMenu(frameContext* ctx, float colorIntensity) {
-		addTextCenteredVertical("RESUME", (currentMenuElementSelectedIndex == 0 ? 1.f : 0.5f) * glm::vec3{ colorIntensity, colorIntensity, colorIntensity }, HorizontalAignment_middle);
-		addTextCenteredVertical("SETTINGS", (currentMenuElementSelectedIndex == 1 ? 1.f : 0.5f) * glm::vec3{ colorIntensity, colorIntensity, colorIntensity }, HorizontalAignment_middle);
-		addTextCenteredVertical("SAVE AND QUIT", (currentMenuElementSelectedIndex == 2 ? 1.f : 0.5f) * glm::vec3{ colorIntensity, colorIntensity, colorIntensity }, HorizontalAignment_middle);
-		flushAlignedTextInfos();
-	}
-	void drawBaseSettings(frameContext* ctx, float colorIntensity) {
-		addTextCenteredVertical("VIDEO", (currentMenuElementSelectedIndex == 0 ? 1.f : 0.5f) * glm::vec3{ colorIntensity, colorIntensity, colorIntensity }, HorizontalAignment_middle);
-		addTextCenteredVertical("SOUND", (currentMenuElementSelectedIndex == 1 ? 1.f : 0.5f) * glm::vec3{ colorIntensity, colorIntensity, colorIntensity }, HorizontalAignment_middle);
-		addTextCenteredVertical("CONTROLS", (currentMenuElementSelectedIndex == 2 ? 1.f : 0.5f) * glm::vec3{ colorIntensity, colorIntensity, colorIntensity }, HorizontalAignment_middle);
-		addTextCenteredVertical("BACK", (currentMenuElementSelectedIndex == 3 ? 1.f : 0.5f) * glm::vec3{ colorIntensity, colorIntensity, colorIntensity }, HorizontalAignment_middle);
-		flushAlignedTextInfos();
-	}
-	void drawSoundSettings(frameContext* ctx, float colorIntensity) {
-		addTextCenteredVertical("MASTER VOLUME", (currentMenuElementSelectedIndex == 1 ? 1.f : 0.5f) * glm::vec3{ colorIntensity, colorIntensity, colorIntensity }, HorizontalAignment_left);
-		std::string currentVolume = std::to_string(int(userSettings::get().seriaizeData.masterVoicePercentage));
-		addTextCenteredVertical(currentVolume.c_str(), (currentMenuElementSelectedIndex == 1 ? 1.f : 0.5f) * glm::vec3{ colorIntensity, colorIntensity, colorIntensity }, HorizontalAignment_right);
-		flushAlignedTextInfos();
-	}
-}*/
-
 void rfct::drawUI(frameContext* ctx)
 {
 	// general updates
@@ -291,7 +169,7 @@ void rfct::drawUI(frameContext* ctx)
 
 	int fps = static_cast<int>(std::floor(1.0 / ctx->dt));
 	debugDraw::drawText("fps: " + std::to_string(fps), glm::vec2(0, 0), 0.08f);
-	if (ctx->state != gameState::menu) return;
+	if (ctx->state != gameState::menu || currentNodeIndex == -1) return;
 
 	// helper
 	imageExtent = { static_cast<float>(rfct::renderer::getRen().getRenderImagesManager().getSwapChain().getExtent().width), static_cast<float>(rfct::renderer::getRen().getRenderImagesManager().getSwapChain().getExtent().height) };
@@ -308,7 +186,7 @@ void rfct::drawUI(frameContext* ctx)
 	rfct::renderer::getRen().getUIPipeline().beginAddingTriangles();
 	rfct::renderer::getRen().getUIPipeline().addTriangleNormalized({ 0,0 }, { 2, 0 }, { 0, 2 }, { 0,0,0 }, rfct::opacity::opacity75percent);
 	rfct::renderer::getRen().getUIPipeline().addTriangleNormalized({ 2,2 }, { 2, 0 }, { 0, 2 }, { 0,0,0 }, rfct::opacity::opacity75percent);
-	//updateDecors(ctx);
+	updateDecors(ctx);
 	rfct::renderer::getRen().getUIPipeline().endAddingTriangles();
 
 	if (changeSelectionCooldown != 0) {
@@ -319,12 +197,48 @@ void rfct::drawUI(frameContext* ctx)
 		animationOffsetNorm = 0.f;
 	}
 
+	// drawing
 	float intensity = glm::sin(globalTime * 3.f) * 0.2f + .8f;
-	uiParts[currentUIPart].drawFunction(ctx, intensity);
+	float oneLineHeight = textScale * imageExtent.y;
+	float totalHeight = UINodes[currentNodeIndex].childrenCount * oneLineHeight + (UINodes[currentNodeIndex].childrenCount - 1) * interline * imageExtent.y;
+	float startY = 0.5f * imageExtent.y - (0.5f * totalHeight);
+	font* defaultFont = renderer::getRen().getUIPipeline().getDefaultFont();
+
+	for (uint32_t i = 0; i < UINodes[currentNodeIndex].childrenCount; i++) {
+		uint32_t childIndex = UINodes[currentNodeIndex].childrenIndices[i];
+		float width = defaultFont->getTextWidth(UINodes[childIndex].label, textScale * imageExtent.y);
+		if (currentMenuElementSelectedIndex == i) {
+			intensity = 1.f;
+		}
+		else {
+			intensity = 0.5f;
+		}
+		float xPos = (0.5f) * imageExtent.x - 0.5f * width;
+		float yPos = startY + i * (oneLineHeight + interline * imageExtent.y);
+		// draw text
+		renderer::getRen().getUIPipeline().addTextVerticesHeight(
+			UINodes[childIndex].label,
+			glm::vec2(
+				xPos,
+				yPos + (animationOffsetNorm * imageExtent.y)),
+			textScale * imageExtent.y,
+			UINodes[childIndex].color * intensity);
+	}
 
 	if ((input::getInput().selectMenu || input::getInput().leftRightMenu != 0) && changeSelectionCooldown <= 0.f) {
 		changeSelectionCooldown = 0.25f;
-		uiParts[currentUIPart].updateFunction(ctx, input::getInput().selectMenu, input::getInput().leftRightMenu);
+		uint32_t selectedNode = UINodes[currentNodeIndex].childrenIndices[currentMenuElementSelectedIndex];
+		switch (UINodes[selectedNode].type) {
+			case UINode::UINodeType::UINodeType_Menu:{
+				currentNodeIndex = selectedNode;
+				currentMenuElementSelectedIndex = 0;
+				break;
+			}
+			case UINode::UINodeType::UINodeType_ActionButton: {
+				UINodes[selectedNode].action(ctx);
+				break;
+			}
+		}
 	}
 }
 
@@ -347,7 +261,7 @@ void rfct::defineUI()
 	UINodes[2].type = UINode::UINodeType::UINodeType_ActionButton;
 	UINodes[2].action = actionResume;
 
-	UINodes[3].label = std::string("RESUME 2");
+	UINodes[3].label = std::string("SAVE AND QUIT");
 	UINodes[3].type = UINode::UINodeType::UINodeType_ActionButton;
-	UINodes[3].action = actionResume;
+	UINodes[3].action = actionQuit;
 }
