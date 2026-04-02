@@ -1,4 +1,4 @@
-masterVoicePercentage: 10
+masterVoicePercentage: 100
 backgroundVoicePercentage: 100
 effectsVoicePercentage: 100
 windowedMode: 0

@@ -32,7 +32,7 @@ void rfct::userSettings::loadUserSettings()
     }
 
     std::string line = "";
-    SETTINGS_GET_FLOAT("masterVoicePercentage:", seriaizeData.masterVoicePercentage);
+    SETTINGS_GET_INT("masterVoicePercentage:", seriaizeData.masterVoicePercentage);
     SETTINGS_GET_FLOAT("backgroundVoicePercentage:", seriaizeData.backgroundVoicePercentage);
     SETTINGS_GET_FLOAT("effectsVoicePercentage:", seriaizeData.effectsVoicePercentage);
     SETTINGS_GET_INT("windowedMode:", seriaizeData.windowedMode);

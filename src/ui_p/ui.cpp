@@ -1,5 +1,6 @@
 #include "ui.h"
 #include <string>
+#include <stack>
 #include "input.h"
 #include "renderer_p/renderer.h"
 #include "world_p/progress/user_progress.h"
@@ -22,6 +23,7 @@ namespace rfct {
 		// int var specific
 		uint32_t minValue;
 		uint32_t maxValue;
+		uint32_t step;
 		uint32_t* valuePtr;
 		// action button specific
 		ActionFunction action;
@@ -36,6 +38,7 @@ constexpr float globalAlignmentStartNorm = 0.5f; // <0,1>, when the horizontal a
 // UI structure
 rfct::UINode UINodes[16];
 uint32_t currentNodeIndex = 0;
+std::stack<uint32_t> previousNodeIndices;
 
 // state
 rfct::gameState beforePauseMenuState = rfct::gameState::gameplay;
@@ -47,7 +50,7 @@ glm::vec2 imageExtent = glm::vec2(0, 0);
 float globalTime = 0.f;
 
 // animation and selection variables
-uint32_t currentMenuElementSelectedIndex = 0;
+uint32_t currentSelectedMenuIndex = 0;
 float changeSelectionCooldown = 0.f;
 float upDownEffectMultiplier = 1.f;
 float animationOffsetNorm = 0.f; // <0,1>
@@ -128,6 +131,7 @@ void actionResume(rfct::frameContext* ctx) {
 	timeSinceStateChange = 0.f;
 	ctx->state = beforePauseMenuState;
 	currentNodeIndex = -1;
+	while (!previousNodeIndices.empty()) previousNodeIndices.pop();
 	rfct::cleanupDecors();
 }
 void actionQuit(rfct::frameContext* ctx) {
@@ -139,10 +143,11 @@ rfct::gameState rfct::getState()
 {
 	if (input::getInput().openClosePauseMenu && timeSinceStateChange > 1.f) {
 		timeSinceStateChange = 0.f;
-		currentMenuElementSelectedIndex = 0;
+		currentSelectedMenuIndex = 0;
 		if (lastState == gameState::menu) {
 			lastState = beforePauseMenuState;
 			currentNodeIndex = -1;
+			while (!previousNodeIndices.empty()) previousNodeIndices.pop();
 			cleanupDecors();
 		}
 		else {
@@ -173,11 +178,12 @@ void rfct::drawUI(frameContext* ctx)
 
 	// helper
 	imageExtent = { static_cast<float>(rfct::renderer::getRen().getRenderImagesManager().getSwapChain().getExtent().width), static_cast<float>(rfct::renderer::getRen().getRenderImagesManager().getSwapChain().getExtent().height) };
+	bool hasBackButton = currentNodeIndex != 0;
 
 	// input updates
 	if (input::getInput().upDownMenu != 0 && changeSelectionCooldown <= 0.f) {
-		uint32_t elementCount = UINodes[currentNodeIndex].childrenCount;
-		currentMenuElementSelectedIndex = (currentMenuElementSelectedIndex - (uint32_t)input::getInput().upDownMenu + elementCount) % elementCount;
+		uint32_t elementCount = UINodes[currentNodeIndex].childrenCount + (hasBackButton?1:0);
+		currentSelectedMenuIndex = (currentSelectedMenuIndex - (uint32_t)input::getInput().upDownMenu + elementCount) % elementCount;
 		upDownEffectMultiplier = -input::getInput().upDownMenu;
 		changeSelectionCooldown = 0.25f;
 	}
@@ -198,8 +204,9 @@ void rfct::drawUI(frameContext* ctx)
 	}
 
 	// drawing
-	float intensity = glm::sin(globalTime * 3.f) * 0.2f + .8f;
+	float pulseColorIntensity = glm::sin(globalTime * 3.f) * 0.2f + .8f;
 	float oneLineHeight = textScale * imageExtent.y;
+	uint32_t elementCount = UINodes[currentNodeIndex].childrenCount + (hasBackButton ? 1 : 0);
 	float totalHeight = UINodes[currentNodeIndex].childrenCount * oneLineHeight + (UINodes[currentNodeIndex].childrenCount - 1) * interline * imageExtent.y;
 	float startY = 0.5f * imageExtent.y - (0.5f * totalHeight);
 	font* defaultFont = renderer::getRen().getUIPipeline().getDefaultFont();
@@ -207,12 +214,7 @@ void rfct::drawUI(frameContext* ctx)
 	for (uint32_t i = 0; i < UINodes[currentNodeIndex].childrenCount; i++) {
 		uint32_t childIndex = UINodes[currentNodeIndex].childrenIndices[i];
 		float width = defaultFont->getTextWidth(UINodes[childIndex].label, textScale * imageExtent.y);
-		if (currentMenuElementSelectedIndex == i) {
-			intensity = 1.f;
-		}
-		else {
-			intensity = 0.5f;
-		}
+		float selectionColorIntensity = (currentSelectedMenuIndex == i?1.f:0.5f);
 		float xPos = (0.5f) * imageExtent.x - 0.5f * width;
 		float yPos = startY + i * (oneLineHeight + interline * imageExtent.y);
 		// draw text
@@ -222,21 +224,58 @@ void rfct::drawUI(frameContext* ctx)
 				xPos,
 				yPos + (animationOffsetNorm * imageExtent.y)),
 			textScale * imageExtent.y,
-			UINodes[childIndex].color * intensity);
+			UINodes[childIndex].color * pulseColorIntensity * selectionColorIntensity);
+	}
+	if (elementCount - UINodes[currentNodeIndex].childrenCount == 1) {
+		// draw back button
+		float selectionColorIntensity = (currentSelectedMenuIndex == UINodes[currentNodeIndex].childrenCount ? 1.f : 0.5f);
+		float width = defaultFont->getTextWidth("BACK", textScale * imageExtent.y);
+		float xPos = (0.5f) * imageExtent.x - 0.5f * width;
+		float yPos = startY + UINodes[currentNodeIndex].childrenCount * (oneLineHeight + interline * imageExtent.y);
+		renderer::getRen().getUIPipeline().addTextVerticesHeight(
+			std::string("BACK"),
+			glm::vec2(
+				xPos,
+				yPos + (animationOffsetNorm * imageExtent.y)),
+			textScale * imageExtent.y,
+			glm::vec3(1.f, 1.f, 1.f) * pulseColorIntensity * selectionColorIntensity);
 	}
 
 	if ((input::getInput().selectMenu || input::getInput().leftRightMenu != 0) && changeSelectionCooldown <= 0.f) {
 		changeSelectionCooldown = 0.25f;
-		uint32_t selectedNode = UINodes[currentNodeIndex].childrenIndices[currentMenuElementSelectedIndex];
-		switch (UINodes[selectedNode].type) {
-			case UINode::UINodeType::UINodeType_Menu:{
-				currentNodeIndex = selectedNode;
-				currentMenuElementSelectedIndex = 0;
-				break;
+		if (UINodes[currentNodeIndex].childrenCount == currentSelectedMenuIndex) {
+			// back button selected
+			currentNodeIndex = previousNodeIndices.top();
+			previousNodeIndices.pop();
+			currentSelectedMenuIndex = 0;
+		}
+		else {
+			uint32_t selectedNodeIndex = UINodes[currentNodeIndex].childrenIndices[currentSelectedMenuIndex];
+			if (input::getInput().selectMenu) {
+				switch (UINodes[selectedNodeIndex].type) {
+				case UINode::UINodeType::UINodeType_Menu: {
+					previousNodeIndices.push(currentNodeIndex);
+					currentNodeIndex = selectedNodeIndex;
+					currentSelectedMenuIndex = 0;
+					break;
+				}
+				case UINode::UINodeType::UINodeType_ActionButton: {
+					UINodes[selectedNodeIndex].action(ctx);
+					break;
+				}
+				}
 			}
-			case UINode::UINodeType::UINodeType_ActionButton: {
-				UINodes[selectedNode].action(ctx);
-				break;
+			else {
+				switch (UINodes[selectedNodeIndex].type) {
+				case UINode::UINodeType::UINodeType_IntVariable: {
+					*UINodes[currentNodeIndex].valuePtr = std::clamp(
+						(*UINodes[currentNodeIndex].valuePtr) + (uint32_t)input::getInput().leftRightMenu * UINodes[currentNodeIndex].step,
+						UINodes[currentNodeIndex].minValue,
+						UINodes[currentNodeIndex].maxValue
+					);
+					break;
+				}
+				}
 			}
 		}
 	}
@@ -257,11 +296,30 @@ void rfct::defineUI()
 	UINodes[1].type = UINode::UINodeType::UINodeType_ActionButton;
 	UINodes[1].action = actionResume;
 
-	UINodes[2].label = std::string("RESUME 1");
-	UINodes[2].type = UINode::UINodeType::UINodeType_ActionButton;
-	UINodes[2].action = actionResume;
+	UINodes[2].label = std::string("SETTINGS");
+	UINodes[2].type = UINode::UINodeType::UINodeType_Menu;
+	UINodes[2].childrenIndices[0] = 4;
+	UINodes[2].childrenIndices[1] = 5;
+	UINodes[2].childrenCount = 2;
 
 	UINodes[3].label = std::string("SAVE AND QUIT");
 	UINodes[3].type = UINode::UINodeType::UINodeType_ActionButton;
 	UINodes[3].action = actionQuit;
+
+	UINodes[4].label = std::string("GRAPHICS");
+	UINodes[4].type = UINode::UINodeType::UINodeType_Menu;
+	UINodes[4].childrenIndices[0] = 6;
+	UINodes[4].childrenCount = 1;
+
+	UINodes[5].label = std::string("SOUND");
+	UINodes[5].type = UINode::UINodeType::UINodeType_Menu;
+	UINodes[5].childrenIndices[0] = 6;
+	UINodes[5].childrenCount = 1;
+
+	UINodes[6].label = std::string("MASTER VOLUME");
+	UINodes[6].type = UINode::UINodeType::UINodeType_IntVariable;
+	UINodes[6].minValue = 0;
+	UINodes[6].maxValue = 100;
+	UINodes[6].step = 10;
+	UINodes[6].valuePtr = &rfct::userSettings::get().seriaizeData.masterVoicePercentage;
 }

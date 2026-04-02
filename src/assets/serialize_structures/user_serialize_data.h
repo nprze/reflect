@@ -3,7 +3,7 @@
 
 namespace rfct {
 	struct settingsSerializeData {
-		float masterVoicePercentage = 100;
+		uint32_t masterVoicePercentage = 100;
 		float backgroundVoicePercentage = 100;
 		float effectsVoicePercentage = 100;
 		uint32_t windowedMode = 0; // 0 - borderless, 1 - fullscreen, 2 - windowes
