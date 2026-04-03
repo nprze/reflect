@@ -33,11 +33,12 @@ void rfct::userSettings::loadUserSettings()
 
     std::string line = "";
     SETTINGS_GET_INT("masterVoicePercentage:", seriaizeData.masterVoicePercentage);
-    SETTINGS_GET_FLOAT("backgroundVoicePercentage:", seriaizeData.backgroundVoicePercentage);
-    SETTINGS_GET_FLOAT("effectsVoicePercentage:", seriaizeData.effectsVoicePercentage);
+    SETTINGS_GET_INT("backgroundVoicePercentage:", seriaizeData.backgroundVoicePercentage);
+    SETTINGS_GET_INT("effectsVoicePercentage:", seriaizeData.effectsVoicePercentage);
     SETTINGS_GET_INT("windowedMode:", seriaizeData.windowedMode);
     SETTINGS_GET_INT("resolutionWidth:", seriaizeData.resolutionWidth);
  	SETTINGS_GET_INT("resolutionHeight:", seriaizeData.resolutionHeight);
+ 	SETTINGS_GET_INT("isDeveloper:", seriaizeData.isDeveloper);
 }
 
 void rfct::userSettings::dumpUserSettings()
@@ -53,6 +54,7 @@ void rfct::userSettings::dumpUserSettings()
     SETTINGS_SET_ANY("windowedMode:", seriaizeData.windowedMode);
     SETTINGS_SET_ANY("resolutionWidth:", seriaizeData.resolutionWidth);
     SETTINGS_SET_ANY("resolutionHeight:", seriaizeData.resolutionHeight);
+    SETTINGS_SET_ANY("isDeveloper:", seriaizeData.isDeveloper);
 }
 
 void rfct::userSettings::resetToDefaults()
