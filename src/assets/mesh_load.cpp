@@ -1,10 +1,18 @@
 #include "mesh_load.h"
 #include <fstream>
-
 #include "renderer_p/renderer.h"
 #include "assets/assets_utils.h"
 #include "renderer_p/frame_anim/anim_buffer.h"
 #include "serialize_structures/frame_animation_serialize_data.h"
+
+uint32_t basicHash(uint32_t x) {
+    x ^= x >> 16;
+    x *= 0x7feb352d;
+    x ^= x >> 15;
+    x *= 0x846ca68b;
+    x ^= x >> 16;
+    return x;
+}
 
 void rfct::uploadVertices(const std::vector<Vertex>& vertices, VulkanBuffer* buffer, vk::DeviceSize offset)
 {
@@ -78,14 +86,13 @@ void rfct::uploadVertices(const std::vector<Vertex>& vertices, VulkanBuffer* buf
 void rfct::loadBuildingBlockMesh(const std::string& path, std::vector<Vertex>* meshOut, const glm::vec3& color, const glm::vec2& size)
 {
     std::ifstream file;
-    if (!openAssetFile(path, &file)) {
+    if (!openAssetFile(path, &file))
         RFCT_CRITICAL("Failed to open mesh file: {}", path);
-    }
 
     std::vector<glm::vec2> coords;
     std::string line;
 
-    Vertex black[6];
+	Vertex black[6]; // vertices for the black background of the block
     black[0].pos = { 0.f,0.f, 0.f };
     black[1].pos = { size.x,0.f, 0.f };
     black[2].pos = { 0.f,size.y, 0.f };
@@ -93,47 +100,48 @@ void rfct::loadBuildingBlockMesh(const std::string& path, std::vector<Vertex>* m
     black[4].pos = { size.x,0.f, 0.f };
     black[5].pos = { 0.f,size.y, 0.f };
 
-    for (uint32_t i = 0; i < 6; ++i) {
+    for (uint32_t i = 0; i < 6; ++i) 
+    {
         black[i].color = { 0.f, 0.f, 0.f };
         meshOut->push_back(black[i]);
     }
-    while (std::getline(file, line)) {
+	uint32_t primitiveID = 0;
+    while (std::getline(file, line)) 
+    {
         std::istringstream iss(line);
         std::vector<float> values;
-
         double number;
 
-        while (iss >> number) {
+        while (iss >> number) 
+        {
             values.push_back(static_cast<float>(number));
         }
-
-
-
-        if (values.size() == 2) {
+        if (values.size() == 2)
+        {
             coords.emplace_back(values[0], values[1]);
-
         }
-        else if (values.size() == 1) {
-            if (coords.size() == 3 || coords.size() == 6) {
+        else if (values.size() == 1)
+        {
+            if (coords.size() == 3 || coords.size() == 6)
+            {
                 constexpr float one255 = 1.f / 255.f;
                 glm::vec3 color_fin = glm::vec3(color[0] * values[0] * one255, color[1] * values[0] * one255, color[2] * values[0] * one255);
-
-                for (size_t i = 0; i < coords.size(); i++) {
+				float fluctuate = (basicHash(primitiveID) & 0xFFFFFF) / float(0x1000000);
+                for (size_t i = 0; i < coords.size(); i++)
+                {
                     Vertex vtx{};
                     vtx.pos = glm::vec3(coords[i], 0.0f);
                     vtx.color = color_fin;
+					vtx.primitiveFluctuate = fluctuate;
                     meshOut->push_back(vtx);
                 }
-
                 coords.clear();
+
+				primitiveID++;
             }
-            else {
-                RFCT_CRITICAL("Invalid number of coordinates before color line.");
-            }
+            else RFCT_CRITICAL("Invalid number of coordinates before color line.");
         }
-        else {
-            RFCT_CRITICAL("Invalid line {} of file {}", line, path);
-        }
+        else RFCT_CRITICAL("Invalid line {} of file {}", line, path);
     }
 
 }
@@ -141,7 +149,8 @@ void rfct::loadBuildingBlockMesh(const std::string& path, std::vector<Vertex>* m
 void rfct::loadBackgroundMesh(const std::string& path, std::vector<Vertex>* vertxBufferOut, const glm::vec3& color, const float zMin, const float zMax)
 {
     std::ifstream file;
-    if (!openAssetFile(path, &file)) {
+    if (!openAssetFile(path, &file)) 
+    {
         RFCT_CRITICAL("Failed to open mesh file: {}", path);
     }
 

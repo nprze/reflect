@@ -6,7 +6,6 @@ namespace rfct {
 	class descriptors {
 	public:
 		descriptors(uint32_t size = 1);
-		~descriptors();
 		void bindCameraUbo(vk::Buffer ubo, uint32_t index);
 		vk::DescriptorSet& getCameraDescSet(uint32_t index) { return m_cameraUboDescSet[index].get(); }
 	private:

@@ -50,7 +50,7 @@ namespace rfct {
 		void render(frameContext& frameContext);
 		void setObjectName(void* objectHandle, const std::string& name, vk::ObjectType objectType);
 	private:
-		bool m_uselessBool; // do not remove
+		bool m_uselessBool;
         RFCT_PLATFORM_WINDOW m_window;
 		vulkanInstance m_instance;
 		SurfaceWrapper m_surface; // here for simpler access when surface holder changes (android)
@@ -64,7 +64,6 @@ namespace rfct {
 		bloomResurcesHolder m_bloomRes;
 		debugDraw m_debugDraw;
 		UIPipeline m_UIPipeline;
-
     private:
         friend class vulkanSwapChain;
         friend class reflectApplication;

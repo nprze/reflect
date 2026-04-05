@@ -7,7 +7,8 @@
 
 namespace rfct {
     renderer* renderer::ren = nullptr;
-    bool setStaticRenderer(renderer *rendererArg) { // this exists bcs the static renderer var needs to be set before the components' constructors
+    bool setStaticRenderer(renderer *rendererArg) 
+    { // this exists bcs the static renderer var needs to be set before the components' constructors
         renderer::ren = rendererArg;
         return true;
     }
@@ -90,10 +91,11 @@ void rfct::renderer::updateWindow(RFCT_NATIVE_WINDOW_ANDROID RFCT_NATIVE_WINDOW_
     m_window = AndroidWindow(RFCT_NATIVE_WINDOW_ANDROID_VAR);
     m_surface.newSurface(m_window.createSurface(getInstance()));
     RFCT_WARN("destroying widnow and surface. creating new surface with width, hwight: ({}, {})", m_window.getExtent().width, m_window.getExtent().height);
-#endif // ANDROID_BUILD
+#endif
 };
 
-rfct::renderer::~renderer() {
+rfct::renderer::~renderer() 
+{
     cleanupAssetsCommandPool();
 };
 
@@ -147,7 +149,8 @@ void rfct::renderer::render(frameContext& frameContext)
         bloomSubmitInfo.pWaitDstStageMask = waitStages;
         renderer::getRen().getDeviceWrapper().getQueueManager().submitGraphics(bloomSubmitInfo);
 
-        if (frameContext.renderDebugDraw) {
+        if (frameContext.renderDebugDraw) 
+        {
             vk::SubmitInfo debugDrawSubmitInfo = frameData.debugDrawSubmitInfo(frameContext);
             debugDrawSubmitInfo.pWaitDstStageMask = waitStages;
             renderer::getRen().getDeviceWrapper().getQueueManager().submitGraphics(debugDrawSubmitInfo);
@@ -157,9 +160,6 @@ void rfct::renderer::render(frameContext& frameContext)
         uiSubmitInfo.pWaitDstStageMask = waitStages;
          renderer::getRen().getDeviceWrapper().getQueueManager().submitGraphics(uiSubmitInfo, frameData.m_thisFrameRenderFinishedFence);
     }
-
-
-
 
     {
         RFCT_PROFILE_SCOPE("image present");

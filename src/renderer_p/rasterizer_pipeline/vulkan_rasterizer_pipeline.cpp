@@ -9,7 +9,9 @@
 #include "world_p/objects/objects.h"
 
 
-rfct::vulkanRasterizerPipeline::vulkanRasterizerPipeline(vk::RenderPass renderPass) :m_vertexShader("shaders/cube/cube_vert.spv"), m_fragShader("shaders/cube/cube_frag.spv")
+rfct::vulkanRasterizerPipeline::vulkanRasterizerPipeline(vk::RenderPass renderPass) 
+    : m_vertexShader("shaders/cube/cube_vert.spv"), 
+    m_fragShader("shaders/cube/cube_frag.spv")
 {
 	createPipeline(renderPass);
 }
@@ -148,11 +150,8 @@ void rfct::vulkanRasterizerPipeline::recordCommandBuffer(frameContext* ctx, fram
     renderPassInfo.pClearValues = clearValues.data();
 
     commandBuffer.beginRenderPass(renderPassInfo, vk::SubpassContents::eInline);
-
     commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, m_graphicsPipeline.get());
     
-
-
     vk::Viewport viewport = {};
     viewport.x = 0.0f;
     viewport.y = 0.0f;
@@ -169,10 +168,9 @@ void rfct::vulkanRasterizerPipeline::recordCommandBuffer(frameContext* ctx, fram
 
     vk::DeviceSize offsets[] = { 0 };
     // Camera Descriptor
-    if (renderdata.m_verticesCountStaticObj) {
-
+    if (renderdata.m_verticesCountStaticObj)
+    {
         vk::Buffer vertexBuffers[] = { renderdata.m_VertexBufferStatic.m_Buffer.buffer };
-
         commandBuffer.bindVertexBuffers(0, 1, vertexBuffers, offsets);
 
         vk::DescriptorSet sets[] = { frameData.getCameraUboDescSet(ctx->frame), renderdata.m_DescriptorSetStatic.get() };
@@ -181,10 +179,10 @@ void rfct::vulkanRasterizerPipeline::recordCommandBuffer(frameContext* ctx, fram
         commandBuffer.draw(renderdata.m_verticesCountStaticObj, 1, 0, 0);
     }
     
-    if (renderdata.m_verticesCountDynamicObj) {
+    if (renderdata.m_verticesCountDynamicObj)
+    {
 
         vk::Buffer vertexBuffers[] = { renderdata.m_VertexBufferDynamic[ctx->frame]->buffer};
-        
         commandBuffer.bindVertexBuffers(0, 1, vertexBuffers, offsets);
 
         vk::DescriptorSet sets[] = { frameData.getCameraUboDescSet(ctx->frame), renderdata.m_DescriptorSetsDynamic[ctx->frame].get() };

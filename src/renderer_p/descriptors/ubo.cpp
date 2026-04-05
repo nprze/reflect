@@ -1,10 +1,13 @@
-#include "camera_ubo.h"
+#include "ubo.h"
 #include "vma/vk_mem_alloc.h"
 #include "renderer_p/renderer.h"
 
 vk::DescriptorSetLayout rfct::cameraUbo::m_descriptorSetLayout;
 
-rfct::cameraUbo::cameraUbo():m_buffer("cameraUBO", sizeof(uniformBufferObject), vk::BufferUsageFlagBits::eUniformBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU) {
+rfct::cameraUbo::cameraUbo()
+    : m_buffer("cameraUBO", sizeof(uniformBufferObject), vk::BufferUsageFlagBits::eUniformBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU),
+    m_ubo()
+{
 	m_mappedData = m_buffer.Map();
 }
 
@@ -14,8 +17,9 @@ rfct::cameraUbo::~cameraUbo() {
 
 void rfct::cameraUbo::updateViewProj(glm::mat4 vp)
 {
-    //vp = glm::mat4(1);
-	memcpy(m_mappedData, &vp, sizeof(uniformBufferObject));
+	memcpy(m_mappedData, &vp, sizeof(glm::mat4));
+	float value = 1.f;
+	memcpy((void*)((glm::mat4*)m_mappedData + 1), &value, sizeof(float));
 }
 
 vk::DescriptorSetLayout rfct::cameraUbo::getDescriptorSetLayout()

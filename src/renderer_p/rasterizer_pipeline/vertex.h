@@ -6,7 +6,7 @@ namespace rfct {
 		glm::vec3 pos;
 		glm::vec3 color;
 		uint32_t objectIndex;
-		uint32_t padding;
+		float primitiveFluctuate;
 	
 	static vk::VertexInputBindingDescription getBindingDescription() {
 		vk::VertexInputBindingDescription bindingDescription{};
@@ -16,8 +16,8 @@ namespace rfct {
 		return bindingDescription;
 	}
 
-	static std::array<vk::VertexInputAttributeDescription, 3> getAttributeDescriptions() {
-		std::array<vk::VertexInputAttributeDescription, 3> attributeDescriptions{};
+	static std::array<vk::VertexInputAttributeDescription, 4> getAttributeDescriptions() {
+		std::array<vk::VertexInputAttributeDescription, 4> attributeDescriptions{};
 		attributeDescriptions[0].binding = 0;
 		attributeDescriptions[0].location = 0;
 		attributeDescriptions[0].format = vk::Format::eR32G32B32Sfloat;
@@ -28,8 +28,12 @@ namespace rfct {
 		attributeDescriptions[1].offset = offsetof(Vertex, color);
 		attributeDescriptions[2].binding = 0;
 		attributeDescriptions[2].location = 2;
-		attributeDescriptions[2].format = vk::Format::eR8Uint;
+		attributeDescriptions[2].format = vk::Format::eR32Uint;
 		attributeDescriptions[2].offset = offsetof(Vertex, objectIndex);
+		attributeDescriptions[3].binding = 0;
+		attributeDescriptions[3].location = 3;
+		attributeDescriptions[3].format = vk::Format::eR32Sfloat;
+		attributeDescriptions[3].offset = offsetof(Vertex, primitiveFluctuate);
 		return attributeDescriptions;
 	}
 	};

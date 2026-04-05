@@ -1,5 +1,5 @@
 #pragma once
-#include "renderer_p/descriptors/camera_ubo.h"
+#include "renderer_p/descriptors/ubo.h"
 #include "renderer_p/descriptors/camera_descriptors.h"
 #include "context.h"
 

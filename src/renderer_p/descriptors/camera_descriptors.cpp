@@ -1,6 +1,6 @@
 #include "camera_descriptors.h"
 #include "renderer_p/renderer.h"
-#include "renderer_p/descriptors/camera_ubo.h"
+#include "renderer_p/descriptors/ubo.h"
 
 rfct::descriptors::descriptors(uint32_t size)
 {
@@ -27,10 +27,6 @@ rfct::descriptors::descriptors(uint32_t size)
 		auto descriptorSets = renderer::getRen().getDevice().allocateDescriptorSetsUnique(allocInfo);
 		m_cameraUboDescSet.push_back(std::move(descriptorSets[0]));
 	}
-}
-
-rfct::descriptors::~descriptors()
-{
 }
 
 void rfct::descriptors::bindCameraUbo(vk::Buffer ubo, uint32_t index)

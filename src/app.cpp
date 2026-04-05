@@ -9,10 +9,9 @@
 
 bool rfct::reflectApplication::isAppMinimised;
 
-rfct::reflectApplication::reflectApplication(RFCT_APP_ARGS):
-m_Renderer(RFCT_RENDERER_ARGUMENTS_VAR)
+rfct::reflectApplication::reflectApplication(RFCT_APP_ARGS)
+    : m_Renderer(RFCT_RENDERER_ARGUMENTS_VAR)
 {
-	// app init
 	input::getInput().init();
 	userSettings::get().loadUserSettings();
 	isAppMinimised = false;
@@ -28,12 +27,12 @@ m_Renderer(RFCT_RENDERER_ARGUMENTS_VAR)
 
 rfct::reflectApplication::~reflectApplication()
 {
-    RFCT_TRACE("app cleanup start");
     renderer::getRen().getDevice().waitIdle();
     cleanGameSystems();
 }
 
-void rfct::reflectApplication::updateWindow(RFCT_APP_ARGS){
+void rfct::reflectApplication::updateWindow(RFCT_APP_ARGS)
+{
     m_Renderer.updateWindow(RFCT_NATIVE_WINDOW_ANDROID_VAR);
 };
 
@@ -43,7 +42,6 @@ void rfct::reflectApplication::update() {
     static auto previousTime = clock::now();
     auto frameStart = clock::now();
 
-    // Delta time
     std::chrono::duration<float> deltaTime = frameStart - previousTime;
     previousTime = frameStart;
 
@@ -63,10 +61,8 @@ void rfct::reflectApplication::update() {
     input::getInput().pollAndParseEvents(&context);
 
     if (!isAppMinimised) {
-        // fixed update
         fixedUpdate(context, timesToUpdate);
 
-		// ui and visual update and render
         jobSystem::get().KickJob([&]() {
             RFCT_PROFILE_SCOPE("ui draw");
             drawUI(&context);
@@ -93,9 +89,6 @@ void rfct::reflectApplication::update() {
     }
 
     updateLastState(context.state);
-
-	// simulate small frame rate
-    //std::this_thread::sleep_for(std::chrono::milliseconds(100));
 }
 
 void rfct::reflectApplication::fixedUpdate(frameContext& ctx, uint64_t times)
