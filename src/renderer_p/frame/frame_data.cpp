@@ -60,10 +60,10 @@ rfct::frameData::frameData(vk::Device device, VmaAllocator& allocator, vk::Fence
 
 }
 
-void rfct::frameData::prepareFrame(uint32_t BufferIndex)
+void rfct::frameData::prepareFrame(const frameContext& ctx, uint32_t BufferIndex)
 {
-    m_cameraUbo[BufferIndex].updateViewProj(getVPMatrix());
-    m_UIcameraUbo.updateViewProj(getUIMatrix());
+    m_cameraUbo[BufferIndex].updateUboData(getVPMatrix(), ctx.globalTime);
+    m_UIcameraUbo.updateUboData(getUIMatrix(), ctx.globalTime);
 }
 
 void rfct::frameData::waitForFences()

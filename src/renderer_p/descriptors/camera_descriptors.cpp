@@ -22,7 +22,7 @@ rfct::descriptors::descriptors(uint32_t size)
         vk::DescriptorSetAllocateInfo allocInfo{};
         allocInfo.descriptorPool = m_descriptorPool.get();
         allocInfo.descriptorSetCount = 1;
-        vk::DescriptorSetLayout descriptorSetLayout = cameraUbo::getDescriptorSetLayout();
+        vk::DescriptorSetLayout descriptorSetLayout = ubo::getDescriptorSetLayout();
         allocInfo.pSetLayouts = &descriptorSetLayout;
 		auto descriptorSets = renderer::getRen().getDevice().allocateDescriptorSetsUnique(allocInfo);
 		m_cameraUboDescSet.push_back(std::move(descriptorSets[0]));

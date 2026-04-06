@@ -11,6 +11,7 @@ layout(location = 2) out vec3 fragColor;
 
 layout(set = 0, binding = 0) uniform cameraUbo {
     mat4 vp;
+    float globalTime;
 } ubo;
 
 void main() {

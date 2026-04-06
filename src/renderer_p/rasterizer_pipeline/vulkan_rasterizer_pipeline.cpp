@@ -10,8 +10,8 @@
 
 
 rfct::vulkanRasterizerPipeline::vulkanRasterizerPipeline(vk::RenderPass renderPass) 
-    : m_vertexShader("shaders/cube/cube_vert.spv"), 
-    m_fragShader("shaders/cube/cube_frag.spv")
+    : m_vertexShader("shaders/basic/basic_vert.spv"), 
+    m_fragShader("shaders/basic/basic_frag.spv")
 {
 	createPipeline(renderPass);
 }
@@ -99,7 +99,7 @@ void rfct::vulkanRasterizerPipeline::createPipeline(vk::RenderPass renderPass)
     // Pipeline layout
     vk::PipelineLayoutCreateInfo pipelineLayoutInfo = {};
     pipelineLayoutInfo.setLayoutCount = 2;
-    vk::DescriptorSetLayout dscSetLayouts[] = { cameraUbo::getDescriptorSetLayout(), renderData::getDescriptorSetLayout() };
+    vk::DescriptorSetLayout dscSetLayouts[] = { ubo::getDescriptorSetLayout(), renderData::getDescriptorSetLayout() };
     pipelineLayoutInfo.pSetLayouts = dscSetLayouts;
     m_pipelineLayout = renderer::getRen().getDevice().createPipelineLayoutUnique(pipelineLayoutInfo);
 

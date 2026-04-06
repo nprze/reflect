@@ -119,7 +119,7 @@ void rfct::renderer::render(frameContext& frameContext)
         }
     }
     frameData.resetFences();
-    frameData.prepareFrame(frameContext.frame);
+    frameData.prepareFrame(frameContext, frameContext.frame);
     {
         RFCT_PROFILE_SCOPE("command buffers record");
         auto jobs = std::make_shared<rfct::jobTracker>();

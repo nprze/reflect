@@ -2,27 +2,27 @@
 #include "vma/vk_mem_alloc.h"
 #include "renderer_p/renderer.h"
 
-vk::DescriptorSetLayout rfct::cameraUbo::m_descriptorSetLayout;
+vk::DescriptorSetLayout rfct::ubo::m_descriptorSetLayout;
 
-rfct::cameraUbo::cameraUbo()
-    : m_buffer("cameraUBO", sizeof(uniformBufferObject), vk::BufferUsageFlagBits::eUniformBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU),
-    m_ubo()
+rfct::ubo::ubo()
+    : m_buffer("uniform buffer", sizeof(uboData), vk::BufferUsageFlagBits::eUniformBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU),
+    m_data()
 {
-	m_mappedData = m_buffer.Map();
+	m_mappedBuffer = m_buffer.Map();
 }
 
-rfct::cameraUbo::~cameraUbo() { 
+rfct::ubo::~ubo() { 
 	m_buffer.Unmap(); 
 }
 
-void rfct::cameraUbo::updateViewProj(glm::mat4 vp)
+void rfct::ubo::updateUboData(glm::mat4 vp, float globalTime)
 {
-	memcpy(m_mappedData, &vp, sizeof(glm::mat4));
-	float value = 1.f;
-	memcpy((void*)((glm::mat4*)m_mappedData + 1), &value, sizeof(float));
+	memcpy(m_mappedBuffer, &vp, sizeof(glm::mat4));
+	float value = globalTime;
+	memcpy((void*)((glm::mat4*)m_mappedBuffer + 1), &value, sizeof(float));
 }
 
-vk::DescriptorSetLayout rfct::cameraUbo::getDescriptorSetLayout()
+vk::DescriptorSetLayout rfct::ubo::getDescriptorSetLayout()
 {
     if (m_descriptorSetLayout)
     {
@@ -43,7 +43,7 @@ vk::DescriptorSetLayout rfct::cameraUbo::getDescriptorSetLayout()
 	return m_descriptorSetLayout;
 }
 
-void rfct::cameraUbo::destroyDescriptorSetLayout()
+void rfct::ubo::destroyDescriptorSetLayout()
 {
     renderer::getRen().getDevice().destroyDescriptorSetLayout(m_descriptorSetLayout);
 }

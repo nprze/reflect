@@ -61,6 +61,7 @@ ipch/
 
 # Reflect specific
 assets/building_blocks
+assets/player_progress
 assets/scenes
 assets/dialogues
 assets/player

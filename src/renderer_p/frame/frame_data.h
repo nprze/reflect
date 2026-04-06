@@ -8,12 +8,10 @@ namespace rfct {
     class frameData {
     public:
         frameData(vk::Device device, VmaAllocator& allocator, vk::Fence lastFramePresentFinishedFence, vk::Fence thisFramePresentFinishedFence);
-        ~frameData() {};
-
-		void prepareFrame(uint32_t BufferIndex);
-
+		void prepareFrame(const frameContext& ctx, uint32_t BufferIndex);
         void waitForFences();
         void resetFences();
+
 		vk::DescriptorSet& getCameraUboDescSet(uint32_t BufferIndex) { return m_descriptors.getCameraDescSet(BufferIndex); }
 		vk::DescriptorSet& getUICameraUboDescSet() { return m_UIcameradescriptors.getCameraDescSet(0); }
 
@@ -44,12 +42,11 @@ namespace rfct {
 		vk::Fence m_thisFrameRenderFinishedFence;
 		vk::Fence m_lastFrameRenderFinishedFence;
 
-		std::array<cameraUbo, RFCT_FRAMES_IN_FLIGHT> m_cameraUbo;
-		cameraUbo m_UIcameraUbo; // one bcs when windows get resized, device waits idle anyway
+		std::array<ubo, RFCT_FRAMES_IN_FLIGHT> m_cameraUbo;
+		ubo m_UIcameraUbo;
 
 		descriptors m_descriptors;
 		descriptors m_UIcameradescriptors;
-
     private:
         friend class renderer;
         friend class debugDraw;

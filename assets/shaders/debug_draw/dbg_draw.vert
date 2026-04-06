@@ -7,7 +7,9 @@ layout(location = 0) out vec3 fragColor;
 
 layout(set = 0, binding = 0) uniform cameraUbo {
     mat4 vp;
+    float globalTime;
 } ubo;
+
 void main() {
     gl_Position = ubo.vp * vec4(inPosition, 1.0);
     fragColor = inColor;

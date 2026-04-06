@@ -92,7 +92,7 @@ void rfct::debugDraw::createPipelines(vk::RenderPass renderPass)
     // Pipeline layout
     vk::PipelineLayoutCreateInfo pipelineLayoutInfo = {};
     pipelineLayoutInfo.setLayoutCount = 1;
-    vk::DescriptorSetLayout dscSetLayout = cameraUbo::getDescriptorSetLayout();
+    vk::DescriptorSetLayout dscSetLayout = ubo::getDescriptorSetLayout();
     pipelineLayoutInfo.pSetLayouts = &dscSetLayout;
     m_PipelineLayout = renderer::getRen().getDevice().createPipelineLayoutUnique(pipelineLayoutInfo);
 

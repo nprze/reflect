@@ -3,24 +3,24 @@
 #include "renderer_p/buffer/vulkan_buffer.h"
 
 namespace rfct {
-	struct uniformBufferObject {
+	struct uboData {
 		glm::mat4 vp;
 		float globalTime;
 	};
-	class cameraUbo {
+	class ubo {
 	private:
 		static vk::DescriptorSetLayout m_descriptorSetLayout;
 	public:
 		static vk::DescriptorSetLayout getDescriptorSetLayout();
 		static void destroyDescriptorSetLayout();
 	public:
-		cameraUbo();
-		~cameraUbo();
-		void updateViewProj(glm::mat4 vp);
+		ubo();
+		~ubo();
+		void updateUboData(glm::mat4 vp, float globalTime);
 		inline vk::Buffer getBuffer() { return m_buffer.buffer; }
 	private:
-		uniformBufferObject m_ubo;
+		uboData m_data;
 		VulkanBuffer m_buffer;
-		void* m_mappedData;
+		void* m_mappedBuffer;
 	};
 }

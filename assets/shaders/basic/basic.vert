@@ -17,5 +17,5 @@ layout(set = 1, binding = 1) readonly buffer ObjectMatrices {
 };
 void main() {
     gl_Position = ubo.vp * modelMatrices[inObjectIndex] * vec4(inPosition, 1.0);
-    fragColor = inColor * ubo.globalTime;
+    fragColor = inColor * sin(ubo.globalTime + inPerPrimitiveFluctuate);
 }

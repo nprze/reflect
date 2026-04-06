@@ -39,15 +39,19 @@ void rfct::reflectApplication::updateWindow(RFCT_APP_ARGS)
 void rfct::reflectApplication::update() {
     using clock = std::chrono::steady_clock;
 
+	static float globalTime = 0.f;
     static auto previousTime = clock::now();
     auto frameStart = clock::now();
 
     std::chrono::duration<float> deltaTime = frameStart - previousTime;
     previousTime = frameStart;
 
+	globalTime += deltaTime.count();
+
     currentFrame = (currentFrame + 1) % RFCT_FRAMES_IN_FLIGHT;
     frameContext context = {
         .dt = deltaTime.count(),
+		.globalTime = globalTime,
         .frame = currentFrame,
         .scene = &world::getWorld().getCurrentScene(),
         .state = getState()
