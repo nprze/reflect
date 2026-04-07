@@ -7,17 +7,12 @@
 #include "world_p/ecs.h"
 #include "world_p/transform.h"
 
-namespace rfct {
-    constexpr float inside = 0.08f;
-    constexpr float outside = 0.1f;
-
-
-    constexpr float angularDamping = 0.94f;
-}
-
+constexpr float inside = 0.08f;
+constexpr float outside = 0.1f;
+constexpr float angularDamping = 0.94f;
 std::vector<rfct::Vertex> kindlingVertices [3];
-void rfct::initKindlingsVars(scene* parentScene)
-{
+
+void rfct::initKindlingsVars(scene* parentScene) {
     RFCT_PROFILE_FUNCTION();
 
     for (uint8_t i = 0; i < 3; ++i) {
@@ -29,7 +24,6 @@ void rfct::initKindlingsVars(scene* parentScene)
     glm::vec3 orange = { 0.7f, 0.3f, 0.2f };
     glm::vec3 yellow = { 0.6f, 0.4f, 0.2f };
     glm::vec3 black = { 0.f, 0.f, 0.f };
-
     glm::vec3 center = { 0, 0, 0 };
 
     float r_outer = outside;
@@ -38,7 +32,6 @@ void rfct::initKindlingsVars(scene* parentScene)
         float angle = glm::radians(120.0f * i);
         hexOuter[i] = glm::vec3(r_outer * cos(angle), r_outer * sin(angle), 0);
     }
-
     for (uint8_t i = 0; i < 3; ++i) {
         kindlingVertices[i][0].pos = hexOuter[0];
         kindlingVertices[i][1].pos = hexOuter[1];
@@ -68,12 +61,7 @@ void rfct::initKindlingsVars(scene* parentScene)
     }
 }
 
-void rfct::cleanupKindlings()
-{
-}
-
-void rfct::spawnKindling(frameContext* fc, const glm::vec2& position, const glm::vec2& playerVel , uint32_t var)
-{
+void rfct::spawnKindling(frameContext* fc, const glm::vec2& position, const glm::vec2& playerVel , uint32_t var) {
     for (uint32_t i = 0; i < var + 1; ++i) {
         glm::mat4 transMat = glm::translate(glm::mat4(1.f), glm::vec3(position, 0.f));
         entity kindling = fc->scene->createDynamicRenderingEntity(&kindlingVertices[2 - var], &transMat);
@@ -89,12 +77,10 @@ void rfct::spawnKindling(frameContext* fc, const glm::vec2& position, const glm:
         reg.emplace_or_replace<rotationComponent>(kindling, rotationComponent{ {} });
         reg.emplace<scaleComponent>(kindling, scaleComponent{ {0, 0} });
         reg.emplace<dynamicObjectTypeComponent>(kindling, dynamicObjectTypeComponent{ {dynamicObjectType::Kindling} });
-
     }
 }
 
-void rfct::updateKindlings(frameContext* ctx)
-{
+void rfct::updateKindlings(frameContext* ctx) {
     // in fixed update
     auto kindlingParticlesComponentsQuery = ecs::get().view<kindlingParticleComponent, sinusoidFloatComponent, angularVelocityComponent, positionComponent, rotationComponent, scaleComponent, dynamicSSBOIndexComponent>();
     for (auto [smokeParticle, particleData, sinFloat, angVel, pos, rot, sc, ssbo] : kindlingParticlesComponentsQuery.each()) {
@@ -126,8 +112,7 @@ void rfct::updateKindlings(frameContext* ctx)
         };
 }
 
-void rfct::updateKindlingMatrices(frameContext* ctx)
-{
+void rfct::updateKindlingMatrices(frameContext* ctx) {
     renderData& rd = ctx->scene->getRenderData();
     auto kindlingParticlesComponentsQuery = ecs::get().view<kindlingParticleComponent, dynamicSSBOIndexComponent, positionComponent, rotationComponent, scaleComponent>();
     for (auto [smokeParticle, dis, ssboData, pos, rot, sc] : kindlingParticlesComponentsQuery.each()) {

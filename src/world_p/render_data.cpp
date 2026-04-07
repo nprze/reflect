@@ -3,11 +3,10 @@
 #include "renderer_p\renderer.h"
 #include "context.h"
 
-vk::DescriptorSetLayout rfct::renderData::m_descriptorSetLayout;
+vk::DescriptorSetLayout descriptorSetLayout;
 
-vk::DescriptorSetLayout rfct::renderData::getDescriptorSetLayout()
-{
-	if (m_descriptorSetLayout) return m_descriptorSetLayout;
+vk::DescriptorSetLayout rfct::renderData::getDescriptorSetLayout() {
+	if (descriptorSetLayout) return descriptorSetLayout;
 	vk::DescriptorSetLayoutBinding layoutBinding{};
 	layoutBinding.binding = 1;
 	layoutBinding.descriptorType = vk::DescriptorType::eStorageBuffer;
@@ -19,24 +18,22 @@ vk::DescriptorSetLayout rfct::renderData::getDescriptorSetLayout()
 	layoutCreateInfo.bindingCount = 1;
 	layoutCreateInfo.pBindings = &layoutBinding;
 
-	m_descriptorSetLayout = renderer::getRen().getDevice().createDescriptorSetLayout(layoutCreateInfo);
-	return m_descriptorSetLayout;
+	descriptorSetLayout = renderer::getRen().getDevice().createDescriptorSetLayout(layoutCreateInfo);
+	return descriptorSetLayout;
 }
 
-void rfct::renderData::destroyDescriptorSetLayout()
-{
-	renderer::getRen().getDevice().destroyDescriptorSetLayout(m_descriptorSetLayout);
+void rfct::renderData::destroyDescriptorSetLayout() {
+	renderer::getRen().getDevice().destroyDescriptorSetLayout(descriptorSetLayout);
 }
 
-rfct::renderData::renderData() : 
-	m_VertexBufferStatic(RFCT_SCENE_STATIC_DRAW_VERTEX_BUFFER_VERTEX_COUNT * sizeof(Vertex)), 
+rfct::renderData::renderData()
+	: m_VertexBufferStatic(RFCT_SCENE_STATIC_DRAW_VERTEX_BUFFER_VERTEX_COUNT * sizeof(Vertex)), 
 	m_StaticModelMatsBuffer("Static mats",sizeof(glm::mat4) * RFCT_MAX_STATIC_OBJ_ON_SCENE, vk::BufferUsageFlagBits::eStorageBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU), 
 	m_mappedDataStatic(nullptr), 
 	m_matsCounterStatic(0), 
 	m_verticesCountStaticObj(0), 
 	m_verticesCountDynamicObj(0), 
-	m_matsCounterDynamic(0)
-{
+	m_matsCounterDynamic(0) {
  	for (uint32_t i = 0; i < RFCT_FRAMES_IN_FLIGHT; ++i) {
 		m_VertexBufferDynamic[i] = std::make_unique<VulkanBuffer>("dynamic vertex buffers", RFCT_SCENE_DYNAMIC_DRAW_VERTEX_BUFFER_VERTEX_COUNT * sizeof(Vertex), vk::BufferUsageFlagBits::eVertexBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU);
 		m_DynamicModelMatsBuffers[i] = std::move(VulkanBuffer("dynamicModelMatrices", sizeof(glm::mat4) * RFCT_MAX_DYNAMIC_OBJ_ON_SCENE, vk::BufferUsageFlagBits::eStorageBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU));
@@ -101,7 +98,6 @@ rfct::renderData::renderData() :
 			VK_WHOLE_SIZE
 		};
 
-
 		vk::WriteDescriptorSet write{};
 		write.dstSet = m_DescriptorSetsDynamic[i].get();
 		write.dstBinding = 1;
@@ -116,15 +112,14 @@ rfct::renderData::renderData() :
 		m_mappedVerticesDataDynamic[i] = m_VertexBufferDynamic[i]->Map();
 	}
 
-	// reserve matrix index 0 for identity and index 1 for player transform (bcs player uses frame anim)
+	// reserve matrix index 0 for identity and index 1 for player transform 
 	frameContext noCtx = {};
 	glm::mat4 identityMat4 = {1.f};
 	RFCT_ASSERT(addDynamicMat(&noCtx, &identityMat4)==0);
 	RFCT_ASSERT(addDynamicMat(&noCtx, &identityMat4)==1);
 }
 
-rfct::renderData::~renderData()
-{
+rfct::renderData::~renderData() {
 	for (size_t i = 0; i < RFCT_FRAMES_IN_FLIGHT; i++) {
 		m_DynamicModelMatsBuffers[i].Unmap();
 		m_VertexBufferDynamic[i]->Unmap();
@@ -132,8 +127,7 @@ rfct::renderData::~renderData()
 	destroyDescriptorSetLayout();
 }
 
-void rfct::renderData::clearAllData()
-{
+void rfct::renderData::clearAllData() {
 	m_matsCounterStatic = 0;
 	m_matsCounterDynamic = 0;
 	m_verticesCountStaticObj = 0;
@@ -156,28 +150,24 @@ void rfct::renderData::clearAllData()
 	RFCT_ASSERT(addDynamicMat(&noCtx, &identityMat4) == 1);
 }
 
-void rfct::renderData::updateMat(const frameContext* ctx, const uint32_t& objIndexInSSBO, glm::mat4* mat)
-{
+void rfct::renderData::updateMat(const frameContext* ctx, const uint32_t& objIndexInSSBO, glm::mat4* mat) {
 	char* finalPtr = (char*)m_mappedMatsDataDynamic[ctx->frame] + objIndexInSSBO * sizeof(glm::mat4);
 	memcpy(finalPtr, mat, sizeof(glm::mat4));
 }
 
-void rfct::renderData::updateDynamicVertices(const frameContext* ctx, const size_t objBufferOffset, void* vertices, const size_t size)
-{
+void rfct::renderData::updateDynamicVertices(const frameContext* ctx, const size_t objBufferOffset, void* vertices, const size_t size) {
 	char* finalPtr = (char*)m_mappedVerticesDataDynamic[ctx->frame] + (objBufferOffset * sizeof(Vertex));
 	memcpy(finalPtr, vertices, size);
 }
 
-uint32_t rfct::renderData::addStaticMat(void* data)
-{
+uint32_t rfct::renderData::addStaticMat(void* data) {
 	if (!m_mappedDataStatic) { RFCT_CRITICAL("trying to add matrices when startTransferStatic() hasn't been called"); }
 	char* finalPtr = ((char*)m_mappedDataStatic) + (m_matsCounterStatic * sizeof(glm::mat4));
 	memcpy(finalPtr, data, sizeof(glm::mat4));
 	return m_matsCounterStatic++;
 }
 
-uint32_t rfct::renderData::addDynamicMat(const frameContext* ctx, void* data)
-{
+uint32_t rfct::renderData::addDynamicMat(const frameContext* ctx, void* data) {
 	if (m_matricesFreeIndices.size() != 0) {
 		size_t index = m_matricesFreeIndices.back();
 		m_matricesFreeIndices.pop_back();
@@ -195,7 +185,6 @@ uint32_t rfct::renderData::addDynamicMat(const frameContext* ctx, void* data)
 }
 
 uint32_t rfct::renderData::reserveSuitableVertexBufferLocation(size_t numVertices) {
-	
 	uint32_t bestSizeDiff = INT_MAX;
 	for (uint32_t i = 0; i < m_freeVertices.size(); ++i) {
 		if (m_freeVertices[i].verticesCount == numVertices) {
@@ -209,8 +198,7 @@ uint32_t rfct::renderData::reserveSuitableVertexBufferLocation(size_t numVertice
 	return m_verticesCountDynamicObj;
 }
 
-uint32_t rfct::renderData::addDynamicVertices(std::vector<Vertex>* vertices, uint32_t frame, uint32_t numVertices, uint32_t location)
-{
+uint32_t rfct::renderData::addDynamicVertices(std::vector<Vertex>* vertices, uint32_t frame, uint32_t numVertices, uint32_t location) {
 	if (location == UINT32_MAX) {
 		location = reserveSuitableVertexBufferLocation(numVertices);
 	}
@@ -219,8 +207,7 @@ uint32_t rfct::renderData::addDynamicVertices(std::vector<Vertex>* vertices, uin
 	return location;
 }
 
-rfct::objectLocation rfct::renderData::addStaticObject(std::vector<Vertex>* vertices, glm::mat4* matrix)
-{
+rfct::objectLocation rfct::renderData::addStaticObject(std::vector<Vertex>* vertices, glm::mat4* matrix) {
 	RFCT_PROFILE_FUNCTION();
 	objectLocation objLoc{};
 	uint32_t matLocation = addStaticMat(matrix);
@@ -234,8 +221,7 @@ rfct::objectLocation rfct::renderData::addStaticObject(std::vector<Vertex>* vert
 	return objLoc;
 }
 
-rfct::objectLocation rfct::renderData::addDynamicObject(std::vector<Vertex>* vertices, glm::mat4* matrix, const frameContext& fc, uint32_t numVertices)
-{
+rfct::objectLocation rfct::renderData::addDynamicObject(std::vector<Vertex>* vertices, glm::mat4* matrix, const frameContext& fc, uint32_t numVertices) {
 	RFCT_PROFILE_FUNCTION();
 	objectLocation objLoc{};
 	frameContext ctx = {};
@@ -244,14 +230,10 @@ rfct::objectLocation rfct::renderData::addDynamicObject(std::vector<Vertex>* ver
 		ctx.frame = i;
 		updateMat(&ctx, objLoc.indexInSSBO, matrix);
 	}
-	
 	for (Vertex& ver : *vertices) {
 		ver.objectIndex = objLoc.indexInSSBO;
 	}
-
-	if (numVertices == 0) {
-		numVertices = vertices->size();
-	}
+	if (numVertices == 0) numVertices = vertices->size();
 	objLoc.vertexBufferOffset = addDynamicVertices(vertices, 0, numVertices);
 	for (uint8_t i = 1; i < RFCT_FRAMES_IN_FLIGHT; ++i) {
 		addDynamicVertices(vertices, i, numVertices, objLoc.vertexBufferOffset);
@@ -261,8 +243,7 @@ rfct::objectLocation rfct::renderData::addDynamicObject(std::vector<Vertex>* ver
  	return objLoc;
 }
 
-void rfct::renderData::removeDynamicObject(const dynamicSSBOIndexComponent& ssboData, const vertexRenderInfoComponent& vertexRenderInfo, bool addToFreelist, const frameContext* ctx)
-{
+void rfct::renderData::removeDynamicObject(const dynamicSSBOIndexComponent& ssboData, const vertexRenderInfoComponent& vertexRenderInfo, bool addToFreelist, const frameContext* ctx) {
 	char* finalPtr = ((char*)m_mappedMatsDataDynamic[ctx->frame]) + (ssboData.indexInSSBO * sizeof(glm::mat4));
 	memset(finalPtr, 0, sizeof(glm::mat4));
 	char* finalPtrVer = ((char*)m_mappedVerticesDataDynamic[ctx->frame]) + (vertexRenderInfo.vertexBufferOffset * sizeof(Vertex));
@@ -272,8 +253,7 @@ void rfct::renderData::removeDynamicObject(const dynamicSSBOIndexComponent& ssbo
 	m_freeVertices.push_back(vertexRenderInfo);
 }
 
-void rfct::renderData::removeDynamicEntity(entity e)
-{
+void rfct::renderData::removeDynamicEntity(entity e) {
 	dynamicSSBOIndexComponent& ssbo = ecs::get().get<dynamicSSBOIndexComponent>(e);
 	vertexRenderInfoComponent& vData = ecs::get().get<vertexRenderInfoComponent>(e);
 	frameContext noCtx = {};
@@ -284,10 +264,8 @@ void rfct::renderData::removeDynamicEntity(entity e)
 	}
 }
 
-void rfct::renderData::removeAnimatedEntity(entity e)
-{
+void rfct::renderData::removeAnimatedEntity(entity e) {
 	const dynamicSSBOIndexComponent& ssbo = ecs::get().get<dynamicSSBOIndexComponent>(e);
-
 	m_matricesFreeIndices.push_back(ssbo.indexInSSBO);
 
 	for (uint8_t i = 0; i < RFCT_FRAMES_IN_FLIGHT; i++) {

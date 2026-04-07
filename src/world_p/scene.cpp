@@ -15,8 +15,9 @@
 #include "objects/objects.h"
 #include "world.h"
 
-rfct::scene::scene(world* worldArg) : m_World(worldArg)
-{}
+rfct::scene::scene(world* worldArg) 
+	: m_World(worldArg) {
+}
 
 void rfct::scene::onUpdate(frameContext* context)
 {

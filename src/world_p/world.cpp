@@ -6,8 +6,13 @@
 #include "ecs.h"
 #include "ui_p/ui.h"
 #include "assets/world_load.h"
+#include "render_data.h"
 
-rfct::world rfct::world::currentWorld;
+rfct::world currentWorld;
+
+rfct::world& rfct::world::getWorld() {
+	return currentWorld;
+}
 
 void rfct::world::initWorld(const std::string& path)
 {

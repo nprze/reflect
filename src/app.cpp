@@ -1,17 +1,18 @@
 #include "app.h"
+#include <thread>
 #include "world_p/world.h"
 #include "ui_p/ui.h"
 #include "world_p/progress/user_progress.h"
-#include <thread>
 #include "job_system_p/job_system.h"
 #include "world_p/player/player_animations.h"
 #include "sound_p/sound.h"
+#include "input.h"
+#include "world_p/objects/objects.h"
 
 bool rfct::reflectApplication::isAppMinimised;
 
 rfct::reflectApplication::reflectApplication(RFCT_APP_ARGS)
-    : m_Renderer(RFCT_RENDERER_ARGUMENTS_VAR)
-{
+    : m_Renderer(RFCT_RENDERER_ARGUMENTS_VAR) {
 	input::getInput().init();
 	userSettings::get().loadUserSettings();
 	isAppMinimised = false;
@@ -25,14 +26,12 @@ rfct::reflectApplication::reflectApplication(RFCT_APP_ARGS)
 #endif
 }
 
-rfct::reflectApplication::~reflectApplication()
-{
+rfct::reflectApplication::~reflectApplication() {
     renderer::getRen().getDevice().waitIdle();
     cleanGameSystems();
 }
 
-void rfct::reflectApplication::updateWindow(RFCT_APP_ARGS)
-{
+void rfct::reflectApplication::updateWindow(RFCT_APP_ARGS) {
     m_Renderer.updateWindow(RFCT_NATIVE_WINDOW_ANDROID_VAR);
 };
 
@@ -68,18 +67,18 @@ void rfct::reflectApplication::update() {
         fixedUpdate(context, timesToUpdate);
 
         jobSystem::get().KickJob([&]() {
-            RFCT_PROFILE_SCOPE("ui draw");
-            drawUI(&context);
+                RFCT_PROFILE_SCOPE("ui draw");
+                drawUI(&context);
 			}, context.wholeUpdateTracker);
 #ifdef ANDROID_BUILD
         jobSystem::get().KickJob([&]() {
-            RFCT_PROFILE_SCOPE("android UI update");
-            input::getInput().drawButtons();
+                RFCT_PROFILE_SCOPE("android UI update");
+                input::getInput().drawButtons();
             }, context.wholeUpdateTracker);
 #endif
         jobSystem::get().KickJob([&]() {
-            RFCT_PROFILE_SCOPE("world visual update");
-            world::getWorld().worldVisualUpdate(context);
+                RFCT_PROFILE_SCOPE("world visual update");
+                world::getWorld().worldVisualUpdate(context);
             }, context.wholeUpdateTracker);
         context.wholeUpdateTracker.waitAll();
 
@@ -95,34 +94,31 @@ void rfct::reflectApplication::update() {
     updateLastState(context.state);
 }
 
-void rfct::reflectApplication::fixedUpdate(frameContext& ctx, uint64_t times)
-{
+void rfct::reflectApplication::fixedUpdate(frameContext& ctx, uint64_t times) {
     world::getWorld().worldFixedUpdate(ctx, times);
 }
 
-void rfct::reflectApplication::loadGameSystems()
-{
+void rfct::reflectApplication::loadGameSystems() {
     auto jobs = std::make_shared<jobTracker>();
     jobSystem::get().KickJob([&]() {
-        RFCT_PROFILE_SCOPE("sound load");
-        soundPlayer::get().initSoundPlayer();
-        soundManager::get().loadSounds();
+            RFCT_PROFILE_SCOPE("sound load");
+            soundPlayer::get().initSoundPlayer();
+            soundManager::get().loadSounds();
         }, *jobs);
     jobSystem::get().KickJob([&]() {
-        RFCT_PROFILE_SCOPE("animation load");
-        playerAnimations::get().loadAnimations();
+            RFCT_PROFILE_SCOPE("animation load");
+            playerAnimations::get().loadAnimations();
         }, *jobs);
     jobSystem::get().KickJob([&]() {
-        RFCT_PROFILE_SCOPE("init gameplay systems");
-        objectSystems::get().init();
+            RFCT_PROFILE_SCOPE("init gameplay systems");
+            objectSystems::get().init();
         }, *jobs);
     jobs->waitAll();
     world::getWorld().initWorld("world/world.txt");
     play(soundManager::get().background);
 }
 
-void rfct::reflectApplication::cleanGameSystems()
-{
+void rfct::reflectApplication::cleanGameSystems() {
     world::getWorld().cleanWorld();
     objectSystems::get().cleanup();
     playerAnimations::get().unloadAnimations();

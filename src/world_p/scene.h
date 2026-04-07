@@ -45,7 +45,7 @@ namespace rfct {
 
 		objectSystems& getObjectHolder() { return objectSystems::get(); }
 		decorationHolder& getDecorationHolder() { return m_decorations; }
-		world* getWorld() { return m_World; }
+		world* getWorldScene() { return m_World; }
 
 		entity camera;
 		

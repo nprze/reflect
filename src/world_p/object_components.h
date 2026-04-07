@@ -3,10 +3,6 @@
 #include "assets/serialize_structures/frame_animation_serialize_data.h"
 #include "renderer_p/rasterizer_pipeline/vertex.h"
 
-namespace flecs {
-    class world;
-    class entity;
-}
 namespace rfct {
     class scene;
     struct frameContext;
@@ -15,11 +11,9 @@ namespace rfct {
         std::vector<glm::vec2> previousPosition;
         std::vector<glm::vec2> positions;
     };
-
     struct vineVerticesComponent {
         std::vector<Vertex> vertices;
     };
-
     struct vineBasePositionsComponent {
         std::vector<glm::vec2> basePositions;
     };
@@ -35,13 +29,11 @@ namespace rfct {
     struct dialoguePathComponent {
         std::string dialoguePath;
     };
-
     struct cigaretteUpdateComponent {
         bool shouldBeUpdated = false;
         bool shouldSpawnSmoke = false;
         bool spawnedSmoke = false;
     };
-
     struct smokeFinishedComponent {
         bool hasSmokeFinished = false;
     };
@@ -57,19 +49,15 @@ namespace rfct {
         float fullLenght;
         float currentProgress;
     };
-
     struct kindlingParticleComponent {
         glm::vec2 direction;
         float fullLenght;
         float currentProgress;
     };
-
     struct deathAnimParticle {
         glm::vec2 direction;
         float currentProgress;
-
     };
-
     struct enemyComponent {
         bool facingRight = true;
         frameAnimation walkFrameAnim;
@@ -85,11 +73,9 @@ namespace rfct {
     struct enemyRayComponent {
         entity owner;
     };
-
     struct jumpBoosterComponent {
         float timeSinceBoost = -1.f;
     };
-
     struct grassComponent {
         bool beenTouched = false;
         bool canBeFirst = true;

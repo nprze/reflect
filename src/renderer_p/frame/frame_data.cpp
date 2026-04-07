@@ -7,8 +7,8 @@
 #include "world_p/camera/camera.h"
 #include "world_p/world.h"  
 
-inline static glm::mat4 getUIMatrix() {
-
+inline static glm::mat4 getUIMatrix()
+{
     vk::Extent2D extent = rfct::renderer::getRen().getWindow().getExtent();
     float width = static_cast<float>(extent.width);
     float height = static_cast<float>(extent.height);
@@ -18,9 +18,11 @@ inline static glm::mat4 getUIMatrix() {
 }
 
 rfct::frameData::frameData(vk::Device device, VmaAllocator& allocator, vk::Fence lastFramePresentFinishedFence, vk::Fence thisFramePresentFinishedFence)
-    : m_lastFrameRenderFinishedFence(lastFramePresentFinishedFence), m_thisFrameRenderFinishedFence(thisFramePresentFinishedFence), m_descriptors(RFCT_FRAMES_IN_FLIGHT) {
+    : m_lastFrameRenderFinishedFence(lastFramePresentFinishedFence), m_thisFrameRenderFinishedFence(thisFramePresentFinishedFence), m_descriptors(RFCT_FRAMES_IN_FLIGHT)
+{
 
-    vk::CommandPoolCreateInfo poolInfo{
+    vk::CommandPoolCreateInfo poolInfo 
+    {
         vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
         renderer::getRen().getDeviceWrapper().getQueueManager().getGraphicsQueueFamilyIndex()
     };

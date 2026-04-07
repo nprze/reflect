@@ -8,8 +8,6 @@ namespace rfct {
 		float globalTime;
 	};
 	class ubo {
-	private:
-		static vk::DescriptorSetLayout m_descriptorSetLayout;
 	public:
 		static vk::DescriptorSetLayout getDescriptorSetLayout();
 		static void destroyDescriptorSetLayout();

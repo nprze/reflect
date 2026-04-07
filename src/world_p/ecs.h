@@ -1,10 +1,10 @@
 #pragma once
 #include "entt/entt.hpp"
+
 namespace rfct {
 	class ecs {
 	public:
-		inline static entt::registry& get()
-		{
+		inline static entt::registry& get() {
 			return registry;
 		}
 	private:

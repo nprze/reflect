@@ -5,20 +5,17 @@ using collisionHandler = void(*)(entity, entity, glm::vec2);
 using dynamicCollisionHandler = void(*)(entity, entity); // the second entity must have dynamic box collider
 using rayHitCallback = void(*)(entity, entity); // the second entity must have static box collider. the first one is the ray
 
-namespace flecs {
-	class world;
-	class entity;
-}
 namespace rfct {
+    class scene;
+	struct frameContext;
+
 	const float CameraFOV = 45.f;
     inline float randF() {
         static uint32_t seed = rand();
         seed = 1664525u * seed + 1013904223u;
         return (seed >> 8) * (1.0f / 16777216.0f);
     }
-    class scene;
-	struct frameContext;
-
+    
     enum class dynamicObjectType : uint8_t {
         Player = 0,
         Vine,
@@ -30,7 +27,6 @@ namespace rfct {
         Enemy,
         JumpBooster,
     };
-
     enum class playerState : uint8_t {
         normal = 0,
         dashing,
@@ -38,17 +34,11 @@ namespace rfct {
         holdingVines,
         holdingBlocks
     };
-
-
-
-
-
     struct objectLocation {
         uint32_t indexInSSBO;
         uint32_t verticesCount;
         size_t vertexBufferOffset;
     };
-
     struct dynamicObjectTypeComponent {
         dynamicObjectType type;
         bool passable = true;
@@ -56,7 +46,6 @@ namespace rfct {
     struct cameraComponent {
         float fov, aspectRatio, nearPlane, farPlane;
     };
-
     struct positionComponent {
         glm::vec2 position = glm::vec2(0.f);
     };
@@ -86,8 +75,6 @@ namespace rfct {
         uint32_t verticesCount;
         size_t vertexBufferOffset; // in vertices count (not bytes)
     };
-
-
     struct staticBoxColliderComponent { // it is in fact an AABB
         glm::vec2 min;
         glm::vec2 max;
@@ -96,8 +83,6 @@ namespace rfct {
         glm::vec2 min;
         glm::vec2 max;
     };
-
-
 	struct velocityComponent {
 		glm::vec2 velocity;
 	};
@@ -110,7 +95,6 @@ namespace rfct {
 		bool gravityEnabled = true;
 		float gravity = 5.f;
 	};
-
     struct playerStateComponent {
         bool grounded = false;
         bool allowToJump = false;
@@ -124,15 +108,12 @@ namespace rfct {
         bool dashing = false;
         float dashProgress = 0.f;
     };
-
     struct staticObjCollisionCallbackComponent {
         collisionHandler handler;
     };
-
     struct dynamicObjCollisionCallbackComponent {
         dynamicCollisionHandler handler; 
     };
-
     struct transform {
 		positionComponent pos;
         rotationComponent rot;

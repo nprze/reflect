@@ -1,8 +1,10 @@
 #pragma once
 #include "renderer_p/renderer.h"
-#include "input.h"
+
 namespace rfct {
 	class reflectApplication {
+	public:
+		static bool isAppMinimised;
 	public:
         reflectApplication(RFCT_APP_ARGS); // arguments vary by platform
 		~reflectApplication();
@@ -10,11 +12,8 @@ namespace rfct {
         void updateWindow(RFCT_APP_ARGS);
 		void update();
 		void fixedUpdate(frameContext& ctx, uint64_t times);
-
 		void loadGameSystems();
 		void cleanGameSystems();
-
-        static bool isAppMinimised;
     private:
 		size_t currentFrame = -1; // the frame in flight which resources to use this frame
         renderer m_Renderer;

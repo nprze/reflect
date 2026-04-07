@@ -14,6 +14,7 @@
 #include "entt/entt.hpp"
 #include "world_p/ecs.h"
 #include "alloc.h"
+#include "context.h"
 
 using entity = entt::entity;
 

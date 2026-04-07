@@ -2,7 +2,7 @@
 #include "vma/vk_mem_alloc.h"
 #include "renderer_p/renderer.h"
 
-vk::DescriptorSetLayout rfct::ubo::m_descriptorSetLayout;
+vk::DescriptorSetLayout uboDescriptorSetLayout;
 
 rfct::ubo::ubo()
     : m_buffer("uniform buffer", sizeof(uboData), vk::BufferUsageFlagBits::eUniformBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU),
@@ -11,7 +11,8 @@ rfct::ubo::ubo()
 	m_mappedBuffer = m_buffer.Map();
 }
 
-rfct::ubo::~ubo() { 
+rfct::ubo::~ubo()
+{ 
 	m_buffer.Unmap(); 
 }
 
@@ -24,9 +25,9 @@ void rfct::ubo::updateUboData(glm::mat4 vp, float globalTime)
 
 vk::DescriptorSetLayout rfct::ubo::getDescriptorSetLayout()
 {
-    if (m_descriptorSetLayout)
+    if (uboDescriptorSetLayout)
     {
-        return m_descriptorSetLayout;
+        return uboDescriptorSetLayout;
     }
     vk::DescriptorSetLayoutBinding layoutBinding{};
     layoutBinding.binding = 0;
@@ -39,11 +40,11 @@ vk::DescriptorSetLayout rfct::ubo::getDescriptorSetLayout()
     layoutCreateInfo.bindingCount = 1;
     layoutCreateInfo.pBindings = &layoutBinding;
 
-    m_descriptorSetLayout = renderer::getRen().getDevice().createDescriptorSetLayout(layoutCreateInfo);
-	return m_descriptorSetLayout;
+    uboDescriptorSetLayout = renderer::getRen().getDevice().createDescriptorSetLayout(layoutCreateInfo);
+	return uboDescriptorSetLayout;
 }
 
 void rfct::ubo::destroyDescriptorSetLayout()
 {
-    renderer::getRen().getDevice().destroyDescriptorSetLayout(m_descriptorSetLayout);
+    renderer::getRen().getDevice().destroyDescriptorSetLayout(uboDescriptorSetLayout);
 }
