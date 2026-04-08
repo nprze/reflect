@@ -2,8 +2,7 @@
 #include "renderer_p/renderer.h"
 #include "renderer_p/descriptors/ubo.h"
 
-rfct::descriptors::descriptors(uint32_t size)
-{
+rfct::descriptors::descriptors(uint32_t size) {
     // Create pool
     std::array<vk::DescriptorPoolSize, 1> poolSizes = { {
        { vk::DescriptorType::eUniformBuffer, size },
@@ -29,8 +28,7 @@ rfct::descriptors::descriptors(uint32_t size)
 	}
 }
 
-void rfct::descriptors::bindCameraUbo(vk::Buffer ubo, uint32_t index)
-{
+void rfct::descriptors::bindCameraUbo(vk::Buffer ubo, uint32_t index) {
     if (!m_cameraUboDescSet[index].get()) {
 		RFCT_CRITICAL("Camera UBO descriptor set is null");
     }
@@ -48,5 +46,4 @@ void rfct::descriptors::bindCameraUbo(vk::Buffer ubo, uint32_t index)
     descriptorWrite.pBufferInfo = &bufferInfo;
 
     renderer::getRen().getDevice().updateDescriptorSets(descriptorWrite, nullptr);
-
 }

@@ -37,7 +37,7 @@ void rfct::playerAnimations::loadAnimations()
 
 void rfct::playerAnimations::unloadAnimations()
 {
-	buffer.cleanup();
+	buffer.cleanupBuffer();
 }
 
 void rfct::playerAnimations::update(const glm::vec2& playerVel, const glm::vec2& playerPos, frameContext& ctx, entity player)

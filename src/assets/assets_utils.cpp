@@ -15,22 +15,19 @@ void rfct::setAssetsPath(const std::string& path) {
 
 std::string& rfct::getAssetsPath() { return assetsPath; }
 
-bool rfct::openAssetFile(const std::string& path, std::ifstream* streamOut, std::ios_base::openmode openMode)
-{
+bool rfct::openAssetFile(const std::string& path, std::ifstream* streamOut, std::ios_base::openmode openMode) {
     std::string finalPath = getAssetsPath() + "/" + path;
     streamOut->open(finalPath, openMode);
     return streamOut->is_open();
 }
 
-vk::CommandPool& rfct::getAssetsCommandPool()
-{
+vk::CommandPool& rfct::getAssetsCommandPool() {
     if (!assetsCommandPool) {
         assetsCommandPool = renderer::getRen().getDevice().createCommandPool({ {}, renderer::getRen().getDeviceWrapper().getQueueManager().getGraphicsQueueFamilyIndex() });
     }
     return assetsCommandPool;
 }
 
-void rfct::cleanupAssetsCommandPool()
-{
+void rfct::cleanupAssetsCommandPool() {
     renderer::getRen().getDevice().destroyCommandPool(assetsCommandPool);
 }

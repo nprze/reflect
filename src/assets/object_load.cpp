@@ -1,10 +1,10 @@
 #include "object_load.h"
+#include <fstream>
 #include "assets_utils.h"
 #include "serialize_structures/dialogue_serialize_data.h"
-#include <fstream>
 
-void rfct::loadDialogue(const std::string& path, dialogueSerializeData* dialogueSerializedDataOut)
-{
+void rfct::loadDialogue(const std::string& path, dialogueSerializeData* dialogueSerializedDataOut) {
+    RFCT_PROFILE_FUNCTION();
     std::ifstream file;
     if (!openAssetFile(path, &file)) {
         RFCT_CRITICAL("Could not open file:  {}", path);
@@ -86,11 +86,10 @@ void rfct::loadDialogue(const std::string& path, dialogueSerializeData* dialogue
     if (!currentParticipant.name.empty()) {
         dialogueSerializedDataOut->participants.push_back(currentParticipant);
     }
-
 }
 
-void rfct::loadDialogueSpriteSheet(const std::string& path, dialogueSpritesheetSerializeData* dialogueSpritesheetSerializedDataOut)
-{
+void rfct::loadDialogueSpriteSheet(const std::string& path, dialogueSpritesheetSerializeData* dialogueSpritesheetSerializedDataOut) {
+    RFCT_PROFILE_FUNCTION();
     std::ifstream file;
     if (!openAssetFile(path, &file)) {
         RFCT_CRITICAL("Could not open file:  {}", path);
@@ -153,5 +152,4 @@ void rfct::loadDialogueSpriteSheet(const std::string& path, dialogueSpritesheetS
     if (!currentCycleName.empty()) {
         dialogueSpritesheetSerializedDataOut->cycles[currentCycleName] = currentCycle;
     }
-
 }

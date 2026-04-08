@@ -3,15 +3,13 @@
 
 namespace rfct {
 	struct animationBuffer {
-		animationBuffer();
 		void init(size_t bufferSizeInTriangles);
-		void cleanup();
+		void cleanupBuffer();
 		vulkanBufferLocation requestTriangles(uint32_t triangleCount);
 		vk::Buffer& getBuffer() { return buffer->buffer; };
 	private:
 		VulkanBuffer* buffer;
 		size_t trianglesLeftInBuffer;
 		size_t maxTriangles;
-
 	};
 }

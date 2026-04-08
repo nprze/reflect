@@ -16,7 +16,7 @@ void rfct::objectSystems::init()
 	m_cigSystem.initSystem();
 }
 
-void rfct::objectSystems::cleanup()
+void rfct::objectSystems::cleanupBuffer()
 {
 	m_cigSystem.cleanupSystem();
 	m_enemySystem.cleanupSystem();

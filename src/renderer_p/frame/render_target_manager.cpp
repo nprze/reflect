@@ -4,6 +4,7 @@
 
 namespace rfct {
     void transformImage(vk::Image im, vk::ImageLayout newLayout) {
+        RFCT_PROFILE_FUNCTION();
         vk::CommandBufferAllocateInfo allocInfo(
             getAssetsCommandPool(),
             vk::CommandBufferLevel::ePrimary,
@@ -63,16 +64,15 @@ namespace rfct {
         renderer::getRen().getDevice().destroyFence(fence);
     }
 
-    void renderImagesManager::getSwapChainImages()
-    {
+    void renderImagesManager::getSwapChainImages() {
         m_swapchainImages = renderer::getRen().getDevice().getSwapchainImagesKHR(m_swapChain.getSwapChain());
         for (uint32_t i = 0; i < RFCT_FRAMES_IN_FLIGHT + 1; i++) {
             transformImage(m_swapchainImages[i], vk::ImageLayout::ePresentSrcKHR);
         }
     }
 
-    void renderImagesManager::createImages()
-    {
+    void renderImagesManager::createImages() {
+        RFCT_PROFILE_FUNCTION();
         m_sceneImages.resize(m_swapchainImages.size());
         m_bloom1Images.resize(m_swapchainImages.size());
         m_bloom2Images.resize(m_swapchainImages.size());
@@ -110,8 +110,8 @@ namespace rfct {
         }
     }
 
-    void renderImagesManager::createImageViews()
-    {
+    void renderImagesManager::createImageViews() {
+        RFCT_PROFILE_FUNCTION();
         m_swapChainImageViews.resize(m_swapchainImages.size());
         m_sceneImageViews.resize(m_sceneImages.size());
         m_bloom1ImageViews.resize(m_bloom1Images.size());
@@ -144,12 +144,11 @@ namespace rfct {
             
             viewCreateInfo.image = m_bloom2Images[i];
             m_bloom2ImageViews[i] = renderer::getRen().getDevice().createImageViewUnique(viewCreateInfo);
-
         }
     }
 
-    void renderImagesManager::createRenderPasses()
-    {
+    void renderImagesManager::createRenderPasses() {
+        RFCT_PROFILE_FUNCTION();
         {
             vk::AttachmentDescription colorAttachment = {};
             colorAttachment.format = vk::Format::eB8G8R8A8Unorm;
@@ -423,9 +422,8 @@ namespace rfct {
         }
     }
 
-
-    void renderImagesManager::createFrameBuffers()
-    {
+    void renderImagesManager::createFrameBuffers() {
+        RFCT_PROFILE_FUNCTION();
         m_swapchainFramebuffers.resize(m_swapChainImageViews.size());
         m_sceneFramebuffers.resize(m_swapChainImageViews.size());
         m_bloom1Framebuffers.resize(m_swapChainImageViews.size());
@@ -487,8 +485,8 @@ namespace rfct {
         }
     }
 
-    void renderImagesManager::createMSAAres(vk::SampleCountFlagBits msaaSamples)
-    {
+    void renderImagesManager::createMSAAres(vk::SampleCountFlagBits msaaSamples) {
+        RFCT_PROFILE_FUNCTION();
         m_msaaColorImages.resize(m_swapChainImageViews.size());
         m_msaaImageAllocations.resize(m_swapChainImageViews.size());
         m_msaaColorImageViews.resize(m_swapChainImageViews.size());
@@ -521,8 +519,8 @@ namespace rfct {
         }
     }
 
-    void renderImagesManager::cleanupMSAAres()
-    {
+    void renderImagesManager::cleanupMSAAres() {
+        RFCT_PROFILE_FUNCTION();
         if (m_msaaColorImages.size()) {
             for (uint32_t i = 0; i < m_msaaColorImages.size(); i++) {
                 vmaDestroyImage(renderer::getRen().getAllocator(), static_cast<VkImage>(m_msaaColorImages[i]), m_msaaImageAllocations[i]);
@@ -530,8 +528,8 @@ namespace rfct {
         }
     }
 
-    void renderImagesManager::cleanupImages()
-    {
+    void renderImagesManager::cleanupImages() {
+        RFCT_PROFILE_FUNCTION();
         for (uint32_t i = 0; i < m_bloom1ImagesAllocations.size(); i++) {
             vmaDestroyImage(renderer::getRen().getAllocator(), static_cast<VkImage>(m_bloom1Images[i]), m_bloom1ImagesAllocations[i]);
             vmaDestroyImage(renderer::getRen().getAllocator(), static_cast<VkImage>(m_bloom2Images[i]), m_bloom2ImagesAllocations[i]);
@@ -539,10 +537,8 @@ namespace rfct {
         }
     }
 
-
-
-    uint32_t renderImagesManager::acquireNextImage(const vk::Semaphore& sem, vk::Fence fence)
-    {
+    uint32_t renderImagesManager::acquireNextImage(const vk::Semaphore& sem, vk::Fence fence) {
+        RFCT_PROFILE_FUNCTION();
         if (m_swapChain.framebufferResized) {
             m_swapChain.recreateSwapChain();
             createResources();
@@ -557,19 +553,18 @@ namespace rfct {
         return res;
     }
 
-    renderImagesManager::renderImagesManager() :m_swapChain()
-    {
+    renderImagesManager::renderImagesManager() 
+        : m_swapChain() {
         createRenderPasses();
         createResources();
     }
 
-    renderImagesManager::~renderImagesManager()
-    {
+    renderImagesManager::~renderImagesManager() {
         cleanupMSAAres();
         cleanupImages();
     }
-    void renderImagesManager::createResources()
-    {
+
+    void renderImagesManager::createResources() {
         getSwapChainImages();
         cleanupImages();
         

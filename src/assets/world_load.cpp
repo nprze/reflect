@@ -1,13 +1,13 @@
-#include "world_load.h"
+#include "object_load.h"
 #include <fstream>
 #include "assets_utils.h"
 #include "serialize_structures/world_serialize_data.h"
 
-void rfct::loadWorld(const std::string& path, worldSerializeData* out)
-{
+void rfct::loadWorld(const std::string& path, worldSerializeData* out) {
+    RFCT_PROFILE_FUNCTION();
     std::ifstream file;
     if (!openAssetFile(path, &file)) {
-        RFCT_CRITICAL("Could not open scene file: {}", path);
+        RFCT_CRITICAL("Could not open world file: {}", path);
         return;
     }
 

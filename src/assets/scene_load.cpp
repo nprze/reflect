@@ -1,10 +1,8 @@
-#include "assets_utils.h"
 #include "object_load.h"
-#include "serialize_structures/scene_serialize_data.h"
 #include <iostream>
 #include <fstream>
-#include <sstream>
-#include <charconv>
+#include "assets_utils.h"
+#include "serialize_structures/scene_serialize_data.h"
 
 #define FILE_COUNT_PART(label, out)                                                                                 \
     else if (sv.starts_with(label)) {                                                                               \
@@ -42,8 +40,8 @@ std::getline(file, line);                                                       
 
 
 
-void rfct::loadScene(const std::string& path, sceneSerializedData* out)
-{
+void rfct::loadScene(const std::string& path, sceneSerializedData* out) {
+    RFCT_PROFILE_FUNCTION();
     std::ifstream file;
     if (!openAssetFile(path, &file)) {
         RFCT_CRITICAL("Could not open scene file:  {}", path);

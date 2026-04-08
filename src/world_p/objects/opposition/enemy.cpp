@@ -212,7 +212,7 @@ namespace rfct {
 	};
 
 	void enemies::cleanupSystem() {
-		animBuffer.cleanup();
+		animBuffer.cleanupBuffer();
 	}
 
 	void enemies::drawFrameAnimSprites(vk::CommandBuffer& cmd, frameContext* ctx)

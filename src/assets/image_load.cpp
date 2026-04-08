@@ -1,15 +1,14 @@
 #include "image_load.h"
+#include <fstream>
+#include "stb_image/stb_image.h"
 #include "renderer_p/image/image.h"
 #include "renderer_p/UI/font/font.h"
-#include "serialize_structures/button_image_serialize_data.h"
-
 #include "renderer_p/renderer.h"
+#include "serialize_structures/button_image_serialize_data.h"
 #include "assets_utils.h"
-#include "stb_image/stb_image.h"
-#include <fstream>
 
-void rfct::loadImage(const std::string& path, image* imageOut)
-{
+void rfct::loadImage(const std::string& path, image* imageOut) {
+    RFCT_PROFILE_FUNCTION();
     std::string finalPath = getAssetsPath() + "/" + path;
     int width, height, channels;
     stbi_uc* pixels = stbi_load(finalPath.c_str(), &width, &height, &channels, STBI_rgb_alpha);
@@ -84,8 +83,8 @@ void rfct::loadImage(const std::string& path, image* imageOut)
     imageOut->m_imageView = renderer::getRen().getDevice().createImageView(viewInfo);
 }
 
-void rfct::createDummyImage(image* imageOut)
-{
+void rfct::createDummyImage(image* imageOut) {
+    RFCT_PROFILE_FUNCTION();
     uint32_t widthHeight = 1;
     vk::DeviceSize imageSize = 1;
 
@@ -132,8 +131,8 @@ void rfct::createDummyImage(image* imageOut)
     imageOut->m_imageView = renderer::getRen().getDevice().createImageView(viewInfo);
 }
 
-void rfct::loadGlyphs(const std::string& path, font* fontOut)
-{
+void rfct::loadGlyphs(const std::string& path, font* fontOut) {
+    RFCT_PROFILE_FUNCTION();
     std::ifstream file;
     if (!openAssetFile(path, &file)) {
         RFCT_CRITICAL("Failed to open font data file: {}", path);
@@ -162,8 +161,8 @@ void rfct::loadGlyphs(const std::string& path, font* fontOut)
     }
 }
 
-void rfct::loadButtonImage(const std::string& path, buttonImageSerializeData* buttonImageSerializedDataOut)
-{
+void rfct::loadButtonImage(const std::string& path, buttonImageSerializeData* buttonImageSerializedDataOut) {
+    RFCT_PROFILE_FUNCTION();
     std::ifstream file;
     if (!openAssetFile(path, &file)) {
         RFCT_CRITICAL("Failed to open button image descripting file: {}", path);

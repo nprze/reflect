@@ -12,7 +12,7 @@ namespace rfct{
 	struct sceneSerializedData;
 	struct objectSystems {
 		void init();
-		void cleanup();
+		void cleanupBuffer();
 		void loadSceneData(sceneSerializedData* serializeData, scene* parentScene);
 		void systemsFixedUpdate(frameContext* fc);
 		void updateVisuals(frameContext* fc);

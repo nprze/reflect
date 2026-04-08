@@ -1,8 +1,8 @@
 #include "mesh_load.h"
 #include <fstream>
 #include "renderer_p/renderer.h"
-#include "assets/assets_utils.h"
 #include "renderer_p/frame_anim/anim_buffer.h"
+#include "assets/assets_utils.h"
 #include "serialize_structures/frame_animation_serialize_data.h"
 
 uint32_t basicHash(uint32_t x) {
@@ -14,8 +14,8 @@ uint32_t basicHash(uint32_t x) {
     return x;
 }
 
-void rfct::uploadVertices(const std::vector<Vertex>& vertices, VulkanBuffer* buffer, vk::DeviceSize offset)
-{
+void rfct::uploadVertices(const std::vector<Vertex>& vertices, VulkanBuffer* buffer, vk::DeviceSize offset) {
+	RFCT_PROFILE_FUNCTION();
     vk::DeviceSize bufferSize = vertices.size() * sizeof(Vertex);
 
     VkBufferCreateInfo stagingBufferInfo = {
@@ -83,8 +83,8 @@ void rfct::uploadVertices(const std::vector<Vertex>& vertices, VulkanBuffer* buf
     renderer::getRen().getDevice().freeCommandBuffers(getAssetsCommandPool(), commandBuffer);
 }
 
-void rfct::loadBuildingBlockMesh(const std::string& path, std::vector<Vertex>* meshOut, const glm::vec3& color, const glm::vec2& size)
-{
+void rfct::loadBuildingBlockMesh(const std::string& path, std::vector<Vertex>* meshOut, const glm::vec3& color, const glm::vec2& size) {
+    RFCT_PROFILE_FUNCTION();
     std::ifstream file;
     if (!openAssetFile(path, &file))
         RFCT_CRITICAL("Failed to open mesh file: {}", path);
@@ -143,11 +143,10 @@ void rfct::loadBuildingBlockMesh(const std::string& path, std::vector<Vertex>* m
         }
         else RFCT_CRITICAL("Invalid line {} of file {}", line, path);
     }
-
 }
 
-void rfct::loadBackgroundMesh(const std::string& path, std::vector<Vertex>* vertxBufferOut, const glm::vec3& color, const float zMin, const float zMax)
-{
+void rfct::loadBackgroundMesh(const std::string& path, std::vector<Vertex>* vertxBufferOut, const glm::vec3& color, const float zMin, const float zMax) {
+    RFCT_PROFILE_FUNCTION();
     std::ifstream file;
     if (!openAssetFile(path, &file)) 
     {
@@ -188,8 +187,8 @@ void rfct::loadBackgroundMesh(const std::string& path, std::vector<Vertex>* vert
     }
 }
 
-void rfct::loadCharacterMesh(const std::string& path, std::vector<Vertex>* meshOut, uint32_t matrixIndexInSSBO)
-{
+void rfct::loadCharacterMesh(const std::string& path, std::vector<Vertex>* meshOut, uint32_t matrixIndexInSSBO) {
+    RFCT_PROFILE_FUNCTION();
     std::ifstream file;
     if (!openAssetFile(path, &file)) {
         RFCT_CRITICAL("Failed to open mesh file: {}", path);
@@ -234,8 +233,8 @@ void rfct::loadCharacterMesh(const std::string& path, std::vector<Vertex>* meshO
     }
 }
 
-void rfct::loadAnimation(const std::string& path, frameAnimation* animOut, animationBuffer* loc, uint32_t matrixIndex)
-{
+void rfct::loadAnimation(const std::string& path, frameAnimation* animOut, animationBuffer* loc, uint32_t matrixIndex) {
+    RFCT_PROFILE_FUNCTION();
     std::ifstream file;
 
     if (!openAssetFile(path, &file)) {
@@ -293,7 +292,6 @@ void rfct::loadAnimation(const std::string& path, frameAnimation* animOut, anima
 #else
         std::string keyword = "assets/";
 #endif // ANDROID_BUILD
-
         size_t pos = folderPath.find(keyword);
         if (pos != std::string::npos) {
             folderPath = folderPath.substr(pos + keyword.length());
@@ -301,14 +299,11 @@ void rfct::loadAnimation(const std::string& path, frameAnimation* animOut, anima
     }
 
     std::string newPath = folderPath + filename;
-
     loadCharacterMesh(newPath, &vertices, matrixIndex);
 
     vulkanBufferLocation location = loc->requestTriangles(allTrianglesCount);
     RFCT_ASSERT(location.buffer); // cannot find buffer to accomodate needs for animation
-
     uploadVertices(vertices, location.buffer, location.offsetInBytes);
-
 
     animOut->buffer = location.buffer;
     animOut->bufferOffsetInBytes = location.offsetInBytes;

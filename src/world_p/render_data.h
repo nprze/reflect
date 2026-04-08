@@ -42,9 +42,9 @@ namespace rfct {
 		std::array<vk::UniqueDescriptorSet, RFCT_FRAMES_IN_FLIGHT> m_DescriptorSetsDynamic;
 		std::array<void*, RFCT_FRAMES_IN_FLIGHT> m_mappedMatsDataDynamic;
 		std::array<void*, RFCT_FRAMES_IN_FLIGHT> m_mappedVerticesDataDynamic;
-	private:
 		size_t m_verticesCountStaticObj;
 		size_t m_verticesCountDynamicObj;
+	private:
 		uint32_t m_matsCounterStatic;
 		uint32_t m_matsCounterDynamic;
 		// free lists for dynamic buffers

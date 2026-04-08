@@ -3,17 +3,44 @@
 #include "sizes.h"
 #include "renderer_p/renderer.h"
 
-rfct::debugDraw* rfct::debugDraw::instance;
+rfct::debugDraw* instance;
 
-rfct::debugDraw::debugDraw(vk::RenderPass renderPass) :m_triangleBuffer(RFCT_DEBUG_DRAW_VERTEX_BUFFER_MAX_SIZE), m_lineBuffer(RFCT_DEBUG_DRAW_VERTEX_BUFFER_MAX_SIZE), m_vertexShader("shaders/debug_draw/dbg_draw_vert.spv"), m_fragShader("shaders/debug_draw/dbg_draw_frag.spv")
-{
-    createPipelines(renderPass);
+rfct::debugTriangle* rfct::debugDraw::requestTriangles(uint32_t count)  {
+    return instance->requestNTriangles(count);
+}
+
+rfct::debugLine* rfct::debugDraw::requestLines(uint32_t count)  {
+    return instance->requestNLines(count);
+}
+
+float rfct::debugDraw::drawText(const std::string& text, glm::vec2 startPosition, float scale)  {
+    return instance->text(text, startPosition, scale);
+}
+
+void rfct::debugDraw::flush(frameContext* ctx, frameData& fd, vk::Framebuffer framebuffer, vk::RenderPass renderPass) {
+    instance->draw(ctx, fd, framebuffer, renderPass);
+}
+
+rfct::debugDraw::debugDraw(vk::RenderPass renderPass)
+    : m_triangleBuffer(RFCT_DEBUG_DRAW_VERTEX_BUFFER_MAX_SIZE), 
+    m_lineBuffer(RFCT_DEBUG_DRAW_VERTEX_BUFFER_MAX_SIZE), 
+    m_vertexShader("shaders/debug_draw/dbg_draw_vert.spv"), 
+    m_fragShader("shaders/debug_draw/dbg_draw_frag.spv") {
+	RFCT_PROFILE_FUNCTION();
+    createDebugPipelines(renderPass);
 	instance = this;
 }
 
+rfct::debugDrawVertexBuffer::debugDrawVertexBuffer(uint32_t size)
+    : buffer("debugDrawVertex", size, vk::BufferUsageFlagBits::eVertexBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU), bufferOffset(0), vertexCount(0) {
+    bufferMappedMemory = buffer.Map();
+}
+rfct::debugDrawVertexBuffer::~debugDrawVertexBuffer() {
+    buffer.Unmap();
+}
 
-void rfct::debugDraw::createPipelines(vk::RenderPass renderPass)
-{
+void rfct::debugDraw::createDebugPipelines(vk::RenderPass renderPass) {
+    RFCT_PROFILE_FUNCTION();
     // Shaders
     vk::PipelineShaderStageCreateInfo vertShaderStageInfo = {};
     vertShaderStageInfo.stage = vk::ShaderStageFlagBits::eVertex;
@@ -142,17 +169,9 @@ void rfct::debugDraw::createPipelines(vk::RenderPass renderPass)
     m_linePipeline = renderer::getRen().getDevice().createGraphicsPipelineUnique({}, linePipelineInfo).value;
 }
 
-
-
-rfct::debugDraw::~debugDraw()
-{
-}
-
-void rfct::debugDraw::draw(frameContext* ctx, frameData& fd, vk::Framebuffer framebuffer, vk::RenderPass renderPass)
-{
+void rfct::debugDraw::draw(frameContext* ctx, frameData& fd, vk::Framebuffer framebuffer, vk::RenderPass renderPass) {
     RFCT_PROFILE_FUNCTION();
-	if (m_triangleBuffer.vertexCount == 0 && m_lineBuffer.vertexCount == 0)
-	{
+	if (m_triangleBuffer.vertexCount == 0 && m_lineBuffer.vertexCount == 0) {
         ctx->renderDebugDraw = false;
 		return;
 	}
@@ -194,38 +213,27 @@ void rfct::debugDraw::draw(frameContext* ctx, frameData& fd, vk::Framebuffer fra
     // Debug trigs
     if(m_triangleBuffer.vertexCount!=0){
         commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, m_trianglePipeline.get());
-
-
         vk::Buffer vertexBuffers[] = { m_triangleBuffer.buffer.buffer };
         vk::DeviceSize offsets[] = { 0 };
         commandBuffer.bindVertexBuffers(0, 1, vertexBuffers, offsets);
-
         commandBuffer.draw(m_triangleBuffer.vertexCount, 1, 0, 0);
     }
 
-
     // Debug lines
     if (m_lineBuffer.vertexCount != 0) {
-
         commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, m_linePipeline.get());
-
-
         vk::Buffer vertexBuffersLine[] = { m_lineBuffer.buffer.buffer };
         vk::DeviceSize offsetsLine[] = { 0 };
         commandBuffer.bindVertexBuffers(0, 1, vertexBuffersLine, offsetsLine);
-
-
         commandBuffer.draw(m_lineBuffer.vertexCount, 1, 0, 0);
     }
     commandBuffer.endRenderPass();
-
     commandBuffer.end();
 	m_triangleBuffer.postFrame();
 	m_lineBuffer.postFrame();
 }
 
-rfct::debugTriangle* rfct::debugDraw::requestNTriangles(uint32_t count)
-{
+rfct::debugTriangle* rfct::debugDraw::requestNTriangles(uint32_t count) {
     bool check = (m_triangleBuffer.vertexCount + 3*count) < RFCT_DEBUG_DRAW_VERTEX_BUFFER_MAX_SIZE;
 	RFCT_ASSERT(check);
 	void* ret = (char*)m_triangleBuffer.bufferMappedMemory + m_triangleBuffer.bufferOffset;
@@ -234,17 +242,15 @@ rfct::debugTriangle* rfct::debugDraw::requestNTriangles(uint32_t count)
 	return (debugTriangle*)ret;
 }
 
-rfct::debugLine* rfct::debugDraw::requestNLines(uint32_t count)
-{
+rfct::debugLine* rfct::debugDraw::requestNLines(uint32_t count) {
     bool check = (m_lineBuffer.vertexCount + 2 * count) < RFCT_DEBUG_DRAW_VERTEX_BUFFER_MAX_SIZE;
     RFCT_ASSERT(check);
     void* ret = (char*)m_lineBuffer.bufferMappedMemory + m_lineBuffer.bufferOffset;
-    m_lineBuffer.vertexCount += count * 3;
+    m_lineBuffer.vertexCount += count * 2;
     m_lineBuffer.bufferOffset += count * sizeof(debugLine);
     return (debugLine*)ret;
 }
 
-float rfct::debugDraw::text(const std::string& text, glm::vec2 startPosition, float scale)
-{
+float rfct::debugDraw::text(const std::string& text, glm::vec2 startPosition, float scale) {
     return renderer::getRen().getUIPipeline().debugText(text, startPosition, scale);
 }

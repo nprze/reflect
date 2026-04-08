@@ -4,18 +4,14 @@
 #include "renderer_p/frame/frame_data.h"
 
 namespace rfct {
-
 	struct layoutTemporaryHolder {
 		vk::PipelineLayout pipeline;
 		vk::DescriptorSetLayout descSet;
 	};
-
 	struct bloomSamplerHolder {
 		vk::UniqueSampler m_sampler;
 		bloomSamplerHolder();
 	};
-
-
 	struct gaussianPushConstants {
 		glm::vec2 dir;
 		float res;
@@ -30,6 +26,7 @@ namespace rfct {
 		vk::UniquePipeline m_pipeline;
 		vk::DescriptorSetLayout m_descSetLayout;
 		vk::PipelineLayout m_pipelineLayout;
+
 		friend class bloomResurcesHolder;
 	};
 	class bloomResurcesHolder {
@@ -44,13 +41,10 @@ namespace rfct {
 		bloomSamplerHolder m_imageSampler;
 		postprocPipeline m_gaussianPipeline;
 		postprocPipeline m_compositePipeline;
-
 		vk::UniqueDescriptorPool m_descriptorPool;
-
 		std::vector<vk::UniqueDescriptorSet> m_gaussian1SceneImageDescriptorSet; // image 0
 		std::vector<vk::UniqueDescriptorSet> m_gaussian2SceneImageDescriptorSet; // image 2
 		std::vector<vk::UniqueDescriptorSet> m_compositeImageDescriptorSet; // image 0 and 1
-
 		// using prebaked command buffers bcs literally nothing changes frame to frame in this  
 		vk::UniqueCommandPool m_bloomCommandPool;
 		std::vector<vk::UniqueCommandBuffer> m_bloomCommandBuffer;

@@ -1,7 +1,6 @@
 #include "vulkan_instance.h"
 #include "renderer_p/renderer.h"
 
-
 VKAPI_ATTR vk::Bool32 VKAPI_CALL debugCallback(
     vk::DebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
     vk::DebugUtilsMessageTypeFlagsEXT messageType,
@@ -27,12 +26,11 @@ VKAPI_ATTR vk::Bool32 VKAPI_CALL debugCallback(
     return VK_FALSE;
 }
 
-rfct::vulkanInstance::vulkanInstance()
-{
+rfct::vulkanInstance::vulkanInstance() {
 	RFCT_PROFILE_FUNCTION();
     try {
         vk::ApplicationInfo appInfo(
-            "game",
+            "smokes",
             VK_MAKE_VERSION(1, 0, 0),
             "reflect",
             VK_MAKE_VERSION(1, 0, 0),
@@ -46,8 +44,6 @@ rfct::vulkanInstance::vulkanInstance()
         }
         std::vector<vk::ExtensionProperties> availableExtensions = vk::enumerateInstanceExtensionProperties();
 
-
-
         for (const char* ext : VulkanInstanceExtensions) {
             bool found = false;
             for (const auto& available : availableExtensions) {
@@ -56,7 +52,6 @@ rfct::vulkanInstance::vulkanInstance()
                     break;
                 }
             }
-
             if (!found) {
                 RFCT_CRITICAL("VulkanInstanceExtension {} not avaible", ext);
             }
@@ -110,9 +105,6 @@ rfct::vulkanInstance::vulkanInstance()
         );
         m_debugMessenger = m_instance.get().createDebugUtilsMessengerEXTUnique(debugCreateInfo, nullptr, m_dynamicLoader);
 #endif // !RFCT_VULKAN_DEBUG_OFF
-
-		RFCT_TRACE("Vulkan instance created successfully");
-
     }
     catch (const vk::SystemError& e) {
 		RFCT_ERROR("vk::SystemError: {}", e.what());

@@ -1,7 +1,8 @@
 #include "bindable_image.h"
 #include "renderer_p/renderer.h"
-rfct::bindableImage::bindableImage(const std::string& path) :m_Image(path), name(path)
-{
+
+rfct::bindableImage::bindableImage(const std::string& path) :m_Image(path), m_name(path) {
+	RFCT_PROFILE_FUNCTION();
     // Sampler
     vk::SamplerCreateInfo samplerCreateInfo = {};
     samplerCreateInfo.magFilter = vk::Filter::eLinear;
@@ -14,10 +15,9 @@ rfct::bindableImage::bindableImage(const std::string& path) :m_Image(path), name
     samplerCreateInfo.mipmapMode = vk::SamplerMipmapMode::eLinear;
 
    m_sampler = renderer::getRen().getDevice().createSamplerUnique(samplerCreateInfo);
-   RFCT_INFO("created image {}", name);
+   RFCT_INFO("created image {}", m_name);
 }
 
-rfct::bindableImage::~bindableImage()
-{
-   RFCT_INFO("deleting image {}", name);
+rfct::bindableImage::~bindableImage() {
+   RFCT_INFO("deleting image {}", m_name);
 }

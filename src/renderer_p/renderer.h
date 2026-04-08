@@ -4,32 +4,36 @@
 #include "device/vulkan_device.h"
 #include "renderer_p/frame/frame_resource_manager.h"
 #include "renderer_p/frame/render_target_manager.h"
-
-#include "renderer_p/rasterizer_pipeline/vulkan_rasterizer_pipeline.h"
 #include "renderer_p/debug/debug_draw.h"
+#include "renderer_p/rasterizer_pipeline/vulkan_rasterizer_pipeline.h"
 #include "renderer_p/UI/ui_pipeline.h"
 #include "renderer_p/post_process/bloom.h"
 
 namespace rfct {
 	constexpr vk::SampleCountFlagBits msaaSamples = vk::SampleCountFlagBits::e4;
-	struct SurfaceWrapper { // surface works a little differently on android
+	// surface works a little differently on android
+	struct SurfaceWrapper { 
 		vk::SurfaceKHR surface;
         SurfaceWrapper(vk::SurfaceKHR surfaceArg);
         void newSurface(vk::SurfaceKHR surfaceArg);
 		~SurfaceWrapper();
 	};
-	struct allocator // vma is static on windows, dynamic on android (requires different setups).
-	{
+	// vma is static on windows, dynamic on android (requires different setups).
+	struct allocator {
 		VmaAllocator m_allocator;
 		allocator();
 		~allocator();
 	};
 	class renderer {
-	private:
-		static renderer* ren;
 	public:
-		static renderer& getRen() { return *ren; };
+		static renderer& getRen();
 	public:
+        renderer(RFCT_RENDERER_ARGUMENTS);
+		~renderer();
+        void updateWindow(RFCT_NATIVE_WINDOW_ANDROID RFCT_NATIVE_WINDOW_ANDROID_VAR);
+		void render(frameContext& frameContext);
+		void setObjectName(void* objectHandle, const std::string& name, vk::ObjectType objectType);
+
 		inline vk::Device& getDevice() { return m_device.getDevice(); }
 		inline vulkanDevice& getDeviceWrapper() { return m_device; }
 		inline vk::Instance& getInstance() { return m_instance.getInstance(); }
@@ -42,13 +46,6 @@ namespace rfct {
 		inline vk::SurfaceKHR& getSurface() { return m_surface.surface; }
 		inline float getAspectRatio() { return m_window.getAspectRatio(); }
 		inline UIPipeline& getUIPipeline() { return m_UIPipeline; };
-
-        renderer(RFCT_RENDERER_ARGUMENTS);
-		~renderer();
-        void updateWindow(RFCT_NATIVE_WINDOW_ANDROID RFCT_NATIVE_WINDOW_ANDROID_VAR);
-
-		void render(frameContext& frameContext);
-		void setObjectName(void* objectHandle, const std::string& name, vk::ObjectType objectType);
 	private:
 		bool m_uselessBool;
         RFCT_PLATFORM_WINDOW m_window;
@@ -56,10 +53,8 @@ namespace rfct {
 		SurfaceWrapper m_surface; // here for simpler access when surface holder changes (android)
 		vulkanDevice m_device;
 		allocator m_allocator;
-		
 		renderImagesManager m_renderImages;
 		framesInFlight m_framesInFlight;
-
 		vulkanRasterizerPipeline m_rasterizerPipeline;
 		bloomResurcesHolder m_bloomRes;
 		debugDraw m_debugDraw;

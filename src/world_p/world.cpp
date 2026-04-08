@@ -5,7 +5,7 @@
 #include "world_p/objects/objects.h"
 #include "ecs.h"
 #include "ui_p/ui.h"
-#include "assets/world_load.h"
+#include "assets/object_load.h"
 #include "render_data.h"
 
 rfct::world currentWorld;

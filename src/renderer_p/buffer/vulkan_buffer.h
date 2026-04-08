@@ -7,23 +7,10 @@ namespace rfct {
         VulkanBuffer(const char* name, vk::DeviceSize size, vk::BufferUsageFlags usage, VmaMemoryUsage memoryUsage, VkMemoryPropertyFlags requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, VmaAllocationCreateFlags allocFlags = 0);
         VulkanBuffer() = default;
         ~VulkanBuffer();
-        void cleanup();
+        VulkanBuffer(VulkanBuffer&& bffr) noexcept;
+        VulkanBuffer& operator=(VulkanBuffer&& bffr) noexcept;
 
-        // move constructor
-        VulkanBuffer(VulkanBuffer&& bffr) noexcept
-            : buffer(bffr.buffer), allocation(bffr.allocation)
-        {
-            bffr.buffer = nullptr;
-            bffr.allocation = nullptr;
-        }
-        VulkanBuffer& operator=(VulkanBuffer&& bffr) noexcept {
-            buffer = bffr.buffer;
-			allocation = bffr.allocation;
-			bffr.buffer = nullptr;
-			bffr.allocation = nullptr;
-            return *this;
-        }
-
+        void cleanupBuffer();
         void* Map();
         void Unmap();
         void CopyData(const void* data, size_t size);
@@ -31,7 +18,6 @@ namespace rfct {
         vk::Buffer buffer;
 		VmaAllocation allocation;
 	};
-
     struct vulkanBufferLocation {
         VulkanBuffer* buffer;
         uint32_t offsetInBytes;

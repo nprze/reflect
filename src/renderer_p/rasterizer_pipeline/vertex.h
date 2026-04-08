@@ -1,6 +1,7 @@
 #pragma once
 #include <glm\glm.hpp>
 #include <vulkan\vulkan.hpp>
+
 namespace rfct {
 	struct Vertex {
 		glm::vec3 pos;

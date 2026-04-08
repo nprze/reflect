@@ -1,8 +1,8 @@
 #include "vulkan_buffer.h"
 #include "renderer_p/renderer.h"
 
-rfct::VulkanBuffer::VulkanBuffer(const char* name, vk::DeviceSize size, vk::BufferUsageFlags usage, VmaMemoryUsage memoryUsage, VkMemoryPropertyFlags requiredFlags, VmaAllocationCreateFlags allocFlags)
-{
+rfct::VulkanBuffer::VulkanBuffer(const char* name, vk::DeviceSize size, vk::BufferUsageFlags usage, VmaMemoryUsage memoryUsage, VkMemoryPropertyFlags requiredFlags, VmaAllocationCreateFlags allocFlags) {
+	RFCT_PROFILE_FUNCTION();
     VmaAllocator allocator = renderer::getRen().getAllocator();
     VkBufferCreateInfo bufferCreateInfo{};
     bufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -26,22 +26,30 @@ rfct::VulkanBuffer::VulkanBuffer(const char* name, vk::DeviceSize size, vk::Buff
     buffer = vk::Buffer(vkBuffer);
 }
 
-rfct::VulkanBuffer::~VulkanBuffer()
-{
-    cleanup();
+rfct::VulkanBuffer::~VulkanBuffer() {
+    cleanupBuffer();
 }
 
-void rfct::VulkanBuffer::cleanup()
-{
+rfct::VulkanBuffer::VulkanBuffer(VulkanBuffer&& bffr) noexcept
+    : buffer(bffr.buffer), allocation(bffr.allocation) {
+    bffr.buffer = nullptr;
+    bffr.allocation = nullptr;
+}
+rfct::VulkanBuffer& rfct::VulkanBuffer::operator=(VulkanBuffer&& bffr) noexcept {
+    buffer = bffr.buffer;
+    allocation = bffr.allocation;
+    bffr.buffer = nullptr;
+    bffr.allocation = nullptr;
+    return *this;
+}
+
+void rfct::VulkanBuffer::cleanupBuffer() {
+    RFCT_PROFILE_FUNCTION();
     VmaAllocator allocator = renderer::getRen().getAllocator();
-
-    if (allocation) {
-        vmaDestroyBuffer(allocator, static_cast<VkBuffer>(buffer), allocation);
-    }
+    if (allocation) vmaDestroyBuffer(allocator, static_cast<VkBuffer>(buffer), allocation);
 }
 
-void* rfct::VulkanBuffer::Map()
-{
+void* rfct::VulkanBuffer::Map() {
     VmaAllocator allocator = renderer::getRen().getAllocator();
     
     void* m_mappedData = nullptr;
@@ -52,18 +60,14 @@ void* rfct::VulkanBuffer::Map()
     return m_mappedData;
 }
 
-void rfct::VulkanBuffer::Unmap()
-{
+void rfct::VulkanBuffer::Unmap() {
     VmaAllocator allocator = renderer::getRen().getAllocator();
-
     vmaUnmapMemory(allocator, allocation);
 }
 
-void rfct::VulkanBuffer::CopyData(const void* data, size_t size)
-{
+void rfct::VulkanBuffer::CopyData(const void* data, size_t size) {
+    RFCT_PROFILE_FUNCTION();
     void* m_mappedData = Map();
-
     std::memcpy(m_mappedData, data, size);
-
     Unmap();
 }

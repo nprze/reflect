@@ -1,6 +1,6 @@
-masterVoicePercentage: 0
-backgroundVoicePercentage: 100
-effectsVoicePercentage: 100
+masterVoicePercentage: 70
+backgroundVoicePercentage: 70
+effectsVoicePercentage: 70
 windowedMode: 0
 resolutionWidth: 1920
 resolutionHeight: 1080

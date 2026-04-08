@@ -3,6 +3,8 @@
 #include <sstream>
 #include "renderer_p/renderer.h"
 
+uint32_t lastGraphicsQueueFamilyIndex = -1;
+
 // Helper function
 std::string queueFlagsToString(vk::QueueFlags queueFlags) {
     std::vector<std::string> flagNames;
@@ -40,7 +42,8 @@ std::string queueFlagsToString(vk::QueueFlags queueFlags) {
     return oss.str();
 }
 
-std::array<uint32_t, 1> rfct::selectQueueFamilies(vk::PhysicalDevice physicalDevice) {
+uint32_t rfct::selectQueueFamily(vk::PhysicalDevice physicalDevice) {
+    RFCT_PROFILE_FUNCTION();
     std::vector<vk::QueueFamilyProperties> queueFamilies = physicalDevice.getQueueFamilyProperties();
 
     std::pair<int, uint32_t> graphicsAndPresentFamily = { -1, 0 };
@@ -70,39 +73,19 @@ std::array<uint32_t, 1> rfct::selectQueueFamilies(vk::PhysicalDevice physicalDev
             }
         }
     }
-
-    return {
-        static_cast<uint32_t>(graphicsAndPresentFamily.first)/*,
-        static_cast<uint32_t>(computeFamily.first),
-        static_cast<uint32_t>(transferFamily.first)*/
-    };
+	lastGraphicsQueueFamilyIndex = graphicsAndPresentFamily.first;
+    return static_cast<uint32_t>(graphicsAndPresentFamily.first);
 }
 
 rfct::vulkanQueueManager::vulkanQueueManager(vk::Device device, vk::PhysicalDevice physicalDevice)
     : m_device(device) {
-    auto queueFamilies = selectQueueFamilies(physicalDevice);
-
-    m_graphicsQueueFamilyIndex = queueFamilies[0];
-    //m_computeQueueFamilyIndex = queueFamilies[1];
-    //m_transferQueueFamilyIndex = queueFamilies[2];
-
-    m_graphicsQueue = m_device.getQueue(queueFamilies[0], 0);
-    //m_computeQueue = m_device.getQueue(queueFamilies[1], 0);
-    //m_transferQueue = m_device.getQueue(queueFamilies[2], 0);
-}
-
-rfct::vulkanQueueManager::~vulkanQueueManager() {
+    RFCT_PROFILE_FUNCTION();
+    RFCT_ASSERT(lastGraphicsQueueFamilyIndex != -1)
+    m_graphicsQueueFamilyIndex = lastGraphicsQueueFamilyIndex;
+    m_graphicsQueue = m_device.getQueue(lastGraphicsQueueFamilyIndex, 0);
 }
 
 void rfct::vulkanQueueManager::submitGraphics(const vk::SubmitInfo& submitInfo, vk::Fence fence) {
+    RFCT_PROFILE_FUNCTION();
     m_graphicsQueue.submit(submitInfo, fence);
 }
-
-/*
-void rfct::vulkanQueueManager::submitCompute(const vk::SubmitInfo& submitInfo, vk::Fence fence) {
-    m_computeQueue.submit(submitInfo, fence);
-}
-
-void rfct::vulkanQueueManager::submitTransfer(const vk::SubmitInfo& submitInfo, vk::Fence fence) {
-    m_transferQueue.submit(submitInfo, fence);
-}*/

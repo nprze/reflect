@@ -120,7 +120,7 @@ void rfct::reflectApplication::loadGameSystems() {
 
 void rfct::reflectApplication::cleanGameSystems() {
     world::getWorld().cleanWorld();
-    objectSystems::get().cleanup();
+    objectSystems::get().cleanupBuffer();
     playerAnimations::get().unloadAnimations();
     soundManager::get().unloadSounds();
     soundPlayer::get().cleanupSoundPlayer();

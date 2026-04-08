@@ -2,8 +2,7 @@
 #include "assets/image_load.h"
 #include "renderer_p/renderer.h"
 
-rfct::image::image(const std::string& path)
-{
+rfct::image::image(const std::string& path) {
 	if (path.empty()) {
         createDummyImage(this);
 		return;
@@ -13,8 +12,7 @@ rfct::image::image(const std::string& path)
     }
 }
 
-rfct::image::~image()
-{
+rfct::image::~image() {
     if (m_imageView) {
         vkDestroyImageView(renderer::getRen().getDevice(), static_cast<VkImageView>(m_imageView), nullptr);
     }
@@ -22,8 +20,7 @@ rfct::image::~image()
         vmaDestroyImage(renderer::getRen().getAllocator(), static_cast<VkImage>(m_image), m_allocation);
     }
 }
-void rfct::image::transitionImageLayout(vk::CommandBuffer commandBuffer, vk::ImageLayout oldLayout, vk::ImageLayout newLayout)
-{
+void rfct::image::transitionImageLayout(vk::CommandBuffer commandBuffer, vk::ImageLayout oldLayout, vk::ImageLayout newLayout) {
     RFCT_PROFILE_FUNCTION();
     vk::ImageMemoryBarrier barrier{};
     barrier.oldLayout = oldLayout;
@@ -70,8 +67,7 @@ void rfct::image::transitionImageLayout(vk::CommandBuffer commandBuffer, vk::Ima
     );
 }
 
-void rfct::image::copyBufferToImage(vk::CommandBuffer commandBuffer, vk::Buffer buffer)
-{
+void rfct::image::copyBufferToImage(vk::CommandBuffer commandBuffer, vk::Buffer buffer) {
     vk::BufferImageCopy region{};
     region.bufferOffset = 0;
     region.bufferRowLength = 0;
@@ -83,10 +79,5 @@ void rfct::image::copyBufferToImage(vk::CommandBuffer commandBuffer, vk::Buffer 
     region.imageOffset = vk::Offset3D{ 0, 0, 0 };
     region.imageExtent = vk::Extent3D{ width, height, 1 };
 
-    commandBuffer.copyBufferToImage(
-        buffer,
-        m_image,
-        vk::ImageLayout::eTransferDstOptimal,
-        region
-    );
+    commandBuffer.copyBufferToImage(buffer, m_image, vk::ImageLayout::eTransferDstOptimal, region);
 }

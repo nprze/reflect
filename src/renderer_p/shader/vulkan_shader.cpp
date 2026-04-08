@@ -1,11 +1,11 @@
 #include "vulkan_shader.h"
-#include "assets/assets_utils.h"
 #include <fstream>
+#include "assets/assets_utils.h"
 #include "renderer_p/renderer.h"
 
 namespace rfct {
-    vulkanShader::vulkanShader(const std::string& spirvFilePath)
-    {
+    vulkanShader::vulkanShader(const std::string& spirvFilePath) {
+        RFCT_PROFILE_FUNCTION();
         std::ifstream file;
         if (!openAssetFile(spirvFilePath, &file, std::ios::binary | std::ios::ate)) {
             RFCT_CRITICAL("Failed to open shader file: {}", spirvFilePath);
@@ -23,5 +23,4 @@ namespace rfct {
 
         m_shaderModule = renderer::getRen().getDevice().createShaderModuleUnique(createInfo);
     }
-
 }

@@ -4,6 +4,7 @@
 #include <thread>
 #include <queue>
 #include <mutex>
+
 namespace rfct {
     struct jobTracker {
         uint32_t count = 0;
@@ -35,26 +36,21 @@ namespace rfct {
         }
     };
 	class jobSystem {
-		static jobSystem instance;
     public:
-        static jobSystem& get() { return instance; }
-
-        void KickJob(std::function<void()> job, jobTracker& counter);
-
-        void Start();
-
-        void Stop();
-
-    private:
+        static jobSystem& get();
+    public:
         jobSystem();
         ~jobSystem();
+        void KickJob(std::function<void()> job, jobTracker& counter);
+        void Start();
+        void Stop();
+    private:
         void WorkerThread();
-
+    private:
         std::vector<std::thread> threads;
         std::queue<std::pair<std::function<void()>, jobTracker*>> jobQueue;
         std::mutex queueMutex;
         std::condition_variable cv;
         bool stopThreads = false;
-
 	};
 }

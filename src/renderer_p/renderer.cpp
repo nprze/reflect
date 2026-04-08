@@ -6,10 +6,15 @@
 #include "assets/assets_utils.h"
 
 namespace rfct {
-    renderer* renderer::ren = nullptr;
-    bool setStaticRenderer(renderer *rendererArg) 
-    { // this exists bcs the static renderer var needs to be set before the components' constructors
-        renderer::ren = rendererArg;
+    renderer* ren = nullptr;
+
+    rfct::renderer& rfct::renderer::getRen() {
+        return *ren;
+    }
+
+    // this exists bcs the static renderer var needs to be set before the components' constructors
+    bool setStaticRenderer(renderer *rendererArg) { 
+        ren = rendererArg;
         return true;
     }
 
@@ -26,8 +31,7 @@ namespace rfct {
     }
 
     // vma allocator wrapper
-    allocator::allocator()
-    {
+    allocator::allocator() {
 #ifdef ANDROID_BUILD
         VmaAllocatorCreateInfo allocatorCreateInfo = {};
         allocatorCreateInfo.physicalDevice = rfct::renderer::getRen().getDeviceWrapper().getPhysicalDevice();
@@ -54,13 +58,11 @@ namespace rfct {
 #endif
     }
 
-    allocator::~allocator()
-    {
+    allocator::~allocator() {
         vmaDestroyAllocator(m_allocator);
     }
 
 }
-
 
 // LET THIS CODE COOK. IT DOES COOK FRFR
 rfct::renderer::renderer(RFCT_RENDERER_ARGUMENTS)
@@ -80,6 +82,7 @@ rfct::renderer::renderer(RFCT_RENDERER_ARGUMENTS)
 }
 
 void rfct::renderer::updateWindow(RFCT_NATIVE_WINDOW_ANDROID RFCT_NATIVE_WINDOW_ANDROID_VAR){ 
+	RFCT_PROFILE_FUNCTION();
 // surface holder change on android
 #ifdef ANDROID_BUILD
     m_device.getDevice().waitIdle();
@@ -94,13 +97,11 @@ void rfct::renderer::updateWindow(RFCT_NATIVE_WINDOW_ANDROID RFCT_NATIVE_WINDOW_
 #endif
 };
 
-rfct::renderer::~renderer() 
-{
+rfct::renderer::~renderer() {
     cleanupAssetsCommandPool();
 };
 
-void rfct::renderer::render(frameContext& frameContext)
-{
+void rfct::renderer::render(frameContext& frameContext) {
     RFCT_PROFILE_FUNCTION();
 	frameData& frameData = m_framesInFlight.getNextFrame(frameContext.frame);
     {
@@ -160,7 +161,6 @@ void rfct::renderer::render(frameContext& frameContext)
         uiSubmitInfo.pWaitDstStageMask = waitStages;
          renderer::getRen().getDeviceWrapper().getQueueManager().submitGraphics(uiSubmitInfo, frameData.m_thisFrameRenderFinishedFence);
     }
-
     {
         RFCT_PROFILE_SCOPE("image present");
         vk::PresentInfoKHR presentInfo{};
@@ -191,8 +191,8 @@ void rfct::renderer::render(frameContext& frameContext)
     }
 }
 
-void rfct::renderer::setObjectName(void* objectHandle, const std::string& name, vk::ObjectType objectType)
-{
+void rfct::renderer::setObjectName(void* objectHandle, const std::string& name, vk::ObjectType objectType) {
+    RFCT_PROFILE_FUNCTION();
 #ifndef RFCT_VULKAN_DEBUG_OFF
     if (!m_instance.getDynamicLoader().vkSetDebugUtilsObjectNameEXT) {
         RFCT_CRITICAL("Failed to load vkSetDebugUtilsObjectNameEXT!");

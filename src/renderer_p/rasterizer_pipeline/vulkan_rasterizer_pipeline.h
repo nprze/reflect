@@ -1,6 +1,7 @@
 #pragma once
-#include "renderer_p/shader/vulkan_shader.h"
 #include "context.h"
+#include "renderer_p/shader/vulkan_shader.h"
+
 namespace rfct {
 	class renderData;
 	class frameData;
@@ -8,7 +9,6 @@ namespace rfct {
 	{
 	public:
 		vulkanRasterizerPipeline(vk::RenderPass renderPass);
-		~vulkanRasterizerPipeline();
 		void createPipeline(vk::RenderPass renderPass);
 		void recordCommandBuffer(frameContext* ctx, frameData& frameData, vk::Framebuffer framebuffer, vk::RenderPass renderPass);
 	private:

@@ -1,27 +1,21 @@
 #include "vulkan_rasterizer_pipeline.h"
-
-#include "renderer_p/renderer.h"
 #include "vertex.h"
 #include "renderer_p/frame/frame_data.h"
+#include "renderer_p/renderer.h"
 #include "world_p/render_data.h"
 #include "world_p/scene.h"
 #include "world_p/player/player_animations.h"
 #include "world_p/objects/objects.h"
 
-
 rfct::vulkanRasterizerPipeline::vulkanRasterizerPipeline(vk::RenderPass renderPass) 
     : m_vertexShader("shaders/basic/basic_vert.spv"), 
-    m_fragShader("shaders/basic/basic_frag.spv")
-{
+    m_fragShader("shaders/basic/basic_frag.spv") {
+    RFCT_PROFILE_FUNCTION();
 	createPipeline(renderPass);
 }
 
-rfct::vulkanRasterizerPipeline::~vulkanRasterizerPipeline()
-{
-}
-
-void rfct::vulkanRasterizerPipeline::createPipeline(vk::RenderPass renderPass)
-{
+void rfct::vulkanRasterizerPipeline::createPipeline(vk::RenderPass renderPass) {
+    RFCT_PROFILE_FUNCTION();
     // Shaders
     vk::PipelineShaderStageCreateInfo vertShaderStageInfo = {};
     vertShaderStageInfo.stage = vk::ShaderStageFlagBits::eVertex;
@@ -95,7 +89,6 @@ void rfct::vulkanRasterizerPipeline::createPipeline(vk::RenderPass renderPass)
     dynamicState.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
     dynamicState.pDynamicStates = dynamicStates.data();
 
-
     // Pipeline layout
     vk::PipelineLayoutCreateInfo pipelineLayoutInfo = {};
     pipelineLayoutInfo.setLayoutCount = 2;
@@ -126,10 +119,7 @@ void rfct::vulkanRasterizerPipeline::createPipeline(vk::RenderPass renderPass)
     m_graphicsPipeline = renderer::getRen().getDevice().createGraphicsPipelineUnique({}, pipelineInfo).value;
 }
 
-
-
-void rfct::vulkanRasterizerPipeline::recordCommandBuffer(frameContext* ctx, frameData& frameData, vk::Framebuffer framebuffer, vk::RenderPass renderPass)
-{
+void rfct::vulkanRasterizerPipeline::recordCommandBuffer(frameContext* ctx, frameData& frameData, vk::Framebuffer framebuffer, vk::RenderPass renderPass) {
     RFCT_PROFILE_FUNCTION();
     const renderData& renderdata = ctx->scene->getRenderData();
     vk::CommandBuffer commandBuffer = frameData.m_sceneCommandBuffer.get();
@@ -168,8 +158,7 @@ void rfct::vulkanRasterizerPipeline::recordCommandBuffer(frameContext* ctx, fram
 
     vk::DeviceSize offsets[] = { 0 };
     // Camera Descriptor
-    if (renderdata.m_verticesCountStaticObj)
-    {
+    if (renderdata.m_verticesCountStaticObj) {
         vk::Buffer vertexBuffers[] = { renderdata.m_VertexBufferStatic.m_Buffer.buffer };
         commandBuffer.bindVertexBuffers(0, 1, vertexBuffers, offsets);
 
@@ -179,8 +168,7 @@ void rfct::vulkanRasterizerPipeline::recordCommandBuffer(frameContext* ctx, fram
         commandBuffer.draw(renderdata.m_verticesCountStaticObj, 1, 0, 0);
     }
     
-    if (renderdata.m_verticesCountDynamicObj)
-    {
+    if (renderdata.m_verticesCountDynamicObj) {
 
         vk::Buffer vertexBuffers[] = { renderdata.m_VertexBufferDynamic[ctx->frame]->buffer};
         commandBuffer.bindVertexBuffers(0, 1, vertexBuffers, offsets);
@@ -198,5 +186,4 @@ void rfct::vulkanRasterizerPipeline::recordCommandBuffer(frameContext* ctx, fram
 
     commandBuffer.endRenderPass();
     commandBuffer.end();
-
 }

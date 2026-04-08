@@ -2,28 +2,18 @@
 #include "renderer_p/renderer.h"
 #include "world_p/world.h"
 
-rfct::vulkanSwapChain::vulkanSwapChain()
-{
+rfct::vulkanSwapChain::vulkanSwapChain() {
+	RFCT_PROFILE_FUNCTION();
     createSwapChain();
 }
 
-rfct::vulkanSwapChain::~vulkanSwapChain()
-{
-}
-
-void rfct::vulkanSwapChain::createSwapChain()
-{
+void rfct::vulkanSwapChain::createSwapChain() {
+    RFCT_PROFILE_FUNCTION();
     vk::SurfaceCapabilitiesKHR capabilities = renderer::getRen().getDeviceWrapper().getPhysicalDevice().getSurfaceCapabilitiesKHR(renderer::getRen().getSurface());
     std::vector<vk::SurfaceFormatKHR> surfaceFormats = renderer::getRen().getDeviceWrapper().getPhysicalDevice().getSurfaceFormatsKHR(renderer::getRen().getSurface());
     std::vector<vk::PresentModeKHR> presentModes = renderer::getRen().getDeviceWrapper().getPhysicalDevice().getSurfacePresentModesKHR(renderer::getRen().getSurface());
     vk::SurfaceFormatKHR chosenSurfaceFormat = surfaceFormats[0];
-/*
-    for (const auto& format : surfaceFormats) {
-        if (format.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear && format.format == vk::Format::eB8G8R8A8Unorm) {
-            chosenSurfaceFormat = format;
-            break;
-        }
-    }*/
+
     m_surfaceFormat = chosenSurfaceFormat;
     vk::PresentModeKHR  chosenPresentMode = vk::PresentModeKHR::eFifo;
 #ifdef WINDOWS_BUILD
@@ -36,8 +26,7 @@ void rfct::vulkanSwapChain::createSwapChain()
     vk::SwapchainCreateInfoKHR swapChainCreateInfo = {};
     swapChainCreateInfo.surface = renderer::getRen().m_surface.surface;
 #ifdef WINDOWS_BUILD
-    if (m_swapChain.get()!=nullptr)
-    {
+    if (m_swapChain.get()!=nullptr) {
         swapChainCreateInfo.oldSwapchain = m_swapChain.get();
     }
 #endif // WINDOWS_BUILD
@@ -83,8 +72,8 @@ void rfct::vulkanSwapChain::createSwapChain()
     m_swapChain = renderer::getRen().getDevice().createSwapchainKHRUnique(swapChainCreateInfo);
 }
 
-void rfct::vulkanSwapChain::recreateSwapChain()
-{
+void rfct::vulkanSwapChain::recreateSwapChain() {
+    RFCT_PROFILE_FUNCTION();
     renderer::getRen().getDevice().waitIdle();
 #ifdef ANDROID_BUILD
     renderer::getRen().getDevice().destroySwapchainKHR(m_swapChain.get());
@@ -95,38 +84,27 @@ void rfct::vulkanSwapChain::recreateSwapChain()
     createSwapChain();
 }
 
-uint32_t rfct::vulkanSwapChain::acquireNextImage(const vk::Semaphore& semaphore, vk::Fence fence)
-{
+uint32_t rfct::vulkanSwapChain::acquireNextImage(const vk::Semaphore& semaphore, vk::Fence fence) {
+    RFCT_PROFILE_FUNCTION();
     vk::ResultValue<uint32_t> result = vk::ResultValue<uint32_t>(vk::Result::eSuccess, 0);
-
-    if (framebufferResized)
-    {
+    if (framebufferResized) {
         recreateSwapChain();
-
         framebufferResized = false;
     }
-
-    try
-    {
+    try {
         result = renderer::getRen().getDevice().acquireNextImageKHR(m_swapChain.get(), UINT64_MAX, semaphore, fence);
     }
-    catch (const vk::OutOfDateKHRError&)
-    {
+    catch (const vk::OutOfDateKHRError&) {
         recreateSwapChain();
         return -1;
     }
-
-    if (result.result == vk::Result::eSuboptimalKHR)
-    {
+    if (result.result == vk::Result::eSuboptimalKHR) {
         RFCT_WARN("Swap chain is suboptimal, recreating...");
         recreateSwapChain();
         return -1;
     }
-
-    if (result.result != vk::Result::eSuccess)
-    {
+    if (result.result != vk::Result::eSuccess) {
         RFCT_CRITICAL("Failed to acquire swap chain image!");
     }
-
     return result.value;
 }

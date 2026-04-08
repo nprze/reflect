@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include <glm/glm.hpp>
+
 namespace rfct {
     enum SpikeDirection {
         SpikeDirUp,

@@ -1,6 +1,7 @@
 #pragma once
-#include "renderer_p/image/bindable_image.h"
 #include <glm/glm.hpp>
+#include "renderer_p/image/bindable_image.h"
+
 namespace rfct {
     struct GlyphVertex {
         glm::vec2 pos;
@@ -15,7 +16,6 @@ namespace rfct {
             bindingDescription.inputRate = vk::VertexInputRate::eVertex;
             return bindingDescription;
         }
-
         static std::array<vk::VertexInputAttributeDescription, 4> getAttributeDescriptions() {
             std::array<vk::VertexInputAttributeDescription, 4> attributeDescriptions{};
 
@@ -51,16 +51,13 @@ namespace rfct {
 		float yoffset;
 		float xadvance;
 	};
+    // font is just a texture atlas to hold the font and info on glyphs
 	class font {
-		// font is just a texture atlast to hold the font and info on glyphs
 	public:
-		inline const glyph* getGlyph(char character) const {
-			auto it = glyphMap.find(character);
-			if (it == glyphMap.end()) RFCT_CRITICAL("trying to get a glyph which isn't in the font");
-			return &it->second;
-		}
-		font(const std::string& path); // path should point to .txt file of a font
+        const glyph* getGlyph(char character) const;
+		font(const std::string& path); // path should point to a .txt
         float getTextWidth(const std::string& text, float scale);
+    public:
 		bindableImage m_TextureAtlas;
 		std::unordered_map<char, glyph> glyphMap;
         float fontScale;

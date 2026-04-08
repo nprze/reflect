@@ -1,11 +1,9 @@
 #include "frame_resource_manager.h"
-
 #include <vma/vk_mem_alloc.h>
 #include "renderer_p/renderer.h"
 
 namespace rfct {
-	framesInFlight::framesInFlight()
-	{
+	framesInFlight::framesInFlight() {
 		m_fences.resize(RFCT_FRAMES_IN_FLIGHT);
 		vk::FenceCreateInfo fenceInfo{ vk::FenceCreateFlagBits::eSignaled };
 		for (uint32_t i = 0; i < RFCT_FRAMES_IN_FLIGHT; i++) {
@@ -17,13 +15,11 @@ namespace rfct {
 		}
 	}
 
-	framesInFlight::~framesInFlight()
-	{
+	framesInFlight::~framesInFlight() {
 		ubo::destroyDescriptorSetLayout();
 	}
 
-	frameData& framesInFlight::getNextFrame(uint32_t frame_index)
-	{
+	frameData& framesInFlight::getNextFrame(uint32_t frame_index) {
 		frameData& fc = *m_frames[frame_index].get();
 		return fc;
 	}

@@ -10,7 +10,6 @@ namespace rfct {
 			loadBuildingBlockMesh(path, &m_Vertices, color, size);
 		};
 		std::vector<Vertex> m_Vertices;
-	private:
 	};
 	struct backgroundMesh {
 		backgroundMesh(const std::string& path, const glm::vec3& color, const float zMin, const float zMax) {
@@ -18,7 +17,6 @@ namespace rfct {
 			loadBackgroundMesh(path, &m_Vertices, color, zMin, zMax);
 		};
 		std::vector<Vertex> m_Vertices;
-	private:
 	};
 	struct mesh {
 		mesh(const std::string& path) {
@@ -26,6 +24,5 @@ namespace rfct {
 			loadCharacterMesh(path, &m_Vertices, 1);
 		};
 		std::vector<Vertex> m_Vertices;
-	private:
 	};
 }

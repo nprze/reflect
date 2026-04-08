@@ -1,20 +1,21 @@
 #include "job_system.h"
 
-rfct::jobSystem rfct::jobSystem::instance;
+rfct::jobSystem instance;
 
-rfct::jobSystem::jobSystem()
-{
+rfct::jobSystem& rfct::jobSystem::get() {
+    return instance;
+}
+
+rfct::jobSystem::jobSystem() {
     threads.resize(4);
     Start();
 }
 
-rfct::jobSystem::~jobSystem()
-{
+rfct::jobSystem::~jobSystem() {
     Stop();
 }
 
-void rfct::jobSystem::KickJob(std::function<void()> job, jobTracker& counter)
-{
+void rfct::jobSystem::KickJob(std::function<void()> job, jobTracker& counter) {
     {
         std::lock_guard<std::mutex> lock(queueMutex);
         counter.addTask();
@@ -23,15 +24,13 @@ void rfct::jobSystem::KickJob(std::function<void()> job, jobTracker& counter)
     cv.notify_one();
 }
 
-void rfct::jobSystem::Start()
-{
+void rfct::jobSystem::Start() {
     for (auto& thread : threads) {
         thread = std::thread(&jobSystem::WorkerThread, this);
     }
 }
 
-void rfct::jobSystem::Stop()
-{
+void rfct::jobSystem::Stop() {
     {
         std::lock_guard<std::mutex> lock(queueMutex);
         stopThreads = true;
@@ -45,8 +44,7 @@ void rfct::jobSystem::Stop()
     }
 }
 
-void rfct::jobSystem::WorkerThread()
-{
+void rfct::jobSystem::WorkerThread() {
     while (true) {
         std::function<void()> job;
         jobTracker* counter = nullptr;

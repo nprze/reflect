@@ -18,7 +18,6 @@ void rfct::decorationHolder::init(sceneSerializedData* serializeData, scene* par
 rfct::decorationHolder::~decorationHolder()
 {
 	cleanupSmokes();
-	cleanupKindlings();
 	cleanupGrass();
 }
 

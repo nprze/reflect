@@ -1,8 +1,8 @@
 #pragma once
 #include <glm/glm.hpp>
 #include <map>
+
 namespace rfct {
-	// dialogue version 1.0
 	struct dialogueParticipantSerializeData {
 		std::string name;
 		std::vector<std::string> spritesFilenames;
@@ -25,6 +25,5 @@ namespace rfct {
 		int rowCount;
 		int columnCount;
 		std::map<std::string, spritesheetCycle> cycles;
-
 	};
 }
