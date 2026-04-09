@@ -1,33 +1,46 @@
 #include "cigarettes.h"
+#include "renderer_p/rasterizer_pipeline/vertex.h"
 #include "world_p/components.h"
-#include "context.h"
 #include "world_p/scene.h"
 #include "world_p/transform.h"
-#include "world_p/ecs.h"
-#include "renderer_p/rasterizer_pipeline/vertex.h"
 #include "world_p/object_components.h"
 #include "world_p/decors/smokes.h"
 
+constexpr float angularDamping = 0.94f;
+constexpr glm::vec2 gravity{ 0.f, -5.f };
+constexpr float linearDamping = 0.9f;
+constexpr float betweenVer = 0.05f;
+constexpr float betweenHor = 0.11f;
+constexpr float restVer = .07f;
+constexpr float restHor = .13f;
+constexpr uint8_t cigarettesMaxCount = 4;
+
+std::vector<entity> cigarettesVec;
+uint8_t lastCigaretteIndex = 0;
+std::vector<rfct::Vertex> cigaretteModelVertices;
+
 namespace rfct {
-    constexpr float angularDamping = 0.94f;
-    constexpr glm::vec2 gravity{ 0.f, -5.f };
-    constexpr float linearDamping = 0.9f;
+    void onCollision_Cigarette_StaticObj(entity cigarette, entity collidedWith, glm::vec2 resolution) {
+        RFCT_PROFILE_FUNCTION();
+        entt::registry& reg = ecs::get();
+        auto& rot = reg.get<rotationComponent>(cigarette);
+        auto& pos = reg.get<positionComponent>(cigarette);
+        auto& vel = reg.get<velocityComponent>(cigarette);
+        auto& angVel = reg.get<angularVelocityComponent>(cigarette);
+        auto& collidedWithAABB = reg.get<staticBoxColliderComponent>(collidedWith);
 
-    constexpr float betweenVer = 0.05f;
-    constexpr float betweenHor = 0.11f;
-    constexpr float restVer = .07f;
-    constexpr float restHor = .13f;
+        pos.position += resolution;
 
-    constexpr uint8_t cigarettesMaxCount = 4;
+        if (!reg.get<cigaretteUpdateComponent>(cigarette).spawnedSmoke) {
+            reg.get<cigaretteUpdateComponent>(cigarette).spawnedSmoke = true;
+            reg.get<cigaretteUpdateComponent>(cigarette).shouldSpawnSmoke = true;
+        }
+    }
+}
 
-    std::vector<entity> cigarettesVec;
-    uint8_t lastCigaretteIndex = 0;
-
-
-
-    std::vector<rfct::Vertex> cigaretteModelVertices;
-    void cigarettes::initSystem()
-    {
+namespace rfct {
+    void cigarettes::initSystem() {
+        RFCT_PROFILE_FUNCTION();
         cigarettesVec.assign(cigarettesMaxCount, entt::null);
 
         // vertices
@@ -55,7 +68,6 @@ namespace rfct {
             cigaretteModelVertices[i].color = black;
         }
 
-
         // color triangles
         glm::vec3 v0 = glm::vec3(-betweenHor, betweenVer, 0);
         glm::vec3 v1 = glm::vec3(betweenHor, betweenVer, 0);
@@ -77,36 +89,27 @@ namespace rfct {
         }
 
     }
-    void cigarettes::spawnData(scene* s, sceneSerializedData* sd)
-    {
-    }
-    void cigarettes::resetLevel(const frameContext* ctx)
-    {
-        for (entity& e : cigarettesVec)
-        {
+
+    void cigarettes::resetLevel(const frameContext* ctx) {
+        RFCT_PROFILE_FUNCTION();
+        for (entity& e : cigarettesVec) {
             if(ecs::get().valid(e))
                 ctx->scene->deleteDynamicEntity(e);
         }
     }
-    /*
-    void cigarettes::onLevelSwitch(scene* scen)
-    {
-        auto gravityVelocityPositionBoxQuery = ecs::get().view<cigaretteUpdateComponent>();
-        for (auto [ent, upd] : gravityVelocityPositionBoxQuery.each()) {
-            scen->deleteDynamicEntity(ent);
-        }
-    }*/
+
     void cigarettes::updateVisuals(const frameContext* ctx) {
+        RFCT_PROFILE_FUNCTION();
         renderData& rd = ctx->scene->getRenderData();
         auto gravityVelocityPositionBoxQuery = ecs::get().view<cigaretteUpdateComponent, dynamicSSBOIndexComponent, positionComponent, rotationComponent, scaleComponent>();
         for (auto [ent, upd, ssboData, pos, rot, sc] : gravityVelocityPositionBoxQuery.each()) {
             glm::mat4 mat = getModelMatrix(pos, rot, sc);
             rd.updateMat(ctx, ssboData.indexInSSBO, &mat);
         };
-
     }
-    void cigarettes::updateSystem(frameContext* ctx)
-    {
+
+    void cigarettes::updateSystem(frameContext* ctx) {
+        RFCT_PROFILE_FUNCTION();
         renderData& rd = ctx->scene->getRenderData();
         auto cigaretteComponentsQuery = ecs::get().view<cigaretteUpdateComponent, positionComponent, velocityComponent, angularVelocityComponent, rotationComponent>();
         for (auto [cigaretteEntity, update, pos, velocity, angVel, rotation] : cigaretteComponentsQuery.each()) {
@@ -134,8 +137,8 @@ namespace rfct {
             }
             };
     }
-    void cigarettes::onDash(frameContext* fc, const entity entityPlayer, const bool facingRight)
-    {
+    void cigarettes::onDash(frameContext* fc, const entity entityPlayer, const bool facingRight) {
+        RFCT_PROFILE_FUNCTION();
         if (ecs::get().valid(cigarettesVec[lastCigaretteIndex])) {
             fc->scene->deleteDynamicEntity(cigarettesVec[lastCigaretteIndex]);
         }
@@ -145,30 +148,9 @@ namespace rfct {
     }
 }
 
-namespace rfct {
-    void onCollision_Cigarette_StaticObj(entity cigarette, entity collidedWith, glm::vec2 resolution)
-    {
-        entt::registry& reg = ecs::get();
-        auto& rot = reg.get<rotationComponent>(cigarette);
-        auto& pos = reg.get<positionComponent>(cigarette);
-        auto& vel = reg.get<velocityComponent>(cigarette);
-        auto& angVel = reg.get<angularVelocityComponent>(cigarette);
 
-        auto& collidedWithAABB = reg.get<staticBoxColliderComponent>(collidedWith);
-
-
-        pos.position += resolution;
-
-        if (!reg.get<cigaretteUpdateComponent>(cigarette).spawnedSmoke) {
-            reg.get<cigaretteUpdateComponent>(cigarette).spawnedSmoke = true;
-            reg.get<cigaretteUpdateComponent>(cigarette).shouldSpawnSmoke = true;
-        }
-    }
-}
-
-
-entity rfct::cigarettes::constructCigarette(const frameContext* fc, const entity entityPlayer, const bool facingRight)
-{
+entity rfct::cigarettes::constructCigarette(const frameContext* fc, const entity entityPlayer, const bool facingRight) {
+    RFCT_PROFILE_FUNCTION();
     constexpr float min_val = std::min(betweenVer, betweenHor);
     entt::registry& reg = ecs::get();
 

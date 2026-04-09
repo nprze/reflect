@@ -1,10 +1,9 @@
 #include "glfw_window.h"
 #include <stdexcept>
-#include "renderer_p\renderer.h"
+#include "renderer_p/renderer.h"
 #include "app.h"
 
 void framebufferResizeCallback(GLFWwindow* window, int width, int height) {
-
 	rfct::renderer::getRen().getRenderImagesManager().getSwapChain().framebufferResized = true;
     vk::Extent2D newExtent = { static_cast<uint32_t>(width), static_cast<uint32_t>(height) };
     rfct::renderer::getRen().getWindow().setExtent(newExtent);

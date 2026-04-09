@@ -68,6 +68,7 @@ namespace rfct {
 	};
 	std::vector<triangleDecoration> triangleDecorations;
 	void defineDecors(uint32_t count) {
+		RFCT_PROFILE_FUNCTION();
 		triangleDecorations.clear();
 		triangleDecorations.reserve(count);
 		for (uint32_t i = 0; i < count; i++) {
@@ -90,6 +91,7 @@ namespace rfct {
 		}
 	}
 	void updateDecors(frameContext* ctx) {
+		RFCT_PROFILE_FUNCTION();
 		float aspectRatio = imageExtent.x / imageExtent.y;
 		for (triangleDecoration& decor : triangleDecorations) {
 			decor.angle += ctx->dt * 20.f;
@@ -168,11 +170,9 @@ void actionTellStory(rfct::frameContext* ctx) {
 	else if (storyProgress == 8) UINodes[11].label = "This is not a clicker.";
 	else if (storyProgress == 9) UINodes[11].label = "There is nothing more here, I promise.";
 }
-void actionEmpty(rfct::frameContext* ctx) {
-}
+void actionEmpty(rfct::frameContext* ctx) {}
 
-rfct::gameState rfct::getState()
-{
+rfct::gameState rfct::getState() {
 	if (input::getInput().openClosePauseMenu && timeSinceStateChange > 1.f) {
 		timeSinceStateChange = 0.f;
 		currentSelectedMenuIndex = 0;
@@ -192,13 +192,11 @@ rfct::gameState rfct::getState()
 	return lastState;
 }
 
-void rfct::updateLastState(gameState newState)
-{
+void rfct::updateLastState(gameState newState) {
 	lastState = newState;
 }
 
-void rfct::drawUI(frameContext* ctx)
-{
+void rfct::drawUI(frameContext* ctx) {
 	// general updates
 	timeSinceStateChange += ctx->dt;
 	globalTime += ctx->dt;
@@ -344,9 +342,7 @@ void rfct::drawUI(frameContext* ctx)
 	}
 }
 
-
-void rfct::defineUI()
-{
+void rfct::defineUI() {
 	UINodes[0].label = std::string("PAUSE MENU");
 	UINodes[0].type = UINode::UINodeType::UINodeType_Menu;
 	UINodes[0].previousIndex = -1;

@@ -2,9 +2,6 @@
 #ifdef WIN32
 #include <GLFW/glfw3.h>
 #endif // WIN32
-
-#include <vulkan/vulkan.hpp>
-#include <memory>
 #include "window.h"
 
 namespace rfct {

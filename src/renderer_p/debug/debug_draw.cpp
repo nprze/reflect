@@ -1,6 +1,4 @@
 #include "debug_draw.h"
-
-#include "sizes.h"
 #include "renderer_p/renderer.h"
 
 rfct::debugDraw* instance;

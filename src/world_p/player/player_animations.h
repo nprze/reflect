@@ -1,7 +1,6 @@
 #pragma once
 #include "assets/serialize_structures/frame_animation_serialize_data.h"
 #include "hair_anim.h"
-#include "context.h"
 #include "renderer_p/buffer/vulkan_buffer.h"
 #include "renderer_p/frame_anim/anim_buffer.h"
 

@@ -2,13 +2,11 @@
 #include "input.h"
 #include "world_p/components.h"
 #include "world_p/object_components.h"
-#include "context.h"
 #include "renderer_p/debug/debug_draw.h"
 #include "world_p/scene.h"
 #include "world_p/physics/physics.h"
 #include "world_p/physics/collision.h"
 #include "world_p/transform.h"
-#include "world_p/ecs.h"
 #include "world_p/decors/dash_kindlings.h"
 // sound effects
 #include "sound_p/sound.h"

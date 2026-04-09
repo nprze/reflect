@@ -1,13 +1,12 @@
 #include "camera.h"
-
-#include "renderer_p/renderer.h"
-#include "world_p/world.h"
 #include "glm/gtc/matrix_transform.hpp"
 #define GLM_ENABLE_EXPERIMENTAL
 #include "glm/gtx/euler_angles.hpp"
-#include "world_p/components.h"
-#include "world_p/ecs.h"
 #include "input.h"
+#include "world_p/world.h"
+#include "world_p/components.h"
+#include "renderer_p/renderer.h"
+
 namespace rfct {
 	static entity cameraEntity;
     static glm::mat4 projectionMatrix;
@@ -15,19 +14,18 @@ namespace rfct {
 	float fov = 45.f;
 
     void recalculateProjectionMatrix(cameraComponent& cam) {
+        RFCT_PROFILE_FUNCTION();
         glm::mat4 screenRot = glm::rotate(glm::mat4(1), glm::radians(world::getWorld().screenViewTransformDegrees), glm::vec3(0.0f, 0.0f, 1.0f));
         projectionMatrix = screenRot* glm::perspective(glm::radians(cam.fov), cam.aspectRatio, cam.nearPlane, cam.farPlane);
     }
 
-    void setCamera(entity camera)
-    {
+    void setCamera(entity camera) {
 		cameraEntity = camera;
 		recalculateProjectionMatrix(ecs::get().get<cameraComponent>(camera));
     }
-    void cameraComponentOnUpdate(float dt, entity player, int sceneWidth, int sceneHeight)
-    {
-        RFCT_PROFILE_SCOPE("camera update");
 
+    void cameraComponentOnUpdate(float dt, entity player, int sceneWidth, int sceneHeight) {
+        RFCT_PROFILE_SCOPE("camera update");
         entt::registry& reg = ecs::get();
         glm::vec2 playerPos = reg.get<positionComponent>(player).position;
         auto& camPos3D = reg.get<position3DComponent>(cameraEntity);
@@ -38,7 +36,6 @@ namespace rfct {
             camComp.aspectRatio = renderer::getRen().getAspectRatio();
             recalculateProjectionMatrix(camComp);
         }
-
 		// get size of camera view in world coords
         float distance = std::abs(camPos3D.position.z - 0.0f);
         float fovRad = glm::radians(CameraFOV);

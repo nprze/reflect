@@ -1,27 +1,20 @@
 #include "npc.h"
+#include "input.h"
+#include "renderer_p/debug/debug_draw.h"
 #include "world_p/objects/objects.h"
-#include "context.h"
 #include "world_p/scene.h"
 #include "world_p/object_components.h"
-#include "renderer_p/debug/debug_draw.h"
-#include "input.h"
-
 #include "world_p/dialogue/dialogue.h"
+
+rfct::dialogue* m_currentlyPlayingDialogue = nullptr;
 
 float distanceSquared(const glm::vec2* pos1, const glm::vec2* pos2) {
 	return glm::dot(*pos1 - *pos2, *pos1 - *pos2);
 }
-void rfct::updateNpc(frameContext* ctx, entity npcEntity) {
-}
-
-
-namespace rfct {
-
-	dialogue* m_currentlyPlayingDialogue = nullptr;
-}
 
 namespace rfct {
     void npcs::spawnData(scene* s, sceneSerializedData* sd) {
+        RFCT_PROFILE_FUNCTION();
         auto& reg = ecs::get();
 
         for (const NPCInfo& npcInfo : sd->npcs) {
@@ -38,21 +31,8 @@ namespace rfct {
         }
     };
 
-    void npcs::resetLevel(const frameContext* ctx) {
-    }/*
-    void npcs::onLevelSwitch(scene* scen)
-    {
-        auto vineQuery = ecs::get().view<dialoguePathComponent>();
-        for (auto [ent, sc] : vineQuery.each()) {
-            scen->deleteDynamicEntity(ent);
-        }
-    }
-    ;*/
-
-    void npcs::updateVisuals(const frameContext* ctx) {
-    };
-
     void npcs::updateSystem(frameContext* ctx) {
+        RFCT_PROFILE_FUNCTION();
         auto& reg = ecs::get();
 
         if (ctx->state == gameState::gameplay) {
@@ -93,8 +73,8 @@ namespace rfct {
 			delete m_currentlyPlayingDialogue;
 		}
 	}
-	void npcs::startDialogue(const std::string& path)
-	{
+
+	void npcs::startDialogue(const std::string& path) {
 		m_currentlyPlayingDialogue = new dialogue(path);
 		m_currentlyPlayingDialogue->fullLoad();
 	}

@@ -4,7 +4,6 @@
 #include "components.h"
 #include "transform.h"
 #include "input.h"
-#include "context.h"
 #include "camera/camera.h"
 #include "renderer_p/renderer.h"
 #include "physics/physics.h"

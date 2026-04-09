@@ -1,19 +1,19 @@
 #include "dialogue.h"
 #include "assets/object_load.h"
-#include "context.h"
 #include "renderer_p/debug/debug_draw.h"
 #include "input.h"
 #include "renderer_p/renderer.h"
 
-rfct::dialogue::dialogue(const std::string& dialoguePath)
-{
+constexpr float waitBetweenLines = .5f;
+
+rfct::dialogue::dialogue(const std::string& dialoguePath) {
 	loadDialogue("dialogues/"+dialoguePath+".txt", &m_serializeData);
 	RFCT_INFO("dialogue participant count: {}", m_serializeData.participants.size());
 	nodeIndex = 0;
 }
 
-void rfct::dialogue::fullLoad()
-{
+void rfct::dialogue::fullLoad() {
+	RFCT_PROFILE_FUNCTION();
 	for (auto& participantInfo : m_serializeData.participants) {
 		dialogueParticipant participant = {};
 		for (auto filename : participantInfo.spritesFilenames) {
@@ -30,12 +30,11 @@ void rfct::dialogue::fullLoad()
 }
 
 bool rfct::dialogue::update(frameContext* ctx) {
+	RFCT_PROFILE_FUNCTION();
 	if (!loaded) return false;
 	timeTillChangeOfIndexIsPossible -= ctx->dt;
 
-	
 	updateText(ctx);
-
 	updateImage(ctx);
 
 	if (input::getInput().anyClicked && timeTillChangeOfIndexIsPossible <= 0.f) {
@@ -48,7 +47,6 @@ bool rfct::dialogue::update(frameContext* ctx) {
 		changeSpritesheet();
 	}
 	return false;
-	
 }
 
 rfct::dialoguePartAnimation getAnim(const std::string& name) {
@@ -57,8 +55,7 @@ rfct::dialoguePartAnimation getAnim(const std::string& name) {
 	RFCT_CRITICAL("unknown animation");
 }
 
-void rfct::dialogue::getDialogueData()
-{
+void rfct::dialogue::getDialogueData() {
 	currentTextAnimTime = 0.f;
 	text.clear();
 	textAnimations.clear();
@@ -66,9 +63,8 @@ void rfct::dialogue::getDialogueData()
 	lineChars = 0;
 
 	std::string lineText =  m_serializeData.text[nodeIndex].dialogueText;
-
-
 	std::size_t pos = 0;
+
 	while (true) {
 		std::size_t open = lineText.find('[', pos);
 		if (open == std::string::npos) break;
@@ -95,8 +91,8 @@ void rfct::dialogue::getDialogueData()
 	currentTextFullAnimTime = 2.f;
 }
 
-void rfct::dialogue::updateText(frameContext* ctx)
-{
+void rfct::dialogue::updateText(frameContext* ctx) {
+	RFCT_PROFILE_FUNCTION();
 	if (text.size() == 0) getDialogueData();
 
 	currentTextAnimTime += ctx->dt;
@@ -119,8 +115,8 @@ void rfct::dialogue::updateText(frameContext* ctx)
 	}
 }
 
-void rfct::dialogue::updateImage(frameContext* ctx)
-{
+void rfct::dialogue::updateImage(frameContext* ctx) {
+	RFCT_PROFILE_FUNCTION();
 	if (currentSpritesheet == nullptr) changeSpritesheet();
 	spritesheetCycle currentCycle = currentSpritesheet->cycles[currentCycleName];
 
@@ -154,11 +150,10 @@ void rfct::dialogue::updateImage(frameContext* ctx)
 	glm::vec2 texMax = { (spriteSheetTextureCoords.y+1) * oneOverColumnCount, (spriteSheetTextureCoords.x+1) * oneOverRowCount };
 
 	renderer::getRen().getUIPipeline().addImage({ 10, 300 }, { 110, 400 }, &(currentSpritesheet->spriteSheetImage), texMin, texMax);
-
 }
 
-void rfct::dialogue::changeSpritesheet()
-{
+void rfct::dialogue::changeSpritesheet() {
+	RFCT_PROFILE_FUNCTION();
 	std::istringstream iss(m_serializeData.text[nodeIndex].participantDataInBrackets);
 	std::vector<std::string> parts;
 	std::string word;
@@ -184,20 +179,17 @@ void rfct::dialogue::changeSpritesheet()
 	onChangeCycle();
 }
 
-void rfct::dialogue::onChangeFrame()
-{
+void rfct::dialogue::onChangeFrame() {
 	framePlayingTime = 0.f;
 }
 
-void rfct::dialogue::onChangeCycle()
-{
+void rfct::dialogue::onChangeCycle() {
 	cyclePlayingTime = 0.f;
 	onChangeFrame();
 	currentCycleIsLooped = (currentSpritesheet->cycles[currentCycleName].fallBack == "");
 }
 
-rfct::characterSpritesheet::characterSpritesheet(const std::string& characterName, const std::string& spritesheetName): spriteSheetImage("dialogues/characters/"+characterName+"/"+spritesheetName+".png")
-{
+rfct::characterSpritesheet::characterSpritesheet(const std::string& characterName, const std::string& spritesheetName): spriteSheetImage("dialogues/characters/"+characterName+"/"+spritesheetName+".png") {
 	dialogueSpritesheetSerializeData sd;
 	loadDialogueSpriteSheet("dialogues/characters/" + characterName + "/" + spritesheetName + ".txt", &sd);
 	cycles = std::move(sd.cycles);
@@ -205,9 +197,6 @@ rfct::characterSpritesheet::characterSpritesheet(const std::string& characterNam
 	columnCount = sd.columnCount;
 }
 
-rfct::characterSpritesheet::~characterSpritesheet()
-{
-	if (drawn) {
-		renderer::getRen().getUIPipeline().removeImage(&spriteSheetImage);
-	}
+rfct::characterSpritesheet::~characterSpritesheet() {
+	if (drawn) renderer::getRen().getUIPipeline().removeImage(&spriteSheetImage);
 }

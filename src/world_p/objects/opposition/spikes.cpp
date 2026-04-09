@@ -4,13 +4,10 @@
 #include "world_p/object_components.h"
 #include "world_p/components.h"
 
+std::vector<rfct::Vertex> vertices; // doing this to avoid smaller alloc
 
 namespace rfct {
-	std::vector<Vertex> vertices; // doing this to avoid smaller alloc
-}
-namespace rfct {
 	void onCollision_Spike_DynamicObj(entity vineEntity, entity collidedWith) {
-		
 		if (ecs::get().get<dynamicObjectTypeComponent>(collidedWith).type != dynamicObjectType::Player) return;
 		ecs::get().get<playerLifeComponent>(collidedWith).alive = false;
 	}
@@ -18,10 +15,12 @@ namespace rfct {
 
 namespace rfct {
 	void spikes::initSystem() {
-		constexpr size_t maxSpikesInOneLine = 100;
-		vertices.resize(maxSpikesInOneLine * 3);
+		RFCT_PROFILE_FUNCTION();
+		vertices.resize(300); // assume max 100 spikes in one line
 	};
+
 	void spikes::spawnData(scene* s, sceneSerializedData* sd) {
+		RFCT_PROFILE_FUNCTION();
 		for (SpikeInfo& spawnInfo : sd->spikes) {
 			// spikes along the line defined by spawnInfo min and max, a spike size is 0.5f x 0.5f.
 			glm::vec2 alongTheSpawn = glm::normalize(spawnInfo.max - spawnInfo.min);

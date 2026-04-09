@@ -1,5 +1,4 @@
 #pragma once
-#include "context.h"
 #include "assets/serialize_structures/scene_serialize_data.h"
 
 namespace rfct {
@@ -7,7 +6,6 @@ namespace rfct {
 		virtual void initSystem() = 0;
 		virtual void spawnData(scene* s, sceneSerializedData* sd) = 0;
 		virtual void resetLevel(const frameContext* ctx) = 0;
-		//virtual void onLevelSwitch(scene* sc) = 0;
 		virtual void updateVisuals(const frameContext* ctx) = 0;
 		virtual void updateSystem(frameContext* ctx) = 0;
 		virtual void cleanupSystem() = 0;

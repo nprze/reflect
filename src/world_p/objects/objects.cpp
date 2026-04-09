@@ -1,13 +1,12 @@
 #include "objects.h"
 #include "world_p/components.h"
 #include "world_p/physics/physics.h"
-#include "world_p/ecs.h"
 
-rfct::objectSystems rfct::objectSystems::instance;
+rfct::objectSystems instance;
+rfct::objectSystems& rfct::objectSystems::get() { return instance; };
 
-
-void rfct::objectSystems::init()
-{
+void rfct::objectSystems::init() {
+	RFCT_PROFILE_FUNCTION();
 	m_jumpBoostSystem.initSystem();
 	m_spikeSystem.initSystem();
 	m_npcSystem.initSystem();
@@ -16,8 +15,8 @@ void rfct::objectSystems::init()
 	m_cigSystem.initSystem();
 }
 
-void rfct::objectSystems::cleanupBuffer()
-{
+void rfct::objectSystems::cleanupBuffer() {
+	RFCT_PROFILE_FUNCTION();
 	m_cigSystem.cleanupSystem();
 	m_enemySystem.cleanupSystem();
 	m_vineSystem.cleanupSystem();
@@ -25,8 +24,9 @@ void rfct::objectSystems::cleanupBuffer()
 	m_spikeSystem.cleanupSystem();
 	m_jumpBoostSystem.cleanupSystem();
 }
-void rfct::objectSystems::loadSceneData(sceneSerializedData* serializeData, scene* parentScene)
-{
+
+void rfct::objectSystems::loadSceneData(sceneSerializedData* serializeData, scene* parentScene) {
+	RFCT_PROFILE_FUNCTION();
 	m_cigSystem.spawnData(parentScene, serializeData);
 	m_enemySystem.spawnData(parentScene, serializeData);
 	m_vineSystem.spawnData(parentScene, serializeData);
@@ -35,9 +35,8 @@ void rfct::objectSystems::loadSceneData(sceneSerializedData* serializeData, scen
 	m_jumpBoostSystem.spawnData(parentScene, serializeData);
 }
 
-void rfct::objectSystems::systemsFixedUpdate(frameContext* fc)
-{
-	RFCT_PROFILE_SCOPE("dynamic objects update");
+void rfct::objectSystems::systemsFixedUpdate(frameContext* fc) {
+	RFCT_PROFILE_FUNCTION();
 	m_cigSystem.updateSystem(fc);
 	m_enemySystem.updateSystem(fc);
 	m_vineSystem.updateSystem(fc);
@@ -47,6 +46,7 @@ void rfct::objectSystems::systemsFixedUpdate(frameContext* fc)
 }
 
 void rfct::objectSystems::updateVisuals(frameContext* fc){
+	RFCT_PROFILE_FUNCTION();
 	m_cigSystem.updateVisuals(fc);
 	m_enemySystem.updateVisuals(fc);
  	m_vineSystem.updateVisuals(fc);
@@ -54,28 +54,28 @@ void rfct::objectSystems::updateVisuals(frameContext* fc){
 	m_spikeSystem.updateVisuals(fc);
 	m_jumpBoostSystem.updateVisuals(fc);
 }
-void rfct::objectSystems::customDrawObjects(vk::CommandBuffer& cmd, frameContext* ctx)
-{
+void rfct::objectSystems::customDrawObjects(vk::CommandBuffer& cmd, frameContext* ctx) {
+	RFCT_PROFILE_FUNCTION();
 	m_enemySystem.drawFrameAnimSprites(cmd, ctx);
-	// todo: grass should be drawn here to be displayed over
+	// TODO: grass should be drawn here to be displayed over
 }
-void rfct::objectSystems::respawn(frameContext* fc)
-{
+void rfct::objectSystems::respawn(frameContext* fc) {
+	RFCT_PROFILE_FUNCTION();
 	m_cigSystem.resetLevel(fc);
 	m_vineSystem.resetLevel(fc);
 }
-void rfct::objectSystems::onPlayerDash(frameContext* fc, const entity entityPlayer, const bool facingRight)
-{
+void rfct::objectSystems::onPlayerDash(frameContext* fc, const entity entityPlayer, const bool facingRight) {
+	RFCT_PROFILE_FUNCTION();
 	m_cigSystem.onDash(fc, entityPlayer, facingRight);
 }
 
-void rfct::objectSystems::onStartHolding(playerState state, nearestObject& nearest)
-{
+void rfct::objectSystems::onStartHolding(playerState state, nearestObject& nearest) {
+	RFCT_PROFILE_FUNCTION();
 	if (nearest.vineIndex >= 0)
 		m_vineSystem.onStartHolding(nearest);
 }
 
-void rfct::objectSystems::onEndHolding()
-{
+void rfct::objectSystems::onEndHolding() {
+	RFCT_PROFILE_FUNCTION();
 	m_vineSystem.onEndHolding();
 }

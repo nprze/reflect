@@ -1,16 +1,14 @@
 #pragma once
+#include "utils/alloc.h"
 #include "miniaudio/miniaudio.h"
 
 namespace rfct {
 	struct sound {
 		ma_sound* memory;
 	};
-
 	class soundPlayer { // just plays sounds
-	private:
-		static soundPlayer instance;
 	public:
-		static soundPlayer& get() { return instance; }
+		static soundPlayer& get();
 	private:
 		ma_engine m_engine;
 		arenaAllocation m_soundMemory;
@@ -21,14 +19,9 @@ namespace rfct {
 		void playSound(sound& sound);
 		void deleteSound(sound& sound);
 	};
-
-	inline void play(sound& sound) { soundPlayer::get().playSound(sound); }
-
 	class soundManager { // manages sound effect sounds
-	private:
-		static soundManager instance;
 	public:
-		static soundManager& get() { return instance; }
+		static soundManager& get();
 	public:
 		sound background;
 		sound swoosh;
@@ -36,4 +29,5 @@ namespace rfct {
 		void loadSounds();
 		void unloadSounds();
 	};
+	inline void play(sound& sound) { soundPlayer::get().playSound(sound); }
 }

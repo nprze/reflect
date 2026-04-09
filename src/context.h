@@ -1,5 +1,6 @@
 #pragma once
 #include "job_system_p/job_system.h"
+
 namespace rfct {
 	enum gameState {
 		undefined,

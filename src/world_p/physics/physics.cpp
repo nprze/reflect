@@ -1,7 +1,5 @@
 #include "physics.h"
-#include "world_p/ecs.h"
 #include "renderer_p/debug/debug_draw.h"
-#include "context.h"
 
 #include <stack>
 #include <limits>

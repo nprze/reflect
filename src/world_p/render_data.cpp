@@ -1,7 +1,6 @@
 #include "render_data.h"
 #include "renderer_p\rasterizer_pipeline\vertex.h"
 #include "renderer_p\renderer.h"
-#include "context.h"
 
 vk::DescriptorSetLayout descriptorSetLayout;
 

@@ -1,5 +1,4 @@
 #include "bloom.h"
-#include "context.h"
 #include "renderer_p/renderer.h"
 
 namespace rfct {

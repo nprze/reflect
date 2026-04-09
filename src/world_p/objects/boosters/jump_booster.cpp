@@ -3,19 +3,10 @@
 #include "world_p/object_components.h"
 #include "world_p/transform.h"
 #include "world_p/scene.h"
-#include "world_p/ecs.h"
 #include "renderer_p/debug/debug_draw.h"
 
 namespace rfct {
 	constexpr float boostAnimTime = 0.5f;
-	void onCollision_JumpBooster_DynamicObj(entity enemy, entity collidedWith) {
-		entt::registry& reg = ecs::get();
-		if (reg.get<dynamicObjectTypeComponent>(collidedWith).type != dynamicObjectType::Player) return;
-
-		reg.get<velocityComponent>(collidedWith).velocity.y = 3.6f;
-		reg.get<playerStateComponent>(collidedWith).dashCharges = 1;
-		reg.get<jumpBoosterComponent>(enemy).timeSinceBoost = 0.0f;
-	}
 
 	std::vector<Vertex> jumpBoosterVertices = {
 		{{-0.17799716876470864f, 0.002142857142857141f, 0.0f}, {0.519531f, 0.339844f, 0.222656f}, 0, 0},
@@ -47,10 +38,18 @@ namespace rfct {
 	};
 };
 
-
-
 namespace rfct {
+	void onCollision_JumpBooster_DynamicObj(entity enemy, entity collidedWith) {
+		entt::registry& reg = ecs::get();
+		if (reg.get<dynamicObjectTypeComponent>(collidedWith).type != dynamicObjectType::Player) return;
+
+		reg.get<velocityComponent>(collidedWith).velocity.y = 3.6f;
+		reg.get<playerStateComponent>(collidedWith).dashCharges = 1;
+		reg.get<jumpBoosterComponent>(enemy).timeSinceBoost = 0.0f;
+	}
+
 	void jumpBoosters::spawnData(scene* s, sceneSerializedData* sd) {
+		RFCT_PROFILE_FUNCTION();
 		uint8_t i = 0;
 		for (const JumpBoosterInfo& e : sd->boosters) {
 
@@ -84,11 +83,9 @@ namespace rfct {
 			i++;
 		}
 	};
-	void jumpBoosters::resetLevel(const frameContext* ctx) {
-	};
-	void jumpBoosters::updateVisuals(const frameContext* ctx) {
-	};
+
 	void jumpBoosters::updateSystem(frameContext* ctx) { 
+		RFCT_PROFILE_FUNCTION();
 		auto jumpBoosterQuery = ecs::get().view<scaleComponent, dynamicBoxColliderComponent, jumpBoosterComponent, dynamicSSBOIndexComponent>();
 		for (auto [ent, sc, box, en, i] : jumpBoosterQuery.each()) {
 			glm::vec2 heightPlus = { 0,0 };

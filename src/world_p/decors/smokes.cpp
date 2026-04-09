@@ -4,20 +4,14 @@
 #include "renderer_p/rasterizer_pipeline/vertex.h"
 #include <glm/ext.hpp>
 #include "world_p/scene.h"
-#include "world_p/ecs.h"
 #include "world_p/transform.h"
 
-namespace rfct {
-    constexpr float inside = 0.3f;
-    constexpr float outside = 0.34f;
-
-
-    constexpr float angularDamping = 0.94f;
-}
-
+constexpr float inside = 0.3f;
+constexpr float outside = 0.34f;
+constexpr float angularDamping = 0.94f;
 std::vector<rfct::Vertex> smokeVertices;
-void rfct::initSmokeVars(scene* parentScene)
-{
+
+void rfct::initSmokeVars(scene* parentScene) {
     RFCT_PROFILE_FUNCTION();
     smokeVertices.clear();
     smokeVertices.resize(24);
@@ -81,10 +75,6 @@ void rfct::initSmokeVars(scene* parentScene)
     }
 }
 
-void rfct::cleanupSmokes()
-{
-}
-
 void rfct::spawnSmoke(frameContext* fc, const glm::vec2& position, const glm::vec2& direction, uint32_t particleCount, float lifetimeSec)
 {
     for (uint32_t i = 0; i < particleCount; ++i) {
@@ -111,12 +101,10 @@ void rfct::spawnSmoke(frameContext* fc, const glm::vec2& position, const glm::ve
         reg.emplace_or_replace<rotationComponent>(smoke, rotationComponent{ {} });
         reg.emplace_or_replace<scaleComponent>(smoke, scaleComponent{ {0, 0} });
         reg.emplace<dynamicObjectTypeComponent>(smoke, dynamicObjectTypeComponent{ {dynamicObjectType::Smoke} });
-
     }
 }
 
-void rfct::setColors(float* is)
-{
+void rfct::setColors(float* is) {
     uint32_t s = 4 * 3;
     for (int j = 0; j < 3; j++) {
         smokeVertices[s + j].color = { *is, *is, *is };
@@ -140,8 +128,7 @@ void rfct::setColors(float* is)
     s += 3;
 }
 
-void rfct::updateSmokes(frameContext* ctx)
-{
+void rfct::updateSmokes(frameContext* ctx) {
 	// fixed update
     auto smokeParticlesComponentsQuery = ecs::get().view<smokeParticleComponent, smokeDisperseComponent, sinusoidFloatComponent, angularVelocityComponent, positionComponent, rotationComponent, scaleComponent, dynamicSSBOIndexComponent>();
     for (auto [smokeParticle, particleDir, disperse, smokeFloat, angVel, pos, rot, sc, ssbo] : smokeParticlesComponentsQuery.each()) {
@@ -172,8 +159,7 @@ void rfct::updateSmokes(frameContext* ctx)
     };
 }
 
-void rfct::updateSmokeMatrices(frameContext* ctx)
-{
+void rfct::updateSmokeMatrices(frameContext* ctx) {
     renderData& rd = ctx->scene->getRenderData();
     auto smokeParticlesQuery = ecs::get().view<smokeDisperseComponent, dynamicSSBOIndexComponent, positionComponent, rotationComponent, scaleComponent, dynamicSSBOIndexComponent>();
     for (auto [smokeParticle, dis, ssboData, pos, rot, sc,ssbo] : smokeParticlesQuery.each()) {

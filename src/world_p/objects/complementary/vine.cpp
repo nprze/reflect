@@ -1,22 +1,23 @@
 #include "vine.h"
-#include "world_p/scene.h"
-#include "world_p/ecs.h"
-#include "world_p/transform.h"
+#include <random>
 #include "renderer_p/debug/debug_draw.h"
+#include "world_p/scene.h"
+#include "world_p/transform.h"
 #include "world_p/components.h"
 #include "world_p/object_components.h"
-#include <random>
-//debug
-#include "renderer_p/debug/debug_draw.h"
-
-
 #include "world_p/physics/physics.h"
 
 #define RFCT_VINE_CONSTRAINS_ITERATIONS 10
 
+constexpr glm::vec2 vineGravity = { 0.f, -15.f };
+entity vineClosestToPlayer = entt::null;
+int nearestVineEdgeToPlayerIndex;
+glm::vec2 nearestVineEdgeToPlayerPosition;
+
 float len(const glm::vec2& vector) {
 	return std::sqrt((vector.x * vector.x) + (vector.y * vector.y));
 }
+
 glm::vec3 getColorWithFluctuate(float maxFluct = 0.2f, const glm::vec3& basicColor = glm::vec3(0.7098f, 0.9020f, 0.1137f)) {
 	static std::mt19937 gen(std::random_device{}());
 	std::uniform_real_distribution<float> dist(-maxFluct * 0.5f, maxFluct * 0.5f);
@@ -25,14 +26,8 @@ glm::vec3 getColorWithFluctuate(float maxFluct = 0.2f, const glm::vec3& basicCol
 }
 
 namespace rfct {
-
-	constexpr glm::vec2 vineGravity = { 0.f, -15.f };
-
-	entity vineClosestToPlayer = entt::null;
-	int nearestVineEdgeToPlayerIndex;
-	glm::vec2 nearestVineEdgeToPlayerPosition;
-
 	void onCollision_Vine_StaticObj(entity vineEntity, entity collidedWith, glm::vec2 resolution) {
+		RFCT_PROFILE_FUNCTION();
 		// narrow phase
 		entt::registry& reg = ecs::get();
  		auto& vinePosCom = reg.get<vinePositionsComponent>(vineEntity);
@@ -73,7 +68,9 @@ namespace rfct {
 			}
 		}
 	}
+
 	void onCollision_Vine_DynamicObj(entity vineEntity, entity collidedWith) {
+		RFCT_PROFILE_FUNCTION();
 		// narrow phase
 		entt::registry& reg = ecs::get();
 		if (reg.get<dynamicObjectTypeComponent>(collidedWith).passable)
@@ -92,7 +89,6 @@ namespace rfct {
 
 		auto& vinePosCom = reg.get<vinePositionsComponent>(vineEntity);
 		auto& vineBasePos = reg.get<positionComponent>(vineEntity).position;
-
 
 		std::vector<glm::vec2>& positions = vinePosCom.positions;
 
@@ -126,8 +122,9 @@ namespace rfct {
 			}
 		}
 	}
-	std::pair<glm::vec2, int> getNearestEdgePos(const glm::vec2& PlayerPos, entity vine)
-	{
+
+	std::pair<glm::vec2, int> getNearestEdgePos(const glm::vec2& PlayerPos, entity vine) {
+		RFCT_PROFILE_FUNCTION();
 		glm::vec2 posMin = glm::vec2(FLT_MAX);
 		float distMin = FLT_MAX;
 		int curVine = 0;
@@ -147,8 +144,7 @@ namespace rfct {
 		return { posMin, vineIndex };
 	}
 
-	void constructBoundingBox(dynamicBoxColliderComponent& boundingBox, const vinePositionsComponent& vinePos)
-	{
+	void constructBoundingBox(dynamicBoxColliderComponent& boundingBox, const vinePositionsComponent& vinePos) {
 		boundingBox.min = { FLT_MAX, FLT_MAX };
 		boundingBox.max = { FLT_MIN, FLT_MIN };
 		for (const glm::vec2& pos : vinePos.positions) {
@@ -159,8 +155,9 @@ namespace rfct {
 			boundingBox.min.y = std::min(pos.y, boundingBox.min.y);
 		}
 	}
-	glm::vec2 simulateVinePlayerIsHolding(entity player,entity vineEntity, int vineEdgeIndex, const frameContext* fc)
-	{
+
+	glm::vec2 simulateVinePlayerIsHolding(entity player,entity vineEntity, int vineEdgeIndex, const frameContext* fc) {
+		RFCT_PROFILE_FUNCTION();
 		entt::registry& reg = ecs::get();
 		auto& vinePosCom = reg.get<vinePositionsComponent>(vineEntity);
 		auto vineBasePos = reg.get<positionComponent>(vineEntity).position;
@@ -213,13 +210,9 @@ namespace rfct {
 }
 
 namespace rfct {
-
-	void vines::initSystem() {
-
-	}
 	void vines::spawnData(scene* s, sceneSerializedData* sd) {
+		RFCT_PROFILE_FUNCTION();
 		for (vineInfo& vi : sd->vines) {
-
 			vinePositionsComponent vpCom = {};
 			vineBasePositionsComponent vbpCom = {};
 			vpCom.positions.reserve(vi.numEdges);
@@ -293,7 +286,9 @@ namespace rfct {
 		}
  		nearestVineEdgeToPlayerIndex = -1;
 	};
+
 	void vines::resetLevel(const frameContext* ctx) {
+		RFCT_PROFILE_FUNCTION();
 		auto vineQuery = ecs::get().view<vineStateComponent, vinePositionsComponent, vineLenghtComponent, dynamicBoxColliderComponent, positionComponent>();
 		for (auto [ent, sc, positions, en, boc, pos] : vineQuery.each()) {
 
@@ -306,16 +301,9 @@ namespace rfct {
 			}
 			};
 	}
-	/*void vines::onLevelSwitch(scene* scen)
-	{
-		auto vineQuery = ecs::get().view<vineStateComponent>();
-		for (auto [ent, sc] : vineQuery.each()) {
-			scen->deleteDynamicEntity(ent);
-		}
-	}
-	;*/
-	void vines::updateVisuals(const frameContext* ctx) {
 
+	void vines::updateVisuals(const frameContext* ctx) {
+		RFCT_PROFILE_FUNCTION();
 		auto vineQuery = ecs::get().view<vinePositionsComponent, vineVerticesComponent, positionComponent, vertexRenderInfoComponent>();
 		for (auto [ent, pos, verts, posComp, renInfo] : vineQuery.each()) {
 			std::vector<glm::vec2>& positions = pos.positions;
@@ -380,7 +368,9 @@ namespace rfct {
 			}
 		};
 	};
+
 	void vines::updateSystem(frameContext* ctx) {
+		RFCT_PROFILE_FUNCTION();
 		if (nearestVineEdgeToPlayerIndex != -1) {
 			if (ecs::get().get<vineStateComponent>(vineClosestToPlayer).holdingToThis) {
 				ecs::get().get<positionComponent>(ctx->scene->getPlayer()).position = simulateVinePlayerIsHolding(ctx->scene->getPlayer(), vineClosestToPlayer, nearestVineEdgeToPlayerIndex, ctx);
@@ -420,14 +410,14 @@ namespace rfct {
 			};
 		}
 	};
-	void vines::onStartHolding(nearestObject& nearest)
-	{
+
+	void vines::onStartHolding(nearestObject& nearest) {
 		vineClosestToPlayer = nearest.object;
 		ecs::get().get<vineStateComponent>(vineClosestToPlayer).holdingToThis = true;
 		nearestVineEdgeToPlayerIndex = nearest.vineIndex;
 	}
-	void vines::onEndHolding()
-	{
+
+	void vines::onEndHolding() {
 		nearestVineEdgeToPlayerIndex = -1;
 		if (vineClosestToPlayer != entt::null) {
 			ecs::get().get<vineStateComponent>(vineClosestToPlayer).holdingToThis = false;

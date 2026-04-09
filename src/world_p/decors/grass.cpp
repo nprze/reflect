@@ -3,14 +3,12 @@
 #include "renderer_p/rasterizer_pipeline/vertex.h"
 #include "world_p/components.h"
 #include "world_p/object_components.h"
-#include "world_p/ecs.h"
 #include "world_p/transform.h"
 #include "assets/serialize_structures/scene_serialize_data.h"
 #include "world_p/scene.h"
 #include "world_p/player/player.h"
 
-namespace rfct
-{
+namespace rfct {
 	std::vector<Vertex> grassVertices = {
 	   {{-0.00088f, 0.264f, 0.0f}, {0.55f, 0.80f, 0.30f}, 0, 0},
 	   {{-0.10956f, 0.000f, 0.0f}, {0.55f, 0.80f, 0.30f}, 0, 0},
@@ -40,12 +38,7 @@ namespace rfct
 	};
 };
 
-void rfct::initGrassVars(scene* parentScene)
-{
-}
-
-void rfct::spawnTallGrass(scene* parentScene, sceneSerializedData* sd)
-{
+void rfct::spawnTallGrass(scene* parentScene, sceneSerializedData* sd) {
 	entt::registry& reg = ecs::get();
 	for (const TallGrassInfo& e : sd->tallGrass) {
 		dynamicBoxColliderComponent bounds = {};
@@ -73,10 +66,6 @@ void rfct::spawnTallGrass(scene* parentScene, sceneSerializedData* sd)
 		reg.emplace_or_replace<grassComponent>(jump, eComp);
 		reg.emplace_or_replace<dynamicObjectTypeComponent>(jump, dynamicObjectTypeComponent{ dynamicObjectType::JumpBooster, false });
 	}
-}
-
-void rfct::cleanupGrass()
-{
 }
 
 void rfct::updateGrass(frameContext* ctx)

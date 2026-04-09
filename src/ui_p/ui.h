@@ -1,7 +1,5 @@
 #pragma once
-#include "context.h"
 
-enum UIPartsNames;
 namespace rfct {
 	gameState getState();
 	void updateLastState(gameState newState);

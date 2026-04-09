@@ -1,6 +1,5 @@
 #pragma once
 #include <glm/glm.hpp>
-#include "context.h"
 #include <unordered_set>
 
 namespace rfct {

@@ -1,21 +1,19 @@
 #include "enemy.h"
-#include "world_p/ecs.h"
+#include "assets/mesh_load.h"
+#include "renderer_p/frame_anim/anim_buffer.h"
 #include "world_p/components.h"
 #include "world_p/object_components.h"
 #include "world_p/transform.h"
 #include "world_p/scene.h"
 #include "world_p/physics/collision.h"
 #include "world_p/world.h"
-#include "renderer_p/frame_anim/anim_buffer.h"
-#include "assets/mesh_load.h"
 #include "world_p/objects/objects.h"
 
+constexpr float maxEnemySpeed = 0.2f;
+constexpr float oneTurnTime = .5f;
+rfct::animationBuffer animBuffer;
+
 namespace rfct {
-	constexpr float maxEnemySpeed = 0.2f;
-	constexpr float oneTurnTime = .5f;
-
-	animationBuffer animBuffer;
-
 	void onCollision_Enemy_StaticObj(entity enemy, entity collidedWith, glm::vec2 resolution) {
 		ecs::get().get<positionComponent>(enemy).position += resolution;
 		velocityComponent& vel = ecs::get().get<velocityComponent>(enemy);
@@ -30,6 +28,7 @@ namespace rfct {
 
 		}
 	}
+
 	void onCollision_Enemy_DynamicObj(entity enemy, entity collidedWith) {
 		entt::registry& reg = ecs::get();
 		if (reg.get<dynamicObjectTypeComponent>(collidedWith).passable)
@@ -71,13 +70,13 @@ namespace rfct {
 };
 
 namespace rfct {
-	void enemies::initSystem()
-	{
+	void enemies::initSystem() {
+		RFCT_PROFILE_FUNCTION();
 		animBuffer.init(10000);
 	}
 
 	void enemies::spawnData(scene* s, sceneSerializedData* sd) {
-
+		RFCT_PROFILE_FUNCTION();
 		for (const BasicEnemyInfo& e : sd->enemies) {
 
 			dynamicBoxColliderComponent bounds = {};
@@ -131,17 +130,8 @@ namespace rfct {
 		}
 	};
 
-	void enemies::resetLevel(const frameContext* ctx) {}
-	/*void enemies::onLevelSwitch(scene* scen)
-	{
-		auto enemyQuery = ecs::get().view<enemyComponent>();
-		for (auto [ent, ve] : enemyQuery.each()) {
-			scen->deleteAnimatedEntity(ent);
-		}
-	};*/
-
 	void enemies::updateVisuals(const frameContext* ctx) {
-
+		RFCT_PROFILE_FUNCTION();
 		auto enemyQuery = ecs::get().view<velocityComponent, positionComponent, scaleComponent, enemyComponent>();
 		for (auto [ent, vel, pos, sc, en] : enemyQuery.each()) {
 			ctx->scene->updateTransformData(ctx, ent);
@@ -149,7 +139,7 @@ namespace rfct {
 	};
 
 	void enemies::updateSystem(frameContext* ctx) {
-
+		RFCT_PROFILE_FUNCTION();
 		auto enemyQuery = ecs::get().view<velocityComponent, positionComponent, scaleComponent, enemyComponent>();
 		for (auto [ent, vel, pos, sc, en] : enemyQuery.each()) {
 			frameAnimation* currentAnim = (frameAnimation*)((char*)&en.walkFrameAnim + (en.animIndex * sizeof(frameAnimation)));
@@ -212,11 +202,12 @@ namespace rfct {
 	};
 
 	void enemies::cleanupSystem() {
+		RFCT_PROFILE_FUNCTION();
 		animBuffer.cleanupBuffer();
 	}
 
-	void enemies::drawFrameAnimSprites(vk::CommandBuffer& cmd, frameContext* ctx)
-	{
+	void enemies::drawFrameAnimSprites(vk::CommandBuffer& cmd, frameContext* ctx) {
+		RFCT_PROFILE_FUNCTION();
 		vk::Buffer vertexBuffers[] = { animBuffer.getBuffer() };
 
 		auto enemyQuery = ecs::get().view<velocityComponent, positionComponent, scaleComponent, enemyComponent>();

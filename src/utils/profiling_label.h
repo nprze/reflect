@@ -11,6 +11,7 @@
         nvtx3::mark_in<GET_NVTX_DOMAIN(__FILE__)>(name);
 #else
     #ifdef NVTX_ENABLE
+    #include <iostream>
     #include "nvtx/nvtx3.hpp"
     #define RFCT_PROFILE_SCOPE(name) \
         nvtx3::scoped_range scopedRange(name);
