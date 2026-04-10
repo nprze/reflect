@@ -4,9 +4,6 @@
 #include "renderer_p/rasterizer_pipeline/vertex.h"
 
 namespace rfct {
-    class scene;
-    struct frameContext;
-
     struct vinePositionsComponent {
         std::vector<glm::vec2> previousPosition;
         std::vector<glm::vec2> positions;
@@ -21,10 +18,10 @@ namespace rfct {
         bool holdingToThis = false;
     };
     struct vineLenghtComponent {
-        float oneBoneLenght;
+        float oneBoneLenght = 0.f;
     };
     struct interactionDistanceComponent {
-        float interationDistanceSquared;
+        float interationDistanceSquared = 0.f;
     };
     struct dialoguePathComponent {
         std::string dialoguePath;
@@ -38,25 +35,25 @@ namespace rfct {
         bool hasSmokeFinished = false;
     };
     struct smokeParticleComponent {
-        glm::vec2 direction;
+        glm::vec2 direction = glm::vec2(0.f);
     };
     struct sinusoidFloatComponent {
-        float amplitude;
-        float frequency;
-        float phase;
+        float amplitude = 0.f;
+        float frequency = 0.f;
+        float phase = 0.f;
     };
     struct smokeDisperseComponent {
-        float fullLenght;
-        float currentProgress;
+        float fullLenght = 0.f;
+        float currentProgress = 0.f;
     };
     struct kindlingParticleComponent {
-        glm::vec2 direction;
-        float fullLenght;
-        float currentProgress;
+        glm::vec2 direction = glm::vec2(0.f);
+        float fullLenght = 0.f;
+        float currentProgress = 0.f;
     };
     struct deathAnimParticle {
-        glm::vec2 direction;
-        float currentProgress;
+        glm::vec2 direction = glm::vec2(0.f);
+        float currentProgress = 0.f;
     };
     struct enemyComponent {
         bool facingRight = true;
@@ -65,13 +62,12 @@ namespace rfct {
         frameAnimation dieFrameAnim;
         uint8_t animIndex; // 0- walk, 1-turn, 2- die
         float turningTime = 0.f;
-
         float timeSinceFrameChanged = 0.f;
-        uint8_t frameIndex;
-        size_t bufferOffset;
+        uint8_t frameIndex = 0;
+        size_t bufferOffset = 0;
     };
     struct enemyRayComponent {
-        entity owner;
+        entity owner = entt::null;
     };
     struct jumpBoosterComponent {
         float timeSinceBoost = -1.f;

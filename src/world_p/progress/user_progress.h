@@ -3,13 +3,11 @@
 
 namespace rfct {
 	class userSettings {
-		static userSettings instance;
 	public:
-		static userSettings& get() { return instance; }
+		static userSettings& get();
 		void loadUserSettings();
 		void dumpUserSettings();
-		void resetToDefaults();
+	public:
 		settingsSerializeData seriaizeData;
-	private:
 	};
 }

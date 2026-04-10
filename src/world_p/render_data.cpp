@@ -5,6 +5,7 @@
 vk::DescriptorSetLayout descriptorSetLayout;
 
 vk::DescriptorSetLayout rfct::renderData::getDescriptorSetLayout() {
+	RFCT_PROFILE_FUNCTION();
 	if (descriptorSetLayout) return descriptorSetLayout;
 	vk::DescriptorSetLayoutBinding layoutBinding{};
 	layoutBinding.binding = 1;
@@ -33,6 +34,7 @@ rfct::renderData::renderData()
 	m_verticesCountStaticObj(0), 
 	m_verticesCountDynamicObj(0), 
 	m_matsCounterDynamic(0) {
+	RFCT_PROFILE_FUNCTION();
  	for (uint32_t i = 0; i < RFCT_FRAMES_IN_FLIGHT; ++i) {
 		m_VertexBufferDynamic[i] = std::make_unique<VulkanBuffer>("dynamic vertex buffers", RFCT_SCENE_DYNAMIC_DRAW_VERTEX_BUFFER_VERTEX_COUNT * sizeof(Vertex), vk::BufferUsageFlagBits::eVertexBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU);
 		m_DynamicModelMatsBuffers[i] = std::move(VulkanBuffer("dynamicModelMatrices", sizeof(glm::mat4) * RFCT_MAX_DYNAMIC_OBJ_ON_SCENE, vk::BufferUsageFlagBits::eStorageBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU));
@@ -119,6 +121,7 @@ rfct::renderData::renderData()
 }
 
 rfct::renderData::~renderData() {
+	RFCT_PROFILE_FUNCTION();
 	for (size_t i = 0; i < RFCT_FRAMES_IN_FLIGHT; i++) {
 		m_DynamicModelMatsBuffers[i].Unmap();
 		m_VertexBufferDynamic[i]->Unmap();
@@ -127,6 +130,7 @@ rfct::renderData::~renderData() {
 }
 
 void rfct::renderData::clearAllData() {
+	RFCT_PROFILE_FUNCTION();
 	m_matsCounterStatic = 0;
 	m_matsCounterDynamic = 0;
 	m_verticesCountStaticObj = 0;
@@ -160,6 +164,7 @@ void rfct::renderData::updateDynamicVertices(const frameContext* ctx, const size
 }
 
 uint32_t rfct::renderData::addStaticMat(void* data) {
+	RFCT_PROFILE_FUNCTION();
 	if (!m_mappedDataStatic) { RFCT_CRITICAL("trying to add matrices when startTransferStatic() hasn't been called"); }
 	char* finalPtr = ((char*)m_mappedDataStatic) + (m_matsCounterStatic * sizeof(glm::mat4));
 	memcpy(finalPtr, data, sizeof(glm::mat4));
@@ -167,6 +172,7 @@ uint32_t rfct::renderData::addStaticMat(void* data) {
 }
 
 uint32_t rfct::renderData::addDynamicMat(const frameContext* ctx, void* data) {
+	RFCT_PROFILE_FUNCTION();
 	if (m_matricesFreeIndices.size() != 0) {
 		size_t index = m_matricesFreeIndices.back();
 		m_matricesFreeIndices.pop_back();
@@ -184,6 +190,7 @@ uint32_t rfct::renderData::addDynamicMat(const frameContext* ctx, void* data) {
 }
 
 uint32_t rfct::renderData::reserveSuitableVertexBufferLocation(size_t numVertices) {
+	RFCT_PROFILE_FUNCTION();
 	uint32_t bestSizeDiff = INT_MAX;
 	for (uint32_t i = 0; i < m_freeVertices.size(); ++i) {
 		if (m_freeVertices[i].verticesCount == numVertices) {
@@ -198,6 +205,7 @@ uint32_t rfct::renderData::reserveSuitableVertexBufferLocation(size_t numVertice
 }
 
 uint32_t rfct::renderData::addDynamicVertices(std::vector<Vertex>* vertices, uint32_t frame, uint32_t numVertices, uint32_t location) {
+	RFCT_PROFILE_FUNCTION();
 	if (location == UINT32_MAX) {
 		location = reserveSuitableVertexBufferLocation(numVertices);
 	}
@@ -243,6 +251,7 @@ rfct::objectLocation rfct::renderData::addDynamicObject(std::vector<Vertex>* ver
 }
 
 void rfct::renderData::removeDynamicObject(const dynamicSSBOIndexComponent& ssboData, const vertexRenderInfoComponent& vertexRenderInfo, bool addToFreelist, const frameContext* ctx) {
+	RFCT_PROFILE_FUNCTION();
 	char* finalPtr = ((char*)m_mappedMatsDataDynamic[ctx->frame]) + (ssboData.indexInSSBO * sizeof(glm::mat4));
 	memset(finalPtr, 0, sizeof(glm::mat4));
 	char* finalPtrVer = ((char*)m_mappedVerticesDataDynamic[ctx->frame]) + (vertexRenderInfo.vertexBufferOffset * sizeof(Vertex));
@@ -253,6 +262,7 @@ void rfct::renderData::removeDynamicObject(const dynamicSSBOIndexComponent& ssbo
 }
 
 void rfct::renderData::removeDynamicEntity(entity e) {
+	RFCT_PROFILE_FUNCTION();
 	dynamicSSBOIndexComponent& ssbo = ecs::get().get<dynamicSSBOIndexComponent>(e);
 	vertexRenderInfoComponent& vData = ecs::get().get<vertexRenderInfoComponent>(e);
 	frameContext noCtx = {};
@@ -264,6 +274,7 @@ void rfct::renderData::removeDynamicEntity(entity e) {
 }
 
 void rfct::renderData::removeAnimatedEntity(entity e) {
+	RFCT_PROFILE_FUNCTION();
 	const dynamicSSBOIndexComponent& ssbo = ecs::get().get<dynamicSSBOIndexComponent>(e);
 	m_matricesFreeIndices.push_back(ssbo.indexInSSBO);
 

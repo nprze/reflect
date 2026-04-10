@@ -5,7 +5,6 @@
 #include "renderer_p/debug/debug_draw.h"
 #include "world_p/scene.h"
 #include "world_p/physics/physics.h"
-#include "world_p/physics/collision.h"
 #include "world_p/transform.h"
 #include "world_p/decors/dash_kindlings.h"
 // sound effects
@@ -17,28 +16,85 @@ constexpr float jumpSpeed = 1.3f;
 constexpr float dashSpeed = 7.f;
 constexpr float boostPureHorizontalVertical = 1.2f;
 
-rfct::playerController rfct::playerController::instance;
+rfct::playerController instance;
 
-rfct::playerController::playerController() :
-	arrowUpDownInput(0),
+rfct::playerController& rfct::playerController::get() { return instance; }
+
+// debug drawing
+namespace rfct {
+	void drawPlayervelocity(const glm::vec2 velComp, const glm::vec2 posComp, const glm::vec2 offset = { 0.f, 0.f }) {
+		debugLine* line = debugDraw::requestLines(1);
+		line->vertices[0].pos = { posComp + offset, 0 };
+		line->vertices[1].pos = { posComp + (velComp)+offset, 0 };
+		line->vertices[0].color = { std::clamp((float)(glm::length(velComp) / (maxVelocityX * 2)), 0.f, 1.f), 0.f, 1.f };
+		line->vertices[1].color = { std::clamp((float)(glm::length(velComp) / (maxVelocityX * 2)), 0.f, 1.f), 0.f, 1.f };
+	}
+	float len(const glm::vec2& vec) {
+		return std::sqrt((vec.x * vec.x) + (vec.y * vec.y));
+	}
+}
+
+namespace rfct {
+	void onCollision_Player_StaticObj(entity player, entity collidedWith, glm::vec2 resolution) {
+		ecs::get().get<positionComponent>(player).position += resolution;
+
+		velocityComponent& vel = ecs::get().get<velocityComponent>(player);
+		inputVelocityComponent& ivel = ecs::get().get<inputVelocityComponent>(player);
+		/*
+		if (resolution.x != 0.0f && resolution.y != 0.0f) {
+			// circle collision. zero velocity on x only when real change.
+			if (std::abs(resolution.x) > 0.01f) {
+				vel->velocity.x = 0.0f;
+			}
+		}*/
+
+		{
+			if (resolution.x != 0.0f) {
+
+				vel.velocity.x = 0.0f;
+			}
+		}
+		if (resolution.y != 0.0f) {
+			if (resolution.y > 0.0f) {
+				// Landed on something
+				vel.velocity.y = 0.0f;
+				ivel.velocity.y = 0.0f;
+			}
+			else {
+				// Hit your head on a ceiling: only stop upward motion
+				if (vel.velocity.y > 0.0f) {
+					vel.velocity.y = -vel.velocity.y * 0.3f;
+					ivel.velocity.y = 0.0f;
+				}
+			}
+		}
+		if (resolution.y > 0) {
+			ecs::get().get<playerStateComponent>(player).grounded = true;
+		}
+	}
+}
+
+rfct::playerController::playerController()
+	: arrowUpDownInput(0),
 	walkHorizontalInput(0),
 	jumpInput(0),
 	dashHorizontalInput(0),
 	dashVerticalInput(0),
 	dash45upInput(0),
 	dash45downInput(0),
-
+	anyDash(false),
 	walkVelocity(0),
 	dashVelocity(0.f, 0.f),
+	holdingTime(0.f),
 	timeYNotZero(0),
 	facingRight(true),
 	nearestObjectToHold(),
 	startedJumpingTime(0.f),
-	dashCooldown(0.f)
-{
+	dashCooldown(0.f) {
 }
-entity rfct::playerController::createPlayer(scene* sc, const glm::vec2& spawnPoint)
-{
+
+entity rfct::playerController::createPlayer(scene* sc, const glm::vec2& spawnPoint) {
+	RFCT_PROFILE_FUNCTION();
 	dynamicBoxColliderComponent bounds = { { -0.23f, -0.45f }, { 0.23, 0.4f } };
 
 	transform trans = {};
@@ -72,21 +128,9 @@ entity rfct::playerController::createPlayer(scene* sc, const glm::vec2& spawnPoi
 
 	return player;
 }
-namespace rfct {
-	void drawPlayervelocity(const glm::vec2 velComp, const glm::vec2 posComp, const glm::vec2 offset = {0.f, 0.f}) {
-		debugLine* line = debugDraw::requestLines(1);
-		line->vertices[0].pos = { posComp + offset, 0 };
-		line->vertices[1].pos = { posComp + (velComp) + offset, 0 };
-		line->vertices[0].color = { std::clamp((float)(glm::length(velComp) / (maxVelocityX * 2) ), 0.f, 1.f), 0.f, 1.f};
-		line->vertices[1].color = { std::clamp((float)(glm::length(velComp) / (maxVelocityX * 2)), 0.f, 1.f), 0.f, 1.f};
-	}
-	float len(const glm::vec2& vec) {
-		return std::sqrt((vec.x * vec.x) + (vec.y * vec.y));
-	}
-}
-void rfct::playerController::update(frameContext* ctx)
-{
-	RFCT_PROFILE_SCOPE("player update");
+
+void rfct::playerController::update(frameContext* ctx) {
+	RFCT_PROFILE_FUNCTION();
 
 	if (input::getInput().hold) {
 		hold = true;
@@ -129,11 +173,10 @@ void rfct::playerController::update(frameContext* ctx)
 	if (input::getInput().jump && state.allowToJump) {
 		jumpInput = input::getInput().jump;
 	}
-
 }
 
-void rfct::playerController::fixedUpdate(frameContext* ctx)
-{
+void rfct::playerController::fixedUpdate(frameContext* ctx) {
+	RFCT_PROFILE_FUNCTION();
 	// fixed update
 	playerStateComponent& state = ecs::get().get<playerStateComponent>(player);
 
@@ -320,8 +363,7 @@ void rfct::playerController::fixedUpdate(frameContext* ctx)
 	}
 }
 
-void rfct::playerController::postFixedUpdate(frameContext* ctx)
-{
+void rfct::playerController::postFixedUpdate(frameContext* ctx) {
 	anyDash = false;
 	dashHorizontalInput = 0.f;
 	dashVerticalInput = 0.f;
@@ -333,8 +375,8 @@ void rfct::playerController::postFixedUpdate(frameContext* ctx)
 	ctx->scene->updateDirection(facingRight);
 }
 
-rfct::nearestObject rfct::playerController::findObjectToHold()
-{
+rfct::nearestObject rfct::playerController::findObjectToHold() {
+	RFCT_PROFILE_FUNCTION();
 	constexpr float forgivenessVine = 0.8f;
 	nearestObject returnVal;
 	// proritize vines
@@ -367,8 +409,8 @@ rfct::nearestObject rfct::playerController::findObjectToHold()
 	return returnVal;
 }
 
-void rfct::playerController::normalWalkUpdate()
-{
+void rfct::playerController::normalWalkUpdate() {
+	RFCT_PROFILE_FUNCTION();
 	walkVelocity += fixedDeltaTime * walkSpeed * walkHorizontalInput;
 	walkVelocity = std::clamp(walkVelocity, -maxVelocityX, maxVelocityX);
 
@@ -380,8 +422,8 @@ void rfct::playerController::normalWalkUpdate()
 	ecs::get().get<velocityComponent>(player).velocity.x = walkVelocity;
 }
 
-void rfct::playerController::normalJumpUpdate()
-{
+void rfct::playerController::normalJumpUpdate() {
+	RFCT_PROFILE_FUNCTION();
 	if (startedJumpingTime == 0.f) {
 		// first 
 		startedJumpingTime = 0.01f;
@@ -392,8 +434,8 @@ void rfct::playerController::normalJumpUpdate()
 	ecs::get().get<inputVelocityComponent>(player).velocity.y += inputMultiplayer * jumpInput * jumpSpeed;
 }
 
-void rfct::playerController::endHold(scene* sc)
-{
+void rfct::playerController::endHold(scene* sc) {
+	RFCT_PROFILE_FUNCTION();
 	objectSystems::get().onEndHolding();
 	ecs::get().get<gravityComponent>(player).gravityEnabled = true;
 
@@ -401,8 +443,8 @@ void rfct::playerController::endHold(scene* sc)
 	ecs::get().get<velocityComponent>(player).velocity.y += 2.f;
 }
 
-bool rfct::playerController::checkHold(scene* scen)
-{
+bool rfct::playerController::checkHold(scene* scen) {
+	RFCT_PROFILE_FUNCTION();
 	playerStateComponent& stateComp = ecs::get().get<playerStateComponent>(player);
 	positionComponent& posComp = ecs::get().get<positionComponent>(player);
 	velocityComponent& velComp = ecs::get().get<velocityComponent>(player);
@@ -426,27 +468,11 @@ bool rfct::playerController::checkHold(scene* scen)
 	}
 	else {
 		return false;
-		/*
-		notHoldingTime += fixedDeltaTime;
-		if (notHoldingTime > fixedDeltaTime * 2) {
-			RFCT_INFO("ending hold");
-			nearestObjectToHold = nearestObject();
-
-			stateComp->holding = false;
-			player.get_mut<gravityComponent>()->gravityEnabled = true;
-
-			glm::vec2 launchDir = glm::vec2(0.f);
-
-			launchDir.x = facingRight ? 1.f : -1.f;
-
-			launchDir.y = 0.2f;
-			player.get_mut<velocityComponent>()->velocity += launchDir * 10.f;
-		}*/
 	}
 }
 
-void rfct::playerController::startDash(frameContext* ctx)
-{
+void rfct::playerController::startDash(frameContext* ctx) {
+	RFCT_PROFILE_FUNCTION();
 	play(soundManager::get().swoosh);
 	ecs::get().get<playerStateComponent>(player).dashCharges--;
 	ecs::get().get<velocityComponent>(player).velocity = { 0.f,0.f };
@@ -463,44 +489,4 @@ void rfct::playerController::startDash(frameContext* ctx)
 	
 	ecs::get().get<playerStateComponent>(player).allowToJump = false;
 	ecs::get().get<gravityComponent>(player).gravityEnabled = false;
-}
-
-void rfct::onCollision_Player_StaticObj(entity player, entity collidedWith, glm::vec2 resolution)
-{
-	ecs::get().get<positionComponent>(player).position += resolution;
-
-	velocityComponent& vel = ecs::get().get<velocityComponent>(player);
-	inputVelocityComponent& ivel = ecs::get().get<inputVelocityComponent>(player);
-	/*
-	if (resolution.x != 0.0f && resolution.y != 0.0f) {
-		// circle collision. zero velocity on x only when real change.
-		if (std::abs(resolution.x) > 0.01f) {
-			vel->velocity.x = 0.0f;
-		}
-	}*/
-	
-	{
-		if (resolution.x != 0.0f) {
-
-			vel.velocity.x = 0.0f;
-		}
-	}
-	if (resolution.y != 0.0f) {
-		if (resolution.y > 0.0f) {
-			// Landed on something
-			vel.velocity.y = 0.0f;
-			ivel.velocity.y = 0.0f;
-		}
-		else {
-			// Hit your head on a ceiling: only stop upward motion
-			if (vel.velocity.y > 0.0f) {
-				vel.velocity.y = -vel.velocity.y * 0.3f;
-				ivel.velocity.y = 0.0f;
-			}
-		}
-	}
-	if (resolution.y > 0)
-	{
-		ecs::get().get<playerStateComponent>(player).grounded = true;
-	}
 }

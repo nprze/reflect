@@ -148,7 +148,6 @@ namespace rfct {
     }
 }
 
-
 entity rfct::cigarettes::constructCigarette(const frameContext* fc, const entity entityPlayer, const bool facingRight) {
     RFCT_PROFILE_FUNCTION();
     constexpr float min_val = std::min(betweenVer, betweenHor);

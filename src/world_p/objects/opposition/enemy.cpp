@@ -5,7 +5,6 @@
 #include "world_p/object_components.h"
 #include "world_p/transform.h"
 #include "world_p/scene.h"
-#include "world_p/physics/collision.h"
 #include "world_p/world.h"
 #include "world_p/objects/objects.h"
 

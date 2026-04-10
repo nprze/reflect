@@ -38,7 +38,7 @@ namespace rfct {
         }
 		// get size of camera view in world coords
         float distance = std::abs(camPos3D.position.z - 0.0f);
-        float fovRad = glm::radians(CameraFOV);
+        float fovRad = glm::radians(camComp.fov);
 
         float visibleHeight = 2.0f * distance * std::tan(fovRad * 0.5f);
         float visibleWidth = visibleHeight * camComp.aspectRatio;

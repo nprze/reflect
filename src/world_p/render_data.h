@@ -4,7 +4,6 @@
 #include "world_p\components.h"
 
 namespace rfct {
-	struct frameContext;
 	class renderData {
 	public:
 		static vk::DescriptorSetLayout getDescriptorSetLayout();
@@ -12,7 +11,6 @@ namespace rfct {
 	public:
 		renderData();
 		~renderData();
-
 		void clearAllData();
 		void updateMat(const frameContext* ctx, const uint32_t& objIndexInSSBO, glm::mat4* mat);
 		void updateDynamicVertices(const frameContext* ctx, const size_t objBufferOffset, void* vertices, const size_t size);

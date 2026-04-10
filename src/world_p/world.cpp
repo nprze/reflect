@@ -14,31 +14,28 @@ rfct::world& rfct::world::getWorld() {
 	return currentWorld;
 }
 
-void rfct::world::initWorld(const std::string& path)
-{
+void rfct::world::initWorld(const std::string& path) {
+	RFCT_PROFILE_FUNCTION();
 	loadWorld(path, &m_serializeData);
 	m_RenderData = new renderData();
 	loadScene("scenes/"+m_serializeData.blocks[m_currentWorldBlockIndex].file + ".txt");
 }
  
-void rfct::world::loadScene(const std::string& path)
-{
+void rfct::world::loadScene(const std::string& path) {
 	RFCT_PROFILE_FUNCTION();
 	m_currentScene = new scene(this);
 	m_currentScene->initScene(path);
 }
 
 
-void rfct::world::cleanWorld() 
-{
+void rfct::world::cleanWorld() {
 	RFCT_PROFILE_FUNCTION();
-	m_currentScene->unloadScene(); 
 	delete m_currentScene; 
 	delete m_RenderData;
 }
 
-void rfct::world::worldFixedUpdate(frameContext& context, uint64_t timesToUpdate)
-{
+void rfct::world::worldFixedUpdate(frameContext& context, uint64_t timesToUpdate) {
+	RFCT_PROFILE_FUNCTION();
 	while (timesToUpdate-- > 0) {
 		if (context.state == gameState::gameplay || context.state == gameState::stateDialogue) {
 			m_currentScene->FixedUpdate(&context);
@@ -51,18 +48,16 @@ void rfct::world::worldFixedUpdate(frameContext& context, uint64_t timesToUpdate
 	}
 }
 
-void rfct::world::worldVisualUpdate(frameContext& context)
-{
+void rfct::world::worldVisualUpdate(frameContext& context) {
 	m_currentScene->onUpdate(&context);
 }
-
 
 void rfct::world::addScreenTransform(float degree) {
 	screenViewTransformDegrees = degree;
 }
 
-void rfct::world::switchScenes(frameContext& ctx)
-{
+void rfct::world::switchScenes(frameContext& ctx) {
+	RFCT_PROFILE_FUNCTION();
 	glm::vec2 coords = m_currentScene->getPlayerCoordsSceneNormalized();
 	coords.y = 1 - coords.y;
 	RFCT_INFO("switching scenes using pos: {}, {}", coords.x, coords.y);
@@ -82,8 +77,7 @@ void rfct::world::switchScenes(frameContext& ctx)
 	ctx.scene = m_currentScene;
 }
 
-uint32_t rfct::world::getSceneToLoad(glm::vec2& lastBlockExit)
-{
+uint32_t rfct::world::getSceneToLoad(glm::vec2& lastBlockExit) {
 	uint32_t currentIndex = 0;
 	glm::vec2 levelSize = m_serializeData.blocks[m_currentWorldBlockIndex].max - m_serializeData.blocks[m_currentWorldBlockIndex].min;
 	glm::vec2 pos = m_serializeData.blocks[m_currentWorldBlockIndex].min + (lastBlockExit * levelSize);

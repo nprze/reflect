@@ -1,6 +1,5 @@
 #pragma once
 #include "assets/serialize_structures/frame_animation_serialize_data.h"
-#include "hair_anim.h"
 #include "renderer_p/buffer/vulkan_buffer.h"
 #include "renderer_p/frame_anim/anim_buffer.h"
 
@@ -18,7 +17,6 @@ namespace rfct {
 		void update(const glm::vec2& playerVel, const glm::vec2& playerPos, frameContext& ctx, entity player);
 		void changeAnimation(frameAnimation* newAnim);
 		void drawPlayer(vk::CommandBuffer& cmdBffr);
-		void initHairAnim(float playerWidth, float playerHeight);
 	private:
 		animationBuffer buffer;
 
@@ -40,9 +38,6 @@ namespace rfct {
 		frameAnimation m_climb;
 
 		frameAnimation* m_currentAnimation;
-
-		hairAnimation m_rightHairAnim;
-		hairAnimation m_leftHairAnim;
 
 		float dashRotationAnimationTime = 0;
 		float angleMax = 0;

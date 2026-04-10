@@ -15,19 +15,23 @@ namespace rfct{
 		int right = -1;
 		entity entity;
 	};
-	extern std::vector<BVHnode> StaticObjsBVHnodes;
-	extern std::vector<BVHnode> DynamicObjsBVHnodes;
-	struct frameContext;
+	// collisions
+	bool checkForCollisionAABBAABB(const glm::vec2& aMin, const glm::vec2& aMax, const glm::vec2& bMin, const glm::vec2& bMax);
+	bool checkIntersectSegmentAABB(const glm::vec2& p0, const glm::vec2& p1, const glm::vec2& aabbMin, const glm::vec2& aabbMax);
+	glm::vec2 ResolveAABBCollision(const dynamicBoxColliderComponent& dynamic, const staticBoxColliderComponent& staticCol);
+	glm::vec2 ResolveAABBCollision(const glm::vec2& aMin, const glm::vec2& aMax, const glm::vec2& bMin, const glm::vec2& bMax); // returns what should be applied to object a to resolve :)
+	bool checkRayStatic(const BVHnode& node, const glm::vec2& rayStart, const glm::vec2& rayEnd);
+	glm::vec2 nearestPointOnAABB(const glm::vec2& point, const glm::vec2& AABBMin, const glm::vec2& AABBMax);
 	// setup
 	void buildStaticObjBVH();
 	void buildDynamicObjBVH();
-	entity findTheNearestVineToPlayer(entity player);
-	entity findTheNearestBlockToPlayer(entity player);
-	void drawAABB(const glm::vec2& min, const glm::vec2& max, uint32_t depth);
+	entity findTheNearestVineToPlayer(const entity player);
+	entity findTheNearestBlockToPlayer(const entity player);
 	void buildStaticBVH(std::vector<BVHnode>* BVHnodes);
-	glm::vec2 nearestPointOnAABB(const glm::vec2& point, const glm::vec2& AABBMin, const glm::vec2& AABBMax);
 	void buildDynamicBVH(std::vector<BVHnode>* BVHnodes);
-
 	// update
-	void updatePhysics(const frameContext* ctx);
+	void physicsStep(const frameContext* ctx);
+
+	extern std::vector<BVHnode> StaticObjsBVHnodes;
+	extern std::vector<BVHnode> DynamicObjsBVHnodes;
 }

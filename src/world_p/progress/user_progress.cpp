@@ -3,7 +3,9 @@
 #include <fstream>
 #include <iostream>
 
-rfct::userSettings rfct::userSettings::instance;
+rfct::userSettings instance;
+
+rfct::userSettings& rfct::userSettings::get() { return instance; }
 
 #define SETTINGS_GET_STRING(label, out)                                                                                 \
     { std::getline(file, line);                                                                                     \
@@ -17,8 +19,8 @@ rfct::userSettings rfct::userSettings::instance;
 #define SETTINGS_SET_ANY(label, value) \
     file << label << " " << value << "\n";
 
-void rfct::userSettings::loadUserSettings()
-{
+void rfct::userSettings::loadUserSettings() {
+    RFCT_PROFILE_FUNCTION();
     std::string finalPath = getAssetsPath() + "/player_progress/settings.txt";
     std::ifstream file(finalPath);
 
@@ -41,8 +43,8 @@ void rfct::userSettings::loadUserSettings()
  	SETTINGS_GET_INT("isDeveloper:", seriaizeData.isDeveloper);
 }
 
-void rfct::userSettings::dumpUserSettings()
-{
+void rfct::userSettings::dumpUserSettings() {
+    RFCT_PROFILE_FUNCTION();
     std::string finalPath = getAssetsPath() + "/player_progress/settings.txt";
     std::ofstream file(finalPath, std::ios::out | std::ios::trunc);
     if (!file) {
@@ -55,8 +57,4 @@ void rfct::userSettings::dumpUserSettings()
     SETTINGS_SET_ANY("resolutionWidth:", seriaizeData.resolutionWidth);
     SETTINGS_SET_ANY("resolutionHeight:", seriaizeData.resolutionHeight);
     SETTINGS_SET_ANY("isDeveloper:", seriaizeData.isDeveloper);
-}
-
-void rfct::userSettings::resetToDefaults()
-{
 }

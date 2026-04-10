@@ -180,14 +180,6 @@ void rfct::playerAnimations::drawPlayer(vk::CommandBuffer& cmdBffr)
 	cmdBffr.bindVertexBuffers(0,1, vertexBuffers, offsets);
 	cmdBffr.draw(m_currentAnimation->trianglesPerFrame[m_currentFrame] * 3, 1, 0, 0);
 }
-
-void rfct::playerAnimations::initHairAnim(float playerWidth, float playerHeight)
-{
-
-	m_rightHairAnim.init(glm::vec2{ playerWidth * 0.4f, 0.4f * playerHeight }, 0.9f * playerHeight, 4);
-	m_leftHairAnim.init(glm::vec2{ playerWidth * -0.4f, 0.4f * playerHeight }, 0.9f * playerHeight, 4);
-}
-
 void rfct::playerAnimations::changeIfNotCurrent(frameAnimation* newAnim)
 {
 	if (m_currentAnimation != newAnim) {

@@ -5,31 +5,32 @@
 
 namespace rfct {
 	constexpr float dashFullTime = 0.2f;
-	struct frameContext;
-	void onCollision_Player_StaticObj(entity player, entity collidedWith, glm::vec2 resolution);
 	class playerController {
-		static playerController instance;
 	public:
-		static playerController& get() { return instance; };
+		static playerController& get();
 		playerController();
 		entity createPlayer(scene* sc, const glm::vec2& spawnPoint);
 		void update(frameContext* ctx);
 		void fixedUpdate(frameContext* ctx);
 		void postFixedUpdate(frameContext* ctx);
+		nearestObject findObjectToHold();
+		void normalWalkUpdate();
+		void normalJumpUpdate();
+		bool checkHold(scene* scen); // returns if holding
 		void endHold(scene* sc);
-		entity belowBlock = entt::null;
-		entity player;
-
+		void startDash(frameContext* ctx);
+	public:
+		// input
 		float walkHorizontalInput;
 		float jumpInput;
 		float dashHorizontalInput;
 		float dashVerticalInput;
 		float dash45upInput;
 		float dash45downInput;
-
 		float arrowUpDownInput;
+		bool anyDash; // for simplicity
 
-		bool anyDash = false; // for simplicity
+		entity player;
 
 		float walkVelocity;
 		bool facingRight;
@@ -39,24 +40,15 @@ namespace rfct {
 
 		float dashTime;
 		glm::vec2 dashVelocity;
+		float dashCooldown;
 		uint8_t kindlingsToSpawnThisDash;
 
 		bool hold;
-		float holdingTime = 0.f;
-		nearestObject nearestObjectToHold;
-
-		float dashCooldown;
 		float holdCooldown;
 		float holdJumpCooldown;
-	private:
-		nearestObject findObjectToHold();
+		float holdingTime;
+		nearestObject nearestObjectToHold;
 
-		void normalWalkUpdate();
-		void normalJumpUpdate();
-
-		bool checkHold(scene* scen); // returns if holding
-
-		void startDash(frameContext* ctx);
 		friend class playerAnimations;
 	};
 }

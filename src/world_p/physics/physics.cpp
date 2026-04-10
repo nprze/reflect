@@ -1,41 +1,24 @@
 #include "physics.h"
-#include "renderer_p/debug/debug_draw.h"
-
 #include <stack>
 #include <limits>
 #include <functional>
 #include <algorithm>
-#include "collision.h"
+#include "renderer_p/debug/debug_draw.h"
 
 constexpr float physicsScale = 9.f; // to make applied forces smaller for more readability
 constexpr uint32_t substepCount = 5;
 constexpr float dumping = 0.97f;
 
-namespace rfct
-{ /*
-    static flecs::query<gravityComponent, velocityComponent, positionComponent, dynamicBoxColliderComponent, staticObjCollisionCallbackComponent> gravityVelocityPositionBoxQuery;
-    static flecs::query<positionComponent, dynamicCircleColliderComponent, staticObjCollisionCallbackComponent> staticCircleCollisionQuery;
-    static flecs::query<positionComponent, dynamicBoxColliderComponent, dynamicObjCollisionCallbackComponent> dynamicBoxesQuery;
-    static flecs::query<positionComponent, dynamicCircleColliderComponent, dynamicObjCollisionCallbackComponent> dynamicCirclesQuery;
-    static flecs::query<staticBoxColliderComponent> staticBoxColliderQuery;
-    static flecs::query<dynamicBoxColliderComponent, positionComponent> dynamicBoxColliderQuery;
-    static flecs::query<dynamicCircleColliderComponent, positionComponent> dynamicCircleColliderQuery;*/
-    std::vector<BVHnode> StaticObjsBVHnodes;
-    std::vector<BVHnode> DynamicObjsBVHnodes;
+namespace rfct {
+    std::vector<rfct::BVHnode> StaticObjsBVHnodes;
+    std::vector<rfct::BVHnode> DynamicObjsBVHnodes;
+    struct Entry {
+        uint32_t mortonCode;
+        glm::vec2 min;
+        glm::vec2 max;
+        entity entity;
+    };
 }
-
-void rfct::buildStaticObjBVH()
-{
-    buildStaticBVH(&StaticObjsBVHnodes);
-}
-
-void rfct::buildDynamicObjBVH()
-{
-    RFCT_PROFILE_SCOPE("build BVH");
-    buildDynamicBVH(&DynamicObjsBVHnodes);
-}
-
-
 
 // helper functions
 namespace rfct {
@@ -76,13 +59,6 @@ namespace rfct {
         return { totalMin, totalMax };
     }
 
-    struct Entry {
-        uint32_t mortonCode;
-        glm::vec2 min;
-        glm::vec2 max;
-        entity entity;
-    };
-
     int createSubTree(std::vector<Entry> entries, uint32_t start, uint32_t end, std::vector<BVHnode>* BVHnodes) { // returns the index to the BVHnodes vector
         if (start == end) {
             // leaf
@@ -111,10 +87,225 @@ namespace rfct {
             return BVHnodes->size() - 1;
         }
     }
+
+    // collision functions
+    void checkForCollision(BVHnode& node, dynamicBoxColliderComponent& bocCollider, staticObjCollisionCallbackComponent& callback, entity& dynamicEntity) {
+        if (checkForCollisionAABBAABB(node.min, node.max, bocCollider.min, bocCollider.max)) {
+            if (node.right < 0) {
+                // BVH leaf
+                glm::vec2 resolution = ResolveAABBCollision(bocCollider, { node.min, node.max });
+                callback.handler(dynamicEntity, node.entity, resolution);
+            }
+            else {
+                checkForCollision(StaticObjsBVHnodes[node.right], bocCollider, callback, dynamicEntity);
+                checkForCollision(StaticObjsBVHnodes[node.left], bocCollider, callback, dynamicEntity);
+            }
+        }
+    }
+
+    void checkForCollision(BVHnode& node, dynamicBoxColliderComponent& bocCollider, dynamicObjCollisionCallbackComponent& callback, entity& collidingEntity) {
+        if (checkForCollisionAABBAABB(node.min, node.max, bocCollider.min, bocCollider.max)) {
+            if (node.right < 0) {
+                // BVH leaf
+                if (collidingEntity != node.entity) {
+                    callback.handler(collidingEntity, node.entity);
+                }
+            }
+            else {
+                checkForCollision(DynamicObjsBVHnodes[node.right], bocCollider, callback, collidingEntity);
+                checkForCollision(DynamicObjsBVHnodes[node.left], bocCollider, callback, collidingEntity);
+            }
+        }
+    }
+
+    // BVH draw functions
+    void drawAABB(const glm::vec2& min, const glm::vec2& max, uint32_t depth) {
+        debugLine* lines = debugDraw::requestLines(4);
+        float z_coord = depth / 100;
+        lines[0].vertices[0].pos = { min.x, min.y, z_coord };
+        lines[0].vertices[1].pos = { min.x, max.y, z_coord };
+
+        lines[1].vertices[0].pos = { max.x, max.y, z_coord };
+        lines[1].vertices[1].pos = { min.x, max.y, z_coord };
+
+        lines[2].vertices[0].pos = { max.x, max.y, z_coord };
+        lines[2].vertices[1].pos = { max.x, min.y, z_coord };
+
+        lines[3].vertices[0].pos = { min.x, min.y, z_coord };
+        lines[3].vertices[1].pos = { max.x, min.y, z_coord };
+
+        switch (depth % 3) {
+        case 0: {
+            const glm::vec3 red = { 1.f,0.f,0.f };
+            for (uint32_t i = 0; i < 4; i++) {
+                lines[i].vertices[0].color = red;
+                lines[i].vertices[1].color = red;
+            }
+            break;
+        }
+        case 1: {
+            const glm::vec3 green = { 0.f,1.f,0.f };
+            for (uint32_t i = 0; i < 4; i++) {
+                lines[i].vertices[0].color = green;
+                lines[i].vertices[1].color = green;
+            }
+            break;
+        }
+        case 2: {
+            const glm::vec3 blue = { 0.f,0.f,1.f };
+            for (uint32_t i = 0; i < 4; i++) {
+                lines[i].vertices[0].color = blue;
+                lines[i].vertices[1].color = blue;
+            }
+            break;
+        }
+        }
+
+    }
+
+    void drawBVH(uint32_t depth, const rfct::BVHnode& start, std::vector<rfct::BVHnode>* nodes) {
+        RFCT_PROFILE_FUNCTION();
+        drawAABB(start.min, start.max, depth);
+        if (!(start.right < 0)) {
+            drawBVH(depth + 1, (*nodes)[start.left], nodes);
+            drawBVH(depth + 1, (*nodes)[start.right], nodes);
+        }
+    }
 }
 
-void rfct::buildStaticBVH(std::vector<BVHnode>* BVHnodes)
-{
+// collision
+
+glm::vec2 rfct::nearestPointOnAABB(const glm::vec2& point, const glm::vec2& AABBMin, const glm::vec2& AABBMax) {
+    return glm::vec2(glm::clamp(point.x, AABBMin.x, AABBMax.x), glm::clamp(point.y, AABBMin.y, AABBMax.y));
+}
+
+bool rfct::checkForCollisionAABBAABB(const glm::vec2& aMin, const glm::vec2& aMax, const glm::vec2& bMin, const glm::vec2& bMax) {
+    return (aMin.x <= bMax.x && aMax.x >= bMin.x &&
+        aMin.y <= bMax.y && aMax.y >= bMin.y);
+}
+
+bool rfct::checkIntersectSegmentAABB(const glm::vec2& p0, const glm::vec2& p1, const glm::vec2& aabbMin, const glm::vec2& aabbMax) {
+    RFCT_PROFILE_FUNCTION();
+    glm::vec2 d = p1 - p0;
+    glm::vec2 invDir(
+        d.x != 0.0f ? 1.0f / d.x : std::numeric_limits<float>::infinity(),
+        d.y != 0.0f ? 1.0f / d.y : std::numeric_limits<float>::infinity()
+    );
+
+    float t1 = (aabbMin.x - p0.x) * invDir.x;
+    float t2 = (aabbMax.x - p0.x) * invDir.x;
+    float tmin = std::min(t1, t2);
+    float tmax = std::max(t1, t2);
+
+    float ty1 = (aabbMin.y - p0.y) * invDir.y;
+    float ty2 = (aabbMax.y - p0.y) * invDir.y;
+    tmin = std::max(tmin, std::min(ty1, ty2));
+    tmax = std::min(tmax, std::max(ty1, ty2));
+
+    if (tmin > tmax) return false;
+
+    if (tmax < 0.0f) return false;
+    if (tmin > 1.0f) return false;
+
+    return true;
+}
+
+glm::vec2 rfct::ResolveAABBCollision(const dynamicBoxColliderComponent& dynamic, const staticBoxColliderComponent& staticCol) {
+    RFCT_PROFILE_FUNCTION();
+    float overlapLeft = dynamic.max.x - staticCol.min.x;
+    float overlapRight = staticCol.max.x - dynamic.min.x;
+    float overlapDown = dynamic.max.y - staticCol.min.y;
+    float overlapUp = staticCol.max.y - dynamic.min.y;
+
+    float resolveX = 0.0f;
+    if (overlapLeft > 0.0f || overlapRight > 0.0f) {
+        if (overlapLeft < overlapRight) {
+            resolveX = -overlapLeft;
+        }
+        else {
+            resolveX = overlapRight;
+        }
+    }
+
+    float resolveY = 0.0f;
+    if (overlapDown > 0.0f || overlapUp > 0.0f) {
+        if (overlapDown < overlapUp) {
+            resolveY = -overlapDown;
+        }
+        else {
+            resolveY = overlapUp;
+        }
+    }
+
+    if (std::abs(resolveX) < std::abs(resolveY)) {
+        return glm::vec2(resolveX, 0.0f);
+    }
+    else {
+        return glm::vec2(0.0f, resolveY);
+    }
+}
+
+glm::vec2 rfct::ResolveAABBCollision(const glm::vec2& aMin, const glm::vec2& aMax, const glm::vec2& bMin, const glm::vec2& bMax) {
+    RFCT_PROFILE_FUNCTION();
+    float overlapLeft = aMax.x - bMin.x;
+    float overlapRight = bMax.x - aMin.x;
+    float overlapDown = aMax.y - bMin.y;
+    float overlapUp = bMax.y - aMin.y;
+
+    float resolveX = 0.0f;
+    if (overlapLeft > 0.0f || overlapRight > 0.0f) {
+        if (overlapLeft < overlapRight) {
+            resolveX = -overlapLeft;
+        }
+        else {
+            resolveX = overlapRight;
+        }
+    }
+
+    float resolveY = 0.0f;
+    if (overlapDown > 0.0f || overlapUp > 0.0f) {
+        if (overlapDown < overlapUp) {
+            resolveY = -overlapDown;
+        }
+        else {
+            resolveY = overlapUp;
+        }
+    }
+
+    if (std::abs(resolveX) < std::abs(resolveY)) {
+        return glm::vec2(resolveX, 0.0f);
+    }
+    else {
+        return glm::vec2(0.0f, resolveY);
+    }
+}
+
+bool rfct::checkRayStatic(const BVHnode& node, const glm::vec2& rayStart, const glm::vec2& rayEnd) {
+    RFCT_PROFILE_FUNCTION();
+    if (checkIntersectSegmentAABB(rayStart, rayEnd, node.min, node.max)) {
+        if (node.right < 0) {
+            return true;
+        }
+        else {
+            bool returnVal = false;
+            if (checkRayStatic(StaticObjsBVHnodes[node.right], rayStart, rayEnd)) returnVal = true;
+            if (checkRayStatic(StaticObjsBVHnodes[node.left], rayStart, rayEnd)) returnVal = true;
+            return returnVal;
+        }
+    }
+    return false;
+}
+
+void rfct::buildStaticObjBVH() {
+    buildStaticBVH(&StaticObjsBVHnodes);
+}
+
+void rfct::buildDynamicObjBVH() {
+    buildDynamicBVH(&DynamicObjsBVHnodes);
+}
+
+void rfct::buildStaticBVH(std::vector<BVHnode>* BVHnodes) {
+	RFCT_PROFILE_FUNCTION();
     BVHnodes->clear();
     glm::vec2 globalMin(FLT_MAX);
     glm::vec2 globalMax(-FLT_MAX);
@@ -150,9 +341,8 @@ void rfct::buildStaticBVH(std::vector<BVHnode>* BVHnodes)
     }
 }
 
-
-void rfct::buildDynamicBVH(std::vector<BVHnode>* BVHnodes)
-{
+void rfct::buildDynamicBVH(std::vector<BVHnode>* BVHnodes) {
+    RFCT_PROFILE_FUNCTION();
     BVHnodes->clear();
     glm::vec2 globalMin(FLT_MAX);
     glm::vec2 globalMax(-FLT_MAX);
@@ -185,97 +375,8 @@ void rfct::buildDynamicBVH(std::vector<BVHnode>* BVHnodes)
     }
 }
 
-// collision functions
-namespace rfct{
-    void checkForCollision(BVHnode& node, dynamicBoxColliderComponent& bocCollider, staticObjCollisionCallbackComponent& callback, entity& dynamicEntity) {
-        if (checkForCollisionAABBAABB(node.min, node.max, bocCollider.min, bocCollider.max)) {
-            if (node.right < 0) 
-            {
-                // BVH leaf
-                glm::vec2 resolution = ResolveAABBCollision(bocCollider, {node.min, node.max});
-                callback.handler(dynamicEntity, node.entity, resolution);
-            }
-            else {
-                checkForCollision(StaticObjsBVHnodes[node.right], bocCollider, callback, dynamicEntity);
-                checkForCollision(StaticObjsBVHnodes[node.left], bocCollider, callback, dynamicEntity);
-            }
-        }
-    }
-
-    void checkForCollision(BVHnode& node, dynamicBoxColliderComponent& bocCollider, dynamicObjCollisionCallbackComponent& callback, entity& collidingEntity) {
-        if (checkForCollisionAABBAABB(node.min, node.max, bocCollider.min, bocCollider.max)) {
-            if (node.right < 0) 
-            {
-                // BVH leaf
-                if (collidingEntity != node.entity) {
-                    callback.handler(collidingEntity, node.entity);
-                }
-            }
-            else {
-                checkForCollision(DynamicObjsBVHnodes[node.right], bocCollider, callback, collidingEntity);
-                checkForCollision(DynamicObjsBVHnodes[node.left], bocCollider, callback, collidingEntity);
-            }
-        }
-    }
-}
-
-// BVH draw functions
-void rfct::drawAABB(const glm::vec2& min, const glm::vec2& max, uint32_t depth) {
-        debugLine* lines = debugDraw::requestLines(4);
-        float z_coord = depth / 100;
-        lines[0].vertices[0].pos = { min.x, min.y, z_coord };
-        lines[0].vertices[1].pos = { min.x, max.y, z_coord };
-
-        lines[1].vertices[0].pos = { max.x, max.y, z_coord };
-        lines[1].vertices[1].pos = { min.x, max.y, z_coord };
-
-        lines[2].vertices[0].pos = { max.x, max.y, z_coord };
-        lines[2].vertices[1].pos = { max.x, min.y, z_coord };
-
-        lines[3].vertices[0].pos = { min.x, min.y, z_coord };
-        lines[3].vertices[1].pos = { max.x, min.y, z_coord };
-
-        switch (depth % 3) {
-        case 0: {
-            const glm::vec3 red = { 1.f,0.f,0.f };
-            for (uint32_t i = 0; i < 4; i++) {
-                lines[i].vertices[0].color = red;
-                lines[i].vertices[1].color = red;
-            }
-            break;
-        }
-        case 1: {
-            const glm::vec3 green = { 0.f,1.f,0.f };
-            for (uint32_t i = 0; i < 4; i++) {
-                lines[i].vertices[0].color = green;
-                lines[i].vertices[1].color = green;
-            }
-            break;
-        }
-        case 2: { 
-            const glm::vec3 blue = { 0.f,0.f,1.f };
-            for (uint32_t i = 0; i < 4; i++) {
-                lines[i].vertices[0].color = blue;
-                lines[i].vertices[1].color = blue;
-            }
-            break;
-        }
-        }
-
-    }
-namespace rfct {
-    void drawBVH(uint32_t depth, const BVHnode& start, std::vector<BVHnode>* nodes) {
-        drawAABB(start.min, start.max, depth);
-        if (!(start.right<0)) {
-            drawBVH(depth+1, (*nodes)[start.left], nodes);
-            drawBVH(depth+1, (*nodes)[start.right], nodes);
-        }
-    }
-}
-
-void rfct::updatePhysics(const frameContext* ctx)
-{
-    RFCT_PROFILE_SCOPE("physics step");
+void rfct::physicsStep(const frameContext* ctx) {
+	RFCT_PROFILE_FUNCTION();
     auto gravityVelocityPositionBoxQuery = ecs::get().view<gravityComponent, velocityComponent, positionComponent, dynamicBoxColliderComponent, staticObjCollisionCallbackComponent>();
     for (auto [ent, gravity, velocity, position, dynamicBox, callback] : gravityVelocityPositionBoxQuery.each()) {
         if (gravity.gravityEnabled) {
@@ -291,7 +392,6 @@ void rfct::updatePhysics(const frameContext* ctx)
     }
 
     // on dynamic objects do not update velocities
-
     auto dynamicBoxesQuery = ecs::get().view<positionComponent, dynamicBoxColliderComponent, dynamicObjCollisionCallbackComponent>();
     for (auto [ent, position, dynamicBox, callback] : dynamicBoxesQuery.each()) {
         constexpr float substepTime = (fixedDeltaTime) / (float)substepCount;
@@ -302,9 +402,8 @@ void rfct::updatePhysics(const frameContext* ctx)
     }
 }
 
-
-entity rfct::findTheNearestVineToPlayer(entity player)
-{
+entity rfct::findTheNearestVineToPlayer(entity player) {
+	RFCT_PROFILE_FUNCTION();
     entt::registry& reg = ecs::get();
     glm::vec2 point = reg.get<positionComponent>(player).position;
     std::vector<BVHnode>& bvh = DynamicObjsBVHnodes;
@@ -357,12 +456,12 @@ entity rfct::findTheNearestVineToPlayer(entity player)
                     stack.push(right);
             }
         }
-    }return nearestEntity;
+    }
+    return nearestEntity;
 }
 
-
-entity rfct::findTheNearestBlockToPlayer(entity player)
-{
+entity rfct::findTheNearestBlockToPlayer(entity player) {
+    RFCT_PROFILE_FUNCTION();
     entt::registry& reg = ecs::get();
     glm::vec2 point = reg.get<positionComponent>(player).position;
     std::vector<BVHnode>& bvh = StaticObjsBVHnodes;
@@ -413,5 +512,6 @@ entity rfct::findTheNearestBlockToPlayer(entity player)
                     stack.push(right);
             }
         }
-    }return nearestEntity;
+    }
+    return nearestEntity;
 }

@@ -14,12 +14,15 @@
 #include "objects/objects.h"
 #include "world.h"
 
+rfct::renderData& rfct::scene::getRenderData() {
+	return m_World->getRenderData();
+}
+
 rfct::scene::scene(world* worldArg) 
 	: m_World(worldArg) {
 }
 
-void rfct::scene::onUpdate(frameContext* context)
-{
+void rfct::scene::onUpdate(frameContext* context) {
 	RFCT_PROFILE_SCOPE("scene update");
 	entt::registry& reg = ecs::get();
 
@@ -53,8 +56,8 @@ void rfct::scene::onUpdate(frameContext* context)
 	cameraComponentOnUpdate(context->dt, playerEntity, m_InitialData.width, m_InitialData.height);
 }
 
-void rfct::scene::FixedUpdate(frameContext* context)
-{
+void rfct::scene::FixedUpdate(frameContext* context) {
+	RFCT_PROFILE_FUNCTION();
 	if (!ecs::get().get<playerLifeComponent>(playerEntity).alive) {
 		resetScene(context);
 	}
@@ -62,16 +65,15 @@ void rfct::scene::FixedUpdate(frameContext* context)
 	objectSystems::get().systemsFixedUpdate(context);
 	m_decorations.decorsFixedUpdate(context);
 	buildDynamicObjBVH();
-	updatePhysics(context);
+	physicsStep(context);
 }
 
-void rfct::scene::postFixedUpdate(frameContext* context)
-{
+void rfct::scene::postFixedUpdate(frameContext* context) {
 	playerController::get().postFixedUpdate(context);
 }
 
-void rfct::scene::initScene(const std::string& path)
-{
+void rfct::scene::initScene(const std::string& path) {
+	RFCT_PROFILE_FUNCTION();
 	loadScene(path, &m_InitialData);
 	
 	entt::registry& reg = ecs::get();
@@ -96,20 +98,12 @@ void rfct::scene::initScene(const std::string& path)
 	camera = reg.create();
 	reg.emplace<position3DComponent>(camera, position3DComponent{ { m_InitialData.spawnPoints[0].position, 20.f} });
 	reg.emplace<rotationComponent>(camera, rotationComponent{ {0.f, 0.f, 0.f} });
-	reg.emplace<cameraComponent>(camera, cameraComponent{ CameraFOV, renderer::getRen().getAspectRatio(), 0.1f, 100.0f });
+	reg.emplace<cameraComponent>(camera, cameraComponent{ 45.f, renderer::getRen().getAspectRatio(), 0.1f, 100.0f });
 	setCamera(camera);
 
 	// init dynamic objects
 	objectSystems::get().loadSceneData(&m_InitialData, this);
 	m_decorations.init(&m_InitialData, this);
-
-
-	//if (m_InitialData.vines.size() != 0) hasVines = true;
-
-	// init player hair anim
-	;
-	const dynamicBoxColliderComponent& bounds = reg.get<dynamicBoxColliderComponent>(playerEntity);
-	playerAnimations::get().initHairAnim(bounds.max.x - bounds.min.x, bounds.max.y - bounds.min.y);
 
 	m_World->getRenderData().endTransferStatic();
 
@@ -120,23 +114,10 @@ void rfct::scene::initScene(const std::string& path)
 	m_pendingEntityDeletions.reserve(20);
 
 	m_InitialData.rectangles.clear();
-	
-	//getRenderData().clearAllData();
 }
 
-void rfct::scene::unloadScene()
-{
-}
-
-rfct::renderData& rfct::scene::getRenderData()
-{
-	return m_World->getRenderData();
-}
-
-
-
-entity rfct::scene::createStaticMesh(const std::string& path, glm::vec2 size, glm::vec2 pos, const glm::vec3& color)
-{
+entity rfct::scene::createStaticMesh(const std::string& path, glm::vec2 size, glm::vec2 pos, const glm::vec3& color) {
+	RFCT_PROFILE_FUNCTION();
 	buildingBlockMesh mesh1(path, color, size * 70.f);
 
 	staticBoxColliderComponent collider;
@@ -163,11 +144,9 @@ entity rfct::scene::createStaticMesh(const std::string& path, glm::vec2 size, gl
 	return e;
 }
 
-entity rfct::scene::createStaticBackgroundMesh(const std::string& path, const glm::vec3& color, const float zMin, const float zMax)
-{
+entity rfct::scene::createStaticBackgroundMesh(const std::string& path, const glm::vec3& color, const float zMin, const float zMax) {
+	RFCT_PROFILE_FUNCTION();
 	backgroundMesh mesh1(path, color, zMin, zMax);
-
-
 	glm::mat4 model = glm::mat4(1.f);
 	objectLocation ol = m_World->getRenderData().addStaticObject(&mesh1.m_Vertices, &model);
 	staticSSBOIndexComponent ssboIndex = { ol.indexInSSBO };
@@ -179,8 +158,8 @@ entity rfct::scene::createStaticBackgroundMesh(const std::string& path, const gl
 	return e;
 }
 
-entity rfct::scene::createStaticRect(staticBoxColliderComponent* bounds, glm::vec3 color)
-{
+entity rfct::scene::createStaticRect(staticBoxColliderComponent* bounds, glm::vec3 color) {
+	RFCT_PROFILE_FUNCTION();
 	std::vector<Vertex> vertices = {
 		{{bounds->min.x, bounds->min.y, 0.f}, color,0,0},
 		{{bounds->min.x, bounds->max.y, 0.f}, color,0,0},
@@ -196,8 +175,8 @@ entity rfct::scene::createStaticRect(staticBoxColliderComponent* bounds, glm::ve
 	return e;
 }
 
-entity rfct::scene::createDynamicRect(dynamicBoxColliderComponent* bounds, glm::vec3 color)
-{
+entity rfct::scene::createDynamicRect(dynamicBoxColliderComponent* bounds, glm::vec3 color) {
+	RFCT_PROFILE_FUNCTION();
 	std::vector<Vertex> vertices = {
 		{{bounds->min.x, bounds->min.y, 0.f},	color,0,0},
 		{{bounds->min.x, bounds->max.y, 0.f}, color,0,0},
@@ -213,20 +192,18 @@ entity rfct::scene::createDynamicRect(dynamicBoxColliderComponent* bounds, glm::
 	return e;
 }
 
-entity rfct::scene::createDynamicMesh(dynamicBoxColliderComponent* bounds, const std::string& path)
-{
+entity rfct::scene::createDynamicMesh(dynamicBoxColliderComponent* bounds, const std::string& path) {
+	RFCT_PROFILE_FUNCTION();
 	mesh mesh1(path);
-
 	transform trans = {};
-
 	glm::mat4 model = getModelMatrixFromTransform(trans);
 	entity e = createDynamicRenderingEntity(&mesh1.m_Vertices, &model);
 	ecs::get().emplace<dynamicBoxColliderComponent>(e, *bounds);
 	return e;
 }
 
-entity rfct::scene::createStaticRenderingEntity(std::vector<Vertex>* vertices, glm::mat4* model)
-{
+entity rfct::scene::createStaticRenderingEntity(std::vector<Vertex>* vertices, glm::mat4* model) {
+	RFCT_PROFILE_FUNCTION();
 	objectLocation ol = m_World->getRenderData().addStaticObject(vertices, model);
 	staticSSBOIndexComponent ssboIndex = { ol.indexInSSBO };
 
@@ -241,20 +218,20 @@ entity rfct::scene::createStaticRenderingEntity(std::vector<Vertex>* vertices, g
 	return e;
 }
 
-void rfct::scene::deleteDynamicEntity(entity e)
-{
+void rfct::scene::deleteDynamicEntity(entity e) {
+	RFCT_PROFILE_FUNCTION();
 	m_World->getRenderData().removeDynamicEntity(e);
 	ecs::get().destroy(e);
 }
 
-void rfct::scene::deleteAnimatedEntity(entity e)
-{
+void rfct::scene::deleteAnimatedEntity(entity e) {
+	RFCT_PROFILE_FUNCTION();
 	m_World->getRenderData().removeAnimatedEntity(e);
 	ecs::get().destroy(e);
 }
 
-entity rfct::scene::createDynamicRenderingEntity(std::vector<Vertex>* vertices, glm::mat4* model, uint32_t numVertices)
-{
+entity rfct::scene::createDynamicRenderingEntity(std::vector<Vertex>* vertices, glm::mat4* model, uint32_t numVertices) {
+	RFCT_PROFILE_FUNCTION();
 	objectLocation ol = m_World->getRenderData().addDynamicObject(vertices, model, {}, numVertices);
 
 	entt::registry& reg = ecs::get();
@@ -266,38 +243,33 @@ entity rfct::scene::createDynamicRenderingEntity(std::vector<Vertex>* vertices, 
 	return e;
 }
 
-void rfct::scene::updateTransformData(const frameContext* ctx, entity e)
-{
+void rfct::scene::updateTransformData(const frameContext* ctx, entity e) {
 	glm::mat4 model = getModelMatrixFromEntity(e);
 	m_World->getRenderData().updateMat(ctx, ecs::get().get<dynamicSSBOIndexComponent>(e).indexInSSBO, &model);
 }
 
-void rfct::scene::updateDirection(bool facingRight)
-{
-	
+void rfct::scene::updateDirection(bool facingRight) {
 	scaleComponent& scale = ecs::get().get<scaleComponent>(playerEntity);
 	scale.scale.x = scale.scale.x* (facingRight? (scale.scale.x < 0 ? -1 : 1) :(scale.scale.x>0?-1:1));
 }
 
-bool rfct::scene::isPlayerOutsideScene()
-{
-	
+bool rfct::scene::isPlayerOutsideScene() {
 	glm::vec2 pos = ecs::get().get<positionComponent>(playerEntity).position;
 	if (pos.x > m_InitialData.width || pos.x < 0) return true;
 	if (pos.y > m_InitialData.height || pos.y < 0) return true;
 	return false;
 }
 
-glm::vec2 rfct::scene::getPlayerCoordsSceneNormalized()
-{
+glm::vec2 rfct::scene::getPlayerCoordsSceneNormalized() {
+	RFCT_PROFILE_FUNCTION();
 	glm::vec2 pos = ecs::get().get<positionComponent>(playerEntity).position;
 	pos.x /= m_InitialData.width;
 	pos.y /= m_InitialData.height;
 	return {std::clamp(pos.x, 0.f, 1.f), std::clamp(pos.y, 0.f, 1.f) };
 }
 
-void rfct::scene::resetScene(frameContext* ctx)
-{
+void rfct::scene::resetScene(frameContext* ctx) {
+	RFCT_PROFILE_FUNCTION();
 	ecs::get().get<playerLifeComponent>(playerEntity).alive = true;
 	playerController::get().endHold(this);
 	ecs::get().get<positionComponent>(playerEntity).position = m_InitialData.spawnPoints[0].position;
