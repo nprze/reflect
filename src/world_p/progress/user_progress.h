@@ -5,6 +5,7 @@ namespace rfct {
 	class userSettings {
 	public:
 		static userSettings& get();
+	public:
 		void loadUserSettings();
 		void dumpUserSettings();
 	public:

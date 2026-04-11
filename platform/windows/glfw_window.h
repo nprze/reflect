@@ -16,10 +16,9 @@ namespace rfct {
         void show() override;
         void hide() override;
         bool pollAndParseEvents() override;
+        vk::SurfaceKHR createSurface(vk::Instance instance) override;
         inline vk::Extent2D getExtent() override { return extent; }
         inline void setExtent(vk::Extent2D ext) override { extent = ext; }
-        vk::SurfaceKHR createSurface(vk::Instance instance) override;
-
         GLFWwindow* GetHandle() const { return window; }
     private:
         vk::Extent2D extent;

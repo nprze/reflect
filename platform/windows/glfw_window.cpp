@@ -4,6 +4,7 @@
 #include "app.h"
 
 void framebufferResizeCallback(GLFWwindow* window, int width, int height) {
+	RFCT_PROFILE_FUNCTION();
 	rfct::renderer::getRen().getRenderImagesManager().getSwapChain().framebufferResized = true;
     vk::Extent2D newExtent = { static_cast<uint32_t>(width), static_cast<uint32_t>(height) };
     rfct::renderer::getRen().getWindow().setExtent(newExtent);
@@ -17,6 +18,7 @@ void framebufferResizeCallback(GLFWwindow* window, int width, int height) {
 }
 
 rfct::GlfwWindow::GlfwWindow(const char* title, bool maximized, int width, int height) {
+    RFCT_PROFILE_FUNCTION();
     if (!glfwInit()) {
         RFCT_CRITICAL("Failed to initialize GLFW");
     }
@@ -24,6 +26,7 @@ rfct::GlfwWindow::GlfwWindow(const char* title, bool maximized, int width, int h
 }
 
 void rfct::GlfwWindow::create(const char* title, bool maximized, int width, int height) {
+    RFCT_PROFILE_FUNCTION();
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
     if (maximized) {
@@ -60,12 +63,12 @@ void rfct::GlfwWindow::hide() {
     glfwHideWindow(window);
 }
 
-bool rfct::GlfwWindow::pollAndParseEvents()
-{
+bool rfct::GlfwWindow::pollAndParseEvents() {
     return !glfwWindowShouldClose(window);
 }
 
 vk::SurfaceKHR rfct::GlfwWindow::createSurface(vk::Instance instance) {
+    RFCT_PROFILE_FUNCTION();
     VkSurfaceKHR surface;
     VkResult res = glfwCreateWindowSurface(instance, window, nullptr, &surface);
     if (res != VK_SUCCESS) {

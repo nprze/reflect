@@ -12,7 +12,8 @@ constexpr float timeForDashAfterBasicButtonReleased = 0.3f;
 rfct::gameplayButtonBindings rfct::gameplayButtonBindings::buttonBindings;
 rfct::gameplayButtonRenderInfo rfct::gameplayButtonRenderInfo::buttonRenderInfo;
 
-void rfct::gameplayButtonBindings::clickCheck(const glm::vec2 &point, const int& action, const int& pointerID, const frameContext* ctx){
+void rfct::gameplayButtonBindings::clickCheck(const glm::vec2 &point, const int& action, const int& pointerID, const frameContext* ctx) {
+	RFCT_PROFILE_FUNCTION();
     dashBttn.updateIsClicked(point, action, pointerID);
     jump.updateIsClicked(point, action, pointerID);
     menu.updateIsClicked(point, action, pointerID);
@@ -20,7 +21,8 @@ void rfct::gameplayButtonBindings::clickCheck(const glm::vec2 &point, const int&
     movement.update(point, action, pointerID, ctx->dt);
 }
 
-void rfct::gameplayButtonBindings::updateInput(rfct::input &input) const{
+void rfct::gameplayButtonBindings::updateInput(rfct::input &input) const {
+    RFCT_PROFILE_FUNCTION();
     input.walk = 0;
     input.jump = 0;
     input.openMenu = false;
@@ -79,11 +81,10 @@ void rfct::gameplayButtonBindings::updateInput(rfct::input &input) const{
             input.dashDefault = 1;
         }
     }
-    
 }
 
 void rfct::gameplayButtonBindings::init() {
-
+    RFCT_PROFILE_FUNCTION();
     vk::Extent2D windowExtent = renderer::getRen().getWindow().getExtent();
     // walk bttns size
     glm::vec2 joystickSize = {((float)windowExtent.height) * 0.45f, ((float)windowExtent.height) * 0.45f };
@@ -119,6 +120,7 @@ void rfct::gameplayButtonBindings::init() {
 }
 
 void rfct::gameplayButtonBindings::drawButtons() {
+    RFCT_PROFILE_FUNCTION();
     renderer::getRen().getUIPipeline().addImage(dashBttn.minViewport, dashBttn.maxViewport, gameplayButtonRenderInfo::buttonRenderInfo.Image.get(),            dashBttn.minImageReleased, dashBttn.maxImageReleased);
     renderer::getRen().getUIPipeline().addImage(jump.minViewport, jump.maxViewport, gameplayButtonRenderInfo::buttonRenderInfo.Image.get(),                    jump.minImageReleased, jump.maxImageReleased);
     renderer::getRen().getUIPipeline().addImage(menu.minViewport, menu.maxViewport, gameplayButtonRenderInfo::buttonRenderInfo.Image.get(),                    menu.minImageReleased, menu.maxImageReleased);
@@ -129,6 +131,7 @@ void rfct::gameplayButtonBindings::drawButtons() {
 }
 
 void rfct::gameplayButtonRenderInfo::bindImages(const std::string& path) {
+    RFCT_PROFILE_FUNCTION();
     buttonImageSerializeData serializeData;
     AssetsManager::get().loadButtonImage(path, &serializeData);
     // init images

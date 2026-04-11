@@ -4,23 +4,28 @@
 #include "android_glue.h"
 #include "button_bindings.h"
 namespace rfct {
+    input inputInstance;
+    input& input::getInput() { return inputInstance; }
 
-    input input::s_input;
-    input::input():walk(0), jump(0), windowExtent(nullptr)
-    {
+    input::input()
+        : walk(0), 
+        jump(0), 
+        windowExtent(nullptr) {
     }
     void input::init() {
         gameplayButtonBindings::buttonBindings.init();
     }
+
     void input::drawButtons(){
         gameplayButtonBindings::buttonBindings.drawButtons();
     }
+
     void input::pollAndParseEvents(frameContext* context) {
         for (InputEvent event : InputQueue::eventQueue) {
             glm::vec2 point = {event.x, event.y};
             gameplayButtonBindings::buttonBindings.clickCheck(point, event.action, event.pointerID, context);
         }
         gameplayButtonBindings::buttonBindings.movement.updateDir();
-        gameplayButtonBindings::buttonBindings.updateInput(s_input);
+        gameplayButtonBindings::buttonBindings.updateInput(inputInstance);
     }
 }

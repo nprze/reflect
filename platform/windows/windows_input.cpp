@@ -2,11 +2,11 @@
 #include "renderer_p/renderer.h"
 #include "key_bindings.h"
 #include <glm/glm.hpp>
-#include "input.h"
 
 namespace rfct {
-	input input::s_input;
 	GLFWwindow* window = nullptr;
+	input inputInstance;
+	input& input::getInput() { return inputInstance; }
 
 	void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
 		if (action == GLFW_PRESS) {
@@ -14,40 +14,47 @@ namespace rfct {
 		}
 	}
 
-	input::input() :walk(0), jump(0), dashDefault(0), dashX(0), dash45up(0), dash45down(0), dashY(0), hold(false), windowExtent(nullptr)
-	{
+	input::input() 
+		:walk(0), 
+		jump(0), 
+		dashDefault(0), 
+		dashX(0), 
+		dash45up(0), 
+		dash45down(0), 
+		dashY(0), 
+		hold(false), 
+		windowExtent(nullptr) {
 	}
 
-	void input::init()
-	{
+	void input::init() {
+		RFCT_PROFILE_FUNCTION();
 		windowExtent = &(renderer::getRen().getWindow().extent);
 		window = renderer::getRen().getWindow().GetHandle();
 		glfwSetKeyCallback(window, key_callback);
 	}
-	void input::pollAndParseEvents(frameContext* context) {
 
+	void input::pollAndParseEvents(frameContext* context) {
+		RFCT_PROFILE_FUNCTION();
 		// reset
 		hold = false;
 		walk = 0;
 		jump = 0;
-
 		dashX = 0;
 		dashY = 0;
 		dash45up = 0;
 		dash45down = 0;
 		dashDefault = 0;
-
 		upDown = 0;
-
 		anyClicked = false;
-	
 		openClosePauseMenu = false;
 		selectMenu = false;
 		upDownMenu = 0;
 		leftRightMenu = 0;
 
+		// poll
 		glfwPollEvents();
 
+		// parse
 		if (glfwGetKey(window, keyBindings::menu)) {
 			openClosePauseMenu = true;
 		}
@@ -143,12 +150,8 @@ namespace rfct {
 		default:
 			break;
 		}
-		
-		
-
 	}
-	button* input::addClickableButton(glm::vec2 pos, glm::vec2 size)
-	{
+	button* input::addClickableButton(glm::vec2 pos, glm::vec2 size) {
 		return nullptr;
 	}
 }

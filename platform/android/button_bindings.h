@@ -15,6 +15,9 @@ namespace rfct {
         rightBottom
     };
     struct joystick {
+        void update(const glm::vec2& point, const int& action, const int& pointerID, const float& dt);
+        void updateDir();
+
         bindableImage* joystickBg;
         glm::vec2 currentBttnPos;
         glm::vec2 position;
@@ -32,21 +35,20 @@ namespace rfct {
 
         std::unordered_set<int> activePointers;
         glm::vec2 lastTouchPos = { -1, -1 };
-        void update(const glm::vec2& point, const int& action, const int& pointerID, const float& dt);
-        void updateDir();
     };
     struct gameplayButtonBindings {
         static gameplayButtonBindings buttonBindings;
-        button jump;
-        button menu;
-        button hold;
-        button dashBttn;
-        joystick movement;
 
         void init();
         void clickCheck(const glm::vec2& point, const int& action, const int& pointerID, const frameContext* ctx);
         void updateInput(input& input) const;
         void drawButtons();
+
+        button jump;
+        button menu;
+        button hold;
+        button dashBttn;
+        joystick movement;
     };
     struct gameplayButtonRenderInfo{
         static gameplayButtonRenderInfo buttonRenderInfo;

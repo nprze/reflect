@@ -6,6 +6,7 @@ rfct::AndroidWindow::AndroidWindow(ANativeWindow* nativeWindow) {
 }
 
 void rfct::AndroidWindow::create(ANativeWindow* nativeWindow) {
+    RFCT_PROFILE_FUNCTION();
     if (!nativeWindow) {
         RFCT_CRITICAL("Failed to get a valid ANativeWindow");
     }
@@ -17,6 +18,7 @@ void rfct::AndroidWindow::create(ANativeWindow* nativeWindow) {
 }
 
 void rfct::AndroidWindow::destroyWind() {
+    RFCT_PROFILE_FUNCTION();
     RFCT_TRACE("desctroying window: {}", (uint64_t)&window);
     if (window) {
         ANativeWindow_release(window);
@@ -25,6 +27,7 @@ void rfct::AndroidWindow::destroyWind() {
 }
 
 vk::SurfaceKHR rfct::AndroidWindow::createSurface(vk::Instance instance) {
+    RFCT_PROFILE_FUNCTION();
     VkSurfaceKHR surface;
     VkAndroidSurfaceCreateInfoKHR createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_ANDROID_SURFACE_CREATE_INFO_KHR;

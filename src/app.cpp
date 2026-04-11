@@ -13,11 +13,14 @@ bool rfct::reflectApplication::isAppMinimised;
 
 rfct::reflectApplication::reflectApplication(RFCT_APP_ARGS)
     : m_Renderer(RFCT_RENDERER_ARGUMENTS_VAR) {
-	input::getInput().init();
-	userSettings::get().loadUserSettings();
-	isAppMinimised = false;
-    loadGameSystems();
-	defineUI();
+    {
+        RFCT_PROFILE_SCOPE("app init");
+	    input::getInput().init();
+	    userSettings::get().loadUserSettings();
+	    isAppMinimised = false;
+        loadGameSystems();
+	    defineUI();
+    }
 #ifdef WINDOWS_BUILD
     update();
 	renderer::getRen().getWindow().show();
@@ -36,6 +39,7 @@ void rfct::reflectApplication::updateWindow(RFCT_APP_ARGS) {
 };
 
 void rfct::reflectApplication::update() {
+    RFCT_PROFILE_FUNCTION();
     using clock = std::chrono::steady_clock;
 
 	static float globalTime = 0.f;
@@ -95,10 +99,12 @@ void rfct::reflectApplication::update() {
 }
 
 void rfct::reflectApplication::fixedUpdate(frameContext& ctx, uint64_t times) {
+    RFCT_PROFILE_FUNCTION();
     world::getWorld().worldFixedUpdate(ctx, times);
 }
 
 void rfct::reflectApplication::loadGameSystems() {
+    RFCT_PROFILE_FUNCTION();
     auto jobs = std::make_shared<jobTracker>();
     jobSystem::get().KickJob([&]() {
             RFCT_PROFILE_SCOPE("sound load");
@@ -119,6 +125,7 @@ void rfct::reflectApplication::loadGameSystems() {
 }
 
 void rfct::reflectApplication::cleanGameSystems() {
+    RFCT_PROFILE_FUNCTION();
     world::getWorld().cleanWorld();
     objectSystems::get().cleanupBuffer();
     playerAnimations::get().unloadAnimations();
