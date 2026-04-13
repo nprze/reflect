@@ -1,5 +1,6 @@
 #include "sound.h"
 #include "assets/assets_utils.h"
+#include "world_p/progress/user_progress.h"
 
 rfct::soundPlayer soundPlayerInstance;
 rfct::soundManager soundManagerInstance;
@@ -37,6 +38,13 @@ void rfct::soundPlayer::playSound(sound& sound) {
 
 void rfct::soundPlayer::deleteSound(sound& sound) {
     ma_sound_uninit(sound.memory);
+}
+
+void rfct::soundPlayer::applyVolumeSettings() {
+    RFCT_PROFILE_FUNCTION();
+    settingsSerializeData& settings = userSettings::get().seriaizeData;
+	constexpr float oneOverHundred = 1.f / 100.f;
+    ma_engine_set_volume(&m_engine, settings.masterVoicePercentage * oneOverHundred);
 }
 
 void rfct::soundManager::loadSounds() {

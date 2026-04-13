@@ -1,7 +1,8 @@
 #include "user_progress.h"
-#include "assets/assets_utils.h"
 #include <fstream>
 #include <iostream>
+#include "assets/assets_utils.h"
+#include "sound_p/sound.h"
 
 rfct::userSettings instance;
 
@@ -57,4 +58,9 @@ void rfct::userSettings::dumpUserSettings() {
     SETTINGS_SET_ANY("resolutionWidth:", seriaizeData.resolutionWidth);
     SETTINGS_SET_ANY("resolutionHeight:", seriaizeData.resolutionHeight);
     SETTINGS_SET_ANY("isDeveloper:", seriaizeData.isDeveloper);
+}
+
+void rfct::userSettings::applySettings() {
+    RFCT_PROFILE_FUNCTION();
+	soundPlayer::get().applyVolumeSettings();
 }

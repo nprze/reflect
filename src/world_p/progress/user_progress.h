@@ -8,6 +8,7 @@ namespace rfct {
 	public:
 		void loadUserSettings();
 		void dumpUserSettings();
+		void applySettings();
 	public:
 		settingsSerializeData seriaizeData;
 	};

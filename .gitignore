@@ -110,16 +110,7 @@ local.properties
 # Misc
 *.class
 *.dex
-*.DS_Store
-
-# Google Services
-/google-services.json
-/firebase/
-
-# MacOS/Linux system files
-*.swp
-*.swo
-*.DS_Store
+*.DS_Stor
 
 # JetBrains IDEs
 .idea/
@@ -130,19 +121,3 @@ out/
 /gradlew.bat
 /gradle-wrapper.properties
 /gradle-wrapper.jar
-
-# Node.js (if React Native is used)
-/node_modules/
-/yarn.lock
-/package-lock.json
-
-# Proguard and Dexguard
-proguard/
-dexguard/
-
-# Fastlane
-fastlane/report.xml
-fastlane/Preview.html
-fastlane/screenshots
-fastlane/test_output
-fastlane/readme.md

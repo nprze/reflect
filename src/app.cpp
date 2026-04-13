@@ -20,6 +20,7 @@ rfct::reflectApplication::reflectApplication(RFCT_APP_ARGS)
 	    isAppMinimised = false;
         loadGameSystems();
 	    defineUI();
+		userSettings::get().applySettings();
     }
 #ifdef WINDOWS_BUILD
     update();

@@ -160,7 +160,6 @@ namespace rfct {
             break;
         }
         }
-
     }
 
     void drawBVH(uint32_t depth, const rfct::BVHnode& start, std::vector<rfct::BVHnode>* nodes) {

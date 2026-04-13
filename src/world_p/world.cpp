@@ -69,7 +69,6 @@ void rfct::world::switchScenes(frameContext& ctx) {
 	m_currentWorldBlockIndex = sceneIndex;
 	RFCT_INFO("new scene name: {}", m_serializeData.blocks[m_currentWorldBlockIndex].file);
 
-	m_currentScene->unloadScene();
 	delete m_currentScene;
 	ecs::get().clear();
 	m_RenderData->clearAllData();

@@ -4,6 +4,7 @@
 #include "input.h"
 #include "renderer_p/renderer.h"
 #include "world_p/progress/user_progress.h"
+#include "sound_p/sound.h"
 
 namespace rfct {
 	using ActionFunction = void(*)(rfct::frameContext*);
@@ -165,10 +166,7 @@ void actionTellStory(rfct::frameContext* ctx) {
 	if (storyProgress == 1)UINodes[11].label = "thank you for playing smokes.";
 	else if (storyProgress == 2)UINodes[11].label = ":3";
 	else if (storyProgress == 5) UINodes[11].label = ">:3";
-	else if (storyProgress == 6) UINodes[11].label = ">:(";
 	else if (storyProgress == 7) UINodes[11].label = "Please enjoy the game.";
-	else if (storyProgress == 8) UINodes[11].label = "This is not a clicker.";
-	else if (storyProgress == 9) UINodes[11].label = "There is nothing more here, I promise.";
 }
 void actionEmpty(rfct::frameContext* ctx) {}
 
@@ -322,6 +320,7 @@ void rfct::drawUI(frameContext* ctx) {
 				}
 				case UINode::UINodeType::UINodeType_ActionButton: {
 					UINodes[selectedNodeIndex].action(ctx);
+					userSettings::get().applySettings();
 					break;
 				}
 				}
@@ -334,6 +333,7 @@ void rfct::drawUI(frameContext* ctx) {
 						(int)UINodes[selectedNodeIndex].minValue,
 						(int)UINodes[selectedNodeIndex].maxValue
 					);
+					userSettings::get().applySettings();
 					break;
 				}
 				}

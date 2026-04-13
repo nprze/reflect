@@ -18,6 +18,7 @@ namespace rfct {
 		sound loadSound(const std::string& soundPath);
 		void playSound(sound& sound);
 		void deleteSound(sound& sound);
+		void applyVolumeSettings();
 	};
 	class soundManager { // manages sound effect sounds
 	public:
