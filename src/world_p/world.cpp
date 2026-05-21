@@ -48,6 +48,10 @@ void rfct::world::worldFixedUpdate(frameContext& context, uint64_t timesToUpdate
 	}
 }
 
+void rfct::world::startSwitchScene(frameContext& ctx) {
+	RFCT_INFO("pending switch scene");
+}
+
 void rfct::world::worldVisualUpdate(frameContext& context) {
 	m_currentScene->onUpdate(&context);
 }

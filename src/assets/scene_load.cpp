@@ -73,10 +73,10 @@ void rfct::loadScene(const std::string& path, sceneSerializedData* out) {
         else if (sv.starts_with("NPC:")) {
             NPCInfo npc{};
 
-            FILE_VEC2_INT("min:", npc.min);
-            FILE_VEC2_INT("max:", npc.max);
+            FILE_VEC2_FLOAT("start:", npc.min);
+            FILE_VEC2_FLOAT("end:", npc.max);
             FILE_FLOAT("interactionRadius:", npc.interatcionRadius);
-            FILE_STRING("file:", npc.dialogueFile);
+            FILE_STRING("dialogueName:", npc.dialogueFile);
 
             out->npcs.push_back(std::move(npc));
         }

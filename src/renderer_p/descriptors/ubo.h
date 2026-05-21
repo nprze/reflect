@@ -14,7 +14,7 @@ namespace rfct {
 	public:
 		ubo();
 		~ubo();
-		void updateUboData(glm::mat4 vp, float globalTime);
+		void updateUboData(const glm::mat4& vp, float globalTime, float changeSceneEffectMultiplier);
 		inline vk::Buffer getBuffer() { return m_buffer.buffer; }
 	private:
 		uboData m_data;

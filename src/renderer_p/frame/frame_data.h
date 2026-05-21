@@ -7,7 +7,7 @@ namespace rfct {
     class frameData {
     public:
         frameData(vk::Device device, VmaAllocator& allocator, vk::Fence lastFramePresentFinishedFence, vk::Fence thisFramePresentFinishedFence);
-		void prepareFrame(const frameContext& ctx, uint32_t BufferIndex);
+		void prepareFrame(const frameContext& ctx, uint32_t BufferIndex, float changeSceneEffectMultiplier);
         void waitForFences();
         void resetFences();
 		vk::DescriptorSet& getCameraUboDescSet(uint32_t BufferIndex) { return m_descriptors.getCameraDescSet(BufferIndex); }

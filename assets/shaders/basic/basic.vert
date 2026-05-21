@@ -10,6 +10,7 @@ layout(location = 0) out vec3 fragColor;
 layout(set = 0, binding = 0) uniform uboData {
     mat4 vp;
     float globalTime;
+    float changeSceneEffectMultiplier;
 } ubo;
 
 layout(set = 1, binding = 1) readonly buffer ObjectMatrices {
@@ -17,5 +18,5 @@ layout(set = 1, binding = 1) readonly buffer ObjectMatrices {
 };
 void main() {
     gl_Position = ubo.vp * modelMatrices[inObjectIndex] * vec4(inPosition, 1.0);
-    fragColor = inColor * sin(ubo.globalTime + inPerPrimitiveFluctuate);
+    fragColor = inColor * (sin(ubo.globalTime * inPerPrimitiveFluctuate) * 0.3 + 0.7) * ubo.changeSceneEffectMultiplier;
 }

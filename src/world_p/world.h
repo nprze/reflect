@@ -15,19 +15,20 @@ namespace rfct {
 		void worldFixedUpdate(frameContext& context, uint64_t timesToUpdate);
 		void worldVisualUpdate(frameContext& context);
         void addScreenTransform(float degree);
+		void startSwitchScene(frameContext& ctx);
 		void switchScenes(frameContext& ctx);
 		uint32_t getSceneToLoad(glm::vec2& lastBlockExit);
 		renderData& getRenderData() { return *m_RenderData; };
 		scene& getCurrentScene() { return *m_currentScene; };
 	public:
 		bool switchingScenes = false;
+		float changeSceneEffectMultiplier = 1.f;
+        float screenViewTransformDegrees = 0;
 	private:
 		scene* m_currentScene;
 		renderData* m_RenderData = nullptr;
 		worldSerializeData m_serializeData;
 		uint32_t m_currentWorldBlockIndex = 1;
 		glm::vec2 worldCoords;
-    public:
-        float screenViewTransformDegrees = 0;
 	};
 }

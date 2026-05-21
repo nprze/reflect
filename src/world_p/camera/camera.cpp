@@ -15,8 +15,14 @@ namespace rfct {
 
     void recalculateProjectionMatrix(cameraComponent& cam) {
         RFCT_PROFILE_FUNCTION();
-        glm::mat4 screenRot = glm::rotate(glm::mat4(1), glm::radians(world::getWorld().screenViewTransformDegrees), glm::vec3(0.0f, 0.0f, 1.0f));
-        projectionMatrix = screenRot* glm::perspective(glm::radians(cam.fov), cam.aspectRatio, cam.nearPlane, cam.farPlane);
+        vk::Extent2D extent = renderer::getRen().getExtent();
+		float aspectRatio = float(extent.width) / float(extent.height);
+        projectionMatrix = glm::ortho(
+            -8.f * aspectRatio, 8.f * aspectRatio,
+			-8.f, 8.f,
+            -100.0f,
+            100.0f
+        );
     }
 
     void setCamera(entity camera) {
@@ -37,11 +43,12 @@ namespace rfct {
             recalculateProjectionMatrix(camComp);
         }
 		// get size of camera view in world coords
-        float distance = std::abs(camPos3D.position.z - 0.0f);
-        float fovRad = glm::radians(camComp.fov);
+        vk::Extent2D extent = renderer::getRen().getExtent();
+		float aspectRatio = float(extent.width) / float(extent.height);
+        constexpr float oneOverHundred = 1.f / 100.f;
 
-        float visibleHeight = 2.0f * distance * std::tan(fovRad * 0.5f);
-        float visibleWidth = visibleHeight * camComp.aspectRatio;
+		float visibleWidth = 16.f * aspectRatio;
+        float visibleHeight = 16.f;
 
 		glm::vec2 whereCameraShouldBe;
 		if (visibleWidth / 2.f > sceneWidth - visibleWidth / 2.f) visibleWidth = 1.f; // case where scene is smaller than camera view

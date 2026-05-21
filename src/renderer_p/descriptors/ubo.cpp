@@ -14,11 +14,11 @@ rfct::ubo::~ubo() {
 	m_buffer.Unmap(); 
 }
 
-void rfct::ubo::updateUboData(glm::mat4 vp, float globalTime) {
-	RFCT_PROFILE_FUNCTION();
-	memcpy(m_mappedBuffer, &vp, sizeof(glm::mat4));
-	float value = globalTime;
-	memcpy((void*)((glm::mat4*)m_mappedBuffer + 1), &value, sizeof(float));
+void rfct::ubo::updateUboData(const glm::mat4& vp, float globalTime, float changeSceneEffectMultiplier) {
+    RFCT_PROFILE_FUNCTION();
+    memcpy(m_mappedBuffer, &vp, sizeof(glm::mat4));
+    float value[2] = { globalTime, changeSceneEffectMultiplier };
+    memcpy((void*)((glm::mat4*)m_mappedBuffer + 1), &value, sizeof(float) * 2);
 }
 
 vk::DescriptorSetLayout rfct::ubo::getDescriptorSetLayout() {

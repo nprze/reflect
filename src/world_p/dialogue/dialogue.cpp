@@ -8,7 +8,6 @@ constexpr float waitBetweenLines = .5f;
 
 rfct::dialogue::dialogue(const std::string& dialoguePath) {
 	loadDialogue("dialogues/"+dialoguePath+".txt", &m_serializeData);
-	RFCT_INFO("dialogue participant count: {}", m_serializeData.participants.size());
 	nodeIndex = 0;
 }
 
@@ -17,10 +16,9 @@ void rfct::dialogue::fullLoad() {
 	for (auto& participantInfo : m_serializeData.participants) {
 		dialogueParticipant participant = {};
 		for (auto filename : participantInfo.spritesFilenames) {
-			unique<characterSpritesheet> ss = std::make_unique<characterSpritesheet>(participantInfo.name, filename);
 			participant.spritesheets.emplace(
 				filename,
-				std::move(ss)
+				std::make_unique<characterSpritesheet>(participantInfo.name, filename)
 			);
 		}
 		participants[participantInfo.name] = std::move(participant);
@@ -149,7 +147,8 @@ void rfct::dialogue::updateImage(frameContext* ctx) {
 	glm::vec2 texMin = { spriteSheetTextureCoords.y * oneOverColumnCount, spriteSheetTextureCoords.x * oneOverRowCount };
 	glm::vec2 texMax = { (spriteSheetTextureCoords.y+1) * oneOverColumnCount, (spriteSheetTextureCoords.x+1) * oneOverRowCount };
 
-	renderer::getRen().getUIPipeline().addImage({ 10, 300 }, { 110, 400 }, &(currentSpritesheet->spriteSheetImage), texMin, texMax);
+	renderer::getRen().getUIPipeline().addImage({ 0, 0 }, { 100, 100 }, &(currentSpritesheet->spriteSheetImage), texMin, texMax);
+	renderer::getRen().getUIPipeline().addTextVertices("TEST", { 0, 0 }, 0.2f);
 }
 
 void rfct::dialogue::changeSpritesheet() {

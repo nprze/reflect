@@ -3,6 +3,7 @@
 #include "job_system_p/job_system.h"
 #include "frame/frame_data.h"
 #include "world_p/scene.h"
+#include "world_p/world.h"
 #include "assets/assets_utils.h"
 
 namespace rfct {
@@ -120,7 +121,7 @@ void rfct::renderer::render(frameContext& frameContext) {
         }
     }
     frameData.resetFences();
-    frameData.prepareFrame(frameContext, frameContext.frame);
+    frameData.prepareFrame(frameContext, frameContext.frame, world::getWorld().changeSceneEffectMultiplier);
     {
         RFCT_PROFILE_SCOPE("command buffers record");
         auto jobs = std::make_shared<rfct::jobTracker>();

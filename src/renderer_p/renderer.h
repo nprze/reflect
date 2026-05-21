@@ -45,6 +45,7 @@ namespace rfct {
 		inline VmaAllocator& getAllocator() { return m_allocator.m_allocator; }
 		inline vk::SurfaceKHR& getSurface() { return m_surface.surface; }
 		inline float getAspectRatio() { return m_window.getAspectRatio(); }
+		inline vk::Extent2D getExtent() { return m_window.getExtent(); }
 		inline UIPipeline& getUIPipeline() { return m_UIPipeline; };
 	private:
 		bool m_uselessBool;

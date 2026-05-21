@@ -58,9 +58,9 @@ rfct::frameData::frameData(vk::Device device, VmaAllocator& allocator, vk::Fence
 	m_UIcameradescriptors.bindCameraUbo(m_UIcameraUbo.getBuffer(), 0);
 }
 
-void rfct::frameData::prepareFrame(const frameContext& ctx, uint32_t BufferIndex) {
-    m_cameraUbo[BufferIndex].updateUboData(getVPMatrix(), ctx.globalTime);
-    m_UIcameraUbo.updateUboData(getUIMatrix(), ctx.globalTime);
+void rfct::frameData::prepareFrame(const frameContext& ctx, uint32_t BufferIndex, float changeSceneEffectMultiplier) {
+    m_cameraUbo[BufferIndex].updateUboData(getVPMatrix(), ctx.globalTime, changeSceneEffectMultiplier);
+    m_UIcameraUbo.updateUboData(getUIMatrix(), ctx.globalTime, changeSceneEffectMultiplier);
 }
 
 void rfct::frameData::waitForFences() {
