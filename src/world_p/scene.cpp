@@ -58,6 +58,7 @@ void rfct::scene::onUpdate(frameContext* context) {
 
 void rfct::scene::FixedUpdate(frameContext* context) {
 	RFCT_PROFILE_FUNCTION();
+	if (!(context->state == gameState::gameplay || context->state == gameState::stateDialogue)) return;
 	if (!ecs::get().get<playerLifeComponent>(playerEntity).alive) {
 		resetScene(context);
 	}

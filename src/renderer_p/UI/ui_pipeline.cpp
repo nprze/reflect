@@ -360,6 +360,12 @@ void rfct::UIPipeline::addImage(const glm::vec2& min, const glm::vec2& max, bind
 	vertices[4].texIndex = texIndex;
     vertices[5].texIndex = texIndex;
     
+	vertices[0].color = { 1.f, 1.f, 1.f };
+	vertices[1].color = { 1.f, 1.f, 1.f };
+	vertices[2].color = { 1.f, 1.f, 1.f };
+	vertices[3].color = { 1.f, 1.f, 1.f };
+	vertices[4].color = { 1.f, 1.f, 1.f };
+	vertices[5].color = { 1.f, 1.f, 1.f };
 
     char* mapped = (char*)m_glyphsRenderData.buffer.Map();
     mapped += m_glyphsRenderData.bufferOffset;

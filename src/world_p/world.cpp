@@ -53,6 +53,7 @@ void rfct::world::startSwitchScene(frameContext& ctx) {
 }
 
 void rfct::world::worldVisualUpdate(frameContext& context) {
+	if (context.state == gameState::menu) return;
 	m_currentScene->onUpdate(&context);
 }
 

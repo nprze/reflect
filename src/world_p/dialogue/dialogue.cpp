@@ -91,6 +91,7 @@ void rfct::dialogue::getDialogueData() {
 
 void rfct::dialogue::updateText(frameContext* ctx) {
 	RFCT_PROFILE_FUNCTION();
+	return;
 	if (text.size() == 0) getDialogueData();
 
 	currentTextAnimTime += ctx->dt;
@@ -148,7 +149,7 @@ void rfct::dialogue::updateImage(frameContext* ctx) {
 	glm::vec2 texMax = { (spriteSheetTextureCoords.y+1) * oneOverColumnCount, (spriteSheetTextureCoords.x+1) * oneOverRowCount };
 
 	renderer::getRen().getUIPipeline().addImage({ 0, 0 }, { 100, 100 }, &(currentSpritesheet->spriteSheetImage), texMin, texMax);
-	renderer::getRen().getUIPipeline().addTextVertices("TEST", { 0, 0 }, 0.2f);
+	//renderer::getRen().getUIPipeline().addTextVertices("TEST", { 0, 0 }, 0.2f);
 }
 
 void rfct::dialogue::changeSpritesheet() {
