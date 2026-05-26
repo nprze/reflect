@@ -199,6 +199,11 @@ namespace rfct {
             renderPassInfo.pDependencies = dependencies.data();
 
             m_UIRenderPass = renderer::getRen().getDevice().createRenderPassUnique(renderPassInfo);
+
+            colorAttachment.finalLayout = vk::ImageLayout::eColorAttachmentOptimal;
+            renderPassInfo.pAttachments = &colorAttachment;
+
+            m_UIimageRenderPass = renderer::getRen().getDevice().createRenderPassUnique(renderPassInfo);
         }
         {
             vk::AttachmentDescription colorAttachment = {};

@@ -47,7 +47,7 @@ namespace rfct {
     private:
         friend class renderer;
         friend class debugDraw;
-        friend class UIPipeline;
+        friend class UIPipelines;
         friend class vulkanRasterizerPipeline;
         friend class bloomResurcesHolder;
     };

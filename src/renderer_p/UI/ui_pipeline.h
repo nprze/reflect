@@ -25,10 +25,10 @@ namespace rfct {
 		opacity75percent,
 		opacity100percent
 	};
-	class UIPipeline {
+	class UIPipelines {
 	public:
-		UIPipeline(vk::RenderPass renderPass);
-		void createPipeline(vk::RenderPass renderPass);
+		UIPipelines(vk::RenderPass renderPass, vk::RenderPass imageRenderPass);
+		void createPipeline(vk::RenderPass renderPass, vk::RenderPass imageRenderPass);
 		void createDescriptorSet();
 		void draw(frameData& fd, vk::Framebuffer framebuffer, vk::RenderPass renderPass);
 		float debugText(const std::string& text, glm::vec2 startPosition, float scale);
@@ -49,8 +49,10 @@ namespace rfct {
 		font* getDefaultFont() { return &m_defaultFont; }
 		vk::DescriptorSetLayout getDescriptorSetLayout();
 	private:
-		vulkanShader m_vertexShader;
-		vulkanShader m_fragShader;
+		vulkanShader m_vertexMostShader;
+		vulkanShader m_fragMostShader;
+		vulkanShader m_vertexImageShader;
+		vulkanShader m_fragImageShader;
 		vk::UniquePipelineLayout m_PipelineLayout;
 		vk::UniqueDescriptorSetLayout m_descriptorSetLayout;
 		vk::UniqueDescriptorPool m_DescriptorPool;
@@ -62,6 +64,7 @@ namespace rfct {
 		bindableImage m_dummyImage;
 		// pipeline
 		vk::UniquePipeline m_pipeline;
+		vk::UniquePipeline m_imagePipeline;
 
 		font m_defaultFont;
 		glyphsRenderData m_glyphsRenderData;

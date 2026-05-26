@@ -78,7 +78,7 @@ rfct::renderer::renderer(RFCT_RENDERER_ARGUMENTS)
     m_framesInFlight(), 
     m_bloomRes(m_renderImages.getIntermediateRenderPass()),
     m_debugDraw(m_renderImages.getIntermediateRenderPass()),
-    m_UIPipeline(m_renderImages.getUIRenderPass())
+    m_UIPipeline(m_renderImages.getUIRenderPass(), m_renderImages.getUIimageRenderPass())
 {
 }
 

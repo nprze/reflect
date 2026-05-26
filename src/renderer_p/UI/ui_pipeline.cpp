@@ -2,29 +2,31 @@
 #include "renderer_p/renderer.h"
 
 
-rfct::UIPipeline::UIPipeline(vk::RenderPass renderPass) 
-    : m_vertexShader("shaders/UI/UIimage_vert.spv"), 
-    m_fragShader("shaders/UI/UIimage_frag.spv"), 
+rfct::UIPipelines::UIPipelines(vk::RenderPass renderPass, vk::RenderPass imageRenderPass)
+    : m_vertexMostShader("shaders/UI/UIeverything_vert.spv"), 
+    m_fragMostShader("shaders/UI/UIeverything_frag.spv"), 
+    m_vertexImageShader("shaders/UI/UIeverything_vert.spv"),
+    m_fragImageShader("shaders/UI/UIeverything_frag.spv"),
     m_glyphsRenderData(RFCT_MAX_UI_CHARS * 6),
     m_debugDrawglyphsRenderData(RFCT_DEBUG_DRAW_VERTEX_BUFFER_MAX_SIZE), 
     m_defaultFont("fonts/3MTrislan.txt"),
     m_dummyImage(""),
 	m_emptyImage("UI/empty.png") {
-    createPipeline(renderPass);
+    createPipeline(renderPass, imageRenderPass);
     createDescriptorSet();
 }
 
-void rfct::UIPipeline::createPipeline(vk::RenderPass renderPass)  {
+void rfct::UIPipelines::createPipeline(vk::RenderPass renderPass, vk::RenderPass imageRenderPass)  {
 	RFCT_PROFILE_FUNCTION();
     // Shaders
     vk::PipelineShaderStageCreateInfo vertShaderStageInfo = {};
     vertShaderStageInfo.stage = vk::ShaderStageFlagBits::eVertex;
-    vertShaderStageInfo.module = m_vertexShader.getShaderModule();
+    vertShaderStageInfo.module = m_vertexMostShader.getShaderModule();
     vertShaderStageInfo.pName = "main";
 
     vk::PipelineShaderStageCreateInfo fragShaderStageInfo = {};
     fragShaderStageInfo.stage = vk::ShaderStageFlagBits::eFragment;
-    fragShaderStageInfo.module = m_fragShader.getShaderModule();
+    fragShaderStageInfo.module = m_fragMostShader.getShaderModule();
     fragShaderStageInfo.pName = "main";
 
     std::vector<vk::PipelineShaderStageCreateInfo> shaderStages = { vertShaderStageInfo, fragShaderStageInfo };
@@ -81,8 +83,7 @@ void rfct::UIPipeline::createPipeline(vk::RenderPass renderPass)  {
     // Dynamic State
     std::vector<vk::DynamicState> dynamicStates = {
         vk::DynamicState::eViewport,
-        vk::DynamicState::eScissor,
-        vk::DynamicState::eLineWidth
+        vk::DynamicState::eScissor
     };
 
     vk::PipelineDynamicStateCreateInfo dynamicState = {};
@@ -118,9 +119,25 @@ void rfct::UIPipeline::createPipeline(vk::RenderPass renderPass)  {
     pipelineInfo.subpass = 0;
 
     m_pipeline = renderer::getRen().getDevice().createGraphicsPipelineUnique({}, pipelineInfo).value;
+
+    // Shaders
+    vertShaderStageInfo.stage = vk::ShaderStageFlagBits::eVertex;
+    vertShaderStageInfo.module = m_vertexImageShader.getShaderModule();
+    vertShaderStageInfo.pName = "main";
+
+    fragShaderStageInfo.stage = vk::ShaderStageFlagBits::eFragment;
+    fragShaderStageInfo.module = m_fragImageShader.getShaderModule();
+    fragShaderStageInfo.pName = "main";
+
+    shaderStages = { vertShaderStageInfo, fragShaderStageInfo };
+
+    pipelineInfo.pStages = shaderStages.data();
+    pipelineInfo.renderPass = imageRenderPass;
+
+    m_imagePipeline = renderer::getRen().getDevice().createGraphicsPipelineUnique({}, pipelineInfo).value;
 }
 
-void rfct::UIPipeline::createDescriptorSet() {
+void rfct::UIPipelines::createDescriptorSet() {
     RFCT_PROFILE_FUNCTION();
     vk::DescriptorPoolSize poolSize(
         vk::DescriptorType::eCombinedImageSampler,
@@ -148,12 +165,9 @@ void rfct::UIPipeline::createDescriptorSet() {
 	m_textureIndexMap.reserve(RFCT_UI_TEXTURE_BINDINGS);
 }
 
-void rfct::UIPipeline::draw(frameData& fd, vk::Framebuffer framebuffer, vk::RenderPass renderPass) {
+void rfct::UIPipelines::draw(frameData& fd, vk::Framebuffer framebuffer, vk::RenderPass renderPass) {
     RFCT_PROFILE_FUNCTION();
-    if (m_glyphsRenderData.vertexCount == 0 && m_debugDrawglyphsRenderData.vertexCount == 0)
-    {
-        return;
-    }
+    if (m_glyphsRenderData.vertexCount == 0 && m_debugDrawglyphsRenderData.vertexCount == 0) return;
 
     vk::CommandBuffer commandBuffer = fd.m_uiCommandBuffer.get();
 
@@ -214,18 +228,18 @@ void rfct::UIPipeline::draw(frameData& fd, vk::Framebuffer framebuffer, vk::Rend
     m_debugDrawglyphsRenderData.postFrame();
 }
 
-float rfct::UIPipeline::debugText(const std::string& text, glm::vec2 startPosition, float scale) {
+float rfct::UIPipelines::debugText(const std::string& text, glm::vec2 startPosition, float scale) {
     return addTextVertices(&m_debugDrawglyphsRenderData, text, startPosition, scale);
 }
 
-void rfct::UIPipeline::beginAddingTriangles() {
+void rfct::UIPipelines::beginAddingTriangles() {
     m_BufferMappedMemory = (char*)m_glyphsRenderData.buffer.Map();
 
     widthFactor = static_cast<float>(rfct::renderer::getRen().getRenderImagesManager().getSwapChain().getExtent().width);
     heightFactor = static_cast<float>(rfct::renderer::getRen().getRenderImagesManager().getSwapChain().getExtent().height);
 }
 
-void rfct::UIPipeline::addTriangleNormalized(const glm::vec2& vec0, const glm::vec2& vec1, const glm::vec2& vec2, const glm::vec3& color, opacity op) {
+void rfct::UIPipelines::addTriangleNormalized(const glm::vec2& vec0, const glm::vec2& vec1, const glm::vec2& vec2, const glm::vec3& color, opacity op) {
     GlyphVertex vertices[3];
     vertices[0].pos = glm::vec2{vec0.x * widthFactor, vec0.y * heightFactor};
     vertices[1].pos = glm::vec2{vec1.x * widthFactor, vec1.y * heightFactor};
@@ -274,11 +288,11 @@ void rfct::UIPipeline::addTriangleNormalized(const glm::vec2& vec0, const glm::v
     m_glyphsRenderData.vertexCount += 3;
 }
 
-void rfct::UIPipeline::endAddingTriangles() {
+void rfct::UIPipelines::endAddingTriangles() {
     m_glyphsRenderData.buffer.Unmap();
 }
 
-int rfct::UIPipeline::getTextureIndex(bindableImage* image, imageUsage usage) {
+int rfct::UIPipelines::getTextureIndex(bindableImage* image, imageUsage usage) {
     if (m_textureIndexMap.find(image) != m_textureIndexMap.end()) {
         return m_textureIndexMap[image];
     }
@@ -334,7 +348,7 @@ int rfct::UIPipeline::getTextureIndex(bindableImage* image, imageUsage usage) {
     return indexInShader;
 }
 
-void rfct::UIPipeline::addImage(const glm::vec2& min, const glm::vec2& max, bindableImage* image, const glm::vec2& texCoordmin, const glm::vec2& texCoordmax) {
+void rfct::UIPipelines::addImage(const glm::vec2& min, const glm::vec2& max, bindableImage* image, const glm::vec2& texCoordmin, const glm::vec2& texCoordmax) {
     RFCT_PROFILE_FUNCTION();
 	GlyphVertex vertices[6];
 	vertices[0].pos = { min.x, min.y };
@@ -376,7 +390,7 @@ void rfct::UIPipeline::addImage(const glm::vec2& min, const glm::vec2& max, bind
     m_glyphsRenderData.vertexCount += 6;
 }
 
-void rfct::UIPipeline::removeImage(bindableImage* image) {
+void rfct::UIPipelines::removeImage(bindableImage* image) {
     RFCT_PROFILE_FUNCTION();
 	int texIndex = getTextureIndex(image, imageUsage::ui);
     for (auto it = m_textureIndexMap.begin(); it != m_textureIndexMap.end(); ) {
@@ -397,7 +411,7 @@ void rfct::UIPipeline::removeImage(bindableImage* image) {
     }
 }
 
-float rfct::UIPipeline::addTextVertices(glyphsRenderData* rd, const std::string& text, glm::vec2 position, float scale, const glm::vec3& color, font* f) {
+float rfct::UIPipelines::addTextVertices(glyphsRenderData* rd, const std::string& text, glm::vec2 position, float scale, const glm::vec3& color, font* f) {
     RFCT_PROFILE_FUNCTION();
     if (!f) f = &m_defaultFont;
     vk::Extent2D windowExtent = renderer::getRen().getWindow().getExtent();
@@ -446,14 +460,14 @@ float rfct::UIPipeline::addTextVertices(glyphsRenderData* rd, const std::string&
     return cursorX;
 }
 
-float rfct::UIPipeline::addTextVerticesHeight(const std::string& text, glm::vec2 position, float height, const glm::vec3& color, font* f) {
+float rfct::UIPipelines::addTextVerticesHeight(const std::string& text, glm::vec2 position, float height, const glm::vec3& color, font* f) {
     RFCT_PROFILE_FUNCTION();
     if (!f) f = &m_defaultFont;
     float scale = f->fontScale * height ;
     return addTextVertices(&m_glyphsRenderData, text, position, scale, color, f);
 }
 
-vk::DescriptorSetLayout rfct::UIPipeline::getDescriptorSetLayout() {
+vk::DescriptorSetLayout rfct::UIPipelines::getDescriptorSetLayout() {
     if (m_descriptorSetLayout) return m_descriptorSetLayout.get();
     RFCT_PROFILE_FUNCTION();
 

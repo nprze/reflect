@@ -46,7 +46,7 @@ namespace rfct {
 		inline vk::SurfaceKHR& getSurface() { return m_surface.surface; }
 		inline float getAspectRatio() { return m_window.getAspectRatio(); }
 		inline vk::Extent2D getExtent() { return m_window.getExtent(); }
-		inline UIPipeline& getUIPipeline() { return m_UIPipeline; };
+		inline UIPipelines& getUIPipeline() { return m_UIPipeline; };
 	private:
 		bool m_uselessBool;
         RFCT_PLATFORM_WINDOW m_window;
@@ -59,7 +59,7 @@ namespace rfct {
 		vulkanRasterizerPipeline m_rasterizerPipeline;
 		bloomResurcesHolder m_bloomRes;
 		debugDraw m_debugDraw;
-		UIPipeline m_UIPipeline;
+		UIPipelines m_UIPipeline;
     private:
         friend class vulkanSwapChain;
         friend class reflectApplication;
