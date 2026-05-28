@@ -2,21 +2,22 @@
 #include "renderer_p/renderer.h"
 
 
-rfct::UIPipelines::UIPipelines(vk::RenderPass renderPass, vk::RenderPass imageRenderPass)
+rfct::UIPipelines::UIPipelines(vk::RenderPass renderPass)
     : m_vertexMostShader("shaders/UI/UIeverything_vert.spv"), 
     m_fragMostShader("shaders/UI/UIeverything_frag.spv"), 
-    m_vertexImageShader("shaders/UI/UIeverything_vert.spv"),
-    m_fragImageShader("shaders/UI/UIeverything_frag.spv"),
-    m_glyphsRenderData(RFCT_MAX_UI_CHARS * 6),
-    m_debugDrawglyphsRenderData(RFCT_DEBUG_DRAW_VERTEX_BUFFER_MAX_SIZE), 
+    m_vertexImageShader("shaders/UI/UIimage_vert.spv"),
+    m_fragImageShader("shaders/UI/UIimage_frag.spv"),
+    m_imageVertexBuffer(6 * RFCT_MAX_BUTTON_COUNT * 2),
+    m_UIVertexBuffer(RFCT_MAX_UI_CHARS * 6),
+    m_debugDrawUIVertexBuffer(RFCT_DEBUG_DRAW_VERTEX_BUFFER_MAX_SIZE), 
     m_defaultFont("fonts/3MTrislan.txt"),
     m_dummyImage(""),
 	m_emptyImage("UI/empty.png") {
-    createPipeline(renderPass, imageRenderPass);
+    createPipeline(renderPass);
     createDescriptorSet();
 }
 
-void rfct::UIPipelines::createPipeline(vk::RenderPass renderPass, vk::RenderPass imageRenderPass)  {
+void rfct::UIPipelines::createPipeline(vk::RenderPass renderPass)  {
 	RFCT_PROFILE_FUNCTION();
     // Shaders
     vk::PipelineShaderStageCreateInfo vertShaderStageInfo = {};
@@ -102,7 +103,7 @@ void rfct::UIPipelines::createPipeline(vk::RenderPass renderPass, vk::RenderPass
     viewportState.viewportCount = 1;
     viewportState.scissorCount = 1;
 
-    // Pipeline
+    // Pipeline for most things
     vk::GraphicsPipelineCreateInfo pipelineInfo = {};
     pipelineInfo.stageCount = 2;
     pipelineInfo.pStages = shaderStages.data();
@@ -120,19 +121,21 @@ void rfct::UIPipelines::createPipeline(vk::RenderPass renderPass, vk::RenderPass
 
     m_pipeline = renderer::getRen().getDevice().createGraphicsPipelineUnique({}, pipelineInfo).value;
 
-    // Shaders
-    vertShaderStageInfo.stage = vk::ShaderStageFlagBits::eVertex;
-    vertShaderStageInfo.module = m_vertexImageShader.getShaderModule();
-    vertShaderStageInfo.pName = "main";
+    // Image Pipeline (for dialogues)
+    vk::PipelineShaderStageCreateInfo newvertShaderStageInfo = {};
+    newvertShaderStageInfo.stage = vk::ShaderStageFlagBits::eVertex;
+    newvertShaderStageInfo.module = m_vertexImageShader.getShaderModule();
+    newvertShaderStageInfo.pName = "main";
 
-    fragShaderStageInfo.stage = vk::ShaderStageFlagBits::eFragment;
-    fragShaderStageInfo.module = m_fragImageShader.getShaderModule();
-    fragShaderStageInfo.pName = "main";
 
-    shaderStages = { vertShaderStageInfo, fragShaderStageInfo };
+    vk::PipelineShaderStageCreateInfo newfragShaderStageInfo = {};
+    newfragShaderStageInfo.stage = vk::ShaderStageFlagBits::eFragment;
+    newfragShaderStageInfo.module = m_fragImageShader.getShaderModule();
+    newfragShaderStageInfo.pName = "main";
 
-    pipelineInfo.pStages = shaderStages.data();
-    pipelineInfo.renderPass = imageRenderPass;
+    std::vector<vk::PipelineShaderStageCreateInfo> newshaderStages = { newvertShaderStageInfo, newfragShaderStageInfo };
+
+    pipelineInfo.pStages = newshaderStages.data();
 
     m_imagePipeline = renderer::getRen().getDevice().createGraphicsPipelineUnique({}, pipelineInfo).value;
 }
@@ -167,7 +170,7 @@ void rfct::UIPipelines::createDescriptorSet() {
 
 void rfct::UIPipelines::draw(frameData& fd, vk::Framebuffer framebuffer, vk::RenderPass renderPass) {
     RFCT_PROFILE_FUNCTION();
-    if (m_glyphsRenderData.vertexCount == 0 && m_debugDrawglyphsRenderData.vertexCount == 0) return;
+    if (m_UIVertexBuffer.vertexCount == 0 && m_debugDrawUIVertexBuffer.vertexCount == 0) return;
 
     vk::CommandBuffer commandBuffer = fd.m_uiCommandBuffer.get();
 
@@ -206,34 +209,52 @@ void rfct::UIPipelines::draw(frameData& fd, vk::Framebuffer framebuffer, vk::Ren
 
     commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, m_pipeline.get());
 
-    if (m_debugDrawglyphsRenderData.vertexCount != 0) {
-        vk::Buffer vertexBuffers[] = { m_debugDrawglyphsRenderData.buffer.buffer };
+    if (m_debugDrawUIVertexBuffer.vertexCount != 0) {
+        vk::Buffer vertexBuffers[] = { m_debugDrawUIVertexBuffer.buffer.buffer };
         vk::DeviceSize offsets[] = { 0 };
         commandBuffer.bindVertexBuffers(0, 1, vertexBuffers, offsets);
 
-        commandBuffer.draw(m_debugDrawglyphsRenderData.vertexCount, 1, 0, 0);
+        commandBuffer.draw(m_debugDrawUIVertexBuffer.vertexCount, 1, 0, 0);
     }
 
-    if (m_glyphsRenderData.vertexCount != 0) {
-        vk::Buffer vertexBuffers[] = { m_glyphsRenderData.buffer.buffer };
+    if (m_UIVertexBuffer.vertexCount != 0) {
+        vk::Buffer vertexBuffers[] = { m_UIVertexBuffer.buffer.buffer };
         vk::DeviceSize offsets[] = { 0 };
         commandBuffer.bindVertexBuffers(0, 1, vertexBuffers, offsets);
 
-        commandBuffer.draw(m_glyphsRenderData.vertexCount, 1, 0, 0);
+        commandBuffer.draw(m_UIVertexBuffer.vertexCount, 1, 0, 0);
+    }
+    if (m_imageVertexBuffer.vertexCount != 0) {
+        //commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, m_imagePipeline.get());
+
+        char* mapped = (char*)m_imageVertexBuffer.buffer.Map();
+        mapped += m_imageVertexBuffer.bufferOffset;
+        GlyphVertex* vb = (GlyphVertex*) mapped;
+        for (uint32_t i = 0; i < m_imageVertexBuffer.vertexCount; i++) {
+            RFCT_INFO("index:{}, pos:({}, {}), color:({}, {}, {}, {}), texCoord:({}, {}), texIndex:{}", i, vb[i].pos.x, vb[i].pos.y, vb[i].color.x, vb[i].color.y, vb[i].color.z, vb[i].color.z, vb[i].texCoord.x, vb[i].texCoord.y, vb[i].texIndex);
+        }
+        m_imageVertexBuffer.buffer.Unmap();
+
+        vk::Buffer vertexBuffers[] = { m_imageVertexBuffer.buffer.buffer };
+        vk::DeviceSize offsets[] = { 0 };
+        commandBuffer.bindVertexBuffers(0, 1, vertexBuffers, offsets);
+
+        commandBuffer.draw(m_imageVertexBuffer.vertexCount, 1, 0, 0);
     }
     commandBuffer.endRenderPass();
 
     commandBuffer.end();
-    m_glyphsRenderData.postFrame();
-    m_debugDrawglyphsRenderData.postFrame();
+    m_imageVertexBuffer.postFrame();
+    m_UIVertexBuffer.postFrame();
+    m_debugDrawUIVertexBuffer.postFrame();
 }
 
 float rfct::UIPipelines::debugText(const std::string& text, glm::vec2 startPosition, float scale) {
-    return addTextVertices(&m_debugDrawglyphsRenderData, text, startPosition, scale);
+    return addTextVertices(&m_debugDrawUIVertexBuffer, text, startPosition, scale);
 }
 
 void rfct::UIPipelines::beginAddingTriangles() {
-    m_BufferMappedMemory = (char*)m_glyphsRenderData.buffer.Map();
+    m_BufferMappedMemory = (char*)m_UIVertexBuffer.buffer.Map();
 
     widthFactor = static_cast<float>(rfct::renderer::getRen().getRenderImagesManager().getSwapChain().getExtent().width);
     heightFactor = static_cast<float>(rfct::renderer::getRen().getRenderImagesManager().getSwapChain().getExtent().height);
@@ -282,14 +303,14 @@ void rfct::UIPipelines::addTriangleNormalized(const glm::vec2& vec0, const glm::
     vertices[1].color = color;
     vertices[2].color = color;
 
-    memcpy(m_BufferMappedMemory + m_glyphsRenderData.bufferOffset, vertices, 3 * sizeof(vertices[0]));
+    memcpy(m_BufferMappedMemory + m_UIVertexBuffer.bufferOffset, vertices, 3 * sizeof(vertices[0]));
 
-    m_glyphsRenderData.bufferOffset += 3 * sizeof(vertices[0]);
-    m_glyphsRenderData.vertexCount += 3;
+    m_UIVertexBuffer.bufferOffset += 3 * sizeof(vertices[0]);
+    m_UIVertexBuffer.vertexCount += 3;
 }
 
 void rfct::UIPipelines::endAddingTriangles() {
-    m_glyphsRenderData.buffer.Unmap();
+    m_UIVertexBuffer.buffer.Unmap();
 }
 
 int rfct::UIPipelines::getTextureIndex(bindableImage* image, imageUsage usage) {
@@ -381,13 +402,13 @@ void rfct::UIPipelines::addImage(const glm::vec2& min, const glm::vec2& max, bin
 	vertices[4].color = { 1.f, 1.f, 1.f };
 	vertices[5].color = { 1.f, 1.f, 1.f };
 
-    char* mapped = (char*)m_glyphsRenderData.buffer.Map();
-    mapped += m_glyphsRenderData.bufferOffset;
+    char* mapped = (char*)m_imageVertexBuffer.buffer.Map();
+    mapped += m_imageVertexBuffer.bufferOffset;
     memcpy(mapped, vertices, 6 * sizeof(vertices[0]));
 
-    m_glyphsRenderData.bufferOffset += 6 * sizeof(vertices[0]);
-    m_glyphsRenderData.buffer.Unmap();
-    m_glyphsRenderData.vertexCount += 6;
+    m_imageVertexBuffer.bufferOffset += 6 * sizeof(vertices[0]);
+    m_imageVertexBuffer.buffer.Unmap();
+    m_imageVertexBuffer.vertexCount += 6;
 }
 
 void rfct::UIPipelines::removeImage(bindableImage* image) {
@@ -411,7 +432,7 @@ void rfct::UIPipelines::removeImage(bindableImage* image) {
     }
 }
 
-float rfct::UIPipelines::addTextVertices(glyphsRenderData* rd, const std::string& text, glm::vec2 position, float scale, const glm::vec3& color, font* f) {
+float rfct::UIPipelines::addTextVertices(UIVertexBuffer* rd, const std::string& text, glm::vec2 position, float scale, const glm::vec3& color, font* f) {
     RFCT_PROFILE_FUNCTION();
     if (!f) f = &m_defaultFont;
     vk::Extent2D windowExtent = renderer::getRen().getWindow().getExtent();
@@ -464,7 +485,7 @@ float rfct::UIPipelines::addTextVerticesHeight(const std::string& text, glm::vec
     RFCT_PROFILE_FUNCTION();
     if (!f) f = &m_defaultFont;
     float scale = f->fontScale * height ;
-    return addTextVertices(&m_glyphsRenderData, text, position, scale, color, f);
+    return addTextVertices(&m_UIVertexBuffer, text, position, scale, color, f);
 }
 
 vk::DescriptorSetLayout rfct::UIPipelines::getDescriptorSetLayout() {

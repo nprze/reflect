@@ -31,7 +31,6 @@ namespace rfct {
 		vk::ImageView getSceneImageView(uint32_t index) { return m_sceneImageViews[index].get(); }
 		vk::ImageView getBloom1ImageView(uint32_t index) { return m_bloom1ImageViews[index].get(); }
 		vk::ImageView getBloom2ImageView(uint32_t index) { return m_bloom2ImageViews[index].get(); }
-		vk::RenderPass getUIimageRenderPass() { return m_UIimageRenderPass.get(); }
 		vk::RenderPass getUIRenderPass() { return m_UIRenderPass.get(); }
 		vk::RenderPass getpresentToColorAttachmentRenderPass() { return m_presentToColorAttachment.get(); }
 		vk::RenderPass getIntermediateClearRenderPass() { return m_IntermediateClearRenderPass.get(); }
@@ -40,7 +39,6 @@ namespace rfct {
 	private:
 		vulkanSwapChain m_swapChain;
 		vk::UniqueRenderPass m_UIRenderPass;
-		vk::UniqueRenderPass m_UIimageRenderPass;
 		vk::UniqueRenderPass m_presentToColorAttachment;
 		vk::UniqueRenderPass m_IntermediateClearRenderPass;
 		vk::UniqueRenderPass m_IntermediateRenderPass;
