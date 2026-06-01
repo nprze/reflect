@@ -7,9 +7,9 @@ rfct::UIPipelines::UIPipelines(vk::RenderPass renderPass)
     m_fragMostShader("shaders/UI/UIeverything_frag.spv"), 
     m_vertexImageShader("shaders/UI/UIimage_vert.spv"),
     m_fragImageShader("shaders/UI/UIimage_frag.spv"),
-    m_imageVertexBuffer(6 * RFCT_MAX_BUTTON_COUNT * 2),
-    m_UIVertexBuffer(RFCT_MAX_UI_CHARS * 6),
-    m_debugDrawUIVertexBuffer(RFCT_DEBUG_DRAW_VERTEX_BUFFER_MAX_SIZE), 
+    m_imageVertexBuffer(6 * RFCT_MAX_BUTTON_COUNT * sizeof(GlyphVertex)),
+    m_UIVertexBuffer(RFCT_MAX_UI_CHARS * 6 * sizeof(GlyphVertex)),
+    m_debugDrawUIVertexBuffer(RFCT_DEBUG_DRAW_VERTEX_BUFFER_MAX_SIZE),
     m_defaultFont("fonts/3MTrislan.txt"),
     m_dummyImage(""),
 	m_emptyImage("UI/empty.png") {
@@ -222,18 +222,10 @@ void rfct::UIPipelines::draw(frameData& fd, vk::Framebuffer framebuffer, vk::Ren
         vk::DeviceSize offsets[] = { 0 };
         commandBuffer.bindVertexBuffers(0, 1, vertexBuffers, offsets);
 
-        commandBuffer.draw(m_UIVertexBuffer.vertexCount, 1, 0, 0);
+        commandBuffer.draw(m_UIVertexBuffer.vertexCount, 1, 0, 0); 
     }
     if (m_imageVertexBuffer.vertexCount != 0) {
-        //commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, m_imagePipeline.get());
-
-        char* mapped = (char*)m_imageVertexBuffer.buffer.Map();
-        mapped += m_imageVertexBuffer.bufferOffset;
-        GlyphVertex* vb = (GlyphVertex*) mapped;
-        for (uint32_t i = 0; i < m_imageVertexBuffer.vertexCount; i++) {
-            RFCT_INFO("index:{}, pos:({}, {}), color:({}, {}, {}, {}), texCoord:({}, {}), texIndex:{}", i, vb[i].pos.x, vb[i].pos.y, vb[i].color.x, vb[i].color.y, vb[i].color.z, vb[i].color.z, vb[i].texCoord.x, vb[i].texCoord.y, vb[i].texIndex);
-        }
-        m_imageVertexBuffer.buffer.Unmap();
+        commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, m_imagePipeline.get());
 
         vk::Buffer vertexBuffers[] = { m_imageVertexBuffer.buffer.buffer };
         vk::DeviceSize offsets[] = { 0 };
@@ -387,6 +379,7 @@ void rfct::UIPipelines::addImage(const glm::vec2& min, const glm::vec2& max, bin
 	vertices[5].texCoord = texCoordmax;
 
 	int texIndex = getTextureIndex(image, imageUsage::ui);
+    RFCT_ASSERT(texIndex > 0);
 	
     vertices[0].texIndex = texIndex;
 	vertices[1].texIndex = texIndex;
@@ -404,9 +397,9 @@ void rfct::UIPipelines::addImage(const glm::vec2& min, const glm::vec2& max, bin
 
     char* mapped = (char*)m_imageVertexBuffer.buffer.Map();
     mapped += m_imageVertexBuffer.bufferOffset;
-    memcpy(mapped, vertices, 6 * sizeof(vertices[0]));
+    memcpy(mapped, vertices, 6 * sizeof(GlyphVertex));
 
-    m_imageVertexBuffer.bufferOffset += 6 * sizeof(vertices[0]);
+    m_imageVertexBuffer.bufferOffset += 6 * sizeof(GlyphVertex);
     m_imageVertexBuffer.buffer.Unmap();
     m_imageVertexBuffer.vertexCount += 6;
 }

@@ -94,7 +94,6 @@ namespace rfct {
 		float gravity = 5.f;
 	};
     struct playerStateComponent {
-        bool grounded = false;
         bool allowToJump = false;
         playerState  state = playerState::normal;
         uint8_t dashCharges = 0;

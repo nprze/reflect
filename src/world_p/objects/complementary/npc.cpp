@@ -36,6 +36,9 @@ namespace rfct {
     };
 
     void npcs::updateVisuals(const frameContext* ctx) {
+        if (m_currentlyPlayingDialogue != nullptr) {
+			m_currentlyPlayingDialogue->visualUpdate(ctx);
+        }
         if (!talkPopupVisible) return;
         glm::vec2 screenSpaceTextPos = getVPMatrix() * glm::vec4(talkPopupPosition.x, talkPopupPosition.y + 2.f, 0.f, 1.f);
         vk::Extent2D winExtent = renderer::getRen().getWindow().getExtent();
@@ -72,7 +75,7 @@ namespace rfct {
             talkPopupVisible = false;
             if (nearestDistanceSqared != FLT_MAX) {
                 const auto& playerState = reg.get<playerStateComponent>(ctx->scene->getPlayer());
-                if (input::getInput().hold && playerState.grounded) {
+                if (input::getInput().hold && playerState.state == playerState::normal) {
                     ctx->state = gameState::stateDialogue;
                     startDialogue(reg.get<dialoguePathComponent>(nearestNPC).dialoguePath);
                     talkPopupVisible = false;

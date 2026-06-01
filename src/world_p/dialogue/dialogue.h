@@ -4,9 +4,14 @@
 
 namespace rfct {
 	struct frameContext;
-	enum dialoguePartAnimation {
+	enum dialoguePartEffect {
 		Normal,
 		Floating
+	};
+	struct dialoguePart {
+		std::string text;
+		dialoguePartEffect animation;
+		float time;
 	};
 	class characterSpritesheet {
 	public:
@@ -25,12 +30,13 @@ namespace rfct {
 	public:
 		dialogue(const std::string& dialoguePath);
 		void fullLoad();
-		bool update(frameContext* ctx); // returns true if ended
+		void visualUpdate(const frameContext* ctx);
+		bool update(const frameContext* ctx); // returns true if ended
 		// text stuff
 		void getDialogueData();
-		void updateText(frameContext* ctx);
+		void updateText(const frameContext* ctx);
 		// animation stuff
-		void updateImage(frameContext* ctx);
+		void updateImage(const frameContext* ctx);
 		void changeSpritesheet();
 		void onChangeFrame();
 		void onChangeCycle();
@@ -38,15 +44,12 @@ namespace rfct {
 		dialogueSerializeData m_serializeData;
 		std::map<std::string, dialogueParticipant> participants;
 	private:
-		std::vector<dialoguePartAnimation> textAnimations;
-		std::vector<std::string> text;
+		std::vector<dialoguePart> displayPart; // one part is a single part with one effect.
 
 		bool loaded = false;
 		float timeTillChangeOfIndexIsPossible;
 
 		uint32_t lineChars;
-		float currentTextFullAnimTime;
-		float currentTextAnimTime;
 		uint32_t nodeIndex;
 		characterSpritesheet* currentSpritesheet = nullptr;
 		std::string currentCycleName;

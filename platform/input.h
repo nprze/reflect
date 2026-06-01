@@ -71,5 +71,6 @@ namespace rfct {
 
         // dialogue input 
         bool anyClicked;
+        float clickExpiryTime;
 	};
 }

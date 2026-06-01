@@ -68,9 +68,6 @@ namespace rfct {
 				}
 			}
 		}
-		if (resolution.y > 0) {
-			ecs::get().get<playerStateComponent>(player).grounded = true;
-		}
 	}
 }
 

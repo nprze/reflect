@@ -11,6 +11,7 @@ namespace rfct {
 	void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
 		if (action == GLFW_PRESS) {
 			input::getInput().anyClicked = true;
+			input::getInput().clickExpiryTime = 0.2f;
 		}
 	}
 
@@ -45,11 +46,18 @@ namespace rfct {
 		dash45down = 0;
 		dashDefault = 0;
 		upDown = 0;
-		anyClicked = false;
 		openClosePauseMenu = false;
 		selectMenu = false;
 		upDownMenu = 0;
 		leftRightMenu = 0;
+
+		// click is different from press
+		if (anyClicked) {
+			clickExpiryTime -= context->dt;
+			if (clickExpiryTime <= 0) {
+				anyClicked = false;
+			}
+		}
 
 		// poll
 		glfwPollEvents();
