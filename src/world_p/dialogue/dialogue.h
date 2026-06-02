@@ -48,9 +48,11 @@ namespace rfct {
 
 		bool loaded = false;
 		float timeTillChangeOfIndexIsPossible;
-
-		uint32_t lineChars;
 		uint32_t nodeIndex;
+		// text
+		uint32_t dialoguePartNodeIndex;
+		float displayPartPlayingTime;
+		// image
 		characterSpritesheet* currentSpritesheet = nullptr;
 		std::string currentCycleName;
 		float currentCycleReplayTime;

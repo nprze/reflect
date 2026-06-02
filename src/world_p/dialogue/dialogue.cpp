@@ -23,7 +23,7 @@ void rfct::dialogue::fullLoad() {
 		}
 		participants[participantInfo.name] = std::move(participant);
 	}
-	timeTillChangeOfIndexIsPossible = waitBetweenLines;
+	timeTillChangeOfIndexIsPossible = 0.3f;
 	loaded = true;
 
 	displayPart.reserve(10);
@@ -40,7 +40,7 @@ bool rfct::dialogue::update(const frameContext* ctx) {
  	if (!loaded) return false;
 	timeTillChangeOfIndexIsPossible -= ctx->dt;
 
-	if (input::getInput().anyClicked) {
+	if (input::getInput().anyClicked && timeTillChangeOfIndexIsPossible < 0.f) {
 		input::getInput().anyClicked = false;
 		nodeIndex++;
 		timeTillChangeOfIndexIsPossible = waitBetweenLines;
@@ -62,9 +62,9 @@ rfct::dialoguePartEffect getEffect(const std::string& name) {
 void rfct::dialogue::getDialogueData() {
 	displayPart.clear();
 
-	lineChars = 0;
-
 	std::string lineText =  m_serializeData.text[nodeIndex].dialogueText;
+	dialoguePartNodeIndex = 0;
+	displayPartPlayingTime = 0.f;
 	std::size_t pos = 0;
 
 	while (true) { // parse the serialize data
@@ -80,16 +80,14 @@ void rfct::dialogue::getDialogueData() {
 
 		if (nextOpen == std::string::npos) {
 			part.text = lineText.substr(textStart);
-			lineChars += part.text.size();
-			part.time = part.text.size() * 0.02f; 
+			part.time = part.text.size() * (part.animation == Normal ? 0.02f : 0.1f);
 			displayPart.push_back(part);
 			break;
 		}
 		else {
 			part.text = lineText.substr(textStart, nextOpen - textStart);
 			pos = nextOpen;
-			lineChars += part.text.size();
-			part.time = part.text.size() * 0.02f;
+			part.time = part.text.size() * (part.animation == Normal ? 0.02f : 0.4f);
 			displayPart.push_back(part);
 		}
 	}
@@ -100,10 +98,18 @@ void rfct::dialogue::updateText(const frameContext* ctx) {
 	if (displayPart.size() == 0) getDialogueData();
 
 	float endX = 0.f;
-	for (uint32_t i = 0; i < displayPart.size();i++) {
+	for (uint32_t i = 0; i < dialoguePartNodeIndex; i++) {
 		dialoguePart singleEffectBit = displayPart[i];
-
 		endX = debugDraw::drawText(singleEffectBit.text, { endX, 250 }, 0.2f);
+	}
+	if (dialoguePartNodeIndex < displayPart.size()) {
+		displayPartPlayingTime += ctx->dt;
+		dialoguePart singleEffectBit = displayPart[dialoguePartNodeIndex];
+		endX = debugDraw::drawText(singleEffectBit.text.substr(0, (uint32_t)(singleEffectBit.text.size() * (displayPartPlayingTime / singleEffectBit.time))), { endX, 250 }, 0.2f);
+		if (displayPartPlayingTime > displayPart[dialoguePartNodeIndex].time) {
+			displayPartPlayingTime = 0.f;
+			dialoguePartNodeIndex++;
+		}
 	}
 }
 

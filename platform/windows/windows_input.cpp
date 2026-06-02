@@ -132,9 +132,6 @@ namespace rfct {
 			break;
 		}
 		case gameState::stateDialogue: {
-			if (anyClicked) {
-				RFCT_WARN("clicked with dialogue");
-			}
 			break;
 		}
 		case gameState::menu: {
