@@ -108,21 +108,7 @@ void rfct::loadDialogueSpriteSheet(const std::string& path, dialogueSpritesheetS
         std::string key;
         iss >> key;
 
-        if (key == "ColumnCount:") {
-            iss >> dialogueSpritesheetSerializedDataOut->columnCount;
-        }
-        else if (key == "RowCount:") {
-            iss >> dialogueSpritesheetSerializedDataOut->rowCount;
-        }
-        else if (key == "CycleName:") {
-            // Save the previous cycle if there was one
-            if (!currentCycleName.empty()) {
-                dialogueSpritesheetSerializedDataOut->cycles[currentCycleName] = currentCycle;
-                currentCycle = spritesheetCycle(); // reset
-            }
-            iss >> currentCycleName;
-        }
-        else if (key == "Images:") {
+        if (key == "Images:") {
             currentCycle.indices.clear();
             std::string token;
             while (iss >> token) {
@@ -137,6 +123,15 @@ void rfct::loadDialogueSpriteSheet(const std::string& path, dialogueSpritesheetS
                 }
             }
         }
+        
+        else if (key == "CycleName:") {
+            // Save the previous cycle if there was one
+            if (!currentCycleName.empty()) {
+                dialogueSpritesheetSerializedDataOut->cycles[currentCycleName] = currentCycle;
+                currentCycle = spritesheetCycle(); // reset
+            }
+            iss >> currentCycleName;
+        }
         else if (key == "Repeat:") {
             iss >> currentCycle.repeat;
         }
@@ -145,6 +140,31 @@ void rfct::loadDialogueSpriteSheet(const std::string& path, dialogueSpritesheetS
         }
         else if (key == "Fallback:") {
             iss >> currentCycle.fallBack;
+        }
+        else if (key == "ColumnCount:") {
+            iss >> dialogueSpritesheetSerializedDataOut->columnCount;
+        }
+        else if (key == "RowCount:") {
+            iss >> dialogueSpritesheetSerializedDataOut->rowCount;
+        }
+        else if (key == "Background:") {
+            std::string token;
+            iss >> token;
+            token = token.substr(1, token.size() - 2); // strip ()
+            size_t commaPos = token.find(',');
+            if (commaPos != std::string::npos) {
+                int row = std::stoi(token.substr(0, commaPos));
+                int col = std::stoi(token.substr(commaPos + 1));
+                dialogueSpritesheetSerializedDataOut->backgroundStart = { row, col };
+            }
+            iss >> token;
+            token = token.substr(1, token.size() - 2); // strip ()
+            commaPos = token.find(',');
+            if (commaPos != std::string::npos) {
+                int row = std::stoi(token.substr(0, commaPos));
+                int col = std::stoi(token.substr(commaPos + 1));
+                dialogueSpritesheetSerializedDataOut->backgroundEnd = { row, col };
+            }
         }
     }
 

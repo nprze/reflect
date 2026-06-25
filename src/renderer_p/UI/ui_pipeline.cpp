@@ -207,8 +207,16 @@ void rfct::UIPipelines::draw(frameData& fd, vk::Framebuffer framebuffer, vk::Ren
     vk::DescriptorSet descSets[] = { fd.getUICameraUboDescSet(), m_DescriptorSet.get() };
     commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_PipelineLayout.get(), 0, descSets, {});
 
-    commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, m_pipeline.get());
+    if (m_imageVertexBuffer.vertexCount != 0) {
+        commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, m_imagePipeline.get());
 
+        vk::Buffer vertexBuffers[] = { m_imageVertexBuffer.buffer.buffer };
+        vk::DeviceSize offsets[] = { 0 };
+        commandBuffer.bindVertexBuffers(0, 1, vertexBuffers, offsets);
+
+        commandBuffer.draw(m_imageVertexBuffer.vertexCount, 1, 0, 0);
+    }
+    commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, m_pipeline.get());
     if (m_debugDrawUIVertexBuffer.vertexCount != 0) {
         vk::Buffer vertexBuffers[] = { m_debugDrawUIVertexBuffer.buffer.buffer };
         vk::DeviceSize offsets[] = { 0 };
@@ -222,17 +230,9 @@ void rfct::UIPipelines::draw(frameData& fd, vk::Framebuffer framebuffer, vk::Ren
         vk::DeviceSize offsets[] = { 0 };
         commandBuffer.bindVertexBuffers(0, 1, vertexBuffers, offsets);
 
-        commandBuffer.draw(m_UIVertexBuffer.vertexCount, 1, 0, 0); 
+        commandBuffer.draw(m_UIVertexBuffer.vertexCount, 1, 0, 0);
     }
-    if (m_imageVertexBuffer.vertexCount != 0) {
-        commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, m_imagePipeline.get());
 
-        vk::Buffer vertexBuffers[] = { m_imageVertexBuffer.buffer.buffer };
-        vk::DeviceSize offsets[] = { 0 };
-        commandBuffer.bindVertexBuffers(0, 1, vertexBuffers, offsets);
-
-        commandBuffer.draw(m_imageVertexBuffer.vertexCount, 1, 0, 0);
-    }
     commandBuffer.endRenderPass();
 
     commandBuffer.end();

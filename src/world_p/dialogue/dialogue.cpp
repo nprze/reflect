@@ -31,6 +31,7 @@ void rfct::dialogue::fullLoad() {
 
 void rfct::dialogue::visualUpdate(const frameContext* ctx) {
 	RFCT_PROFILE_FUNCTION();
+	updateBackground(ctx);
 	updateText(ctx);
 	updateImage(ctx);
 }
@@ -60,6 +61,7 @@ rfct::dialoguePartEffect getEffect(const std::string& name) {
 }
 
 void rfct::dialogue::getDialogueData() {
+	RFCT_PROFILE_FUNCTION();
 	displayPart.clear();
 
 	std::string lineText =  m_serializeData.text[nodeIndex].dialogueText;
@@ -81,6 +83,7 @@ void rfct::dialogue::getDialogueData() {
 		if (nextOpen == std::string::npos) {
 			part.text = lineText.substr(textStart);
 			part.time = part.text.size() * (part.animation == Normal ? 0.02f : 0.1f);
+			part.singleCharTime = part.time / part.text.size();
 			displayPart.push_back(part);
 			break;
 		}
@@ -88,6 +91,7 @@ void rfct::dialogue::getDialogueData() {
 			part.text = lineText.substr(textStart, nextOpen - textStart);
 			pos = nextOpen;
 			part.time = part.text.size() * (part.animation == Normal ? 0.02f : 0.4f);
+			part.singleCharTime = part.time / part.text.size();
 			displayPart.push_back(part);
 		}
 	}
@@ -97,7 +101,7 @@ void rfct::dialogue::updateText(const frameContext* ctx) {
 	RFCT_PROFILE_FUNCTION();
 	if (displayPart.size() == 0) getDialogueData();
 
-	float endX = 0.f;
+	float endX = 150.f;
 	for (uint32_t i = 0; i < dialoguePartNodeIndex; i++) {
 		dialoguePart singleEffectBit = displayPart[i];
 		endX = debugDraw::drawText(singleEffectBit.text, { endX, 250 }, 0.2f);
@@ -105,7 +109,11 @@ void rfct::dialogue::updateText(const frameContext* ctx) {
 	if (dialoguePartNodeIndex < displayPart.size()) {
 		displayPartPlayingTime += ctx->dt;
 		dialoguePart singleEffectBit = displayPart[dialoguePartNodeIndex];
-		endX = debugDraw::drawText(singleEffectBit.text.substr(0, (uint32_t)(singleEffectBit.text.size() * (displayPartPlayingTime / singleEffectBit.time))), { endX, 250 }, 0.2f);
+		uint32_t charsToDisplay = (uint32_t)(displayPartPlayingTime / singleEffectBit.singleCharTime);
+		float animMult = std::fmod(displayPartPlayingTime, singleEffectBit.singleCharTime) / singleEffectBit.singleCharTime; // (0, 1)
+		animMult = std::sin(2.f * 3.24f * animMult) * (1 - (animMult * animMult));
+		endX = debugDraw::drawText(singleEffectBit.text.substr(0, charsToDisplay), { endX, 250 }, 0.2f);
+		endX = debugDraw::drawText(singleEffectBit.text.substr(charsToDisplay, 1), { endX, 250 + (5 * animMult) }, 0.2f); // first char is animated
 		if (displayPartPlayingTime > displayPart[dialoguePartNodeIndex].time) {
 			displayPartPlayingTime = 0.f;
 			dialoguePartNodeIndex++;
@@ -148,6 +156,30 @@ void rfct::dialogue::updateImage(const frameContext* ctx) {
 	glm::vec2 texMax = { (spriteSheetTextureCoords.y+1) * oneOverColumnCount, (spriteSheetTextureCoords.x+1) * oneOverRowCount };
 
 	renderer::getRen().getUIPipeline().addImage({ 0, 0 }, { 100, 100 }, &(currentSpritesheet->spriteSheetImage), texMin, texMax);
+}
+
+void rfct::dialogue::updateBackground(const frameContext* ctx) {
+	RFCT_PROFILE_FUNCTION();
+	if (currentSpritesheet == nullptr) changeSpritesheet();
+	glm::vec2 backgroundBegin = currentSpritesheet->backgroundBegin;
+	glm::vec2 backgroundEnd = currentSpritesheet->backgroundEnd;
+
+	float backgroundAspectRatio = (backgroundEnd.y + 1 - backgroundBegin.y) / (backgroundEnd.x + 1 - backgroundBegin.x); // width / height
+
+	vk::Extent2D winExt = renderer::getRen().getExtent();
+	float backgroundWidth = winExt.width * 0.7f;
+	float backgroundHeight = backgroundWidth / backgroundAspectRatio;
+	float offsetLeft = winExt.width * 0.15f;
+	float offsetTop = winExt.height * 0.15f;
+
+	// get current texture min max coords
+	float oneOverRowCount = 1.f / currentSpritesheet->rowCount;
+	float oneOverColumnCount = 1.f / currentSpritesheet->columnCount;
+
+	glm::vec2 texMin = { backgroundBegin.y * oneOverColumnCount, backgroundBegin.x * oneOverRowCount };
+	glm::vec2 texMax = { (backgroundEnd.y + 1) * oneOverColumnCount, (backgroundEnd.x + 1) * oneOverRowCount };
+
+	renderer::getRen().getUIPipeline().addImage({ offsetLeft, offsetTop }, { offsetLeft + backgroundWidth, offsetTop + backgroundHeight }, &(currentSpritesheet->spriteSheetImage), texMin, texMax);
 }
 
 void rfct::dialogue::changeSpritesheet() {
@@ -193,6 +225,8 @@ rfct::characterSpritesheet::characterSpritesheet(const std::string& characterNam
 	cycles = std::move(sd.cycles);
 	rowCount = sd.rowCount;
 	columnCount = sd.columnCount;
+	backgroundBegin = sd.backgroundStart;
+	backgroundEnd = sd.backgroundEnd;
 }
 
 rfct::characterSpritesheet::~characterSpritesheet() {

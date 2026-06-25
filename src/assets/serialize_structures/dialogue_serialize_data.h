@@ -24,6 +24,8 @@ namespace rfct {
 	struct dialogueSpritesheetSerializeData {
 		int rowCount;
 		int columnCount;
+		glm::vec2 backgroundStart;
+		glm::vec2 backgroundEnd;
 		std::map<std::string, spritesheetCycle> cycles;
 	};
 }

@@ -12,6 +12,7 @@ namespace rfct {
 		std::string text;
 		dialoguePartEffect animation;
 		float time;
+		float singleCharTime;
 	};
 	class characterSpritesheet {
 	public:
@@ -21,6 +22,8 @@ namespace rfct {
 		int rowCount;
 		int columnCount;
 		std::map<std::string, spritesheetCycle> cycles;
+		glm::vec2 backgroundBegin;
+		glm::vec2 backgroundEnd;
 		bool drawn = false;
 	};
 	struct dialogueParticipant {
@@ -32,11 +35,10 @@ namespace rfct {
 		void fullLoad();
 		void visualUpdate(const frameContext* ctx);
 		bool update(const frameContext* ctx); // returns true if ended
-		// text stuff
 		void getDialogueData();
 		void updateText(const frameContext* ctx);
-		// animation stuff
 		void updateImage(const frameContext* ctx);
+		void updateBackground(const frameContext* ctx);
 		void changeSpritesheet();
 		void onChangeFrame();
 		void onChangeCycle();
@@ -47,7 +49,7 @@ namespace rfct {
 		std::vector<dialoguePart> displayPart; // one part is a single part with one effect.
 
 		bool loaded = false;
-		float timeTillChangeOfIndexIsPossible;
+		float timeTillChangeOfIndexIsPossible = 0.f;
 		uint32_t nodeIndex;
 		// text
 		uint32_t dialoguePartNodeIndex;
