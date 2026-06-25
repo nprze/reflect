@@ -206,7 +206,7 @@ void rfct::UIPipelines::draw(frameData& fd, vk::Framebuffer framebuffer, vk::Ren
     // Descriptors
     vk::DescriptorSet descSets[] = { fd.getUICameraUboDescSet(), m_DescriptorSet.get() };
     commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_PipelineLayout.get(), 0, descSets, {});
-
+    
     if (m_imageVertexBuffer.vertexCount != 0) {
         commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, m_imagePipeline.get());
 
@@ -224,7 +224,7 @@ void rfct::UIPipelines::draw(frameData& fd, vk::Framebuffer framebuffer, vk::Ren
 
         commandBuffer.draw(m_debugDrawUIVertexBuffer.vertexCount, 1, 0, 0);
     }
-
+    // order is important for dialogue- text should be drawn last
     if (m_UIVertexBuffer.vertexCount != 0) {
         vk::Buffer vertexBuffers[] = { m_UIVertexBuffer.buffer.buffer };
         vk::DeviceSize offsets[] = { 0 };

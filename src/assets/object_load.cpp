@@ -166,6 +166,9 @@ void rfct::loadDialogueSpriteSheet(const std::string& path, dialogueSpritesheetS
                 dialogueSpritesheetSerializedDataOut->backgroundEnd = { row, col };
             }
         }
+        else if (key == "BgPortraitOffset:") {
+            iss >> dialogueSpritesheetSerializedDataOut->portraitOffset;
+        }
     }
 
     // Store the last cycle if there was one

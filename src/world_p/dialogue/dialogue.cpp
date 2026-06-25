@@ -5,6 +5,7 @@
 #include "renderer_p/renderer.h"
 
 constexpr float waitBetweenLines = .02f;
+constexpr float defaultFontScale = 0.2f;
 
 rfct::dialogue::dialogue(const std::string& dialoguePath) {
 	loadDialogue("dialogues/"+dialoguePath+".txt", &m_serializeData);
@@ -101,10 +102,10 @@ void rfct::dialogue::updateText(const frameContext* ctx) {
 	RFCT_PROFILE_FUNCTION();
 	if (displayPart.size() == 0) getDialogueData();
 
-	float endX = 150.f;
+	float endX = textLeftOffsetInPixel;
 	for (uint32_t i = 0; i < dialoguePartNodeIndex; i++) {
 		dialoguePart singleEffectBit = displayPart[i];
-		endX = debugDraw::drawText(singleEffectBit.text, { endX, 250 }, 0.2f);
+		endX = debugDraw::drawText(singleEffectBit.text, { endX, 250 }, defaultFontScale);
 	}
 	if (dialoguePartNodeIndex < displayPart.size()) {
 		displayPartPlayingTime += ctx->dt;
@@ -112,8 +113,13 @@ void rfct::dialogue::updateText(const frameContext* ctx) {
 		uint32_t charsToDisplay = (uint32_t)(displayPartPlayingTime / singleEffectBit.singleCharTime);
 		float animMult = std::fmod(displayPartPlayingTime, singleEffectBit.singleCharTime) / singleEffectBit.singleCharTime; // (0, 1)
 		animMult = std::sin(2.f * 3.24f * animMult) * (1 - (animMult * animMult));
-		endX = debugDraw::drawText(singleEffectBit.text.substr(0, charsToDisplay), { endX, 250 }, 0.2f);
-		endX = debugDraw::drawText(singleEffectBit.text.substr(charsToDisplay, 1), { endX, 250 + (5 * animMult) }, 0.2f); // first char is animated
+
+		float fontHeightInPixel = renderer::getRen().getUIPipeline().getDefaultFont()->getFontHeight(defaultFontScale);
+		float textOffsetTop = bgOffsetInPixel.y + (bgSizeInPixel.y * 0.5f) - (fontHeightInPixel);
+
+		endX = debugDraw::drawText(singleEffectBit.text.substr(0, charsToDisplay), { endX, textOffsetTop }, defaultFontScale);
+		endX = debugDraw::drawText(singleEffectBit.text.substr(charsToDisplay, 1), { endX, textOffsetTop + (5 * animMult) }, defaultFontScale); // first char is animated
+		RFCT_ASSERT(endX - textLeftOffsetInPixel < maxTextWidthInPixel)
 		if (displayPartPlayingTime > displayPart[dialoguePartNodeIndex].time) {
 			displayPartPlayingTime = 0.f;
 			dialoguePartNodeIndex++;
@@ -128,7 +134,6 @@ void rfct::dialogue::updateImage(const frameContext* ctx) {
 
 	cyclePlayingTime += ctx->dt;
 	framePlayingTime += ctx->dt;
-
 
 	if (framePlayingTime > currentCycle.cycleTime / currentCycle.indices.size()) {
 		if (!currentCycleIsLooped && cyclePlayingTime > currentCycleReplayTime) {
@@ -155,7 +160,8 @@ void rfct::dialogue::updateImage(const frameContext* ctx) {
 	glm::vec2 texMin = { spriteSheetTextureCoords.y * oneOverColumnCount, spriteSheetTextureCoords.x * oneOverRowCount };
 	glm::vec2 texMax = { (spriteSheetTextureCoords.y+1) * oneOverColumnCount, (spriteSheetTextureCoords.x+1) * oneOverRowCount };
 
-	renderer::getRen().getUIPipeline().addImage({ 0, 0 }, { 100, 100 }, &(currentSpritesheet->spriteSheetImage), texMin, texMax);
+	renderer::getRen().getUIPipeline().addImage(bgOffsetInPixel + glm::vec2{ portraitOffsetInPixel, portraitOffsetInPixel }, 
+		bgOffsetInPixel + glm::vec2{ portraitOffsetInPixel + portraitSizeInPixel, portraitOffsetInPixel + portraitSizeInPixel }, & (currentSpritesheet->spriteSheetImage), texMin, texMax);
 }
 
 void rfct::dialogue::updateBackground(const frameContext* ctx) {
@@ -167,10 +173,13 @@ void rfct::dialogue::updateBackground(const frameContext* ctx) {
 	float backgroundAspectRatio = (backgroundEnd.y + 1 - backgroundBegin.y) / (backgroundEnd.x + 1 - backgroundBegin.x); // width / height
 
 	vk::Extent2D winExt = renderer::getRen().getExtent();
-	float backgroundWidth = winExt.width * 0.7f;
-	float backgroundHeight = backgroundWidth / backgroundAspectRatio;
-	float offsetLeft = winExt.width * 0.15f;
-	float offsetTop = winExt.height * 0.15f;
+
+	bgSizeInPixel = { winExt.width * 0.7f, winExt.width * 0.7f / backgroundAspectRatio };
+	bgOffsetInPixel = { winExt.width * 0.15f, winExt.height * 0.15f };
+	portraitOffsetInPixel = currentSpritesheet->portraitOffset * bgSizeInPixel.y;
+	portraitSizeInPixel = bgSizeInPixel.y - 2 * portraitOffsetInPixel;
+	textLeftOffsetInPixel = bgOffsetInPixel.x + portraitSizeInPixel + 4 * portraitOffsetInPixel;
+	maxTextWidthInPixel = bgSizeInPixel.x + bgOffsetInPixel.x - (textLeftOffsetInPixel + 2 * portraitOffsetInPixel);
 
 	// get current texture min max coords
 	float oneOverRowCount = 1.f / currentSpritesheet->rowCount;
@@ -179,7 +188,7 @@ void rfct::dialogue::updateBackground(const frameContext* ctx) {
 	glm::vec2 texMin = { backgroundBegin.y * oneOverColumnCount, backgroundBegin.x * oneOverRowCount };
 	glm::vec2 texMax = { (backgroundEnd.y + 1) * oneOverColumnCount, (backgroundEnd.x + 1) * oneOverRowCount };
 
-	renderer::getRen().getUIPipeline().addImage({ offsetLeft, offsetTop }, { offsetLeft + backgroundWidth, offsetTop + backgroundHeight }, &(currentSpritesheet->spriteSheetImage), texMin, texMax);
+	renderer::getRen().getUIPipeline().addImage(bgOffsetInPixel, { bgOffsetInPixel.x + bgSizeInPixel.x, bgOffsetInPixel.y + bgSizeInPixel.y }, &(currentSpritesheet->spriteSheetImage), texMin, texMax);
 }
 
 void rfct::dialogue::changeSpritesheet() {
@@ -227,6 +236,7 @@ rfct::characterSpritesheet::characterSpritesheet(const std::string& characterNam
 	columnCount = sd.columnCount;
 	backgroundBegin = sd.backgroundStart;
 	backgroundEnd = sd.backgroundEnd;
+	portraitOffset = sd.portraitOffset;
 }
 
 rfct::characterSpritesheet::~characterSpritesheet() {

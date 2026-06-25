@@ -26,6 +26,7 @@ namespace rfct {
 		int columnCount;
 		glm::vec2 backgroundStart;
 		glm::vec2 backgroundEnd;
+		float portraitOffset;
 		std::map<std::string, spritesheetCycle> cycles;
 	};
 }

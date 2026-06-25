@@ -24,6 +24,7 @@ namespace rfct {
 		std::map<std::string, spritesheetCycle> cycles;
 		glm::vec2 backgroundBegin;
 		glm::vec2 backgroundEnd;
+		float portraitOffset;
 		bool drawn = false;
 	};
 	struct dialogueParticipant {
@@ -47,7 +48,6 @@ namespace rfct {
 		std::map<std::string, dialogueParticipant> participants;
 	private:
 		std::vector<dialoguePart> displayPart; // one part is a single part with one effect.
-
 		bool loaded = false;
 		float timeTillChangeOfIndexIsPossible = 0.f;
 		uint32_t nodeIndex;
@@ -60,6 +60,12 @@ namespace rfct {
 		float currentCycleReplayTime;
 		float cyclePlayingTime;
 		float framePlayingTime;
+		glm::vec2 bgOffsetInPixel;
+		glm::vec2 bgSizeInPixel;
+		float portraitOffsetInPixel;
+		float portraitSizeInPixel;
+		float textLeftOffsetInPixel;
+		float maxTextWidthInPixel;
 		bool currentCycleIsLooped;
 		uint32_t cycleSpriteIndex = 0;
 	};

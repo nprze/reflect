@@ -25,4 +25,22 @@ float rfct::font::getTextWidth(const std::string& text, float scale) {
     }
     width -= g->xadvance * scale;
     return width;
+}
+float rfct::font::getFontHeight(float scale) {
+    RFCT_PROFILE_FUNCTION();
+
+    const glyph* g = getGlyph('g');
+    const glyph* h = getGlyph('h');
+    RFCT_ASSERT(g != nullptr && h != nullptr);
+
+    float gy0 = g->yoffset * scale;
+    float gy1 = gy0 + g->height * scale;
+
+    float hy0 = h->yoffset * scale;
+    float hy1 = hy0 + h->height * scale;
+
+    float minY = std::min(hy0, gy0);
+    float maxY = std::max(hy1, gy1);
+
+    return maxY - minY;
 };

@@ -57,6 +57,7 @@ namespace rfct {
         const glyph* getGlyph(char character) const;
 		font(const std::string& path); // path should point to a .txt
         float getTextWidth(const std::string& text, float scale);
+        float getFontHeight(float scale);
     public:
 		bindableImage m_TextureAtlas;
 		std::unordered_map<char, glyph> glyphMap;

@@ -216,7 +216,6 @@ void rfct::debugDraw::draw(frameContext* ctx, frameData& fd, vk::Framebuffer fra
         commandBuffer.bindVertexBuffers(0, 1, vertexBuffers, offsets);
         commandBuffer.draw(m_triangleBuffer.vertexCount, 1, 0, 0);
     }
-
     // Debug lines
     if (m_lineBuffer.vertexCount != 0) {
         commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, m_linePipeline.get());
