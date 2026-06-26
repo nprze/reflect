@@ -40,13 +40,6 @@ namespace rfct {
 
 		velocityComponent& vel = ecs::get().get<velocityComponent>(player);
 		inputVelocityComponent& ivel = ecs::get().get<inputVelocityComponent>(player);
-		/*
-		if (resolution.x != 0.0f && resolution.y != 0.0f) {
-			// circle collision. zero velocity on x only when real change.
-			if (std::abs(resolution.x) > 0.01f) {
-				vel->velocity.x = 0.0f;
-			}
-		}*/
 
 		{
 			if (resolution.x != 0.0f) {
@@ -486,4 +479,12 @@ void rfct::playerController::startDash(frameContext* ctx) {
 	
 	ecs::get().get<playerStateComponent>(player).allowToJump = false;
 	ecs::get().get<gravityComponent>(player).gravityEnabled = false;
+
+	// screenshake
+	auto view = ecs::get().view<cameraComponent>();
+	for (auto entity : view) {
+		cameraComponent& cam = view.get<cameraComponent>(entity);
+		cam.screenShake = glm::normalize(dashVelocity);
+		cam.screenShakeDuration = 1.0f;
+	}
 }

@@ -99,7 +99,7 @@ void rfct::scene::initScene(const std::string& path) {
 	camera = reg.create();
 	reg.emplace<position3DComponent>(camera, position3DComponent{ { m_InitialData.spawnPoints[0].position, 10.f} });
 	reg.emplace<rotationComponent>(camera, rotationComponent{ {0.f, 0.f, 0.f} });
-	reg.emplace<cameraComponent>(camera, cameraComponent{ 45.f, renderer::getRen().getAspectRatio(), 0.1f, 100.0f });
+	reg.emplace<cameraComponent>(camera, cameraComponent{ 45.f, 0.1f, 100.0f });
 	setCamera(camera);
 
 	// init dynamic objects

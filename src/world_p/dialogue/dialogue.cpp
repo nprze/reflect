@@ -103,9 +103,12 @@ void rfct::dialogue::updateText(const frameContext* ctx) {
 	if (displayPart.size() == 0) getDialogueData();
 
 	float endX = textLeftOffsetInPixel;
+	float fontHeightInPixel = renderer::getRen().getUIPipeline().getDefaultFont()->getFontHeight(defaultFontScale);
+	float textOffsetTop = bgOffsetInPixel.y + (bgSizeInPixel.y * 0.5f) - (fontHeightInPixel);
+
 	for (uint32_t i = 0; i < dialoguePartNodeIndex; i++) {
 		dialoguePart singleEffectBit = displayPart[i];
-		endX = debugDraw::drawText(singleEffectBit.text, { endX, 250 }, defaultFontScale);
+		endX = debugDraw::drawText(singleEffectBit.text, { endX, textOffsetTop }, defaultFontScale);
 	}
 	if (dialoguePartNodeIndex < displayPart.size()) {
 		displayPartPlayingTime += ctx->dt;
@@ -114,8 +117,6 @@ void rfct::dialogue::updateText(const frameContext* ctx) {
 		float animMult = std::fmod(displayPartPlayingTime, singleEffectBit.singleCharTime) / singleEffectBit.singleCharTime; // (0, 1)
 		animMult = std::sin(2.f * 3.24f * animMult) * (1 - (animMult * animMult));
 
-		float fontHeightInPixel = renderer::getRen().getUIPipeline().getDefaultFont()->getFontHeight(defaultFontScale);
-		float textOffsetTop = bgOffsetInPixel.y + (bgSizeInPixel.y * 0.5f) - (fontHeightInPixel);
 
 		endX = debugDraw::drawText(singleEffectBit.text.substr(0, charsToDisplay), { endX, textOffsetTop }, defaultFontScale);
 		endX = debugDraw::drawText(singleEffectBit.text.substr(charsToDisplay, 1), { endX, textOffsetTop + (5 * animMult) }, defaultFontScale); // first char is animated

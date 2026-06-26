@@ -42,9 +42,10 @@ namespace rfct {
     };
     struct cameraComponent {
         float fov = 45.f;
-        float aspectRatio = 1.f;
         float nearPlane = 0.1f;
         float farPlane = 100.f;
+        float screenShakeDuration = 0.f;
+        glm::vec2 screenShake = glm::vec2(0.f);
     };
     struct positionComponent {
         glm::vec2 position = glm::vec2(0.f);

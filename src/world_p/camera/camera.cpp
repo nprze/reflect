@@ -37,11 +37,6 @@ namespace rfct {
         auto& camPos3D = reg.get<position3DComponent>(cameraEntity);
         auto& camComp = reg.get<cameraComponent>(cameraEntity);
 
-        // Handle framebuffer resize
-        if (rfct::renderer::getRen().getRenderImagesManager().getSwapChain().framebufferResized) {
-            camComp.aspectRatio = renderer::getRen().getAspectRatio();
-            recalculateProjectionMatrix(camComp);
-        }
 		// get size of camera view in world coords
         vk::Extent2D extent = renderer::getRen().getExtent();
 		float aspectRatio = float(extent.width) / float(extent.height);
@@ -59,11 +54,23 @@ namespace rfct {
 		glm::vec2 directionToWhereCameraShouldBe = whereCameraShouldBe - glm::vec2(camPos3D.position.x, camPos3D.position.y);
 
         // Move camera to player
+        float cameraAlignmentSpeed = 4.f + (camComp.screenShakeDuration / .07f) * 4.f;
         camPos3D.position.x+= 4.f * dt * directionToWhereCameraShouldBe.x;
         camPos3D.position.y+= 4.f * dt * directionToWhereCameraShouldBe.y;
 
+        // screenShake- dash
+        camComp.screenShakeDuration = std::clamp(camComp.screenShakeDuration - dt, 0.f, .07f);
+        float screenShakeMultiplier = 0.f;
+        if (camComp.screenShakeDuration > 0.f) {
+            screenShakeMultiplier = (camComp.screenShakeDuration / .07f);
+            float cameraMoveMultiplier = glm::length(whereCameraShouldBe - glm::vec2{ camPos3D.position.x, camPos3D.position.y });
+            screenShakeMultiplier = (0.1f + cameraMoveMultiplier * 0.05f) * std::cos(3.14f * screenShakeMultiplier) * (1 - screenShakeMultiplier * screenShakeMultiplier);
+        }
+        camPos3D.position.x += camComp.screenShake.x * screenShakeMultiplier;
+        camPos3D.position.y += camComp.screenShake.y * screenShakeMultiplier;
+
         // Always recalc projection
-        recalculateProjectionMatrix(reg.get<cameraComponent>(cameraEntity));
+        recalculateProjectionMatrix(camComp);
     }
     glm::mat4 getViewMatrix() {
         glm::mat4 model = glm::mat4(1.0f);
