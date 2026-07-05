@@ -79,8 +79,7 @@ namespace rfct {
 			if (glfwGetKey(window, keyBindings::walk_left) == GLFW_PRESS) {
 				walk -= 1;
 			}
-			if (glfwGetKey(window, keyBindings::jump) == GLFW_PRESS)
-			{
+			if (glfwGetKey(window, keyBindings::jump) == GLFW_PRESS) {
 				jump += 1;
 			}
 			if (glfwGetKey(window, keyBindings::dash) == GLFW_PRESS) {

@@ -11,6 +11,7 @@
 rfct::dialogue* m_currentlyPlayingDialogue = nullptr;
 bool talkPopupVisible = false;
 glm::vec2 talkPopupPosition = { 0.f, 0.f };
+float lastTalkedCooldown = 0.f; // sets to some value when a dialogue is finished, and counts down to 0. When 0, the player can talk to npcs again.
 
 float distanceSquared(const glm::vec2* pos1, const glm::vec2* pos2) {
 	return glm::dot(*pos1 - *pos2, *pos1 - *pos2);
@@ -51,6 +52,7 @@ namespace rfct {
 
     void npcs::updateSystem(frameContext* ctx) {
         RFCT_PROFILE_FUNCTION();
+		lastTalkedCooldown = std::max(0.f, lastTalkedCooldown - ctx->dt);
         auto& reg = ecs::get();
 
         if (ctx->state == gameState::gameplay) {
@@ -75,7 +77,7 @@ namespace rfct {
             talkPopupVisible = false;
             if (nearestDistanceSqared != FLT_MAX) {
                 const auto& playerState = reg.get<playerStateComponent>(ctx->scene->getPlayer());
-                if (input::getInput().hold && playerState.state == playerState::normal) {
+                if (input::getInput().hold && playerState.state == playerState::normal && lastTalkedCooldown <= 0.f) {
                     ctx->state = gameState::stateDialogue;
                     startDialogue(reg.get<dialoguePathComponent>(nearestNPC).dialoguePath);
                     talkPopupVisible = false;
@@ -92,6 +94,7 @@ namespace rfct {
                 delete m_currentlyPlayingDialogue;
                 m_currentlyPlayingDialogue = nullptr;
                 ctx->state = gameState::gameplay;
+				lastTalkedCooldown = 0.5f;
             }
         }
     };
