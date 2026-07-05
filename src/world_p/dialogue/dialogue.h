@@ -57,7 +57,7 @@ namespace rfct {
 		// image
 		characterSpritesheet* currentSpritesheet = nullptr;
 		std::string currentCycleName;
-		float currentCycleReplayTime;
+		float currentCycleFullPlayTime;
 		float cyclePlayingTime;
 		float framePlayingTime;
 		glm::vec2 bgOffsetInPixel;

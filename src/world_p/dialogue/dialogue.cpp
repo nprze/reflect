@@ -44,13 +44,26 @@ bool rfct::dialogue::update(const frameContext* ctx) {
 
 	if (input::getInput().anyClicked && timeTillChangeOfIndexIsPossible < 0.f) {
 		input::getInput().anyClicked = false;
-		nodeIndex++;
-		timeTillChangeOfIndexIsPossible = waitBetweenLines;
-		if (nodeIndex >= m_serializeData.text.size()) {
-			return true;
+		if (dialoguePartNodeIndex < displayPart.size()) {
+			dialoguePartNodeIndex = displayPart.size();
+
+			spritesheetCycle currentCycle = currentSpritesheet->cycles[currentCycleName];
+			while (currentCycle.fallBack != "") {
+				currentCycleName = currentCycle.fallBack;
+				currentCycle = currentSpritesheet->cycles.at(currentCycleName);
+			}
+			currentCycleFullPlayTime = currentCycle.cycleTime;
+			onChangeCycle();
 		}
-		getDialogueData();
-		changeSpritesheet();
+		else {
+			nodeIndex++;
+			timeTillChangeOfIndexIsPossible = waitBetweenLines;
+			if (nodeIndex >= m_serializeData.text.size()) {
+				return true;
+			}
+			getDialogueData();
+			changeSpritesheet();
+		}
 	}
 	return false;
 }
@@ -137,12 +150,11 @@ void rfct::dialogue::updateImage(const frameContext* ctx) {
 	framePlayingTime += ctx->dt;
 
 	if (framePlayingTime > currentCycle.cycleTime / currentCycle.indices.size()) {
-		if (!currentCycleIsLooped && cyclePlayingTime > currentCycleReplayTime) {
+		if (!currentCycleIsLooped && cyclePlayingTime > currentCycleFullPlayTime) {
 			// cycle finished, fallback to another anim cycle
 			currentCycleName = currentCycle.fallBack;
-			currentCycle = currentSpritesheet->cycles.at(currentCycle.fallBack);
-			currentCycleReplayTime = currentCycle.cycleTime;
-			cycleSpriteIndex = 0;
+			currentCycle = currentSpritesheet->cycles.at(currentCycleName);
+			currentCycleFullPlayTime = currentCycle.cycleTime;
 			onChangeCycle();
 		}
 		else {
@@ -208,13 +220,11 @@ void rfct::dialogue::changeSpritesheet() {
 	currentCycleName = parts[2];
 	if (parts[3] == "auto") {
 		// TODO: unhardcode this
-		currentCycleReplayTime = 2.f;
+		currentCycleFullPlayTime = 2.f;
 	}
 	else {
-		currentCycleReplayTime = std::stof(parts[3]);
+		currentCycleFullPlayTime = std::stof(parts[3]);
 	}
-
-	cycleSpriteIndex = 0;
 
 	onChangeCycle();
 }
@@ -224,6 +234,7 @@ void rfct::dialogue::onChangeFrame() {
 }
 
 void rfct::dialogue::onChangeCycle() {
+	cycleSpriteIndex = 0;
 	cyclePlayingTime = 0.f;
 	onChangeFrame();
 	currentCycleIsLooped = (currentSpritesheet->cycles[currentCycleName].fallBack == "");
