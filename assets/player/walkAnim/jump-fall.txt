@@ -1,0 +1,7 @@
+KeyframeCount: 2
+CycleTime: 0.3
+Repeat: -1
+AllTrianglesCount: 186
+File: jump-fallTrigs.txt
+TriangleCount: 83
+TriangleCount: 103

@@ -1,0 +1,6 @@
+KeyframeCount: 1
+CycleTime: 0.005
+Repeat: 0
+AllTrianglesCount: 80
+File: jump-startTrigs.txt
+TriangleCount: 80

@@ -1,0 +1,47 @@
+SceneWidth: 20
+SceneHeight: 20
+RectCount: 7
+Rect: 0:
+  color: ffa1a3
+  min: (7, 17)
+  max: (10, 18)
+  file: 4x2-0.txt
+Rect: 1:
+  color: ff83a0
+  min: (11, 16)
+  max: (14, 17)
+  file: 4x2-0.txt
+Rect: 2:
+  color: ff86c5
+  min: (15, 14)
+  max: (16, 16)
+  file: 2x3-0.txt
+Rect: 3:
+  color: f93eff
+  min: (15, 10)
+  max: (18, 13)
+  file: 4x4-0.txt
+Rect: 4:
+  color: 9f2aff
+  min: (14, 7)
+  max: (16, 9)
+  file: 3x3-1.txt
+Rect: 5:
+  color: 3459ff
+  min: (9, 6)
+  max: (13, 8)
+  file: 5x3-0.txt
+Rect: 6:
+  color: 5da6ff
+  min: (5, 6)
+  max: (8, 7)
+  file: 4x2-0.txt
+SpawnPointCount: 1
+SpawnPoint: 0
+  position: (13.0, 9.0)
+NPCCount: 1
+NPC: 0
+  start: (5.0, 9.0)
+  end: (5.5, 8.0)
+  interactionRadius: 3
+  dialogueName: dialogue-0

@@ -60,15 +60,6 @@ ipch/
 *.rar
 
 # Reflect specific
-assets/building_blocks
-assets/player_progress
-assets/scenes
-assets/dialogues
-assets/player
-assets/UI
-assets/background
-assets/anim
-assets/world
 build/
 !deps/
 src/utils/reflect_directories.h

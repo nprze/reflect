@@ -1,0 +1,9 @@
+KeyframeCount: 4
+CycleTime: 0.4
+Repeat: -1
+AllTrianglesCount: 387
+File: climbTrigs.txt
+TriangleCount: 96
+TriangleCount: 97
+TriangleCount: 91
+TriangleCount: 103

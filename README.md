@@ -10,7 +10,6 @@ for now reflect can only run in debug and release configurations
 
 ## before building
 
-- make sure you have a folder named assets (reach out to me)
 - make sure you have cmake installed (min. v3.16).
 - make sure you have vulkan SDK (min. vulkan 1.2) installed.
 - modify reflect_settings.cmake to set the correct platform you will be building for

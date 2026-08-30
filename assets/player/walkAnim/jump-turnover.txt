@@ -1,0 +1,7 @@
+KeyframeCount: 2
+CycleTime: 0.2
+Repeat: 0
+AllTrianglesCount: 172
+File: jump-turnoverTrigs.txt
+TriangleCount: 82
+TriangleCount: 90

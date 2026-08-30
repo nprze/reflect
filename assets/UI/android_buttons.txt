@@ -1,0 +1,13 @@
+image: UI/android_buttons.png
+joystickBG: UI/android_joystick.png
+imageRows: 1
+imageColumns: 5
+buttonSize: (50, 50)
+Row 0:
+	Released:
+	joystickButton
+	hold
+	jump
+	menu
+	dash
+	

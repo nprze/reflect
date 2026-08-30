@@ -1,0 +1,44 @@
+SceneWidth: 20
+SceneHeight: 20
+RectCount: 4
+Rect: 0:
+  color: ffffff
+  min: (11, 9)
+  max: (13, 10)
+  file: 3x2-0.txt
+Rect: 1:
+  color: ffbef1
+  min: (10, 7)
+  max: (10, 9)
+  file: 1x3-0.txt
+Rect: 2:
+  color: ffbef1
+  min: (14, 7)
+  max: (16, 9)
+  file: 3x3-0.txt
+Rect: 3:
+  color: bb45ff
+  min: (6, 6)
+  max: (9, 8)
+  file: 4x3-1.txt
+SpawnPointCount: 2
+SpawnPoint: 0
+  position: (11.5, 11.5)
+SpawnPoint: 1
+  position: (13.5, 11.0)
+EnemyCount: 3
+Enemy: 0
+  position: (12.0, 13.5)
+  min: (-0.2, -0.2)
+  max: (0.2, 0.2)
+  animName: anim/enemy/basic-enemy-walk anim/enemy/basic-enemy-turn anim/enemy/basic-enemy-die
+Enemy: 1
+  position: (16.5, 11.5)
+  min: (-0.2, -0.2)
+  max: (0.2, 0.2)
+  animName: anim/enemy/basic-enemy-walk anim/enemy/basic-enemy-turn anim/enemy/basic-enemy-die
+Enemy: 2
+  position: (7.0, 9.5)
+  min: (-0.2, -0.2)
+  max: (0.2, 0.2)
+  animName: anim/enemy/basic-enemy-walk anim/enemy/basic-enemy-turn anim/enemy/basic-enemy-die

@@ -1,0 +1,11 @@
+ColumnCount: 8
+RowCount: 1
+Background: (0,2) (0,7)
+BgPortraitOffset: 0.1
+CycleName: talk
+	Images: (0,0) (0,1)
+	Repeat: 0
+	CycleTime: 1
+	Fallback: talk-idle
+CycleName: talk-idle
+	Images: (0,0)

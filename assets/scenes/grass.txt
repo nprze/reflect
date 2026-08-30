@@ -1,0 +1,30 @@
+SceneWidth: 20
+SceneHeight: 20
+RectCount: 3
+Rect: 0:
+  color: ff69f0
+  min: (12, 11)
+  max: (15, 12)
+  file: 4x2-1.txt
+Rect: 1:
+  color: f3b9ff
+  min: (8, 9)
+  max: (11, 11)
+  file: 4x3-0.txt
+Rect: 2:
+  color: ffffff
+  min: (5, 9)
+  max: (7, 10)
+  file: 3x2-1.txt
+SpawnPointCount: 1
+SpawnPoint: 0
+  position: (6.0, 11.0)
+TallGrassCount: 4
+TallGrass: 0
+  position: (9.5, 11.5)
+TallGrass: 1
+  position: (13.5, 12.5)
+TallGrass: 2
+  position: (15.5, 12.5)
+TallGrass: 3
+  position: (10.5, 11.5)

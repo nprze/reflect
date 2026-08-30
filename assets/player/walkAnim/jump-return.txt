@@ -1,0 +1,8 @@
+KeyframeCount: 3
+CycleTime: 0.05
+Repeat: 0
+AllTrianglesCount: 258
+File: jump-returnTrigs.txt
+TriangleCount: 88
+TriangleCount: 84
+TriangleCount: 86

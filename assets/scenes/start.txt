@@ -1,0 +1,70 @@
+SceneWidth: 20
+SceneHeight: 20
+RectCount: 10
+Rect: 0:
+  color: 7f0508
+  min: (1, 18)
+  max: (3, 19)
+  file: 3x2-0.txt
+Rect: 1:
+  color: 42307f
+  min: (9, 16)
+  max: (12, 17)
+  file: 4x2-1.txt
+Rect: 2:
+  color: 7f0002
+  min: (13, 11)
+  max: (16, 12)
+  file: 4x2-1.txt
+Rect: 3:
+  color: 7f0002
+  min: (3, 7)
+  max: (4, 10)
+  file: 2x4-0.txt
+Rect: 4:
+  color: 7f0002
+  min: (14, 8)
+  max: (15, 10)
+  file: 2x3-0.txt
+Rect: 5:
+  color: 3b7f52
+  min: (11, 8)
+  max: (13, 9)
+  file: 3x2-1.txt
+Rect: 6:
+  color: 27607f
+  min: (8, 7)
+  max: (10, 8)
+  file: 3x2-1.txt
+Rect: 7:
+  color: 00557f
+  min: (5, 6)
+  max: (7, 7)
+  file: 3x2-0.txt
+Rect: 8:
+  color: 4e7f77
+  min: (2, 1)
+  max: (6, 3)
+  file: 5x3-0.txt
+Rect: 9:
+  color: 4e7f77
+  min: (14, 2)
+  max: (16, 3)
+  file: 3x2-1.txt
+SpawnPointCount: 1
+SpawnPoint: 0
+  position: (6.0, 9.0)
+VineCount: 1
+Vine: 0
+  start: (10.0, 16.0)
+  end: (9.5, 12.0)
+  edges: 14
+EnemyCount: 1
+Enemy: 0
+  position: (2.5, 4.0)
+  min: (-0.2, -0.2)
+  max: (0.2, 0.2)
+  animName: anim/enemy/basic-enemy-walk anim/enemy/basic-enemy-turn anim/enemy/basic-enemy-die
+JumpBoosterCount: 1
+JumpBooster: 0
+  position: (15.0, 13.0)

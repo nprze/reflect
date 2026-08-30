@@ -1,0 +1,9 @@
+KeyframeCount: 4
+CycleTime: 0.8
+Repeat: -1
+AllTrianglesCount: 387
+File: holdTrigs.txt
+TriangleCount: 91
+TriangleCount: 98
+TriangleCount: 100
+TriangleCount: 98

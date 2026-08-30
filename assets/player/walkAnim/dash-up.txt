@@ -1,0 +1,7 @@
+KeyframeCount: 2
+CycleTime: 0.4
+Repeat: -1
+AllTrianglesCount: 179
+File: dash-upTrigs.txt
+TriangleCount: 87
+TriangleCount: 92

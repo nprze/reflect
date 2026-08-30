@@ -1,0 +1,13 @@
+KeyframeCount: 9
+CycleTime: 1.5
+AllTrianglesCount: 711
+File: idleTrigs.txt
+TriangleCount: 79
+TriangleCount: 79
+TriangleCount: 79
+TriangleCount: 79
+TriangleCount: 78
+TriangleCount: 81
+TriangleCount: 78
+TriangleCount: 84
+TriangleCount: 74

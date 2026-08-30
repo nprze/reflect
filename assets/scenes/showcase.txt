@@ -1,0 +1,150 @@
+SceneWidth: 50
+SceneHeight: 50
+RectCount: 21
+Rect: 0:
+  color: 555555
+  min: (16, 41)
+  max: (19, 43)
+  file: 4x3-1.txt
+Rect: 1:
+  color: 93a06b
+  min: (20, 38)
+  max: (23, 40)
+  file: 4x3-0.txt
+Rect: 2:
+  color: 98938b
+  min: (30, 36)
+  max: (32, 38)
+  file: 3x3-1.txt
+Rect: 3:
+  color: 555555
+  min: (27, 35)
+  max: (29, 37)
+  file: 3x3-1.txt
+Rect: 4:
+  color: 93a06b
+  min: (36, 34)
+  max: (39, 37)
+  file: 4x4-0.txt
+Rect: 5:
+  color: 566d56
+  min: (40, 35)
+  max: (44, 37)
+  file: 5x3-1.txt
+Rect: 6:
+  color: 98938b
+  min: (24, 35)
+  max: (26, 36)
+  file: 3x2-1.txt
+Rect: 7:
+  color: ca9859
+  min: (10, 30)
+  max: (12, 34)
+  file: 3x5-0.txt
+Rect: 8:
+  color: 566d56
+  min: (39, 31)
+  max: (41, 33)
+  file: 3x3-0.txt
+Rect: 9:
+  color: 555555
+  min: (40, 28)
+  max: (41, 30)
+  file: 2x3-0.txt
+Rect: 10:
+  color: 6f5534
+  min: (11, 27)
+  max: (14, 29)
+  file: 4x3-0.txt
+Rect: 11:
+  color: 93a06b
+  min: (39, 26)
+  max: (42, 27)
+  file: 4x2-0.txt
+Rect: 12:
+  color: ca9859
+  min: (13, 23)
+  max: (15, 26)
+  file: 3x4-1.txt
+Rect: 13:
+  color: 98938b
+  min: (38, 23)
+  max: (40, 25)
+  file: 3x3-0.txt
+Rect: 14:
+  color: 6f5534
+  min: (16, 21)
+  max: (18, 24)
+  file: 3x4-1.txt
+Rect: 15:
+  color: 566d56
+  min: (35, 22)
+  max: (37, 24)
+  file: 3x3-1.txt
+Rect: 16:
+  color: ca9859
+  min: (19, 21)
+  max: (23, 23)
+  file: 5x3-1.txt
+Rect: 17:
+  color: 93a06b
+  min: (33, 21)
+  max: (34, 23)
+  file: 2x3-0.txt
+Rect: 18:
+  color: 566d56
+  min: (24, 20)
+  max: (27, 21)
+  file: 4x2-1.txt
+Rect: 19:
+  color: 566d56
+  min: (31, 16)
+  max: (32, 21)
+  file: 2x6-1.txt
+Rect: 20:
+  color: 93a06b
+  min: (28, 19)
+  max: (30, 20)
+  file: 3x2-1.txt
+SpawnPointCount: 1
+SpawnPoint: 0
+  position: (22.5, 25.5)
+VineCount: 3
+Vine: 0
+  start: (31.0, 36.0)
+  end: (31.0, 29.0)
+  edges: 16
+Vine: 1
+  start: (32.0, 36.0)
+  end: (34.0, 30.0)
+  edges: 16
+Vine: 2
+  start: (17.0, 41.0)
+  end: (17.0, 32.0)
+  edges: 20
+NPCCount: 0
+SpikeCount: 3
+Spike: 0
+  start: (15.0, 27.0)
+  end: (15.0, 30.0)
+  dir: right
+Spike: 1
+  start: (40.0, 28.0)
+  end: (40.0, 31.0)
+  dir: left
+Spike: 2
+  start: (24.0, 35.0)
+  end: (27.0, 35.0)
+  dir: down
+EnemyCount: 1
+Enemy: 0
+  position: (37.0, 38.0)
+  min: (-0.2, -0.2)
+  max: (0.2, 0.2)
+  animName: anim/enemy/basic-enemy-walk anim/enemy/basic-enemy-turn anim/enemy/basic-enemy-die
+JumpBoosterCount: 2
+JumpBooster: 0
+  position: (18.0, 25.0)
+JumpBooster: 1
+  position: (30.0, 21.0)
+DashRechargeCount: 0

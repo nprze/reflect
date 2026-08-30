@@ -1,0 +1,7 @@
+KeyframeCount: 2
+CycleTime: 0.4
+Repeat: -1
+AllTrianglesCount: 182
+File: basic-enemy-walkTrigs.txt
+TriangleCount: 96
+TriangleCount: 86

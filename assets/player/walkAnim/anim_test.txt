@@ -1,0 +1,7 @@
+KeyframeCount: 3
+CycleTime: 1.0
+AllTrianglesCount: 12
+File: anim_testTrigs.txt
+TriangleCount: 6
+TriangleCount: 3
+TriangleCount: 3

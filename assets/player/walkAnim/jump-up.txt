@@ -1,0 +1,6 @@
+KeyframeCount: 1
+CycleTime: 0.2
+Repeat: 0
+AllTrianglesCount: 82
+File: jump-upTrigs.txt
+TriangleCount: 82

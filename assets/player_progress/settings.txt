@@ -1,0 +1,7 @@
+masterVoicePercentage: 0
+backgroundVoicePercentage: 100
+effectsVoicePercentage: 100
+windowedMode: 0
+resolutionWidth: 1920
+resolutionHeight: 1080
+isDeveloper: 1

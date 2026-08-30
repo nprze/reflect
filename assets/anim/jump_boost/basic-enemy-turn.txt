@@ -1,0 +1,7 @@
+KeyframeCount: 2
+CycleTime: 0.4
+Repeat: 0
+AllTrianglesCount: 195
+File: basic-enemy-turnTrigs.txt
+TriangleCount: 98
+TriangleCount: 97

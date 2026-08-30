@@ -1,0 +1,7 @@
+KeyframeCount: 3
+CycleTime: 1
+AllTrianglesCount: 210
+File: testTrigs.txt
+TriangleCount: 70
+TriangleCount: 70
+TriangleCount: 70

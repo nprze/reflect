@@ -1,0 +1,7 @@
+KeyframeCount: 2
+CycleTime: 0.4
+Repeat: -1
+AllTrianglesCount: 177
+File: basic-enemy-dieTrigs.txt
+TriangleCount: 91
+TriangleCount: 86
