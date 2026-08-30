@@ -9,4 +9,4 @@ namespace rfct {
     private:
         vk::UniqueShaderModule m_shaderModule;
     };
-} // namespace rfct
+}

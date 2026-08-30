@@ -6,12 +6,13 @@ demo screenshots:
 | ![dash and smokes](demo_pics/dash_and_smokes.png) | ![cool scene with grass](demo_pics/grass_simple.png) |
 | ![settings](demo_pics/settings.png) | ![mobile build](demo_pics/mobile.png)
 
-for now reflect can only run in debug and release configurations
+Reflect is currently undergoing a serious refactoring. \
+Please, pay inconsistencies in spacing/naming no mind, as they will be fixed as soon as possible.
 
 ## before building
 
 - make sure you have cmake installed (min. v3.16).
-- make sure you have vulkan SDK (min. vulkan 1.2) installed.
+- make sure you have vulkan SDK (vulkan sdk 1.3.296.0) installed.
 - modify reflect_settings.cmake to set the correct platform you will be building for
 
 ## building for windows
