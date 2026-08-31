@@ -35,7 +35,7 @@ namespace rfct {
 		void setObjectName(void* objectHandle, const std::string& name, vk::ObjectType objectType);
 
 		inline vk::Device& getDevice() { return m_device.getDevice(); }
-		inline vulkanDevice& getDeviceWrapper() { return m_device; }
+		inline RfctDevice& getDeviceWrapper() { return m_device; }
 		inline vk::Instance& getInstance() { return m_instance.getInstance(); }
 		inline RFCT_PLATFORM_WINDOW& getWindow() { return m_window; }
 		inline vulkanInstance& getInstanceWrapper() { return m_instance; }
@@ -52,7 +52,7 @@ namespace rfct {
         RFCT_PLATFORM_WINDOW m_window;
 		vulkanInstance m_instance;
 		SurfaceWrapper m_surface; // here for simpler access when surface holder changes (android)
-		vulkanDevice m_device;
+		RfctDevice m_device;
 		allocator m_allocator;
 		renderImagesManager m_renderImages;
 		framesInFlight m_framesInFlight;

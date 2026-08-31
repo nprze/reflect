@@ -76,8 +76,8 @@ void rfct::uploadVertices(const std::vector<Vertex>& vertices, VulkanBuffer* buf
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &commandBuffer;
 
-    renderer::getRen().getDeviceWrapper().getQueueManager().getPresentQueue().submit(submitInfo);
-    renderer::getRen().getDeviceWrapper().getQueueManager().getPresentQueue().waitIdle();
+    renderer::getRen().getDeviceWrapper().GetQueue().getPresentQueue().submit(submitInfo);
+    renderer::getRen().getDeviceWrapper().GetQueue().getPresentQueue().waitIdle();
 
     vmaDestroyBuffer(renderer::getRen().getAllocator(), stagingBuffer, stagingBufferAllocation);
     renderer::getRen().getDevice().freeCommandBuffers(getAssetsCommandPool(), commandBuffer);

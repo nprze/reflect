@@ -57,7 +57,7 @@ namespace rfct {
         vk::SubmitInfo submitInfo({}, {}, commandBuffer);
         vk::FenceCreateInfo fenceInfo;
         vk::Fence fence = renderer::getRen().getDevice().createFence(fenceInfo);
-        renderer::getRen().getDeviceWrapper().getQueueManager().submitGraphics(submitInfo, fence);
+        renderer::getRen().getDeviceWrapper().GetQueue().submitGraphics(submitInfo, fence);
         RFCT_VULKAN_CHECK(renderer::getRen().getDevice().waitForFences(fence, VK_TRUE, UINT64_MAX));
 
         renderer::getRen().getDevice().freeCommandBuffers(getAssetsCommandPool(), commandBuffer);

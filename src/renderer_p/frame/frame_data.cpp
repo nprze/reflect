@@ -22,7 +22,7 @@ rfct::frameData::frameData(vk::Device device, VmaAllocator& allocator, vk::Fence
     RFCT_PROFILE_FUNCTION();
     vk::CommandPoolCreateInfo poolInfo {
         vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
-        renderer::getRen().getDeviceWrapper().getQueueManager().getGraphicsQueueFamilyIndex()
+        renderer::getRen().getDeviceWrapper().GetQueue().getGraphicsQueueFamilyIndex()
     };
     m_sceneCommandPool = device.createCommandPoolUnique(poolInfo);
     m_debugDrawCommandPool = device.createCommandPoolUnique(poolInfo);

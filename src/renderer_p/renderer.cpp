@@ -145,22 +145,22 @@ void rfct::renderer::render(frameContext& frameContext) {
 
         vk::SubmitInfo sceneSubmitInfo = frameData.sceneSubmitInfo(frameContext);
         sceneSubmitInfo.pWaitDstStageMask = waitStages;
-        renderer::getRen().getDeviceWrapper().getQueueManager().submitGraphics(sceneSubmitInfo);
+        renderer::getRen().getDeviceWrapper().GetQueue().submitGraphics(sceneSubmitInfo);
 
         vk::SubmitInfo bloomSubmitInfo = frameData.bloomSubmitInfo(frameContext);
         bloomSubmitInfo.pWaitDstStageMask = waitStages;
-        renderer::getRen().getDeviceWrapper().getQueueManager().submitGraphics(bloomSubmitInfo);
+        renderer::getRen().getDeviceWrapper().GetQueue().submitGraphics(bloomSubmitInfo);
 
         if (frameContext.renderDebugDraw) 
         {
             vk::SubmitInfo debugDrawSubmitInfo = frameData.debugDrawSubmitInfo(frameContext);
             debugDrawSubmitInfo.pWaitDstStageMask = waitStages;
-            renderer::getRen().getDeviceWrapper().getQueueManager().submitGraphics(debugDrawSubmitInfo);
+            renderer::getRen().getDeviceWrapper().GetQueue().submitGraphics(debugDrawSubmitInfo);
         }
 
         vk::SubmitInfo uiSubmitInfo = frameData.uiSubmitInfo(frameContext);
         uiSubmitInfo.pWaitDstStageMask = waitStages;
-         renderer::getRen().getDeviceWrapper().getQueueManager().submitGraphics(uiSubmitInfo, frameData.m_thisFrameRenderFinishedFence);
+         renderer::getRen().getDeviceWrapper().GetQueue().submitGraphics(uiSubmitInfo, frameData.m_thisFrameRenderFinishedFence);
     }
     {
         RFCT_PROFILE_SCOPE("image present");
@@ -179,7 +179,7 @@ void rfct::renderer::render(frameContext& frameContext) {
         presentInfo.pImageIndices = &imageIndex;
         presentInfo.pResults = nullptr;
 
-        vk::Result presRes = m_device.getQueueManager().getPresentQueue().presentKHR(&presentInfo);
+        vk::Result presRes = m_device.GetQueue().getPresentQueue().presentKHR(&presentInfo);
         if (presRes == vk::Result::eSuboptimalKHR){
             getRenderImagesManager().getSwapChain().framebufferResized = true;
             RFCT_INFO("recreation needed");

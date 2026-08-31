@@ -16,7 +16,7 @@ const std::vector<const char*> vulkanInstanceExtensions = {
 };
 
 // helper functions
-std::string queueFlagsToString(vk::QueueFlags queueFlags) {
+std::string QueueFlagsToString(vk::QueueFlags queueFlags) {
 	std::vector<std::string> flagNames;
 
 	if (queueFlags & vk::QueueFlagBits::eGraphics) {
@@ -52,7 +52,7 @@ std::string queueFlagsToString(vk::QueueFlags queueFlags) {
 	return oss.str();
 }
 
-uint32_t selectQueueFamily(vk::PhysicalDevice physicalDevice, vk::SurfaceKHR surface) {
+uint32_t SelectQueueFamily(vk::PhysicalDevice physicalDevice, vk::SurfaceKHR surface, bool debugInfo = false) {
 	RFCT_PROFILE_FUNCTION();
 	std::vector<vk::QueueFamilyProperties> queueFamilies = physicalDevice.getQueueFamilyProperties();
 
@@ -64,8 +64,8 @@ uint32_t selectQueueFamily(vk::PhysicalDevice physicalDevice, vk::SurfaceKHR sur
 	for (uint32_t i = 0; i < queueFamilies.size(); ++i) {
 		uint32_t queueCount = queueFamilies[i].queueCount;
 		vk::QueueFlags flags = queueFamilies[i].queueFlags;
-		RFCT_INFO("queue {}, flags {}", i, queueFlagsToString(flags));
-		bool supportsPresent = physicalDevice.getSurfaceSupportKHR(i, surface);
+		if (debugInfo) RFCT_INFO("queue {}, flags {}", i, QueueFlagsToString(flags));
+		bool supportsPresent = RFCT_VULKAN_SOFT_CHECK(physicalDevice.getSurfaceSupportKHR(i, surface));
 
 		if ((flags & vk::QueueFlagBits::eGraphics) && supportsPresent) {
 			if (queueCount > (graphicsAndPresentFamily.second)) {
@@ -86,9 +86,9 @@ uint32_t selectQueueFamily(vk::PhysicalDevice physicalDevice, vk::SurfaceKHR sur
 	return static_cast<uint32_t>(graphicsAndPresentFamily.first);
 }
 
-uint32_t rateDevice(vk::PhysicalDevice device, vk::SurfaceKHR surface) {
+uint32_t RateDevice(vk::PhysicalDevice device, vk::SurfaceKHR surface) {
 	RFCT_PROFILE_FUNCTION();
-	uint32_t queueFamily = selectQueueFamily(device, surface);
+	uint32_t queueFamily = SelectQueueFamily(device, surface);
 	if (queueFamily == -1) {
         RFCT_ERROR("not enough queue families");
 		return 0;
@@ -97,8 +97,11 @@ uint32_t rateDevice(vk::PhysicalDevice device, vk::SurfaceKHR surface) {
 	vk::PhysicalDeviceProperties deviceProperties = device.getProperties();
 	vk::PhysicalDeviceFeatures deviceFeatures = device.getFeatures();
 
+	auto result = device.enumerateDeviceExtensionProperties();
+	if (!RFCT_VULKAN_SOFT_CHECK(result)) return 0;
+
 	// ensure required extensions are supported
-	std::vector<vk::ExtensionProperties> extensions = device.enumerateDeviceExtensionProperties();
+	std::vector<vk::ExtensionProperties> extensions = result.value;
 	std::vector<const char*> requiredExtensions(deviceRequiredExtensions.begin(), deviceRequiredExtensions.end() );
 	for (const auto& ext : extensions) {
 		std::string extName = ext.extensionName.data();
@@ -107,30 +110,26 @@ uint32_t rateDevice(vk::PhysicalDevice device, vk::SurfaceKHR surface) {
 			requiredExtensions.erase(it);
 		}
 	}
-
 	if (!requiredExtensions.empty()) {
         RFCT_ERROR("required extensions not supported");
 		return 0;
 	}
-
 	uint32_t score = 100;
-
 	// Prefer discrete GPUs
 	if (deviceProperties.deviceType == vk::PhysicalDeviceType::eDiscreteGpu) {
 		score += 500;
 	}
 	// Prefer higher compute performance
 	score += deviceProperties.limits.maxComputeSharedMemorySize / 1024;
-
 	return score;
 }
 
-vk::PhysicalDevice ChooseBestPhysicalDevice() {
+vk::PhysicalDevice ChooseBestPhysicalDevice(vk::Instance instance, vk::SurfaceKHR surface) {
 	RFCT_PROFILE_FUNCTION();
-	std::vector<vk::PhysicalDevice> physicalDevices = renderer::getRen().getInstance().enumeratePhysicalDevices();
+	std::vector<vk::PhysicalDevice> physicalDevices = instance.enumeratePhysicalDevices().value;
 	std::vector<uint32_t> ratings;
 	for (uint32_t i = 0; i < physicalDevices.size(); i++) {
-		ratings.push_back(rateDevice(physicalDevices[i]));
+		ratings.push_back(RateDevice(physicalDevices[i], surface));
 		std::string deviceNameStr = physicalDevices[i].getProperties().deviceName;
 		RFCT_TRACE("Physical device {} rated {}", deviceNameStr, ratings[i]);
 	}
@@ -150,9 +149,9 @@ vk::PhysicalDevice ChooseBestPhysicalDevice() {
 	}
 }
 
-vk::UniqueDevice createDevice(vk::PhysicalDevice physicalDevice) {
+vk::UniqueDevice CreateDevice(vk::PhysicalDevice physicalDevice, vk::SurfaceKHR surface) {
 	RFCT_PROFILE_FUNCTION();
-	uint32_t queueFamilies = selectQueueFamily(physicalDevice);
+	uint32_t queueFamilies = SelectQueueFamily(physicalDevice, surface);
 	std::vector<vk::DeviceQueueCreateInfo> queueCreateInfos;
 	float queuePriority = 1.0f;
 	vk::DeviceQueueCreateInfo graphicsQueueCreateInfo = {};
@@ -167,28 +166,25 @@ vk::UniqueDevice createDevice(vk::PhysicalDevice physicalDevice) {
 	deviceCreateInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
 	deviceCreateInfo.pQueueCreateInfos = queueCreateInfos.data();
 	deviceCreateInfo.pEnabledFeatures = &deviceFeatures;
-	deviceCreateInfo.enabledExtensionCount = static_cast<uint32_t>(RfctDevice::deviceRequiredExtensions.size());
-	deviceCreateInfo.ppEnabledExtensionNames = RfctDevice::deviceRequiredExtensions.data();
+	deviceCreateInfo.enabledExtensionCount = static_cast<uint32_t>(deviceRequiredExtensions.size());
+	deviceCreateInfo.ppEnabledExtensionNames = deviceRequiredExtensions.data();
 
 	vk::UniqueDevice device;
-	try {
-		device = physicalDevice.createDeviceUnique(deviceCreateInfo);
-	}
-	catch (const std::exception& e) {
-		RFCT_CRITICAL("failed to create device");
-	}
+	auto createDeviceResult = physicalDevice.createDeviceUnique(deviceCreateInfo);
+	RFCT_ASSERT(RFCT_VULKAN_SOFT_CHECK(createDeviceResult));
+	device = std::move(createDeviceResult.value);
 	return device;
 }
 
-rfct::RfctDevice::RfctDevice()
-	: m_physicalDevice(ChooseBestPhysicalDevice()), 
-	m_device(createDevice(m_physicalDevice)), 
-	m_queueManager(m_device.get(), m_physicalDevice) {
+rfct::RfctDevice::RfctDevice(vk::Instance instance, vk::SurfaceKHR surface)
+	: m_physicalDevice(ChooseBestPhysicalDevice(instance, surface)),
+	m_device(CreateDevice(m_physicalDevice, surface)), 
+	m_queue(m_device.get(), m_physicalDevice, surface) {
 	std::string deviceNameStr = m_physicalDevice.getProperties().deviceName;
 	RFCT_TRACE("Physical device chosen: {}", deviceNameStr);
 }
 
-VKAPI_ATTR vk::Bool32 VKAPI_CALL debugCallback(
+VKAPI_ATTR vk::Bool32 VKAPI_CALL DebugCallback(
 	vk::DebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
 	vk::DebugUtilsMessageTypeFlagsEXT messageType,
 	const vk::DebugUtilsMessengerCallbackDataEXT* pCallbackData,
@@ -214,86 +210,210 @@ VKAPI_ATTR vk::Bool32 VKAPI_CALL debugCallback(
 
 rfct::RfctVulkanInstance::RfctVulkanInstance() {
 	RFCT_PROFILE_FUNCTION();
-	try {
-		vk::ApplicationInfo appInfo(
-			"smokes",
-			VK_MAKE_VERSION(1, 0, 0),
-			"reflect",
-			VK_MAKE_VERSION(1, 0, 0),
-			VK_API_VERSION_1_2
-		);
+	vk::ApplicationInfo appInfo(
+		"smokes",
+		VK_MAKE_VERSION(1, 0, 0),
+		"reflect",
+		VK_MAKE_VERSION(1, 0, 0),
+		VK_API_VERSION_1_2
+	);
 
-		std::vector<vk::ExtensionProperties>  extensions = vk::enumerateInstanceExtensionProperties();
-		std::vector<const char*> extensionNames;
-		for (const auto& ext : extensions) {
-			extensionNames.push_back(ext.extensionName);
-		}
-		std::vector<vk::ExtensionProperties> availableExtensions = vk::enumerateInstanceExtensionProperties();
+	auto enumerateInstanceExtensionPropsResult = vk::enumerateInstanceExtensionProperties();
+	RFCT_ASSERT(RFCT_VULKAN_SOFT_CHECK(enumerateInstanceExtensionPropsResult));
 
-		for (const char* ext : VulkanInstanceExtensions) {
-			bool found = false;
-			for (const auto& available : availableExtensions) {
-				if (strcmp(available.extensionName, ext) == 0) {
-					found = true;
-					break;
-				}
-			}
-			if (!found) {
-				RFCT_CRITICAL("VulkanInstanceExtension {} not avaible", ext);
+	std::vector<vk::ExtensionProperties> extensions = enumerateInstanceExtensionPropsResult.value;
+	std::vector<const char*> extensionNames;
+	for (const auto& ext : extensions) {
+		extensionNames.push_back(ext.extensionName);
+	}
+	std::vector<vk::ExtensionProperties> availableExtensions = enumerateInstanceExtensionPropsResult.value;
+
+	for (const char* ext : vulkanInstanceExtensions) {
+		bool found = false;
+		for (const auto& available : availableExtensions) {
+			if (strcmp(available.extensionName, ext) == 0) {
+				found = true;
+				break;
 			}
 		}
+		if (!found) {
+			RFCT_CRITICAL("VulkanInstanceExtension {} requested but not avaible", ext);
+		}
+	}
 
-		std::vector<const char*> validationLayers = {
+	std::vector<const char*> validationLayers = {
 #ifndef RFCT_VULKAN_DEBUG_OFF
-			"VK_LAYER_KHRONOS_validation"
+		"VK_LAYER_KHRONOS_validation"
 #endif // !RFCT_VULKAN_DEBUG_OFF
-		};
-		std::vector<vk::LayerProperties> availableLayers = vk::enumerateInstanceLayerProperties();
-		for (const char* layerName : validationLayers) {
-			bool layerFound = false;
-			for (const auto& layer : availableLayers) {
-				if (strcmp(layer.layerName, layerName) == 0) {
-					layerFound = true;
-					break;
-				}
-			}
+	};
 
-			if (!layerFound) {
-				validationLayers.clear();
-				RFCT_CRITICAL("Validation layer requested, but not avaible");
+	auto enumerateInstanceLayerPropsResult = vk::enumerateInstanceLayerProperties();
+	RFCT_ASSERT(RFCT_VULKAN_SOFT_CHECK(enumerateInstanceLayerPropsResult));
+
+	std::vector<vk::LayerProperties> availableLayers = enumerateInstanceLayerPropsResult.value;
+	for (const char* layerName : validationLayers) {
+		bool layerFound = false;
+		for (const auto& layer : availableLayers) {
+			if (strcmp(layer.layerName, layerName) == 0) {
+				layerFound = true;
+				break;
 			}
 		}
+		if (!layerFound) {
+			validationLayers.clear();
+			RFCT_CRITICAL("Validation layer requested, but not avaible");
+		}
+	}
 
-		vk::InstanceCreateInfo createInfo(
-			{},
-			&appInfo,
+	vk::InstanceCreateInfo createInfo(
+		{},
+		&appInfo,
 #ifndef RFCT_VULKAN_DEBUG_OFF
-			validationLayers.size(),
-			validationLayers.data(),
+		validationLayers.size(),
+		validationLayers.data(),
 #else
-			0, nullptr,
+		0, nullptr,
 #endif // !RFCT_VULKAN_DEBUG_OFF
-			extensionNames.size(),
-			extensionNames.data()
-		);
+		extensionNames.size(),
+		extensionNames.data()
+	);
 
-		m_instance = vk::createInstanceUnique(createInfo);
+	auto instanceCreateResult = vk::createInstanceUnique(createInfo);
+	RFCT_ASSERT(RFCT_VULKAN_SOFT_CHECK(instanceCreateResult));
+	m_instance = std::move(instanceCreateResult.value);
 
 #ifndef RFCT_VULKAN_DEBUG_OFF
-		m_dynamicLoader = RFCT_VULKAN_INSTANCE_NAMESPACE DispatchLoaderDynamic(*m_instance, vkGetInstanceProcAddr);
+	m_dynamicLoader = RFCT_VULKAN_LOADER_NAMESPACE::DispatchLoaderDynamic(*m_instance, vkGetInstanceProcAddr);
 
-
-		vk::DebugUtilsMessengerCreateInfoEXT debugCreateInfo(
-			{},
-			vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo | vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning | vk::DebugUtilsMessageSeverityFlagBitsEXT::eError,
-			vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral | vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation | vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance,
-			reinterpret_cast<PFN_vkDebugUtilsMessengerCallbackEXT>(debugCallback)
-		);
-		m_debugMessenger = m_instance.get().createDebugUtilsMessengerEXTUnique(debugCreateInfo, nullptr, m_dynamicLoader);
+	vk::DebugUtilsMessengerCreateInfoEXT debugCreateInfo(
+		{},
+		vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo | vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning | vk::DebugUtilsMessageSeverityFlagBitsEXT::eError,
+		vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral | vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation | vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance,
+		reinterpret_cast<PFN_vkDebugUtilsMessengerCallbackEXT>(DebugCallback)
+	);
+	auto debugCreateResult = m_instance.get().createDebugUtilsMessengerEXTUnique(debugCreateInfo, nullptr, m_dynamicLoader);
+	if (RFCT_VULKAN_SOFT_CHECK(debugCreateResult)) {
+		m_debugMessenger = std::move(debugCreateResult.value);
+		m_debugEnabled = true;
+	}
 #endif // !RFCT_VULKAN_DEBUG_OFF
-	}
-	catch (const vk::SystemError& e) {
-		RFCT_ERROR("vk::SystemError: {}", e.what());
-	}
 }
 
+rfct::RfctQueue::RfctQueue(vk::Device device, vk::PhysicalDevice physicalDevice, vk::SurfaceKHR surface)
+	: m_device(device) {
+	RFCT_PROFILE_FUNCTION();
+	m_graphicsQueueFamilyIndex = SelectQueueFamily(physicalDevice, surface, true);
+	m_graphicsQueue = m_device.getQueue(m_graphicsQueueFamilyIndex, 0);
+}
+
+void rfct::RfctQueue::SubmitGraphics(const vk::SubmitInfo& submitInfo, vk::Fence fence) {
+	RFCT_PROFILE_FUNCTION();
+	m_graphicsQueue.submit(submitInfo, fence);
+}
+
+rfct::RfctSwapChain::RfctSwapChain(vk::PhysicalDevice physicalDevice, vk::Device device, vk::SurfaceKHR surface) {
+	RFCT_PROFILE_FUNCTION();
+	CreateSwapChain(physicalDevice, device, surface);
+}
+
+void rfct::RfctSwapChain::CreateSwapChain(vk::PhysicalDevice physicalDevice, vk::Device device, vk::SurfaceKHR surface) {
+	RFCT_PROFILE_FUNCTION();
+	// throw if not supported
+	vk::SurfaceCapabilitiesKHR capabilities = physicalDevice.getSurfaceCapabilitiesKHR(surface).value;
+	std::vector<vk::SurfaceFormatKHR> surfaceFormats = physicalDevice.getSurfaceFormatsKHR(surface).value;
+	std::vector<vk::PresentModeKHR> presentModes = physicalDevice.getSurfacePresentModesKHR(surface).value;
+	vk::SurfaceFormatKHR chosenSurfaceFormat = surfaceFormats[0];
+
+	m_surfaceFormat = chosenSurfaceFormat;
+	vk::PresentModeKHR  chosenPresentMode = vk::PresentModeKHR::eFifo;
+#ifdef WINDOWS_BUILD
+	for (vk::PresentModeKHR mode : presentModes) {
+		if (mode == vk::PresentModeKHR::eMailbox)  chosenPresentMode = vk::PresentModeKHR::eMailbox;
+	}
+#endif // WINDOWS_BUILD
+	RFCT_TRACE("Choosen swap chain present mode: {0}", chosenPresentMode == vk::PresentModeKHR::eMailbox ? "Mailbox" : "Fifo");
+	m_swapChainExtent = capabilities.currentExtent;
+	vk::SwapchainCreateInfoKHR swapChainCreateInfo = {};
+	swapChainCreateInfo.surface = surface;
+#ifdef WINDOWS_BUILD
+	if (m_swapChain.get() != nullptr) {
+		swapChainCreateInfo.oldSwapchain = m_swapChain.get();
+	}
+#endif // WINDOWS_BUILD
+
+	if (capabilities.supportedCompositeAlpha & vk::CompositeAlphaFlagBitsKHR::eOpaque) {
+		swapChainCreateInfo.compositeAlpha = vk::CompositeAlphaFlagBitsKHR::eOpaque;
+	}
+#ifdef ANDROID_BUILD
+	else if (capabilities.supportedCompositeAlpha & vk::CompositeAlphaFlagBitsKHR::eInherit) {
+		swapChainCreateInfo.compositeAlpha = vk::CompositeAlphaFlagBitsKHR::eInherit;
+	}
+	else {
+		// Pick any available supported option
+		swapChainCreateInfo.compositeAlpha = static_cast<vk::CompositeAlphaFlagBitsKHR>(
+			__builtin_ctz(static_cast<uint32_t>(capabilities.supportedCompositeAlpha))
+			);
+	}
+	vk::SurfaceTransformFlagBitsKHR transform = capabilities.currentTransform;
+	switch (transform) {
+	case vk::SurfaceTransformFlagBitsKHR::eRotate90:
+		world::getWorld().addScreenTransform(90);
+		break;
+	case vk::SurfaceTransformFlagBitsKHR::eRotate180:
+		world::getWorld().addScreenTransform(180);
+		break;
+	case vk::SurfaceTransformFlagBitsKHR::eRotate270:
+		world::getWorld().addScreenTransform(270);
+		break;
+	default:
+		break;
+	}
+#endif
+	swapChainCreateInfo.minImageCount = RFCT_FRAMES_IN_FLIGHT + 1;
+	swapChainCreateInfo.imageFormat = chosenSurfaceFormat.format;
+	swapChainCreateInfo.imageColorSpace = chosenSurfaceFormat.colorSpace;
+	swapChainCreateInfo.imageExtent = capabilities.currentExtent;
+	swapChainCreateInfo.imageArrayLayers = 1;
+	swapChainCreateInfo.imageUsage = vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferDst;
+	swapChainCreateInfo.preTransform = capabilities.currentTransform;
+	swapChainCreateInfo.presentMode = chosenPresentMode;
+	swapChainCreateInfo.clipped = VK_TRUE;
+
+	auto swapChainCreateResult = device.createSwapchainKHRUnique(swapChainCreateInfo);
+	RFCT_ASSERT(RFCT_VULKAN_SOFT_CHECK(swapChainCreateResult));
+	m_swapChain = std::move(swapChainCreateResult.value);
+}
+
+void rfct::RfctSwapChain::RecreateSwapChain(vk::PhysicalDevice physicalDevice, vk::Device device, vk::SurfaceKHR surface) {
+	RFCT_PROFILE_FUNCTION();
+	device.waitIdle();
+#ifdef ANDROID_BUILD
+	device.destroySwapchainKHR(m_swapChain.get());
+	*m_swapChain = nullptr;
+#endif
+	auto surfaceCapabilitiesQueryResult = physicalDevice.getSurfaceCapabilitiesKHR(surface);
+	if (!RFCT_VULKAN_SOFT_CHECK(surfaceCapabilitiesQueryResult)) return;
+	vk::SurfaceCapabilitiesKHR capabilities = surfaceCapabilitiesQueryResult.value;
+	if (capabilities.currentExtent.width == 0 || capabilities.currentExtent.height == 0) return;
+	CreateSwapChain(physicalDevice, device, surface);
+}
+
+uint32_t rfct::RfctSwapChain::AcquireNextImage(const vk::Semaphore& semaphore, vk::Fence fence, vk::PhysicalDevice physicalDevice, vk::Device device, vk::SurfaceKHR surface) {
+	RFCT_PROFILE_FUNCTION();
+	if (framebufferResized) {
+		RecreateSwapChain(physicalDevice, device, surface);
+		framebufferResized = false;
+	}
+	auto acquireImageResult = renderer::getRen().getDevice().acquireNextImageKHR(m_swapChain.get(), UINT64_MAX, semaphore, fence);
+	if (RFCT_VULKAN_SOFT_CHECK(acquireImageResult)) return acquireImageResult.value;
+	if (acquireImageResult.result == vk::Result::eErrorOutOfDateKHR) {
+		RecreateSwapChain(physicalDevice, device, surface);
+		return -1;
+	}
+	if (acquireImageResult.result == vk::Result::eSuboptimalKHR) {
+		RFCT_WARN("Swap chain is suboptimal, recreating...");
+		RecreateSwapChain(physicalDevice, device, surface);
+		return -1;
+	}
+	RFCT_CRITICAL("unknown error ocurred when acquiring next image. Result code: {}", acquireImageResult.result);
+}

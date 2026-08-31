@@ -249,7 +249,7 @@ namespace rfct {
         // create command buffers
         vk::CommandPoolCreateInfo cmdpoolInfo {
             vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
-            renderer::getRen().getDeviceWrapper().getQueueManager().getGraphicsQueueFamilyIndex()
+            renderer::getRen().getDeviceWrapper().GetQueue().getGraphicsQueueFamilyIndex()
         };
         m_bloomCommandPool = renderer::getRen().getDevice().createCommandPoolUnique(cmdpoolInfo);
 

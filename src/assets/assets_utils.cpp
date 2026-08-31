@@ -23,7 +23,7 @@ bool rfct::openAssetFile(const std::string& path, std::ifstream* streamOut, std:
 
 vk::CommandPool& rfct::getAssetsCommandPool() {
     if (!assetsCommandPool) {
-        assetsCommandPool = renderer::getRen().getDevice().createCommandPool({ {}, renderer::getRen().getDeviceWrapper().getQueueManager().getGraphicsQueueFamilyIndex() });
+        assetsCommandPool = renderer::getRen().getDevice().createCommandPool({ {}, renderer::getRen().getDeviceWrapper().GetQueue().getGraphicsQueueFamilyIndex() });
     }
     return assetsCommandPool;
 }
