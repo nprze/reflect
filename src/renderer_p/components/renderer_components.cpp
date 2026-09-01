@@ -1,6 +1,5 @@
 #include "renderer_components.h"
-#include "renderer_p\renderer.h"
-#include "renderer_p\queues\vulkan_queue.h"
+#include <vma/vk_mem_alloc.h>
 #include <set>
 
 // requirements
@@ -176,14 +175,6 @@ vk::UniqueDevice CreateDevice(vk::PhysicalDevice physicalDevice, vk::SurfaceKHR 
 	return device;
 }
 
-rfct::RfctDevice::RfctDevice(vk::Instance instance, vk::SurfaceKHR surface)
-	: m_physicalDevice(ChooseBestPhysicalDevice(instance, surface)),
-	m_device(CreateDevice(m_physicalDevice, surface)), 
-	m_queue(m_device.get(), m_physicalDevice, surface) {
-	std::string deviceNameStr = m_physicalDevice.getProperties().deviceName;
-	RFCT_TRACE("Physical device chosen: {}", deviceNameStr);
-}
-
 VKAPI_ATTR vk::Bool32 VKAPI_CALL DebugCallback(
 	vk::DebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
 	vk::DebugUtilsMessageTypeFlagsEXT messageType,
@@ -206,6 +197,14 @@ VKAPI_ATTR vk::Bool32 VKAPI_CALL DebugCallback(
 		break;
 	}
 	return VK_FALSE;
+}
+
+rfct::RfctDevice::RfctDevice(vk::Instance instance, vk::SurfaceKHR surface)
+	: m_physicalDevice(ChooseBestPhysicalDevice(instance, surface)),
+	m_device(CreateDevice(m_physicalDevice, surface)), 
+	m_queue(m_device.get(), m_physicalDevice, surface) {
+	std::string deviceNameStr = m_physicalDevice.getProperties().deviceName;
+	RFCT_TRACE("Physical device chosen: {}", deviceNameStr);
 }
 
 rfct::RfctVulkanInstance::RfctVulkanInstance() {
@@ -404,7 +403,7 @@ uint32_t rfct::RfctSwapChain::AcquireNextImage(const vk::Semaphore& semaphore, v
 		RecreateSwapChain(physicalDevice, device, surface);
 		framebufferResized = false;
 	}
-	auto acquireImageResult = renderer::getRen().getDevice().acquireNextImageKHR(m_swapChain.get(), UINT64_MAX, semaphore, fence);
+	auto acquireImageResult = device.acquireNextImageKHR(m_swapChain.get(), UINT64_MAX, semaphore, fence);
 	if (RFCT_VULKAN_SOFT_CHECK(acquireImageResult)) return acquireImageResult.value;
 	if (acquireImageResult.result == vk::Result::eErrorOutOfDateKHR) {
 		RecreateSwapChain(physicalDevice, device, surface);
@@ -416,4 +415,49 @@ uint32_t rfct::RfctSwapChain::AcquireNextImage(const vk::Semaphore& semaphore, v
 		return -1;
 	}
 	RFCT_CRITICAL("unknown error ocurred when acquiring next image. Result code: {}", acquireImageResult.result);
+}
+
+rfct::RfctSurfaceWrapper::RfctSurfaceWrapper(vk::SurfaceKHR surfaceArg) {
+	m_surface = surfaceArg;
+}
+
+void rfct::RfctSurfaceWrapper::NewSurface(vk::Instance instance, vk::SurfaceKHR surfaceArg) {
+	instance.destroySurfaceKHR(m_surface);
+	m_surface = surfaceArg;
+}
+
+void rfct::RfctSurfaceWrapper::DestroySurface(vk::Instance instance) {
+	instance.destroySurfaceKHR(m_surface);
+	m_surface = nullptr;
+}
+
+rfct::RfctVulkanMemAllocatorWrapper::RfctVulkanMemAllocatorWrapper(vk::PhysicalDevice physicalDevice, vk::Device device, vk::Instance instance) {
+#ifdef ANDROID_BUILD
+	VmaAllocatorCreateInfo allocatorCreateInfo = {};
+	allocatorCreateInfo.physicalDevice = physicalDevice;
+	allocatorCreateInfo.device = device;
+	allocatorCreateInfo.instance = instance;
+	allocatorCreateInfo.vulkanApiVersion = VK_API_VERSION_1_3;
+	VmaVulkanFunctions vulkanFunctions = {};
+
+	vulkanFunctions.vkGetInstanceProcAddr = vkGetInstanceProcAddr;
+	vulkanFunctions.vkGetDeviceProcAddr = vkGetDeviceProcAddr;
+	vulkanFunctions.vkGetPhysicalDeviceProperties = vkGetPhysicalDeviceProperties;
+	vulkanFunctions.vkGetPhysicalDeviceMemoryProperties = vkGetPhysicalDeviceMemoryProperties;
+	vulkanFunctions.vkCreateBuffer = vkCreateBuffer;
+	allocatorCreateInfo.pVulkanFunctions = &vulkanFunctions;
+
+	vmaCreateAllocator(&allocatorCreateInfo, &m_allocator);
+#else
+	VmaAllocatorCreateInfo allocatorCreateInfo = {};
+	allocatorCreateInfo.physicalDevice = physicalDevice;
+	allocatorCreateInfo.device = device;
+	allocatorCreateInfo.instance = instance;
+	allocatorCreateInfo.vulkanApiVersion = VK_API_VERSION_1_3;
+	vmaCreateAllocator(&allocatorCreateInfo, &m_allocator);
+#endif
+}
+
+rfct::RfctVulkanMemAllocatorWrapper::~RfctVulkanMemAllocatorWrapper() {
+	vmaDestroyAllocator(m_allocator);
 }

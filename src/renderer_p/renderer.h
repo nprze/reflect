@@ -1,7 +1,6 @@
 #pragma once
 #include "platform_window.h"
-#include "device/vulkan_instance.h"
-#include "device/vulkan_device.h"
+#include "components/renderer_components.h"
 #include "renderer_p/frame/frame_resource_manager.h"
 #include "renderer_p/frame/render_target_manager.h"
 #include "renderer_p/debug/debug_draw.h"
@@ -11,58 +10,41 @@
 
 namespace rfct {
 	constexpr vk::SampleCountFlagBits msaaSamples = vk::SampleCountFlagBits::e4;
-	// surface works a little differently on android
-	struct SurfaceWrapper { 
-		vk::SurfaceKHR surface;
-        SurfaceWrapper(vk::SurfaceKHR surfaceArg);
-        void newSurface(vk::SurfaceKHR surfaceArg);
-		~SurfaceWrapper();
-	};
-	// vma is static on windows, dynamic on android (requires different setups).
-	struct allocator {
-		VmaAllocator m_allocator;
-		allocator();
-		~allocator();
-	};
-	class renderer {
+	class RfctRenderer {
 	public:
-		static renderer& getRen();
-	public:
-        renderer(RFCT_RENDERER_ARGUMENTS);
-		~renderer();
-        void updateWindow(RFCT_NATIVE_WINDOW_ANDROID RFCT_NATIVE_WINDOW_ANDROID_VAR);
-		void render(frameContext& frameContext);
-		void setObjectName(void* objectHandle, const std::string& name, vk::ObjectType objectType);
+		vk::Device& GetDevice() { return m_device.GetDevice(); }
+		RfctDevice& GetDeviceWrapper() { return m_device; }
+		vk::Instance& GetInstance() { return m_instance.GetInstance(); }
+		RFCT_PLATFORM_WINDOW& GetWindow() { return m_window; }
+		RfctVulkanInstance& GetInstanceWrapper() { return m_instance; }
+		renderImagesManager& GetRenderImagesManager() { return m_renderImages; }
+		vulkanRasterizerPipeline& GetRasterizerPipeline() { return m_rasterizerPipeline; }
+		bloomResurcesHolder& GetBloomRes() { return m_bloomRes; }
+		VmaAllocator& GetAllocator() { return m_allocator.GetAllocator(); }
+		vk::SurfaceKHR GetSurface() { return m_surface.GetSurface(); }
+		float GetAspectRatio() { return m_window.GetAspectRatio(); }
+		vk::Extent2D GetExtent() { return m_window.GetExtent(); }
+		UIPipelines& GetUIPipeline() { return m_UIPipeline; };
 
-		inline vk::Device& getDevice() { return m_device.getDevice(); }
-		inline RfctDevice& getDeviceWrapper() { return m_device; }
-		inline vk::Instance& getInstance() { return m_instance.getInstance(); }
-		inline RFCT_PLATFORM_WINDOW& getWindow() { return m_window; }
-		inline vulkanInstance& getInstanceWrapper() { return m_instance; }
-		inline renderImagesManager& getRenderImagesManager() { return m_renderImages; }
-		inline vulkanRasterizerPipeline& getRasterizerPipeline() { return m_rasterizerPipeline; }
-		inline bloomResurcesHolder& getBloomRes() { return m_bloomRes; }
-		inline VmaAllocator& getAllocator() { return m_allocator.m_allocator; }
-		inline vk::SurfaceKHR& getSurface() { return m_surface.surface; }
-		inline float getAspectRatio() { return m_window.getAspectRatio(); }
-		inline vk::Extent2D getExtent() { return m_window.getExtent(); }
-		inline UIPipelines& getUIPipeline() { return m_UIPipeline; };
+        RfctRenderer(RFCT_RENDERER_ARGUMENTS);
+		~RfctRenderer();
+        void UpdateWindow(RFCT_NATIVE_WINDOW_ANDROID RFCT_NATIVE_WINDOW_ANDROID_VAR);
+		void Render(frameContext& frameContext);
+		void SetObjectName(void* objectHandle, const std::string& name, vk::ObjectType objectType);
 	private:
 		bool m_uselessBool;
         RFCT_PLATFORM_WINDOW m_window;
-		vulkanInstance m_instance;
-		SurfaceWrapper m_surface; // here for simpler access when surface holder changes (android)
+		RfctVulkanInstance m_instance;
+		RfctSurfaceWrapper m_surface;
 		RfctDevice m_device;
-		allocator m_allocator;
+		RfctVulkanMemAllocatorWrapper m_allocator;
+		RfctSwapChain m_swapChain;
 		renderImagesManager m_renderImages;
 		framesInFlight m_framesInFlight;
 		vulkanRasterizerPipeline m_rasterizerPipeline;
 		bloomResurcesHolder m_bloomRes;
 		debugDraw m_debugDraw;
 		UIPipelines m_UIPipeline;
-    private:
-        friend class vulkanSwapChain;
-        friend class reflectApplication;
-		friend bool setStaticRenderer(renderer* rendererArg);
 	};
+	RfctRenderer& GetRen();
 }

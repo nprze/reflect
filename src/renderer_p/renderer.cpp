@@ -6,73 +6,19 @@
 #include "world_p/world.h"
 #include "assets/assets_utils.h"
 
-namespace rfct {
-    renderer* ren = nullptr;
+rfct::RfctRenderer* ren = nullptr;
 
-    rfct::renderer& rfct::renderer::getRen() {
-        return *ren;
-    }
-
-    // this exists bcs the static renderer var needs to be set before the components' constructors
-    bool setStaticRenderer(renderer *rendererArg) { 
-        ren = rendererArg;
-        return true;
-    }
-
-    // surface wrapper
-    SurfaceWrapper::SurfaceWrapper(vk::SurfaceKHR surfaceArg) {
-        surface = surfaceArg;
-    }
-    void SurfaceWrapper::newSurface(vk::SurfaceKHR surfaceArg){
-        renderer::getRen().getInstance().destroySurfaceKHR(surface);
-        surface = surfaceArg;
-    }
-    SurfaceWrapper::~SurfaceWrapper() {
-        renderer::getRen().getInstance().destroySurfaceKHR(surface);
-    }
-
-    // vma allocator wrapper
-    allocator::allocator() {
-#ifdef ANDROID_BUILD
-        VmaAllocatorCreateInfo allocatorCreateInfo = {};
-        allocatorCreateInfo.physicalDevice = rfct::renderer::getRen().getDeviceWrapper().getPhysicalDevice();
-        allocatorCreateInfo.device = rfct::renderer::getRen().getDevice();
-        allocatorCreateInfo.instance = rfct::renderer::getRen().getInstance();
-        allocatorCreateInfo.vulkanApiVersion = VK_API_VERSION_1_3;
-        VmaVulkanFunctions vulkanFunctions = {};
-
-        vulkanFunctions.vkGetInstanceProcAddr = vkGetInstanceProcAddr;
-        vulkanFunctions.vkGetDeviceProcAddr = vkGetDeviceProcAddr;
-        vulkanFunctions.vkGetPhysicalDeviceProperties = vkGetPhysicalDeviceProperties;
-        vulkanFunctions.vkGetPhysicalDeviceMemoryProperties = vkGetPhysicalDeviceMemoryProperties;
-        vulkanFunctions.vkCreateBuffer = vkCreateBuffer;
-        allocatorCreateInfo.pVulkanFunctions = &vulkanFunctions;
-
-        vmaCreateAllocator(&allocatorCreateInfo, &m_allocator);
-#else
-        VmaAllocatorCreateInfo allocatorCreateInfo = {};
-        allocatorCreateInfo.physicalDevice = rfct::renderer::getRen().getDeviceWrapper().getPhysicalDevice();
-        allocatorCreateInfo.device = rfct::renderer::getRen().getDevice();
-        allocatorCreateInfo.instance = rfct::renderer::getRen().getInstance();
-        allocatorCreateInfo.vulkanApiVersion = VK_API_VERSION_1_3;
-        vmaCreateAllocator(&allocatorCreateInfo, &m_allocator);
-#endif
-    }
-
-    allocator::~allocator() {
-        vmaDestroyAllocator(m_allocator);
-    }
-
+rfct::RfctRenderer& rfct::GetRen() {
+    return *ren;
 }
 
-// LET THIS CODE COOK. IT DOES COOK FRFR
-rfct::renderer::renderer(RFCT_RENDERER_ARGUMENTS)
-	: m_uselessBool(setStaticRenderer(this)), 
-    m_window(RFCT_WINDOWS_WINDOW_ARGUMENTS RFCT_NATIVE_WINDOW_ANDROID_VAR),
+rfct::RfctRenderer::RfctRenderer(RFCT_RENDERER_ARGUMENTS)
+	: m_window(RFCT_WINDOWS_WINDOW_ARGUMENTS RFCT_NATIVE_WINDOW_ANDROID_VAR),
     m_instance(), 
-    m_surface(m_window.createSurface(getInstance())), 
-    m_device(), 
-    m_allocator(),
+    m_surface(m_window.CreateSurface(m_instance.GetInstance())),
+    m_device(m_instance.GetInstance(), m_surface.GetSurface()), 
+    m_allocator(m_device.GetPhysicalDevice(), m_device.GetDevice(), m_instance.GetInstance()),
+	m_swapChain(m_device.GetPhysicalDevice(), m_device.GetDevice(), m_surface.GetSurface()),
     m_renderImages(),
     m_rasterizerPipeline(m_renderImages.getSceneRenderPass()), 
     m_framesInFlight(), 
@@ -82,12 +28,16 @@ rfct::renderer::renderer(RFCT_RENDERER_ARGUMENTS)
 {
 }
 
-void rfct::renderer::updateWindow(RFCT_NATIVE_WINDOW_ANDROID RFCT_NATIVE_WINDOW_ANDROID_VAR){ 
-	RFCT_PROFILE_FUNCTION();
-// surface holder change on android
+rfct::RfctRenderer::~RfctRenderer() {
+    cleanupAssetsCommandPool();
+};
+
+void rfct::RfctRenderer::UpdateWindow(RFCT_NATIVE_WINDOW_ANDROID RFCT_NATIVE_WINDOW_ANDROID_VAR) {
+    RFCT_PROFILE_FUNCTION();
+    // surface holder change on android
 #ifdef ANDROID_BUILD
     m_device.getDevice().waitIdle();
-    if (m_surface.surface){
+    if (m_surface.surface) {
         m_instance.getInstance().destroySurfaceKHR(m_surface.surface);
         m_surface.surface = VK_NULL_HANDLE;
     }
@@ -98,11 +48,7 @@ void rfct::renderer::updateWindow(RFCT_NATIVE_WINDOW_ANDROID RFCT_NATIVE_WINDOW_
 #endif
 };
 
-rfct::renderer::~renderer() {
-    cleanupAssetsCommandPool();
-};
-
-void rfct::renderer::render(frameContext& frameContext) {
+void rfct::RfctRenderer::Render(frameContext& frameContext) {
     RFCT_PROFILE_FUNCTION();
 	frameData& frameData = m_framesInFlight.getNextFrame(frameContext.frame);
     {
@@ -145,22 +91,22 @@ void rfct::renderer::render(frameContext& frameContext) {
 
         vk::SubmitInfo sceneSubmitInfo = frameData.sceneSubmitInfo(frameContext);
         sceneSubmitInfo.pWaitDstStageMask = waitStages;
-        renderer::getRen().getDeviceWrapper().GetQueue().submitGraphics(sceneSubmitInfo);
+        RfctRenderer::getRen().getDeviceWrapper().GetQueue().submitGraphics(sceneSubmitInfo);
 
         vk::SubmitInfo bloomSubmitInfo = frameData.bloomSubmitInfo(frameContext);
         bloomSubmitInfo.pWaitDstStageMask = waitStages;
-        renderer::getRen().getDeviceWrapper().GetQueue().submitGraphics(bloomSubmitInfo);
+        RfctRenderer::getRen().getDeviceWrapper().GetQueue().submitGraphics(bloomSubmitInfo);
 
         if (frameContext.renderDebugDraw) 
         {
             vk::SubmitInfo debugDrawSubmitInfo = frameData.debugDrawSubmitInfo(frameContext);
             debugDrawSubmitInfo.pWaitDstStageMask = waitStages;
-            renderer::getRen().getDeviceWrapper().GetQueue().submitGraphics(debugDrawSubmitInfo);
+            RfctRenderer::getRen().getDeviceWrapper().GetQueue().submitGraphics(debugDrawSubmitInfo);
         }
 
         vk::SubmitInfo uiSubmitInfo = frameData.uiSubmitInfo(frameContext);
         uiSubmitInfo.pWaitDstStageMask = waitStages;
-         renderer::getRen().getDeviceWrapper().GetQueue().submitGraphics(uiSubmitInfo, frameData.m_thisFrameRenderFinishedFence);
+         RfctRenderer::getRen().getDeviceWrapper().GetQueue().submitGraphics(uiSubmitInfo, frameData.m_thisFrameRenderFinishedFence);
     }
     {
         RFCT_PROFILE_SCOPE("image present");
@@ -192,7 +138,7 @@ void rfct::renderer::render(frameContext& frameContext) {
     }
 }
 
-void rfct::renderer::setObjectName(void* objectHandle, const std::string& name, vk::ObjectType objectType) {
+void rfct::RfctRenderer::SetObjectName(void* objectHandle, const std::string& name, vk::ObjectType objectType) {
     RFCT_PROFILE_FUNCTION();
 #ifndef RFCT_VULKAN_DEBUG_OFF
     if (!m_instance.getDynamicLoader().vkSetDebugUtilsObjectNameEXT) {

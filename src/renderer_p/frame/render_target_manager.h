@@ -1,5 +1,5 @@
 #pragma once
-#include "renderer_p/swap_chain/vulkan_swap_chain.h"
+#include <vma/vk_mem_alloc.h>
 
 namespace rfct {
 	// class designed to hold the framebuffers and images
@@ -7,7 +7,6 @@ namespace rfct {
 	public:
 		renderImagesManager();
 		~renderImagesManager();
-		vulkanSwapChain& getSwapChain() { return m_swapChain; }
 		uint32_t acquireNextImage(const vk::Semaphore& sem, vk::Fence fence);
 	private:
 		void createResources();
@@ -37,7 +36,6 @@ namespace rfct {
 		vk::RenderPass getIntermediateRenderPass() { return m_IntermediateRenderPass.get(); }
 		vk::RenderPass getSceneRenderPass() { return m_sceneRenderPass.get(); }
 	private:
-		vulkanSwapChain m_swapChain;
 		vk::UniqueRenderPass m_UIRenderPass;
 		vk::UniqueRenderPass m_presentToColorAttachment;
 		vk::UniqueRenderPass m_IntermediateClearRenderPass;

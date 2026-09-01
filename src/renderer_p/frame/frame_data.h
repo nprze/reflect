@@ -45,7 +45,7 @@ namespace rfct {
 		descriptors m_descriptors;
 		descriptors m_UIcameradescriptors;
     private:
-        friend class renderer;
+        friend class RfctRenderer;
         friend class debugDraw;
         friend class UIPipelines;
         friend class vulkanRasterizerPipeline;

@@ -70,6 +70,6 @@ namespace rfct {
 		// Lines pipeline
 		vk::UniquePipeline m_linePipeline;
 
-		friend class renderer;
+		friend class RfctRenderer;
 	};
 }
