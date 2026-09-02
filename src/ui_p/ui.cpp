@@ -121,7 +121,7 @@ namespace rfct {
 			glm::vec2 p1 = (rotationMatrix * decor.pos1 + decor.pos) * glm::vec2{ 1, aspectRatio };
 			glm::vec2 p2 = (rotationMatrix * decor.pos2 + decor.pos) * glm::vec2{ 1, aspectRatio };
 
-			rfct::renderer::getRen().getUIPipeline().addTriangleNormalized(p0, p1, p2, decor.color, opacity::opacity100percent);
+			rfct::RfctRenderer::getRen().getUIPipeline().addTriangleNormalized(p0, p1, p2, decor.color, opacity::opacity100percent);
 		}
 	}
 	void cleanupDecors() {
@@ -139,7 +139,7 @@ void actionResume(rfct::frameContext* ctx) {
 }
 void actionQuit(rfct::frameContext* ctx) {
 	rfct::userSettings::get().dumpUserSettings();
-	glfwSetWindowShouldClose(rfct::renderer::getRen().getWindow().GetHandle(), true);
+	glfwSetWindowShouldClose(rfct::RfctRenderer::getRen().getWindow().GetHandle(), true);
 }
 void actionProgressDeveloper(rfct::frameContext* ctx) {
 	static uint32_t progress = 0;
@@ -205,7 +205,7 @@ void rfct::drawUI(frameContext* ctx) {
 	if (ctx->state != gameState::menu || currentNodeIndex == -1) return;
 
 	// helper
-	imageExtent = { static_cast<float>(rfct::renderer::getRen().getRenderImagesManager().getSwapChain().getExtent().width), static_cast<float>(rfct::renderer::getRen().getRenderImagesManager().getSwapChain().getExtent().height) };
+	imageExtent = { static_cast<float>(rfct::RfctRenderer::getRen().getRenderImagesManager().getSwapChain().getExtent().width), static_cast<float>(rfct::RfctRenderer::getRen().getRenderImagesManager().getSwapChain().getExtent().height) };
 	bool hasBackButton = currentNodeIndex != 0;
 
 	// input updates
@@ -217,11 +217,11 @@ void rfct::drawUI(frameContext* ctx) {
 	}
 
 	// background draw
-	rfct::renderer::getRen().getUIPipeline().beginAddingTriangles();
-	rfct::renderer::getRen().getUIPipeline().addTriangleNormalized({ 0,0 }, { 2, 0 }, { 0, 2 }, { 0,0,0 }, rfct::opacity::opacity75percent);
-	rfct::renderer::getRen().getUIPipeline().addTriangleNormalized({ 2,2 }, { 2, 0 }, { 0, 2 }, { 0,0,0 }, rfct::opacity::opacity75percent);
+	rfct::RfctRenderer::getRen().getUIPipeline().beginAddingTriangles();
+	rfct::RfctRenderer::getRen().getUIPipeline().addTriangleNormalized({ 0,0 }, { 2, 0 }, { 0, 2 }, { 0,0,0 }, rfct::opacity::opacity75percent);
+	rfct::RfctRenderer::getRen().getUIPipeline().addTriangleNormalized({ 2,2 }, { 2, 0 }, { 0, 2 }, { 0,0,0 }, rfct::opacity::opacity75percent);
 	updateDecors(ctx);
-	rfct::renderer::getRen().getUIPipeline().endAddingTriangles();
+	rfct::RfctRenderer::getRen().getUIPipeline().endAddingTriangles();
 
 	if (changeSelectionCooldown != 0) {
 		animationOffsetNorm = glm::pow(-4 * changeSelectionCooldown, 2);
@@ -237,7 +237,7 @@ void rfct::drawUI(frameContext* ctx) {
 	uint32_t elementCount = UINodes[currentNodeIndex].childrenCount + (hasBackButton ? 1 : 0);
 	float totalHeight = UINodes[currentNodeIndex].childrenCount * oneLineHeight + (UINodes[currentNodeIndex].childrenCount - 1) * interline * imageExtent.y;
 	float startY = 0.5f * imageExtent.y - (0.5f * totalHeight);
-	font* defaultFont = renderer::getRen().getUIPipeline().getDefaultFont();
+	font* defaultFont = RfctRenderer::getRen().getUIPipeline().getDefaultFont();
 
 	for (uint32_t i = 0; i < UINodes[currentNodeIndex].childrenCount; i++) {
 		uint32_t childIndex = UINodes[currentNodeIndex].childrenIndices[i];
@@ -250,7 +250,7 @@ void rfct::drawUI(frameContext* ctx) {
 			float xPos = (0.5f) * imageExtent.x - 0.5f * width;
 			float yPos = startY + i * (oneLineHeight + interline * imageExtent.y);
 			// draw text
-			renderer::getRen().getUIPipeline().addTextVerticesHeight(
+			RfctRenderer::getRen().getUIPipeline().addTextVerticesHeight(
 				UINodes[childIndex].label,
 				glm::vec2(
 					xPos,
@@ -261,7 +261,7 @@ void rfct::drawUI(frameContext* ctx) {
 		}
 		case UINode::UINodeType::UINodeType_IntPercentage: {
 			// label
-			renderer::getRen().getUIPipeline().addTextVerticesHeight(
+			RfctRenderer::getRen().getUIPipeline().addTextVerticesHeight(
 				UINodes[childIndex].label,
 				glm::vec2(
 					(0.15f) * imageExtent.x,
@@ -272,7 +272,7 @@ void rfct::drawUI(frameContext* ctx) {
 			// value
 			std::string valueText = ((*UINodes[childIndex].valuePtr == UINodes[childIndex].minValue)?"":"< ") + std::to_string(*UINodes[childIndex].valuePtr) + ((*UINodes[childIndex].valuePtr == UINodes[childIndex].maxValue) ? "%" : "% >");
 			float valueWidth = defaultFont->getTextWidth(valueText, textScale * imageExtent.y);
-			renderer::getRen().getUIPipeline().addTextVerticesHeight(
+			RfctRenderer::getRen().getUIPipeline().addTextVerticesHeight(
 				valueText,
 				glm::vec2(
 					(0.85f) * imageExtent.x - valueWidth,
@@ -290,7 +290,7 @@ void rfct::drawUI(frameContext* ctx) {
 		float width = defaultFont->getTextWidth("BACK", textScale * imageExtent.y);
 		float xPos = (0.5f) * imageExtent.x - 0.5f * width;
 		float yPos = startY + UINodes[currentNodeIndex].childrenCount * (oneLineHeight + interline * imageExtent.y);
-		renderer::getRen().getUIPipeline().addTextVerticesHeight(
+		RfctRenderer::getRen().getUIPipeline().addTextVerticesHeight(
 			std::string("BACK"),
 			glm::vec2(
 				xPos,

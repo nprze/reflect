@@ -3,14 +3,16 @@
 #include "renderer_p/renderer.h"
 
 namespace rfct {
-	framesInFlight::framesInFlight() {
+	framesInFlight::framesInFlight(RfctVulkanMemAllocator& allocator, RfctQueue& queue, vk::Device device) {
 		m_fences.resize(RFCT_FRAMES_IN_FLIGHT);
 		vk::FenceCreateInfo fenceInfo{ vk::FenceCreateFlagBits::eSignaled };
 		for (uint32_t i = 0; i < RFCT_FRAMES_IN_FLIGHT; i++) {
-			m_fences[i] = renderer::getRen().getDevice().createFenceUnique(fenceInfo);
+			auto fenceCreateResult = device.createFenceUnique(fenceInfo);
+			RFCT_VULKAN_CHECK(fenceCreateResult.result);
+			m_fences[i] = std::move(fenceCreateResult.value);
 		}
 		for (uint32_t i = 0; i < RFCT_FRAMES_IN_FLIGHT; i++) {
-			m_frames.push_back(std::make_unique<frameData>(renderer::getRen().getDevice(), renderer::getRen().getAllocator(), (m_fences[(i + (RFCT_FRAMES_IN_FLIGHT - 1)) % RFCT_FRAMES_IN_FLIGHT]).get(), m_fences[i].get()));
+			m_frames.push_back(std::make_unique<frameData>(allocator, queue, device, (m_fences[(i + (RFCT_FRAMES_IN_FLIGHT - 1)) % RFCT_FRAMES_IN_FLIGHT]).get(), m_fences[i].get()));
 			RFCT_TRACE("Frame in flight #{0} created", i);
 		}
 	}

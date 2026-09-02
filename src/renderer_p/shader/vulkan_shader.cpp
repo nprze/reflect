@@ -21,6 +21,6 @@ namespace rfct {
         createInfo.setCodeSize(buffer.size());
         createInfo.setPCode(reinterpret_cast<const uint32_t*>(buffer.data()));
 
-        m_shaderModule = renderer::getRen().getDevice().createShaderModuleUnique(createInfo);
+        m_shaderModule = RfctRenderer::getRen().getDevice().createShaderModuleUnique(createInfo);
     }
 }

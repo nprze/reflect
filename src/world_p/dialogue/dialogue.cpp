@@ -116,7 +116,7 @@ void rfct::dialogue::updateText(const frameContext* ctx) {
 	if (displayPart.size() == 0) getDialogueData();
 
 	float endX = textLeftOffsetInPixel;
-	float fontHeightInPixel = renderer::getRen().getUIPipeline().getDefaultFont()->getFontHeight(defaultFontScale);
+	float fontHeightInPixel = RfctRenderer::getRen().getUIPipeline().getDefaultFont()->getFontHeight(defaultFontScale);
 	float textOffsetTop = bgOffsetInPixel.y + (bgSizeInPixel.y * 0.5f) - (fontHeightInPixel);
 
 	for (uint32_t i = 0; i < dialoguePartNodeIndex; i++) {
@@ -173,7 +173,7 @@ void rfct::dialogue::updateImage(const frameContext* ctx) {
 	glm::vec2 texMin = { spriteSheetTextureCoords.y * oneOverColumnCount, spriteSheetTextureCoords.x * oneOverRowCount };
 	glm::vec2 texMax = { (spriteSheetTextureCoords.y+1) * oneOverColumnCount, (spriteSheetTextureCoords.x+1) * oneOverRowCount };
 
-	renderer::getRen().getUIPipeline().addImage(bgOffsetInPixel + glm::vec2{ portraitOffsetInPixel, portraitOffsetInPixel }, 
+	RfctRenderer::getRen().getUIPipeline().addImage(bgOffsetInPixel + glm::vec2{ portraitOffsetInPixel, portraitOffsetInPixel }, 
 		bgOffsetInPixel + glm::vec2{ portraitOffsetInPixel + portraitSizeInPixel, portraitOffsetInPixel + portraitSizeInPixel }, & (currentSpritesheet->spriteSheetImage), texMin, texMax);
 }
 
@@ -185,7 +185,7 @@ void rfct::dialogue::updateBackground(const frameContext* ctx) {
 
 	float backgroundAspectRatio = (backgroundEnd.y + 1 - backgroundBegin.y) / (backgroundEnd.x + 1 - backgroundBegin.x); // width / height
 
-	vk::Extent2D winExt = renderer::getRen().getExtent();
+	vk::Extent2D winExt = RfctRenderer::getRen().getExtent();
 
 	bgSizeInPixel = { winExt.width * 0.7f, winExt.width * 0.7f / backgroundAspectRatio };
 	bgOffsetInPixel = { winExt.width * 0.15f, winExt.height * 0.15f };
@@ -201,7 +201,7 @@ void rfct::dialogue::updateBackground(const frameContext* ctx) {
 	glm::vec2 texMin = { backgroundBegin.y * oneOverColumnCount, backgroundBegin.x * oneOverRowCount };
 	glm::vec2 texMax = { (backgroundEnd.y + 1) * oneOverColumnCount, (backgroundEnd.x + 1) * oneOverRowCount };
 
-	renderer::getRen().getUIPipeline().addImage(bgOffsetInPixel, { bgOffsetInPixel.x + bgSizeInPixel.x, bgOffsetInPixel.y + bgSizeInPixel.y }, &(currentSpritesheet->spriteSheetImage), texMin, texMax);
+	RfctRenderer::getRen().getUIPipeline().addImage(bgOffsetInPixel, { bgOffsetInPixel.x + bgSizeInPixel.x, bgOffsetInPixel.y + bgSizeInPixel.y }, &(currentSpritesheet->spriteSheetImage), texMin, texMax);
 }
 
 void rfct::dialogue::changeSpritesheet() {
@@ -252,5 +252,5 @@ rfct::characterSpritesheet::characterSpritesheet(const std::string& characterNam
 }
 
 rfct::characterSpritesheet::~characterSpritesheet() {
-	if (drawn) renderer::getRen().getUIPipeline().removeImage(&spriteSheetImage);
+	if (drawn) RfctRenderer::getRen().getUIPipeline().removeImage(&spriteSheetImage);
 }

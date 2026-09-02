@@ -24,14 +24,14 @@ rfct::reflectApplication::reflectApplication(RFCT_APP_ARGS)
     }
 #ifdef WINDOWS_BUILD
     update();
-	renderer::getRen().getWindow().show();
-	while (renderer::getRen().getWindow().pollAndParseEvents())
+	RfctRenderer::getRen().getWindow().show();
+	while (RfctRenderer::getRen().getWindow().pollAndParseEvents())
         update();
 #endif
 }
 
 rfct::reflectApplication::~reflectApplication() {
-    renderer::getRen().getDevice().waitIdle();
+    RfctRenderer::getRen().getDevice().waitIdle();
     cleanGameSystems();
 }
 
@@ -87,7 +87,7 @@ void rfct::reflectApplication::update() {
             }, context.wholeUpdateTracker);
         context.wholeUpdateTracker.waitAll();
 
-        renderer::getRen().render(context);
+        RfctRenderer::getRen().render(context);
 
 		// check scene switch
         if (world::getWorld().switchingScenes) {

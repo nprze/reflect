@@ -15,7 +15,7 @@ namespace rfct {
 
     void recalculateProjectionMatrix(cameraComponent& cam) {
         RFCT_PROFILE_FUNCTION();
-        vk::Extent2D extent = renderer::getRen().getExtent();
+        vk::Extent2D extent = RfctRenderer::getRen().getExtent();
 		float aspectRatio = float(extent.width) / float(extent.height);
         projectionMatrix = glm::ortho(
             -8.f * aspectRatio, 8.f * aspectRatio,
@@ -38,7 +38,7 @@ namespace rfct {
         auto& camComp = reg.get<cameraComponent>(cameraEntity);
 
 		// get size of camera view in world coords
-        vk::Extent2D extent = renderer::getRen().getExtent();
+        vk::Extent2D extent = RfctRenderer::getRen().getExtent();
 		float aspectRatio = float(extent.width) / float(extent.height);
         constexpr float oneOverHundred = 1.f / 100.f;
 

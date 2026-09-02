@@ -18,12 +18,12 @@ vk::DescriptorSetLayout rfct::renderData::getDescriptorSetLayout() {
 	layoutCreateInfo.bindingCount = 1;
 	layoutCreateInfo.pBindings = &layoutBinding;
 
-	descriptorSetLayout = renderer::getRen().getDevice().createDescriptorSetLayout(layoutCreateInfo);
+	descriptorSetLayout = RfctRenderer::getRen().getDevice().createDescriptorSetLayout(layoutCreateInfo);
 	return descriptorSetLayout;
 }
 
 void rfct::renderData::destroyDescriptorSetLayout() {
-	renderer::getRen().getDevice().destroyDescriptorSetLayout(descriptorSetLayout);
+	RfctRenderer::getRen().getDevice().destroyDescriptorSetLayout(descriptorSetLayout);
 }
 
 rfct::renderData::renderData()
@@ -53,7 +53,7 @@ rfct::renderData::renderData()
 		poolSizes.size(),
 		poolSizes.data()
 	);
-	m_DescriptorPool = renderer::getRen().getDevice().createDescriptorPoolUnique(poolCreateInfo);
+	m_DescriptorPool = RfctRenderer::getRen().getDevice().createDescriptorPoolUnique(poolCreateInfo);
 
 	{
 		vk::DescriptorSetAllocateInfo allocInfo{};
@@ -62,7 +62,7 @@ rfct::renderData::renderData()
 		vk::DescriptorSetLayout descriptorSetLayout = getDescriptorSetLayout();
 		allocInfo.pSetLayouts = &descriptorSetLayout;
 
-		auto descriptorSets = renderer::getRen().getDevice().allocateDescriptorSetsUnique(allocInfo);
+		auto descriptorSets = RfctRenderer::getRen().getDevice().allocateDescriptorSetsUnique(allocInfo);
 		m_DescriptorSetStatic = std::move(descriptorSets[0]);
 
 		vk::DescriptorBufferInfo bufferInfoStatic = {
@@ -79,7 +79,7 @@ rfct::renderData::renderData()
 		write.descriptorCount = 1;
 		write.pBufferInfo = &bufferInfoStatic;
 
-		renderer::getRen().getDevice().updateDescriptorSets(1, &write, 0, nullptr);
+		RfctRenderer::getRen().getDevice().updateDescriptorSets(1, &write, 0, nullptr);
 	}
 
 	// Allocate dynamic descriptor sets
@@ -90,7 +90,7 @@ rfct::renderData::renderData()
 		vk::DescriptorSetLayout descriptorSetLayout = getDescriptorSetLayout();
 		allocInfo.pSetLayouts = &descriptorSetLayout;
 
-		auto descriptorSets = renderer::getRen().getDevice().allocateDescriptorSetsUnique(allocInfo);
+		auto descriptorSets = RfctRenderer::getRen().getDevice().allocateDescriptorSetsUnique(allocInfo);
 		m_DescriptorSetsDynamic[i] = std::move(descriptorSets[0]);
 
 		vk::DescriptorBufferInfo bufferInfoDynamic = {
@@ -107,7 +107,7 @@ rfct::renderData::renderData()
 		write.descriptorCount = 1;
 		write.pBufferInfo = &bufferInfoDynamic;
 
-		renderer::getRen().getDevice().updateDescriptorSets(1, &write, 0, nullptr);
+		RfctRenderer::getRen().getDevice().updateDescriptorSets(1, &write, 0, nullptr);
 
 		m_mappedMatsDataDynamic[i] = m_DynamicModelMatsBuffers[i].Map();
 		m_mappedVerticesDataDynamic[i] = m_VertexBufferDynamic[i]->Map();

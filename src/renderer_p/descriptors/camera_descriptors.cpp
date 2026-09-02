@@ -14,7 +14,7 @@ rfct::descriptors::descriptors(uint32_t size) {
         poolSizes.size(),
         poolSizes.data()
     );
-	m_descriptorPool = renderer::getRen().getDevice().createDescriptorPoolUnique(poolCreateInfo);
+	m_descriptorPool = RfctRenderer::getRen().getDevice().createDescriptorPoolUnique(poolCreateInfo);
 	for (size_t i = 0; i < size; i++)
 	{
         // Allocate camera UBO descriptor set
@@ -23,7 +23,7 @@ rfct::descriptors::descriptors(uint32_t size) {
         allocInfo.descriptorSetCount = 1;
         vk::DescriptorSetLayout descriptorSetLayout = ubo::getDescriptorSetLayout();
         allocInfo.pSetLayouts = &descriptorSetLayout;
-		auto descriptorSets = renderer::getRen().getDevice().allocateDescriptorSetsUnique(allocInfo);
+		auto descriptorSets = RfctRenderer::getRen().getDevice().allocateDescriptorSetsUnique(allocInfo);
 		m_cameraUboDescSet.push_back(std::move(descriptorSets[0]));
 	}
 }
@@ -45,5 +45,5 @@ void rfct::descriptors::bindCameraUbo(vk::Buffer ubo, uint32_t index) {
     descriptorWrite.descriptorCount = 1;
     descriptorWrite.pBufferInfo = &bufferInfo;
 
-    renderer::getRen().getDevice().updateDescriptorSets(descriptorWrite, nullptr);
+    RfctRenderer::getRen().getDevice().updateDescriptorSets(descriptorWrite, nullptr);
 }

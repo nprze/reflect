@@ -29,8 +29,8 @@ namespace rfct {
 
 	void input::init() {
 		RFCT_PROFILE_FUNCTION();
-		windowExtent = &(renderer::getRen().getWindow().extent);
-		window = renderer::getRen().getWindow().GetHandle();
+		windowExtent = &(RfctRenderer::getRen().getWindow().extent);
+		window = RfctRenderer::getRen().getWindow().GetHandle();
 		glfwSetKeyCallback(window, key_callback);
 	}
 

@@ -4,7 +4,7 @@
 namespace rfct {
 	class framesInFlight {
 	public:
-		framesInFlight();
+		framesInFlight(RfctVulkanMemAllocator& allocator, RfctQueue& queue, vk::Device device);
 		~framesInFlight();
 		frameData& getNextFrame(uint32_t frame_index);
 	private:

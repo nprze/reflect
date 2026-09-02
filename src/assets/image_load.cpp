@@ -27,16 +27,16 @@ void rfct::loadImage(const std::string& path, image* imageOut) {
 
     vk::Buffer stagingBuffer;
     VmaAllocation stagingBufferAllocation;
-    if (vmaCreateBuffer(renderer::getRen().getAllocator(), reinterpret_cast<const VkBufferCreateInfo*>(&bufferInfo), &allocCreateInfo,
+    if (vmaCreateBuffer(RfctRenderer::getRen().getAllocator(), reinterpret_cast<const VkBufferCreateInfo*>(&bufferInfo), &allocCreateInfo,
         reinterpret_cast<VkBuffer*>(&stagingBuffer), &stagingBufferAllocation, nullptr) != VK_SUCCESS) {
         RFCT_CRITICAL("Failed to create staging buffer");
     }
 
     // Copy pixel data to the buffer
     void* data;
-    vmaMapMemory(renderer::getRen().getAllocator(), stagingBufferAllocation, &data);
+    vmaMapMemory(RfctRenderer::getRen().getAllocator(), stagingBufferAllocation, &data);
     std::memcpy(data, pixels, static_cast<size_t>(imageSize));
-    vmaUnmapMemory(renderer::getRen().getAllocator(), stagingBufferAllocation);
+    vmaUnmapMemory(RfctRenderer::getRen().getAllocator(), stagingBufferAllocation);
     stbi_image_free(pixels);
 
     // Create Vulkan image
@@ -49,13 +49,13 @@ void rfct::loadImage(const std::string& path, image* imageOut) {
     VmaAllocationCreateInfo imageAllocInfo{};
     imageAllocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
 
-    if (vmaCreateImage(renderer::getRen().getAllocator(), reinterpret_cast<const VkImageCreateInfo*>(&imageInfo), &imageAllocInfo,
+    if (vmaCreateImage(RfctRenderer::getRen().getAllocator(), reinterpret_cast<const VkImageCreateInfo*>(&imageInfo), &imageAllocInfo,
         reinterpret_cast<VkImage*>(&imageOut->m_image), &imageOut->m_allocation, nullptr) != VK_SUCCESS) {
         RFCT_CRITICAL("Failed to create Vulkan image");
     }
 
     vk::CommandBufferAllocateInfo allocInfo(getAssetsCommandPool(), vk::CommandBufferLevel::ePrimary, 1);
-    vk::CommandBuffer commandBuffer = renderer::getRen().getDevice().allocateCommandBuffers(allocInfo)[0];
+    vk::CommandBuffer commandBuffer = RfctRenderer::getRen().getDevice().allocateCommandBuffers(allocInfo)[0];
 
     vk::CommandBufferBeginInfo beginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
     commandBuffer.begin(beginInfo);
@@ -69,18 +69,18 @@ void rfct::loadImage(const std::string& path, image* imageOut) {
 
     vk::SubmitInfo submitInfo({}, {}, commandBuffer);
     vk::FenceCreateInfo fenceInfo;
-    vk::Fence fence = renderer::getRen().getDevice().createFence(fenceInfo);
-    renderer::getRen().getDeviceWrapper().GetQueue().submitGraphics(submitInfo, fence);
-    RFCT_VULKAN_CHECK(renderer::getRen().getDevice().waitForFences(fence, VK_TRUE, UINT64_MAX));
+    vk::Fence fence = RfctRenderer::getRen().getDevice().createFence(fenceInfo);
+    RfctRenderer::getRen().getDeviceWrapper().GetQueue().submitGraphics(submitInfo, fence);
+    RFCT_VULKAN_CHECK(RfctRenderer::getRen().getDevice().waitForFences(fence, VK_TRUE, UINT64_MAX));
 
-    renderer::getRen().getDevice().freeCommandBuffers(getAssetsCommandPool(), commandBuffer);
-    vmaDestroyBuffer(renderer::getRen().getAllocator(), static_cast<VkBuffer>(stagingBuffer), stagingBufferAllocation);
-    renderer::getRen().getDevice().destroyFence(fence);
+    RfctRenderer::getRen().getDevice().freeCommandBuffers(getAssetsCommandPool(), commandBuffer);
+    vmaDestroyBuffer(RfctRenderer::getRen().getAllocator(), static_cast<VkBuffer>(stagingBuffer), stagingBufferAllocation);
+    RfctRenderer::getRen().getDevice().destroyFence(fence);
 
     // Create Image View
     vk::ImageViewCreateInfo viewInfo({}, imageOut->m_image, vk::ImageViewType::e2D, vk::Format::eR8G8B8A8Unorm, {},
         { vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1 });
-    imageOut->m_imageView = renderer::getRen().getDevice().createImageView(viewInfo);
+    imageOut->m_imageView = RfctRenderer::getRen().getDevice().createImageView(viewInfo);
 }
 
 void rfct::createDummyImage(image* imageOut) {
@@ -98,7 +98,7 @@ void rfct::createDummyImage(image* imageOut) {
     VmaAllocationCreateInfo imageAllocInfo{};
     imageAllocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
 
-    VkResult res = vmaCreateImage(renderer::getRen().getAllocator(), reinterpret_cast<const VkImageCreateInfo*>(&imageInfo), &imageAllocInfo,
+    VkResult res = vmaCreateImage(RfctRenderer::getRen().getAllocator(), reinterpret_cast<const VkImageCreateInfo*>(&imageInfo), &imageAllocInfo,
         reinterpret_cast<VkImage*>(&imageOut->m_image), &imageOut->m_allocation, nullptr);
     if (res != VK_SUCCESS) {
         RFCT_CRITICAL("Failed to create Vulkan image");
@@ -106,7 +106,7 @@ void rfct::createDummyImage(image* imageOut) {
 
     // Allocate command buffer
     vk::CommandBufferAllocateInfo allocInfo(getAssetsCommandPool(), vk::CommandBufferLevel::ePrimary, 1);
-    vk::CommandBuffer commandBuffer = renderer::getRen().getDevice().allocateCommandBuffers(allocInfo)[0];
+    vk::CommandBuffer commandBuffer = RfctRenderer::getRen().getDevice().allocateCommandBuffers(allocInfo)[0];
 
     vk::CommandBufferBeginInfo beginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
     commandBuffer.begin(beginInfo);
@@ -118,17 +118,17 @@ void rfct::createDummyImage(image* imageOut) {
 
     vk::SubmitInfo submitInfo({}, {}, commandBuffer);
     vk::FenceCreateInfo fenceInfo;
-    vk::Fence fence = renderer::getRen().getDevice().createFence(fenceInfo);
-    renderer::getRen().getDeviceWrapper().GetQueue().submitGraphics(submitInfo, fence);
-    RFCT_VULKAN_CHECK(renderer::getRen().getDevice().waitForFences(fence, VK_TRUE, UINT64_MAX));
+    vk::Fence fence = RfctRenderer::getRen().getDevice().createFence(fenceInfo);
+    RfctRenderer::getRen().getDeviceWrapper().GetQueue().submitGraphics(submitInfo, fence);
+    RFCT_VULKAN_CHECK(RfctRenderer::getRen().getDevice().waitForFences(fence, VK_TRUE, UINT64_MAX));
 
-    renderer::getRen().getDevice().freeCommandBuffers(getAssetsCommandPool(), commandBuffer);
-    renderer::getRen().getDevice().destroyFence(fence);
+    RfctRenderer::getRen().getDevice().freeCommandBuffers(getAssetsCommandPool(), commandBuffer);
+    RfctRenderer::getRen().getDevice().destroyFence(fence);
 
     // Create Image View
     vk::ImageViewCreateInfo viewInfo({}, imageOut->m_image, vk::ImageViewType::e2D, vk::Format::eR8G8B8A8Unorm, {},
         { vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1 });
-    imageOut->m_imageView = renderer::getRen().getDevice().createImageView(viewInfo);
+    imageOut->m_imageView = RfctRenderer::getRen().getDevice().createImageView(viewInfo);
 }
 
 void rfct::loadGlyphs(const std::string& path, font* fontOut) {

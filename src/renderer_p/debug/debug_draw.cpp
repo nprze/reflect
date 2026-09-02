@@ -119,7 +119,7 @@ void rfct::debugDraw::createDebugPipelines(vk::RenderPass renderPass) {
     pipelineLayoutInfo.setLayoutCount = 1;
     vk::DescriptorSetLayout dscSetLayout = ubo::getDescriptorSetLayout();
     pipelineLayoutInfo.pSetLayouts = &dscSetLayout;
-    m_PipelineLayout = renderer::getRen().getDevice().createPipelineLayoutUnique(pipelineLayoutInfo);
+    m_PipelineLayout = RfctRenderer::getRen().getDevice().createPipelineLayoutUnique(pipelineLayoutInfo);
 
 
     vk::PipelineViewportStateCreateInfo viewportState = {};
@@ -142,7 +142,7 @@ void rfct::debugDraw::createDebugPipelines(vk::RenderPass renderPass) {
     pipelineInfo.renderPass = renderPass;
     pipelineInfo.subpass = 0;
 
-    m_trianglePipeline = renderer::getRen().getDevice().createGraphicsPipelineUnique({}, pipelineInfo).value;
+    m_trianglePipeline = RfctRenderer::getRen().getDevice().createGraphicsPipelineUnique({}, pipelineInfo).value;
 
     // Line 
     vk::PipelineInputAssemblyStateCreateInfo lineinputAssembly = {};
@@ -164,7 +164,7 @@ void rfct::debugDraw::createDebugPipelines(vk::RenderPass renderPass) {
     linePipelineInfo.renderPass = renderPass;
     linePipelineInfo.subpass = 0;
 
-    m_linePipeline = renderer::getRen().getDevice().createGraphicsPipelineUnique({}, linePipelineInfo).value;
+    m_linePipeline = RfctRenderer::getRen().getDevice().createGraphicsPipelineUnique({}, linePipelineInfo).value;
 }
 
 void rfct::debugDraw::draw(frameContext* ctx, frameData& fd, vk::Framebuffer framebuffer, vk::RenderPass renderPass) {
@@ -183,7 +183,7 @@ void rfct::debugDraw::draw(frameContext* ctx, frameData& fd, vk::Framebuffer fra
     renderPassInfo.renderPass = renderPass;
     renderPassInfo.framebuffer = framebuffer;
     renderPassInfo.renderArea.offset = vk::Offset2D{ 0, 0 };
-    renderPassInfo.renderArea.extent = rfct::renderer::getRen().getRenderImagesManager().getSwapChain().getExtent();
+    renderPassInfo.renderArea.extent = rfct::RfctRenderer::getRen().getRenderImagesManager().getSwapChain().getExtent();
     renderPassInfo.clearValueCount = 0;
     renderPassInfo.pClearValues = VK_NULL_HANDLE;
 
@@ -192,15 +192,15 @@ void rfct::debugDraw::draw(frameContext* ctx, frameData& fd, vk::Framebuffer fra
     vk::Viewport viewport = {};
     viewport.x = 0.0f;
     viewport.y = 0.0f;
-    viewport.width = static_cast<float>(rfct::renderer::getRen().getRenderImagesManager().getSwapChain().getExtent().width);
-    viewport.height = static_cast<float>(rfct::renderer::getRen().getRenderImagesManager().getSwapChain().getExtent().height);
+    viewport.width = static_cast<float>(rfct::RfctRenderer::getRen().getRenderImagesManager().getSwapChain().getExtent().width);
+    viewport.height = static_cast<float>(rfct::RfctRenderer::getRen().getRenderImagesManager().getSwapChain().getExtent().height);
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
     commandBuffer.setViewport(0, viewport);
 
     vk::Rect2D scissor = {};
     scissor.offset = vk::Offset2D{ 0, 0 };
-    scissor.extent = rfct::renderer::getRen().getRenderImagesManager().getSwapChain().getExtent();
+    scissor.extent = rfct::RfctRenderer::getRen().getRenderImagesManager().getSwapChain().getExtent();
     commandBuffer.setScissor(0, scissor);
 
     commandBuffer.setLineWidth(1.f);
@@ -249,5 +249,5 @@ rfct::debugLine* rfct::debugDraw::requestNLines(uint32_t count) {
 }
 
 float rfct::debugDraw::text(const std::string& text, glm::vec2 startPosition, float scale) {
-    return renderer::getRen().getUIPipeline().debugText(text, startPosition, scale);
+    return RfctRenderer::getRen().getUIPipeline().debugText(text, startPosition, scale);
 }

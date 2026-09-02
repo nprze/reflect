@@ -1,5 +1,4 @@
 #pragma once
-
 #include "renderer_p/shader/vulkan_shader.h"
 
 namespace rfct {
@@ -8,9 +7,9 @@ namespace rfct {
 	class vulkanRasterizerPipeline
 	{
 	public:
-		vulkanRasterizerPipeline(vk::RenderPass renderPass);
-		void createPipeline(vk::RenderPass renderPass);
-		void recordCommandBuffer(frameContext* ctx, frameData& frameData, vk::Framebuffer framebuffer, vk::RenderPass renderPass);
+		vulkanRasterizerPipeline(vk::RenderPass renderPass, vk::Device device);
+		void CreatePipeline(vk::RenderPass renderPass, vk::Device device);
+		void RecordCommandBuffer(frameContext* ctx, RfctSwapChain& swapChainWrapper, frameData& frameData, vk::Framebuffer framebuffer, vk::RenderPass renderPass);
 	private:
 		vulkanShader m_vertexShader;
 		vulkanShader m_fragShader;

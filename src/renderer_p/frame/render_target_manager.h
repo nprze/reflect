@@ -2,39 +2,42 @@
 #include <vma/vk_mem_alloc.h>
 
 namespace rfct {
+	class RfctDevice;
+	class RfctQueue;
 	// class designed to hold the framebuffers and images
 	class renderImagesManager {
 	public:
-		renderImagesManager();
+		renderImagesManager(rfct::RfctDevice& deviceWrapper, rfct::RfctQueue& queueWrapper,
+			RfctVulkanMemAllocator& allocatorWrapper, RfctSwapChain& swapChainWrapper);
 		~renderImagesManager();
-		uint32_t acquireNextImage(const vk::Semaphore& sem, vk::Fence fence);
 	private:
-		void createResources();
-		void createImageViews();
-		void createImages();
-		void createFrameBuffers();
-		void createMSAAres(vk::SampleCountFlagBits msaaSamples);
-		void cleanupMSAAres();
-		void cleanupImages();
-		void getSwapChainImages();
-		void createRenderPasses();
+		void CreateResources(rfct::RfctDevice& deviceWrapper, rfct::RfctQueue& queueWrapper,
+			RfctVulkanMemAllocator& allocatorWrapper, RfctSwapChain& swapChainWrapper);
+		void CreateImageViews(RfctSwapChain& swapChainWrapper, vk::Device device);
+		void CreateImages(rfct::RfctDevice& deviceWrapper, rfct::RfctQueue& queueWrapper,
+			RfctVulkanMemAllocator& allocatorWrapper, RfctSwapChain& swapChainWrapper);
+		void CreateFrameBuffers(RfctSwapChain& swapChainWrapper, vk::Device device);
+		void CreateMSAAres(RfctSwapChain& swapChainWrapper, RfctVulkanMemAllocator& allocatorWrapper, vk::Device device, vk::SampleCountFlagBits msaaSamples = vk::SampleCountFlagBits::e4);
+		void CleanupMSAAres(RfctVulkanMemAllocator& allocatorWrapper);
+		void CleanupImages(RfctVulkanMemAllocator& allocatorWrapper);
+		void CreateRenderPasses(vk::Device device, vk::SampleCountFlagBits msaaSamples = vk::SampleCountFlagBits::e4);
 	public:
-		vk::Image getSceneImage(uint32_t index) { return m_sceneImages[index]; }
-		vk::Image getBloom1Image(uint32_t index) { return m_bloom1Images[index]; }
-		vk::Image getBloom2Image(uint32_t index) { return m_bloom2Images[index]; }
-		vk::Image getswapchainImage(uint32_t index) { return m_swapchainImages[index]; }
-		vk::Framebuffer getSceneFrameBuffer(uint32_t index) { return m_sceneFramebuffers[index].get(); }
-		vk::Framebuffer getSwapChainFrameBuffer(uint32_t index) {  return m_swapchainFramebuffers[index].get(); }
-		vk::Framebuffer getBloom1FrameBuffer(uint32_t index) { return m_bloom1Framebuffers[index].get(); }
-		vk::Framebuffer getBloom2FrameBuffer(uint32_t index) { return m_bloom2Framebuffers[index].get(); }
-		vk::ImageView getSceneImageView(uint32_t index) { return m_sceneImageViews[index].get(); }
-		vk::ImageView getBloom1ImageView(uint32_t index) { return m_bloom1ImageViews[index].get(); }
-		vk::ImageView getBloom2ImageView(uint32_t index) { return m_bloom2ImageViews[index].get(); }
-		vk::RenderPass getUIRenderPass() { return m_UIRenderPass.get(); }
-		vk::RenderPass getpresentToColorAttachmentRenderPass() { return m_presentToColorAttachment.get(); }
-		vk::RenderPass getIntermediateClearRenderPass() { return m_IntermediateClearRenderPass.get(); }
-		vk::RenderPass getIntermediateRenderPass() { return m_IntermediateRenderPass.get(); }
-		vk::RenderPass getSceneRenderPass() { return m_sceneRenderPass.get(); }
+		vk::Image GetSceneImage(uint32_t index) { return m_sceneImages[index]; }
+		vk::Image GetBloom1Image(uint32_t index) { return m_bloom1Images[index]; }
+		vk::Image GetBloom2Image(uint32_t index) { return m_bloom2Images[index]; }
+		vk::Image GetswapchainImage(uint32_t index) { return m_swapchainImages[index]; }
+		vk::Framebuffer GetSceneFrameBuffer(uint32_t index) { return m_sceneFramebuffers[index].get(); }
+		vk::Framebuffer GetSwapChainFrameBuffer(uint32_t index) {  return m_swapchainFramebuffers[index].get(); }
+		vk::Framebuffer GetBloom1FrameBuffer(uint32_t index) { return m_bloom1Framebuffers[index].get(); }
+		vk::Framebuffer GetBloom2FrameBuffer(uint32_t index) { return m_bloom2Framebuffers[index].get(); }
+		vk::ImageView GetSceneImageView(uint32_t index) { return m_sceneImageViews[index].get(); }
+		vk::ImageView GetBloom1ImageView(uint32_t index) { return m_bloom1ImageViews[index].get(); }
+		vk::ImageView GetBloom2ImageView(uint32_t index) { return m_bloom2ImageViews[index].get(); }
+		vk::RenderPass GetUIRenderPass() { return m_UIRenderPass.get(); }
+		vk::RenderPass GetpresentToColorAttachmentRenderPass() { return m_presentToColorAttachment.get(); }
+		vk::RenderPass GetIntermediateClearRenderPass() { return m_IntermediateClearRenderPass.get(); }
+		vk::RenderPass GetIntermediateRenderPass() { return m_IntermediateRenderPass.get(); }
+		vk::RenderPass GetSceneRenderPass() { return m_sceneRenderPass.get(); }
 	private:
 		vk::UniqueRenderPass m_UIRenderPass;
 		vk::UniqueRenderPass m_presentToColorAttachment;

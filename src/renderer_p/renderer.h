@@ -9,7 +9,6 @@
 #include "renderer_p/post_process/bloom.h"
 
 namespace rfct {
-	constexpr vk::SampleCountFlagBits msaaSamples = vk::SampleCountFlagBits::e4;
 	class RfctRenderer {
 	public:
 		vk::Device& GetDevice() { return m_device.GetDevice(); }
@@ -32,12 +31,12 @@ namespace rfct {
 		void Render(frameContext& frameContext);
 		void SetObjectName(void* objectHandle, const std::string& name, vk::ObjectType objectType);
 	private:
-		bool m_uselessBool;
         RFCT_PLATFORM_WINDOW m_window;
 		RfctVulkanInstance m_instance;
 		RfctSurfaceWrapper m_surface;
 		RfctDevice m_device;
-		RfctVulkanMemAllocatorWrapper m_allocator;
+		RfctQueue m_queue;
+		RfctVulkanMemAllocator m_allocator;
 		RfctSwapChain m_swapChain;
 		renderImagesManager m_renderImages;
 		framesInFlight m_framesInFlight;

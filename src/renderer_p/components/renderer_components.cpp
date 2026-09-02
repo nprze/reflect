@@ -397,22 +397,33 @@ void rfct::RfctSwapChain::RecreateSwapChain(vk::PhysicalDevice physicalDevice, v
 	CreateSwapChain(physicalDevice, device, surface);
 }
 
-uint32_t rfct::RfctSwapChain::AcquireNextImage(const vk::Semaphore& semaphore, vk::Fence fence, vk::PhysicalDevice physicalDevice, vk::Device device, vk::SurfaceKHR surface) {
+rfct::RfctSwapChain::RfctAcquireNextImageResult rfct::RfctSwapChain::AcquireNextImage(const vk::Semaphore& semaphore, vk::Fence fence, vk::PhysicalDevice physicalDevice, vk::Device device, vk::SurfaceKHR surface) {
 	RFCT_PROFILE_FUNCTION();
+	rfct::RfctSwapChain::RfctAcquireNextImageResult result = {};
 	if (framebufferResized) {
 		RecreateSwapChain(physicalDevice, device, surface);
 		framebufferResized = false;
+		result.needsRecreation = true;
+		return result;
 	}
 	auto acquireImageResult = device.acquireNextImageKHR(m_swapChain.get(), UINT64_MAX, semaphore, fence);
-	if (RFCT_VULKAN_SOFT_CHECK(acquireImageResult)) return acquireImageResult.value;
+	if (RFCT_VULKAN_SOFT_CHECK(acquireImageResult)) {
+		result.internalResult = acquireImageResult.result;
+		result.imageIndex = acquireImageResult.value;
+		return result;
+	}
 	if (acquireImageResult.result == vk::Result::eErrorOutOfDateKHR) {
 		RecreateSwapChain(physicalDevice, device, surface);
-		return -1;
+		result.suboptimal = true;
+		result.imageIndex = acquireImageResult.value;
+		return result;
 	}
 	if (acquireImageResult.result == vk::Result::eSuboptimalKHR) {
 		RFCT_WARN("Swap chain is suboptimal, recreating...");
 		RecreateSwapChain(physicalDevice, device, surface);
-		return -1;
+		result.suboptimal = true;
+		result.imageIndex = acquireImageResult.value;
+		return result;
 	}
 	RFCT_CRITICAL("unknown error ocurred when acquiring next image. Result code: {}", acquireImageResult.result);
 }
@@ -431,7 +442,7 @@ void rfct::RfctSurfaceWrapper::DestroySurface(vk::Instance instance) {
 	m_surface = nullptr;
 }
 
-rfct::RfctVulkanMemAllocatorWrapper::RfctVulkanMemAllocatorWrapper(vk::PhysicalDevice physicalDevice, vk::Device device, vk::Instance instance) {
+rfct::RfctVulkanMemAllocator::RfctVulkanMemAllocator(vk::PhysicalDevice physicalDevice, vk::Device device, vk::Instance instance) {
 #ifdef ANDROID_BUILD
 	VmaAllocatorCreateInfo allocatorCreateInfo = {};
 	allocatorCreateInfo.physicalDevice = physicalDevice;
@@ -458,6 +469,6 @@ rfct::RfctVulkanMemAllocatorWrapper::RfctVulkanMemAllocatorWrapper(vk::PhysicalD
 #endif
 }
 
-rfct::RfctVulkanMemAllocatorWrapper::~RfctVulkanMemAllocatorWrapper() {
+rfct::RfctVulkanMemAllocator::~RfctVulkanMemAllocator() {
 	vmaDestroyAllocator(m_allocator);
 }

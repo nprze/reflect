@@ -10,7 +10,7 @@ namespace rfct {
 	};
 	struct bloomSamplerHolder {
 		vk::UniqueSampler m_sampler;
-		bloomSamplerHolder();
+		bloomSamplerHolder(vk::Device device);
 	};
 	struct gaussianPushConstants {
 		glm::vec2 dir;
@@ -31,7 +31,7 @@ namespace rfct {
 	};
 	class bloomResurcesHolder {
 	public:
-		bloomResurcesHolder(vk::RenderPass renderPass);
+		bloomResurcesHolder(RfctQueue& queue, vk::RenderPass renderPass, vk::Device device);
 		void updateDescSets();
 		void blum(frameContext* ctx, frameData& fd, vk::RenderPass renderPass, uint32_t imageIndex);
 		void recordCommandBuffer(vk::CommandBuffer commandBuffer, vk::RenderPass renderPass, uint32_t imageIndex, uint32_t swapchainImage);

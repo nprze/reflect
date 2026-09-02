@@ -2,14 +2,16 @@
 #include "context.h"
 #include "renderer_p/descriptors/ubo.h"
 #include "renderer_p/descriptors/camera_descriptors.h"
+#include <vulkan/vulkan.hpp>
 
 namespace rfct {
+	class RfctVulkanMemAllocator;
     class frameData {
     public:
-        frameData(vk::Device device, VmaAllocator& allocator, vk::Fence lastFramePresentFinishedFence, vk::Fence thisFramePresentFinishedFence);
+        frameData(RfctVulkanMemAllocator& allocatorWrapper, RfctQueue& queue, vk::Device device, vk::Fence lastFramePresentFinishedFence, vk::Fence thisFramePresentFinishedFence);
 		void prepareFrame(const frameContext& ctx, uint32_t BufferIndex, float changeSceneEffectMultiplier);
-        void waitForFences();
-        void resetFences();
+        void WaitForFences(vk::Device device);
+        void ResetFences(vk::Device device);
 		vk::DescriptorSet& getCameraUboDescSet(uint32_t BufferIndex) { return m_descriptors.getCameraDescSet(BufferIndex); }
 		vk::DescriptorSet& getUICameraUboDescSet() { return m_UIcameradescriptors.getCameraDescSet(0); }
         vk::SubmitInfo sceneSubmitInfo(const frameContext& ctx) const;

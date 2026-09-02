@@ -7,14 +7,14 @@
 #include "world_p/player/player_animations.h"
 #include "world_p/objects/objects.h"
 
-rfct::vulkanRasterizerPipeline::vulkanRasterizerPipeline(vk::RenderPass renderPass) 
+rfct::vulkanRasterizerPipeline::vulkanRasterizerPipeline(vk::RenderPass renderPass, vk::Device device)
     : m_vertexShader("shaders/basic/basic_vert.spv"), 
     m_fragShader("shaders/basic/basic_frag.spv") {
     RFCT_PROFILE_FUNCTION();
-	createPipeline(renderPass);
+	CreatePipeline(renderPass, device);
 }
 
-void rfct::vulkanRasterizerPipeline::createPipeline(vk::RenderPass renderPass) {
+void rfct::vulkanRasterizerPipeline::CreatePipeline(vk::RenderPass renderPass, vk::Device device) {
     RFCT_PROFILE_FUNCTION();
     // Shaders
     vk::PipelineShaderStageCreateInfo vertShaderStageInfo = {};
@@ -55,7 +55,7 @@ void rfct::vulkanRasterizerPipeline::createPipeline(vk::RenderPass renderPass) {
 
     // Multisample State
     vk::PipelineMultisampleStateCreateInfo multisampling = {};
-    multisampling.rasterizationSamples = msaaSamples;
+    multisampling.rasterizationSamples = vk::SampleCountFlagBits::e4;
     multisampling.sampleShadingEnable = VK_FALSE;
 
     // Color Blend State
@@ -94,7 +94,7 @@ void rfct::vulkanRasterizerPipeline::createPipeline(vk::RenderPass renderPass) {
     pipelineLayoutInfo.setLayoutCount = 2;
     vk::DescriptorSetLayout dscSetLayouts[] = { ubo::getDescriptorSetLayout(), renderData::getDescriptorSetLayout() };
     pipelineLayoutInfo.pSetLayouts = dscSetLayouts;
-    m_pipelineLayout = renderer::getRen().getDevice().createPipelineLayoutUnique(pipelineLayoutInfo);
+    m_pipelineLayout = device.createPipelineLayoutUnique(pipelineLayoutInfo).value;
 
     vk::PipelineViewportStateCreateInfo viewportState = {};
     viewportState.viewportCount = 1;
@@ -116,10 +116,10 @@ void rfct::vulkanRasterizerPipeline::createPipeline(vk::RenderPass renderPass) {
     pipelineInfo.renderPass = renderPass;
     pipelineInfo.subpass = 0;
 
-    m_graphicsPipeline = renderer::getRen().getDevice().createGraphicsPipelineUnique({}, pipelineInfo).value;
+    m_graphicsPipeline = device.createGraphicsPipelineUnique({}, pipelineInfo).value;
 }
 
-void rfct::vulkanRasterizerPipeline::recordCommandBuffer(frameContext* ctx, frameData& frameData, vk::Framebuffer framebuffer, vk::RenderPass renderPass) {
+void rfct::vulkanRasterizerPipeline::RecordCommandBuffer(frameContext* ctx, RfctSwapChain& swapChainWrapper, frameData& frameData, vk::Framebuffer framebuffer, vk::RenderPass renderPass) {
     RFCT_PROFILE_FUNCTION();
     const renderData& renderdata = ctx->scene->getRenderData();
     vk::CommandBuffer commandBuffer = frameData.m_sceneCommandBuffer.get();
@@ -135,7 +135,7 @@ void rfct::vulkanRasterizerPipeline::recordCommandBuffer(frameContext* ctx, fram
     renderPassInfo.renderPass = renderPass;
     renderPassInfo.framebuffer = framebuffer;
     renderPassInfo.renderArea.offset = vk::Offset2D{ 0, 0 };
-    renderPassInfo.renderArea.extent = rfct::renderer::getRen().getRenderImagesManager().getSwapChain().getExtent();
+    renderPassInfo.renderArea.extent = swapChainWrapper.GetExtent();
     renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
     renderPassInfo.pClearValues = clearValues.data();
 

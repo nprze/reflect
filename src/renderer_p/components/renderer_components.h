@@ -31,8 +31,8 @@ namespace rfct {
 
 	class RfctQueue {
 	public:
-		vk::Queue getPresentQueue() { return m_graphicsQueue; }
-		uint32_t getGraphicsQueueFamilyIndex() { return m_graphicsQueueFamilyIndex; }
+		vk::Queue GetPresentQueue() { return m_graphicsQueue; }
+		uint32_t GetGraphicsQueueFamilyIndex() { return m_graphicsQueueFamilyIndex; }
 	public:
 		RfctQueue(vk::Device device, vk::PhysicalDevice physicalDevice, vk::SurfaceKHR surface);
 		void SubmitGraphics(const vk::SubmitInfo& submitInfo, vk::Fence fence = nullptr); // submit only on main thread
@@ -44,6 +44,13 @@ namespace rfct {
 
 	class RfctSwapChain {
 	public:
+		struct RfctAcquireNextImageResult {
+			bool Succeeded() { return internalResult == vk::Result::eSuccess; }
+			bool needsRecreation : 1 = false;
+			bool suboptimal : 1 = false;
+			vk::Result internalResult;
+			uint32_t imageIndex;
+		};
 		vk::SwapchainKHR GetSwapChain() { return m_swapChain.get(); }
 		vk::SurfaceFormatKHR GetSurfaceFormat() { return m_surfaceFormat; }
 		vk::Extent2D GetExtent() { return m_swapChainExtent; }
@@ -51,7 +58,7 @@ namespace rfct {
 		RfctSwapChain(vk::PhysicalDevice physicalDevice, vk::Device device, vk::SurfaceKHR surface);
 		void CreateSwapChain(vk::PhysicalDevice physicalDevice, vk::Device device, vk::SurfaceKHR surface);
 		void RecreateSwapChain(vk::PhysicalDevice physicalDevice, vk::Device device, vk::SurfaceKHR surface);
-		uint32_t AcquireNextImage(const vk::Semaphore& semaphore, vk::Fence fence, vk::PhysicalDevice physicalDevice, vk::Device device, vk::SurfaceKHR surface); // will recreate swapchain if unoptimal
+		RfctAcquireNextImageResult AcquireNextImage(const vk::Semaphore& semaphore, vk::Fence fence, vk::PhysicalDevice physicalDevice, vk::Device device, vk::SurfaceKHR surface); // will recreate swapchain if unoptimal
 	public:
 		bool framebufferResized = false;
 	private:
@@ -73,12 +80,12 @@ namespace rfct {
 	};
 
 	// vma is static on windows, dynamic on android (requires different setups).
-	class RfctVulkanMemAllocatorWrapper {
+	class RfctVulkanMemAllocator {
 	public:
 		VmaAllocator& GetAllocator() { return m_allocator; }
 	public:
-		RfctVulkanMemAllocatorWrapper(vk::PhysicalDevice physicalDevice, vk::Device device, vk::Instance instance);
-		~RfctVulkanMemAllocatorWrapper();
+		RfctVulkanMemAllocator(vk::PhysicalDevice physicalDevice, vk::Device device, vk::Instance instance);
+		~RfctVulkanMemAllocator();
 	private:
 		VmaAllocator m_allocator;
 	};

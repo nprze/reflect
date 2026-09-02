@@ -96,7 +96,7 @@ void rfct::UIPipelines::createPipeline(vk::RenderPass renderPass)  {
     pipelineLayoutInfo.setLayoutCount = 2;
     vk::DescriptorSetLayout dscSetLayouts[] = { ubo::getDescriptorSetLayout(), getDescriptorSetLayout() };
     pipelineLayoutInfo.pSetLayouts = dscSetLayouts;
-    m_PipelineLayout = renderer::getRen().getDevice().createPipelineLayoutUnique(pipelineLayoutInfo);
+    m_PipelineLayout = RfctRenderer::getRen().getDevice().createPipelineLayoutUnique(pipelineLayoutInfo);
 
 
     vk::PipelineViewportStateCreateInfo viewportState = {};
@@ -119,7 +119,7 @@ void rfct::UIPipelines::createPipeline(vk::RenderPass renderPass)  {
     pipelineInfo.renderPass = renderPass;
     pipelineInfo.subpass = 0;
 
-    m_pipeline = renderer::getRen().getDevice().createGraphicsPipelineUnique({}, pipelineInfo).value;
+    m_pipeline = RfctRenderer::getRen().getDevice().createGraphicsPipelineUnique({}, pipelineInfo).value;
 
     // Image Pipeline (for dialogues)
     vk::PipelineShaderStageCreateInfo newvertShaderStageInfo = {};
@@ -137,7 +137,7 @@ void rfct::UIPipelines::createPipeline(vk::RenderPass renderPass)  {
 
     pipelineInfo.pStages = newshaderStages.data();
 
-    m_imagePipeline = renderer::getRen().getDevice().createGraphicsPipelineUnique({}, pipelineInfo).value;
+    m_imagePipeline = RfctRenderer::getRen().getDevice().createGraphicsPipelineUnique({}, pipelineInfo).value;
 }
 
 void rfct::UIPipelines::createDescriptorSet() {
@@ -154,7 +154,7 @@ void rfct::UIPipelines::createDescriptorSet() {
         &poolSize
     );
 
-    m_DescriptorPool = renderer::getRen().getDevice().createDescriptorPoolUnique(poolCreateInfo);
+    m_DescriptorPool = RfctRenderer::getRen().getDevice().createDescriptorPoolUnique(poolCreateInfo);
 
     vk::DescriptorSetLayout dsLayout = getDescriptorSetLayout();
 
@@ -164,7 +164,7 @@ void rfct::UIPipelines::createDescriptorSet() {
         &dsLayout
     );
 
-    m_DescriptorSet = std::move(renderer::getRen().getDevice().allocateDescriptorSetsUnique(allocInfo)[0]);
+    m_DescriptorSet = std::move(RfctRenderer::getRen().getDevice().allocateDescriptorSetsUnique(allocInfo)[0]);
 	m_textureIndexMap.reserve(RFCT_UI_TEXTURE_BINDINGS);
 }
 
@@ -182,7 +182,7 @@ void rfct::UIPipelines::draw(frameData& fd, vk::Framebuffer framebuffer, vk::Ren
     renderPassInfo.renderPass = renderPass;
     renderPassInfo.framebuffer = framebuffer;
     renderPassInfo.renderArea.offset = vk::Offset2D{ 0, 0 };
-    renderPassInfo.renderArea.extent = rfct::renderer::getRen().getRenderImagesManager().getSwapChain().getExtent();
+    renderPassInfo.renderArea.extent = rfct::RfctRenderer::getRen().getRenderImagesManager().getSwapChain().getExtent();
     renderPassInfo.clearValueCount = 0;
     renderPassInfo.pClearValues = VK_NULL_HANDLE;
 
@@ -191,15 +191,15 @@ void rfct::UIPipelines::draw(frameData& fd, vk::Framebuffer framebuffer, vk::Ren
     vk::Viewport viewport = {};
     viewport.x = 0.0f;
     viewport.y = 0.0f;
-    viewport.width = static_cast<float>(rfct::renderer::getRen().getRenderImagesManager().getSwapChain().getExtent().width);
-    viewport.height = static_cast<float>(rfct::renderer::getRen().getRenderImagesManager().getSwapChain().getExtent().height);
+    viewport.width = static_cast<float>(rfct::RfctRenderer::getRen().getRenderImagesManager().getSwapChain().getExtent().width);
+    viewport.height = static_cast<float>(rfct::RfctRenderer::getRen().getRenderImagesManager().getSwapChain().getExtent().height);
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
     commandBuffer.setViewport(0, viewport);
 
     vk::Rect2D scissor = {};
     scissor.offset = vk::Offset2D{ 0, 0 };
-    scissor.extent = rfct::renderer::getRen().getRenderImagesManager().getSwapChain().getExtent();
+    scissor.extent = rfct::RfctRenderer::getRen().getRenderImagesManager().getSwapChain().getExtent();
     commandBuffer.setScissor(0, scissor);
 
 
@@ -248,8 +248,8 @@ float rfct::UIPipelines::debugText(const std::string& text, glm::vec2 startPosit
 void rfct::UIPipelines::beginAddingTriangles() {
     m_BufferMappedMemory = (char*)m_UIVertexBuffer.buffer.Map();
 
-    widthFactor = static_cast<float>(rfct::renderer::getRen().getRenderImagesManager().getSwapChain().getExtent().width);
-    heightFactor = static_cast<float>(rfct::renderer::getRen().getRenderImagesManager().getSwapChain().getExtent().height);
+    widthFactor = static_cast<float>(rfct::RfctRenderer::getRen().getRenderImagesManager().getSwapChain().getExtent().width);
+    heightFactor = static_cast<float>(rfct::RfctRenderer::getRen().getRenderImagesManager().getSwapChain().getExtent().height);
 }
 
 void rfct::UIPipelines::addTriangleNormalized(const glm::vec2& vec0, const glm::vec2& vec1, const glm::vec2& vec2, const glm::vec3& color, opacity op) {
@@ -356,7 +356,7 @@ int rfct::UIPipelines::getTextureIndex(bindableImage* image, imageUsage usage) {
     writeDescriptorSet.descriptorCount = RFCT_UI_TEXTURE_BINDINGS;
     writeDescriptorSet.pImageInfo = imageInfo;
     
-    renderer::getRen().getDevice().updateDescriptorSets({ writeDescriptorSet }, nullptr);
+    RfctRenderer::getRen().getDevice().updateDescriptorSets({ writeDescriptorSet }, nullptr);
 
     return indexInShader;
 }
@@ -428,7 +428,7 @@ void rfct::UIPipelines::removeImage(bindableImage* image) {
 float rfct::UIPipelines::addTextVertices(UIVertexBuffer* rd, const std::string& text, glm::vec2 position, float scale, const glm::vec3& color, font* f) {
     RFCT_PROFILE_FUNCTION();
     if (!f) f = &m_defaultFont;
-    vk::Extent2D windowExtent = renderer::getRen().getWindow().getExtent();
+    vk::Extent2D windowExtent = RfctRenderer::getRen().getWindow().getExtent();
     
 	int textureIndexInShader = getTextureIndex(&f->m_TextureAtlas, imageUsage::fontAtlas);
 
@@ -495,7 +495,7 @@ vk::DescriptorSetLayout rfct::UIPipelines::getDescriptorSetLayout() {
     layoutCreateInfo.bindingCount = 1;
     layoutCreateInfo.pBindings = &layoutBinding;
 
-    m_descriptorSetLayout = renderer::getRen().getDevice().createDescriptorSetLayoutUnique(layoutCreateInfo);
+    m_descriptorSetLayout = RfctRenderer::getRen().getDevice().createDescriptorSetLayoutUnique(layoutCreateInfo);
 
     return m_descriptorSetLayout.get();
 

@@ -17,19 +17,21 @@ rfct::RfctRenderer::RfctRenderer(RFCT_RENDERER_ARGUMENTS)
     m_instance(), 
     m_surface(m_window.CreateSurface(m_instance.GetInstance())),
     m_device(m_instance.GetInstance(), m_surface.GetSurface()), 
+    m_queue(m_device.GetDevice(), m_device.GetPhysicalDevice(), m_surface.GetSurface()),
     m_allocator(m_device.GetPhysicalDevice(), m_device.GetDevice(), m_instance.GetInstance()),
 	m_swapChain(m_device.GetPhysicalDevice(), m_device.GetDevice(), m_surface.GetSurface()),
-    m_renderImages(),
-    m_rasterizerPipeline(m_renderImages.getSceneRenderPass()), 
-    m_framesInFlight(), 
-    m_bloomRes(m_renderImages.getIntermediateRenderPass()),
-    m_debugDraw(m_renderImages.getIntermediateRenderPass()),
-    m_UIPipeline(m_renderImages.getUIRenderPass())
+    m_renderImages(m_device, m_queue, m_allocator, m_swapChain),
+    m_framesInFlight(m_allocator, m_queue, m_device.GetDevice()), 
+    m_rasterizerPipeline(m_renderImages.GetSceneRenderPass(), m_device.GetDevice()), 
+    m_bloomRes(m_renderImages.GetIntermediateRenderPass()),
+    m_debugDraw(m_renderImages.GetIntermediateRenderPass()),
+    m_UIPipeline(m_renderImages.GetUIRenderPass())
 {
 }
 
 rfct::RfctRenderer::~RfctRenderer() {
-    cleanupAssetsCommandPool();
+	// TODO: do cleanup (probably want to move to separate function ?) 
+    //cleanupAssetsCommandPool();
 };
 
 void rfct::RfctRenderer::UpdateWindow(RFCT_NATIVE_WINDOW_ANDROID RFCT_NATIVE_WINDOW_ANDROID_VAR) {
@@ -53,35 +55,39 @@ void rfct::RfctRenderer::Render(frameContext& frameContext) {
 	frameData& frameData = m_framesInFlight.getNextFrame(frameContext.frame);
     {
         RFCT_PROFILE_SCOPE("fences wait");
-        frameData.waitForFences();
+        frameData.WaitForFences(m_device.GetDevice());
     }
 
     uint32_t imageIndex;
     {
         RFCT_PROFILE_SCOPE("get sawpchain image");
-        imageIndex = m_renderImages.acquireNextImage(frameData.m_ImageAvaibleSemaphore.get(), VK_NULL_HANDLE);
+        rfct::RfctSwapChain::RfctAcquireNextImageResult acquireImageResult = m_swapChain.AcquireNextImage(frameData.m_ImageAvaibleSemaphore.get(), VK_NULL_HANDLE,
+            m_device.GetPhysicalDevice(), m_device.GetDevice(), m_surface.GetSurface());
 
+		RFCT_ASSERT(acquireImageResult.Succeeded(), "Failed to acquire swapchain image!");
+        // createResources();
+        // RfctRenderer::getRen().getBloomRes().onSwapchainExtentChanged();
         if (imageIndex == -1)
         {
             return;
         }
     }
-    frameData.resetFences();
+    frameData.ResetFences(m_device.GetDevice());
     frameData.prepareFrame(frameContext, frameContext.frame, world::getWorld().changeSceneEffectMultiplier);
     {
         RFCT_PROFILE_SCOPE("command buffers record");
         auto jobs = std::make_shared<rfct::jobTracker>();
         jobSystem::get().KickJob([&]() {
-            m_rasterizerPipeline.recordCommandBuffer(&frameContext, frameData, m_renderImages.getSceneFrameBuffer(frameContext.frame), m_renderImages.getSceneRenderPass());
+            m_rasterizerPipeline.RecordCommandBuffer(&frameContext, m_swapChain, frameData, m_renderImages.GetSceneFrameBuffer(frameContext.frame), m_renderImages.GetSceneRenderPass());
             }, *jobs);
         jobSystem::get().KickJob([&]() {
-            m_bloomRes.blum(&frameContext, frameData, m_renderImages.getIntermediateClearRenderPass(), imageIndex);
+            m_bloomRes.blum(&frameContext, frameData, m_renderImages.GetIntermediateClearRenderPass(), imageIndex);
             }, *jobs);
         jobSystem::get().KickJob([&]() {
-            debugDraw::flush(&frameContext, frameData, m_renderImages.getSwapChainFrameBuffer(imageIndex), m_renderImages.getIntermediateRenderPass());
+            debugDraw::flush(&frameContext, frameData, m_renderImages.GetSwapChainFrameBuffer(imageIndex), m_renderImages.GetIntermediateRenderPass());
             }, *jobs);
         jobSystem::get().KickJob([&]() {
-            m_UIPipeline.draw(frameData, m_renderImages.getSwapChainFrameBuffer(imageIndex), m_renderImages.getUIRenderPass());
+            m_UIPipeline.draw(frameData, m_renderImages.GetSwapChainFrameBuffer(imageIndex), m_renderImages.GetUIRenderPass());
             }, *jobs);
         jobs->waitAll();
     }
@@ -91,43 +97,42 @@ void rfct::RfctRenderer::Render(frameContext& frameContext) {
 
         vk::SubmitInfo sceneSubmitInfo = frameData.sceneSubmitInfo(frameContext);
         sceneSubmitInfo.pWaitDstStageMask = waitStages;
-        RfctRenderer::getRen().getDeviceWrapper().GetQueue().submitGraphics(sceneSubmitInfo);
+        m_queue.SubmitGraphics(sceneSubmitInfo);
 
         vk::SubmitInfo bloomSubmitInfo = frameData.bloomSubmitInfo(frameContext);
         bloomSubmitInfo.pWaitDstStageMask = waitStages;
-        RfctRenderer::getRen().getDeviceWrapper().GetQueue().submitGraphics(bloomSubmitInfo);
-
+        m_queue.SubmitGraphics(bloomSubmitInfo);
         if (frameContext.renderDebugDraw) 
         {
             vk::SubmitInfo debugDrawSubmitInfo = frameData.debugDrawSubmitInfo(frameContext);
             debugDrawSubmitInfo.pWaitDstStageMask = waitStages;
-            RfctRenderer::getRen().getDeviceWrapper().GetQueue().submitGraphics(debugDrawSubmitInfo);
+            m_queue.SubmitGraphics(debugDrawSubmitInfo);
         }
 
         vk::SubmitInfo uiSubmitInfo = frameData.uiSubmitInfo(frameContext);
         uiSubmitInfo.pWaitDstStageMask = waitStages;
-         RfctRenderer::getRen().getDeviceWrapper().GetQueue().submitGraphics(uiSubmitInfo, frameData.m_thisFrameRenderFinishedFence);
+        m_queue.SubmitGraphics(uiSubmitInfo, frameData.m_thisFrameRenderFinishedFence);
     }
     {
         RFCT_PROFILE_SCOPE("image present");
         vk::PresentInfoKHR presentInfo{};
         presentInfo.sType = vk::StructureType::ePresentInfoKHR;
 
-        RFCT_VULKAN_CHECK(m_device.getDevice().waitForFences(1, &frameData.m_thisFrameRenderFinishedFence, VK_TRUE, UINT64_MAX));
+        RFCT_VULKAN_CHECK(m_device.GetDevice().waitForFences(1, &frameData.m_thisFrameRenderFinishedFence, VK_TRUE, UINT64_MAX));
 
         presentInfo.waitSemaphoreCount = 1;
         const vk::Semaphore& sem = frameData.m_renderFinishedSemaphore.get();
         presentInfo.pWaitSemaphores = &sem;
 
         presentInfo.swapchainCount = 1;
-        vk::SwapchainKHR sc =  m_renderImages.getSwapChain().getSwapChain();
+        vk::SwapchainKHR sc =  m_swapChain.GetSwapChain();
         presentInfo.pSwapchains = &sc;
         presentInfo.pImageIndices = &imageIndex;
         presentInfo.pResults = nullptr;
 
-        vk::Result presRes = m_device.GetQueue().getPresentQueue().presentKHR(&presentInfo);
+        vk::Result presRes = m_device.GetQueue().GetPresentQueue().presentKHR(&presentInfo);
         if (presRes == vk::Result::eSuboptimalKHR){
-            getRenderImagesManager().getSwapChain().framebufferResized = true;
+            m_swapChain.framebufferResized = true;
             RFCT_INFO("recreation needed");
         }else{
             if (presRes != vk::Result::eSuccess){
@@ -141,7 +146,7 @@ void rfct::RfctRenderer::Render(frameContext& frameContext) {
 void rfct::RfctRenderer::SetObjectName(void* objectHandle, const std::string& name, vk::ObjectType objectType) {
     RFCT_PROFILE_FUNCTION();
 #ifndef RFCT_VULKAN_DEBUG_OFF
-    if (!m_instance.getDynamicLoader().vkSetDebugUtilsObjectNameEXT) {
+    if (!m_instance.GetDynamicLoader().vkSetDebugUtilsObjectNameEXT) {
         RFCT_CRITICAL("Failed to load vkSetDebugUtilsObjectNameEXT!");
     }
 
@@ -150,6 +155,6 @@ void rfct::RfctRenderer::SetObjectName(void* objectHandle, const std::string& na
     nameInfo.objectHandle = (uintptr_t)(objectHandle);
     nameInfo.pObjectName = name.c_str();
 
-    m_device.getDevice().setDebugUtilsObjectNameEXT(nameInfo, m_instance.getDynamicLoader());
+    m_device.GetDevice().setDebugUtilsObjectNameEXT(nameInfo, m_instance.GetDynamicLoader());
 #endif // RFCT_VULKAN_DEBUG_OFF
 }

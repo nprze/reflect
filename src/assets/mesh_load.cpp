@@ -32,7 +32,7 @@ void rfct::uploadVertices(const std::vector<Vertex>& vertices, VulkanBuffer* buf
     VmaAllocation stagingBufferAllocation;
 
     if (vmaCreateBuffer(
-        renderer::getRen().getAllocator(),
+        RfctRenderer::getRen().getAllocator(),
         &stagingBufferInfo,
         &stagingAllocInfo,
         &stagingBuffer,
@@ -43,9 +43,9 @@ void rfct::uploadVertices(const std::vector<Vertex>& vertices, VulkanBuffer* buf
     }
 
     void* data;
-    vmaMapMemory(renderer::getRen().getAllocator(), stagingBufferAllocation, &data);
+    vmaMapMemory(RfctRenderer::getRen().getAllocator(), stagingBufferAllocation, &data);
     memcpy(data, vertices.data(), (size_t)bufferSize);
-    vmaUnmapMemory(renderer::getRen().getAllocator(), stagingBufferAllocation);
+    vmaUnmapMemory(RfctRenderer::getRen().getAllocator(), stagingBufferAllocation);
 
     vk::CommandBufferAllocateInfo allocInfo;
     allocInfo.commandPool = getAssetsCommandPool();
@@ -53,7 +53,7 @@ void rfct::uploadVertices(const std::vector<Vertex>& vertices, VulkanBuffer* buf
     allocInfo.commandBufferCount = 1;
 
     vk::CommandBuffer commandBuffer;
-    RFCT_VULKAN_CHECK(renderer::getRen().getDevice().allocateCommandBuffers(&allocInfo, &commandBuffer));
+    RFCT_VULKAN_CHECK(RfctRenderer::getRen().getDevice().allocateCommandBuffers(&allocInfo, &commandBuffer));
 
     vk::CommandBufferBeginInfo beginInfo;
     beginInfo.flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit;
@@ -76,11 +76,11 @@ void rfct::uploadVertices(const std::vector<Vertex>& vertices, VulkanBuffer* buf
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &commandBuffer;
 
-    renderer::getRen().getDeviceWrapper().GetQueue().getPresentQueue().submit(submitInfo);
-    renderer::getRen().getDeviceWrapper().GetQueue().getPresentQueue().waitIdle();
+    RfctRenderer::getRen().getDeviceWrapper().GetQueue().getPresentQueue().submit(submitInfo);
+    RfctRenderer::getRen().getDeviceWrapper().GetQueue().getPresentQueue().waitIdle();
 
-    vmaDestroyBuffer(renderer::getRen().getAllocator(), stagingBuffer, stagingBufferAllocation);
-    renderer::getRen().getDevice().freeCommandBuffers(getAssetsCommandPool(), commandBuffer);
+    vmaDestroyBuffer(RfctRenderer::getRen().getAllocator(), stagingBuffer, stagingBufferAllocation);
+    RfctRenderer::getRen().getDevice().freeCommandBuffers(getAssetsCommandPool(), commandBuffer);
 }
 
 void rfct::loadBuildingBlockMesh(const std::string& path, std::vector<Vertex>* meshOut, const glm::vec3& color, const glm::vec2& size) {

@@ -3,7 +3,7 @@
 
 rfct::VulkanBuffer::VulkanBuffer(const char* name, vk::DeviceSize size, vk::BufferUsageFlags usage, VmaMemoryUsage memoryUsage, VkMemoryPropertyFlags requiredFlags, VmaAllocationCreateFlags allocFlags) {
 	RFCT_PROFILE_FUNCTION();
-    VmaAllocator allocator = renderer::getRen().getAllocator();
+    VmaAllocator allocator = RfctRenderer::getRen().getAllocator();
     VkBufferCreateInfo bufferCreateInfo{};
     bufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
     bufferCreateInfo.size = size;
@@ -45,12 +45,12 @@ rfct::VulkanBuffer& rfct::VulkanBuffer::operator=(VulkanBuffer&& bffr) noexcept 
 
 void rfct::VulkanBuffer::cleanupBuffer() {
     RFCT_PROFILE_FUNCTION();
-    VmaAllocator allocator = renderer::getRen().getAllocator();
+    VmaAllocator allocator = RfctRenderer::getRen().getAllocator();
     if (allocation) vmaDestroyBuffer(allocator, static_cast<VkBuffer>(buffer), allocation);
 }
 
 void* rfct::VulkanBuffer::Map() {
-    VmaAllocator allocator = renderer::getRen().getAllocator();
+    VmaAllocator allocator = RfctRenderer::getRen().getAllocator();
     
     void* m_mappedData = nullptr;
     VkResult res = vmaMapMemory(allocator, allocation, &m_mappedData);
@@ -61,7 +61,7 @@ void* rfct::VulkanBuffer::Map() {
 }
 
 void rfct::VulkanBuffer::Unmap() {
-    VmaAllocator allocator = renderer::getRen().getAllocator();
+    VmaAllocator allocator = RfctRenderer::getRen().getAllocator();
     vmaUnmapMemory(allocator, allocation);
 }
 
