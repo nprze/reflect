@@ -400,6 +400,7 @@ void rfct::RfctSwapChain::RecreateSwapChain(vk::PhysicalDevice physicalDevice, v
 rfct::RfctSwapChain::RfctAcquireNextImageResult rfct::RfctSwapChain::AcquireNextImage(const vk::Semaphore& semaphore, vk::Fence fence, vk::PhysicalDevice physicalDevice, vk::Device device, vk::SurfaceKHR surface) {
 	RFCT_PROFILE_FUNCTION();
 	rfct::RfctSwapChain::RfctAcquireNextImageResult result = {};
+	result.imageIndex = -1;
 	if (framebufferResized) {
 		RecreateSwapChain(physicalDevice, device, surface);
 		framebufferResized = false;
@@ -425,7 +426,7 @@ rfct::RfctSwapChain::RfctAcquireNextImageResult rfct::RfctSwapChain::AcquireNext
 		result.imageIndex = acquireImageResult.value;
 		return result;
 	}
-	RFCT_CRITICAL("unknown error ocurred when acquiring next image. Result code: {}", acquireImageResult.result);
+	RFCT_CRITICAL("unknown error ocurred when acquiring next image. Result code: {}", static_cast<uint32_t>(acquireImageResult.result));
 }
 
 rfct::RfctSurfaceWrapper::RfctSurfaceWrapper(vk::SurfaceKHR surfaceArg) {

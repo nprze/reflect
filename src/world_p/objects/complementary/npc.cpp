@@ -42,12 +42,12 @@ namespace rfct {
         }
         if (!talkPopupVisible) return;
         glm::vec2 screenSpaceTextPos = getVPMatrix() * glm::vec4(talkPopupPosition.x, talkPopupPosition.y + 2.f, 0.f, 1.f);
-        vk::Extent2D winExtent = RfctRenderer::getRen().getWindow().getExtent();
+        vk::Extent2D winExtent = GetRen().GetExtent();
 		glm::vec2 appScreenSpacePos = (screenSpaceTextPos + glm::vec2(1.f, 1.f)) * 0.5f * glm::vec2(winExtent.width, winExtent.height);
-        font* defaultFont = RfctRenderer::getRen().getUIPipeline().getDefaultFont();
+        font* defaultFont = GetRen().GetUIPipeline().getDefaultFont();
         float width = defaultFont->getTextWidth("TALK", 0.055f * winExtent.height) * 0.5f;
 		appScreenSpacePos.x -= width;
-        RfctRenderer::getRen().getUIPipeline().addTextVerticesHeight(std::string("TALK"), appScreenSpacePos, 0.04f * winExtent.height, glm::vec3(1.f, 1.f, 1.f));
+        GetRen().GetUIPipeline().addTextVerticesHeight(std::string("TALK"), appScreenSpacePos, 0.04f * winExtent.height, glm::vec3(1.f, 1.f, 1.f));
     }
 
     void npcs::updateSystem(frameContext* ctx) {

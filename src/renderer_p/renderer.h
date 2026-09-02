@@ -20,6 +20,8 @@ namespace rfct {
 		vulkanRasterizerPipeline& GetRasterizerPipeline() { return m_rasterizerPipeline; }
 		bloomResurcesHolder& GetBloomRes() { return m_bloomRes; }
 		VmaAllocator& GetAllocator() { return m_allocator.GetAllocator(); }
+		RfctSwapChain& GetSwapChain() { return m_swapChain; }
+		RfctQueue& GetQueue() { return m_queue; }
 		vk::SurfaceKHR GetSurface() { return m_surface.GetSurface(); }
 		float GetAspectRatio() { return m_window.GetAspectRatio(); }
 		vk::Extent2D GetExtent() { return m_window.GetExtent(); }
@@ -31,6 +33,7 @@ namespace rfct {
 		void Render(frameContext& frameContext);
 		void SetObjectName(void* objectHandle, const std::string& name, vk::ObjectType objectType);
 	private:
+		bool m_uselessBool = false;
         RFCT_PLATFORM_WINDOW m_window;
 		RfctVulkanInstance m_instance;
 		RfctSurfaceWrapper m_surface;

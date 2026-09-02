@@ -24,5 +24,7 @@ namespace rfct {
     private:
         vk::Extent2D m_extent;
         GLFWwindow* m_window = nullptr;
+
+    friend class input;
     };
 }

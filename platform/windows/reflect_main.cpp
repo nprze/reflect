@@ -8,7 +8,7 @@ using namespace rfct;
 // entry point on windows
 int main() {
 	srand(static_cast<unsigned>(time(nullptr)));
-	rfct::setAssetsPath(std::string(""));
+	rfct::SetAssetsPath(std::string(""));
 	reflectApplication();
 	return 0;
 }

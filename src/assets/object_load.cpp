@@ -6,7 +6,7 @@
 void rfct::loadDialogue(const std::string& path, dialogueSerializeData* dialogueSerializedDataOut) {
     RFCT_PROFILE_FUNCTION();
     std::ifstream file;
-    if (!openAssetFile(path, &file)) {
+    if (!OpenAssetFile(path, &file)) {
         RFCT_CRITICAL("Could not open file:  {}", path);
     }
     enum class ParseState { None, Participants, DialogueText };
@@ -91,7 +91,7 @@ void rfct::loadDialogue(const std::string& path, dialogueSerializeData* dialogue
 void rfct::loadDialogueSpriteSheet(const std::string& path, dialogueSpritesheetSerializeData* dialogueSpritesheetSerializedDataOut) {
     RFCT_PROFILE_FUNCTION();
     std::ifstream file;
-    if (!openAssetFile(path, &file)) {
+    if (!OpenAssetFile(path, &file)) {
         RFCT_CRITICAL("Could not open file:  {}", path);
     }
 

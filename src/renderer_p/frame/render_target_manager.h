@@ -4,6 +4,8 @@
 namespace rfct {
 	class RfctDevice;
 	class RfctQueue;
+	class RfctSwapChain;
+	class RfctVulkanMemAllocator;
 	// class designed to hold the framebuffers and images
 	class renderImagesManager {
 	public:

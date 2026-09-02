@@ -36,10 +36,10 @@ vk::DescriptorSetLayout rfct::ubo::getDescriptorSetLayout() {
     layoutCreateInfo.bindingCount = 1;
     layoutCreateInfo.pBindings = &layoutBinding;
 
-    uboDescriptorSetLayout = RfctRenderer::getRen().getDevice().createDescriptorSetLayout(layoutCreateInfo);
+    uboDescriptorSetLayout = GetRen().GetDevice().createDescriptorSetLayout(layoutCreateInfo).value;
 	return uboDescriptorSetLayout;
 }
 
 void rfct::ubo::destroyDescriptorSetLayout() {
-    RfctRenderer::getRen().getDevice().destroyDescriptorSetLayout(uboDescriptorSetLayout);
+    GetRen().GetDevice().destroyDescriptorSetLayout(uboDescriptorSetLayout);
 }

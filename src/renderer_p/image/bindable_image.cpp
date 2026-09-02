@@ -14,7 +14,7 @@ rfct::bindableImage::bindableImage(const std::string& path) :m_Image(path), m_na
     samplerCreateInfo.unnormalizedCoordinates = VK_FALSE;
     samplerCreateInfo.mipmapMode = vk::SamplerMipmapMode::eLinear;
 
-   m_sampler = RfctRenderer::getRen().getDevice().createSamplerUnique(samplerCreateInfo);
+   m_sampler = GetRen().GetDevice().createSamplerUnique(samplerCreateInfo).value;
    RFCT_INFO("created image {}", m_name);
 }
 

@@ -6,6 +6,7 @@
 #include "world_p/scene.h"
 #include "world_p/player/player_animations.h"
 #include "world_p/objects/objects.h"
+#include "renderer_p/components/renderer_components.h"
 
 rfct::vulkanRasterizerPipeline::vulkanRasterizerPipeline(vk::RenderPass renderPass, vk::Device device)
     : m_vertexShader("shaders/basic/basic_vert.spv"), 

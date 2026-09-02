@@ -4,6 +4,8 @@
 #include "renderer_p/frame/frame_data.h"
 
 namespace rfct {
+	class renderImagesManager;
+	class RfctSwapChain;
 	struct layoutTemporaryHolder {
 		vk::PipelineLayout pipeline;
 		vk::DescriptorSetLayout descSet;
@@ -18,7 +20,8 @@ namespace rfct {
 	};
 	class postprocPipeline {
 	public:
-		postprocPipeline(vk::RenderPass renderPass, vulkanShader* shaderRef, const std::string& fragmentShaderPath, layoutTemporaryHolder pipelineLayoutStuff); // the will be responsible for cleanup after pipelineLayout and descriptor set descSet
+		postprocPipeline(vk::Device device, vk::RenderPass renderPass, vulkanShader* shaderRef, 
+			const std::string& fragmentShaderPath, layoutTemporaryHolder pipelineLayoutStuff);
 		~postprocPipeline();
 	private:
 		vulkanShader* m_vertexShader;
@@ -31,11 +34,13 @@ namespace rfct {
 	};
 	class bloomResurcesHolder {
 	public:
-		bloomResurcesHolder(RfctQueue& queue, vk::RenderPass renderPass, vk::Device device);
-		void updateDescSets();
-		void blum(frameContext* ctx, frameData& fd, vk::RenderPass renderPass, uint32_t imageIndex);
-		void recordCommandBuffer(vk::CommandBuffer commandBuffer, vk::RenderPass renderPass, uint32_t imageIndex, uint32_t swapchainImage);
-		void onSwapchainExtentChanged();
+		bloomResurcesHolder(RfctQueue& queue, renderImagesManager& imageManager, vk::RenderPass renderPass, vk::Device device);
+		void updateDescSets(renderImagesManager& imageManager, vk::Device device);
+		void blum(frameContext* ctx, renderImagesManager& imageManager, RfctSwapChain& swapChain,
+			frameData& fd, vk::RenderPass renderPass, uint32_t imageIndex);
+		void recordCommandBuffer(renderImagesManager& imageManager, RfctSwapChain& swapChain,
+			vk::CommandBuffer commandBuffer, vk::RenderPass renderPass, uint32_t imageIndex, uint32_t swapchainImage);
+		void onSwapchainExtentChanged(renderImagesManager& imageManager, vk::Device device);
 	private:
 		vulkanShader vertexShader;
 		bloomSamplerHolder m_imageSampler;

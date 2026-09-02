@@ -1,5 +1,6 @@
 #pragma once
 #include <vulkan/vulkan.hpp>
+#include <vma/vk_mem_alloc.h>
 #include "platform_window.h"
 
 namespace rfct {
@@ -16,19 +17,6 @@ namespace rfct {
 		RFCT_VULKAN_LOADER_NAMESPACE::DispatchLoaderDynamic m_dynamicLoader;
 	};
 
-	class RfctDevice {
-	public:
-		vk::Device& GetDevice() { return m_device.get(); }
-		RfctQueue& GetQueue() { return m_queue; }
-		vk::PhysicalDevice& GetPhysicalDevice() { return m_physicalDevice; }
-	public:
-		RfctDevice(vk::Instance instance, vk::SurfaceKHR surface);
-	private:
-		vk::PhysicalDevice m_physicalDevice;
-		vk::UniqueDevice m_device;
-		RfctQueue m_queue;
-	};
-
 	class RfctQueue {
 	public:
 		vk::Queue GetPresentQueue() { return m_graphicsQueue; }
@@ -40,6 +28,19 @@ namespace rfct {
 		vk::Device m_device;
 		vk::Queue m_graphicsQueue;
 		uint32_t m_graphicsQueueFamilyIndex;
+	};
+
+	class RfctDevice {
+	public:
+		vk::Device& GetDevice() { return m_device.get(); }
+		RfctQueue& GetQueue() { return m_queue; }
+		vk::PhysicalDevice& GetPhysicalDevice() { return m_physicalDevice; }
+	public:
+		RfctDevice(vk::Instance instance, vk::SurfaceKHR surface);
+	private:
+		vk::PhysicalDevice m_physicalDevice;
+		vk::UniqueDevice m_device;
+		RfctQueue m_queue;
 	};
 
 	class RfctSwapChain {

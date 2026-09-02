@@ -3,6 +3,7 @@
 
 namespace rfct {
 	class renderData;
+	class RfctSwapChain;
 	class frameData;
 	class vulkanRasterizerPipeline
 	{

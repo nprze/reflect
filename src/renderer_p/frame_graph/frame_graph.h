@@ -1,4 +1,5 @@
 #pragma once
+/*
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -142,4 +143,4 @@ namespace rfct {
 		std::vector<ResourceEntry> m_entries;
 		ResourceHandle m_presentResource;
 	};
-}
+}*/

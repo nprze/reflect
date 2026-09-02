@@ -6,6 +6,7 @@
 
 namespace rfct {
 	class RfctVulkanMemAllocator;
+	class RfctQueue;
     class frameData {
     public:
         frameData(RfctVulkanMemAllocator& allocatorWrapper, RfctQueue& queue, vk::Device device, vk::Fence lastFramePresentFinishedFence, vk::Fence thisFramePresentFinishedFence);

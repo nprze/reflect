@@ -7,7 +7,7 @@ namespace rfct {
     vulkanShader::vulkanShader(const std::string& spirvFilePath) {
         RFCT_PROFILE_FUNCTION();
         std::ifstream file;
-        if (!openAssetFile(spirvFilePath, &file, std::ios::binary | std::ios::ate)) {
+        if (!OpenAssetFile(spirvFilePath, &file, std::ios::binary | std::ios::ate)) {
             RFCT_CRITICAL("Failed to open shader file: {}", spirvFilePath);
         }
         size_t fileSize = static_cast<size_t>(file.tellg());
@@ -21,6 +21,6 @@ namespace rfct {
         createInfo.setCodeSize(buffer.size());
         createInfo.setPCode(reinterpret_cast<const uint32_t*>(buffer.data()));
 
-        m_shaderModule = RfctRenderer::getRen().getDevice().createShaderModuleUnique(createInfo);
+        m_shaderModule = GetRen().GetDevice().createShaderModuleUnique(createInfo).value;
     }
 }

@@ -24,19 +24,19 @@ rfct::reflectApplication::reflectApplication(RFCT_APP_ARGS)
     }
 #ifdef WINDOWS_BUILD
     update();
-	RfctRenderer::getRen().getWindow().show();
-	while (RfctRenderer::getRen().getWindow().pollAndParseEvents())
+	GetRen().GetWindow().Show();
+	while (GetRen().GetWindow().PollAndParseEvents())
         update();
 #endif
 }
 
 rfct::reflectApplication::~reflectApplication() {
-    RfctRenderer::getRen().getDevice().waitIdle();
+    RFCT_VULKAN_CHECK(GetRen().GetDevice().waitIdle());
     cleanGameSystems();
 }
 
 void rfct::reflectApplication::updateWindow(RFCT_APP_ARGS) {
-    m_Renderer.updateWindow(RFCT_NATIVE_WINDOW_ANDROID_VAR);
+    m_Renderer.UpdateWindow(RFCT_NATIVE_WINDOW_ANDROID_VAR);
 };
 
 void rfct::reflectApplication::update() {
@@ -73,7 +73,7 @@ void rfct::reflectApplication::update() {
 
         jobSystem::get().KickJob([&]() {
                 RFCT_PROFILE_SCOPE("ui draw");
-                drawUI(&context);
+                drawUI(&context, GetRen().GetSwapChain());
 			}, context.wholeUpdateTracker);
 #ifdef ANDROID_BUILD
         jobSystem::get().KickJob([&]() {
@@ -87,7 +87,7 @@ void rfct::reflectApplication::update() {
             }, context.wholeUpdateTracker);
         context.wholeUpdateTracker.waitAll();
 
-        RfctRenderer::getRen().render(context);
+        GetRen().Render(context);
 
 		// check scene switch
         if (world::getWorld().switchingScenes) {

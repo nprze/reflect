@@ -12,8 +12,14 @@ rfct::RfctRenderer& rfct::GetRen() {
     return *ren;
 }
 
+bool SetRenderer(rfct::RfctRenderer* renderer) {
+    ren = renderer;
+    return true;
+}
+
 rfct::RfctRenderer::RfctRenderer(RFCT_RENDERER_ARGUMENTS)
-	: m_window(RFCT_WINDOWS_WINDOW_ARGUMENTS RFCT_NATIVE_WINDOW_ANDROID_VAR),
+	: m_uselessBool(SetRenderer(this)),
+    m_window(RFCT_WINDOWS_WINDOW_ARGUMENTS RFCT_NATIVE_WINDOW_ANDROID_VAR),
     m_instance(), 
     m_surface(m_window.CreateSurface(m_instance.GetInstance())),
     m_device(m_instance.GetInstance(), m_surface.GetSurface()), 
@@ -23,9 +29,9 @@ rfct::RfctRenderer::RfctRenderer(RFCT_RENDERER_ARGUMENTS)
     m_renderImages(m_device, m_queue, m_allocator, m_swapChain),
     m_framesInFlight(m_allocator, m_queue, m_device.GetDevice()), 
     m_rasterizerPipeline(m_renderImages.GetSceneRenderPass(), m_device.GetDevice()), 
-    m_bloomRes(m_renderImages.GetIntermediateRenderPass()),
-    m_debugDraw(m_renderImages.GetIntermediateRenderPass()),
-    m_UIPipeline(m_renderImages.GetUIRenderPass())
+    m_bloomRes(m_queue, m_renderImages, m_renderImages.GetIntermediateRenderPass(), m_device.GetDevice()),
+    m_debugDraw(m_renderImages.GetIntermediateRenderPass(), m_device.GetDevice()),
+    m_UIPipeline(m_renderImages.GetUIRenderPass(), m_device.GetDevice())
 {
 }
 
@@ -63,11 +69,12 @@ void rfct::RfctRenderer::Render(frameContext& frameContext) {
         RFCT_PROFILE_SCOPE("get sawpchain image");
         rfct::RfctSwapChain::RfctAcquireNextImageResult acquireImageResult = m_swapChain.AcquireNextImage(frameData.m_ImageAvaibleSemaphore.get(), VK_NULL_HANDLE,
             m_device.GetPhysicalDevice(), m_device.GetDevice(), m_surface.GetSurface());
+		imageIndex = acquireImageResult.imageIndex;
 
 		RFCT_ASSERT(acquireImageResult.Succeeded(), "Failed to acquire swapchain image!");
         // createResources();
         // RfctRenderer::getRen().getBloomRes().onSwapchainExtentChanged();
-        if (imageIndex == -1)
+        if (acquireImageResult.imageIndex == -1)
         {
             return;
         }
@@ -81,13 +88,13 @@ void rfct::RfctRenderer::Render(frameContext& frameContext) {
             m_rasterizerPipeline.RecordCommandBuffer(&frameContext, m_swapChain, frameData, m_renderImages.GetSceneFrameBuffer(frameContext.frame), m_renderImages.GetSceneRenderPass());
             }, *jobs);
         jobSystem::get().KickJob([&]() {
-            m_bloomRes.blum(&frameContext, frameData, m_renderImages.GetIntermediateClearRenderPass(), imageIndex);
+            m_bloomRes.blum(&frameContext, m_renderImages, m_swapChain, frameData, m_renderImages.GetIntermediateClearRenderPass(), imageIndex);
             }, *jobs);
         jobSystem::get().KickJob([&]() {
             debugDraw::flush(&frameContext, frameData, m_renderImages.GetSwapChainFrameBuffer(imageIndex), m_renderImages.GetIntermediateRenderPass());
             }, *jobs);
         jobSystem::get().KickJob([&]() {
-            m_UIPipeline.draw(frameData, m_renderImages.GetSwapChainFrameBuffer(imageIndex), m_renderImages.GetUIRenderPass());
+            m_UIPipeline.draw(m_swapChain, frameData, m_renderImages.GetSwapChainFrameBuffer(imageIndex), m_renderImages.GetUIRenderPass());
             }, *jobs);
         jobs->waitAll();
     }

@@ -14,10 +14,10 @@ rfct::image::image(const std::string& path) {
 
 rfct::image::~image() {
     if (m_imageView) {
-        vkDestroyImageView(RfctRenderer::getRen().getDevice(), static_cast<VkImageView>(m_imageView), nullptr);
+        vkDestroyImageView(GetRen().GetDevice(), static_cast<VkImageView>(m_imageView), nullptr);
     }
     if (m_image) {
-        vmaDestroyImage(RfctRenderer::getRen().getAllocator(), static_cast<VkImage>(m_image), m_allocation);
+        vmaDestroyImage(GetRen().GetAllocator(), static_cast<VkImage>(m_image), m_allocation);
     }
 }
 void rfct::image::transitionImageLayout(vk::CommandBuffer commandBuffer, vk::ImageLayout oldLayout, vk::ImageLayout newLayout) {

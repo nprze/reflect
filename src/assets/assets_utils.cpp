@@ -23,7 +23,7 @@ bool rfct::OpenAssetFile(const std::string& path, std::ifstream* streamOut, std:
 
 vk::CommandPool& rfct::GetAssetsCommandPool(RfctDevice& deviceWrapper) {
     if (!assetsCommandPool) {
-        auto createCommandPoolResult = deviceWrapper.GetDevice().createCommandPool({ {}, deviceWrapper.GetQueue().getGraphicsQueueFamilyIndex() });
+        auto createCommandPoolResult = deviceWrapper.GetDevice().createCommandPool({ {}, deviceWrapper.GetQueue().GetGraphicsQueueFamilyIndex() });
         RFCT_VULKAN_CHECK(createCommandPoolResult.result);
         assetsCommandPool = createCommandPoolResult.value;
     }

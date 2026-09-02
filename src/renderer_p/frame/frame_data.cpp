@@ -5,7 +5,8 @@
 #include "renderer_p/renderer.h"
 #include "world_p/components.h"
 #include "world_p/camera/camera.h"
-#include "world_p/world.h"  
+#include "world_p/world.h"
+#include "renderer_p/components/renderer_components.h"
 
 inline static glm::mat4 getUIMatrix(vk::Extent2D extent) {
     RFCT_PROFILE_FUNCTION();
