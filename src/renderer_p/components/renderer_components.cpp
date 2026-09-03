@@ -400,14 +400,17 @@ void rfct::RfctSwapChain::RecreateSwapChain(vk::PhysicalDevice physicalDevice, v
 rfct::RfctSwapChain::RfctAcquireNextImageResult rfct::RfctSwapChain::AcquireNextImage(const vk::Semaphore& semaphore, vk::Fence fence, vk::PhysicalDevice physicalDevice, vk::Device device, vk::SurfaceKHR surface) {
 	RFCT_PROFILE_FUNCTION();
 	rfct::RfctSwapChain::RfctAcquireNextImageResult result = {};
+	result.internalResult = vk::Result::eErrorUnknown;
 	result.imageIndex = -1;
 	if (framebufferResized) {
 		RecreateSwapChain(physicalDevice, device, surface);
 		framebufferResized = false;
 		result.needsRecreation = true;
+		result.internalResult = vk::Result::eErrorOutOfDateKHR;
 		return result;
 	}
 	auto acquireImageResult = device.acquireNextImageKHR(m_swapChain.get(), UINT64_MAX, semaphore, fence);
+	result.internalResult = acquireImageResult.result;
 	if (RFCT_VULKAN_SOFT_CHECK(acquireImageResult)) {
 		result.internalResult = acquireImageResult.result;
 		result.imageIndex = acquireImageResult.value;
@@ -415,6 +418,7 @@ rfct::RfctSwapChain::RfctAcquireNextImageResult rfct::RfctSwapChain::AcquireNext
 	}
 	if (acquireImageResult.result == vk::Result::eErrorOutOfDateKHR) {
 		RecreateSwapChain(physicalDevice, device, surface);
+		result.needsRecreation = true;
 		result.suboptimal = true;
 		result.imageIndex = acquireImageResult.value;
 		return result;
@@ -422,6 +426,7 @@ rfct::RfctSwapChain::RfctAcquireNextImageResult rfct::RfctSwapChain::AcquireNext
 	if (acquireImageResult.result == vk::Result::eSuboptimalKHR) {
 		RFCT_WARN("Swap chain is suboptimal, recreating...");
 		RecreateSwapChain(physicalDevice, device, surface);
+		result.needsRecreation = true;
 		result.suboptimal = true;
 		result.imageIndex = acquireImageResult.value;
 		return result;

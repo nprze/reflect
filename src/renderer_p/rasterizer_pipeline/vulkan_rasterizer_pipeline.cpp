@@ -7,10 +7,11 @@
 #include "world_p/player/player_animations.h"
 #include "world_p/objects/objects.h"
 #include "renderer_p/components/renderer_components.h"
+#include "assets/asset_manager.h"
 
 rfct::vulkanRasterizerPipeline::vulkanRasterizerPipeline(vk::RenderPass renderPass, vk::Device device)
-    : m_vertexShader("shaders/basic/basic_vert.spv"), 
-    m_fragShader("shaders/basic/basic_frag.spv") {
+    : m_vertexShader(GetAssetManager().GetOrLoadShader(device, "shaders/basic/basic_vert.spv")), 
+    m_fragShader(GetAssetManager().GetOrLoadShader(device, "shaders/basic/basic_frag.spv")) {
     RFCT_PROFILE_FUNCTION();
 	CreatePipeline(renderPass, device);
 }
@@ -20,12 +21,12 @@ void rfct::vulkanRasterizerPipeline::CreatePipeline(vk::RenderPass renderPass, v
     // Shaders
     vk::PipelineShaderStageCreateInfo vertShaderStageInfo = {};
     vertShaderStageInfo.stage = vk::ShaderStageFlagBits::eVertex;
-    vertShaderStageInfo.module = m_vertexShader.getShaderModule();
+    vertShaderStageInfo.module = m_vertexShader->getShaderModule();
     vertShaderStageInfo.pName = "main";
 
     vk::PipelineShaderStageCreateInfo fragShaderStageInfo = {};
     fragShaderStageInfo.stage = vk::ShaderStageFlagBits::eFragment;
-    fragShaderStageInfo.module = m_fragShader.getShaderModule();
+    fragShaderStageInfo.module = m_fragShader->getShaderModule();
     fragShaderStageInfo.pName = "main";
 
     std::vector<vk::PipelineShaderStageCreateInfo> shaderStages = { vertShaderStageInfo, fragShaderStageInfo };

@@ -1,6 +1,7 @@
 #include "debug_draw.h"
 #include "renderer_p/renderer.h"
 #include "renderer_p/components/renderer_components.h"
+#include "assets/asset_manager.h"
 
 rfct::debugDraw* instance;
 
@@ -23,8 +24,8 @@ void rfct::debugDraw::flush(frameContext* ctx, frameData& fd, vk::Framebuffer fr
 rfct::debugDraw::debugDraw(vk::RenderPass renderPass, vk::Device device)
     : m_triangleBuffer(RFCT_DEBUG_DRAW_VERTEX_BUFFER_MAX_SIZE), 
     m_lineBuffer(RFCT_DEBUG_DRAW_VERTEX_BUFFER_MAX_SIZE), 
-    m_vertexShader("shaders/debug_draw/dbg_draw_vert.spv"), 
-    m_fragShader("shaders/debug_draw/dbg_draw_frag.spv") {
+    m_vertexShader(GetAssetManager().GetOrLoadShader(device, "shaders/debug_draw/dbg_draw_vert.spv")), 
+    m_fragShader(GetAssetManager().GetOrLoadShader(device, "shaders/debug_draw/dbg_draw_frag.spv")) {
 	RFCT_PROFILE_FUNCTION();
     createDebugPipelines(renderPass, device);
 	instance = this;
@@ -43,12 +44,12 @@ void rfct::debugDraw::createDebugPipelines(vk::RenderPass renderPass, vk::Device
     // Shaders
     vk::PipelineShaderStageCreateInfo vertShaderStageInfo = {};
     vertShaderStageInfo.stage = vk::ShaderStageFlagBits::eVertex;
-    vertShaderStageInfo.module = m_vertexShader.getShaderModule();
+    vertShaderStageInfo.module = m_vertexShader->getShaderModule();
     vertShaderStageInfo.pName = "main";
 
     vk::PipelineShaderStageCreateInfo fragShaderStageInfo = {};
     fragShaderStageInfo.stage = vk::ShaderStageFlagBits::eFragment;
-    fragShaderStageInfo.module = m_fragShader.getShaderModule();
+    fragShaderStageInfo.module = m_fragShader->getShaderModule();
     fragShaderStageInfo.pName = "main";
 
     std::vector<vk::PipelineShaderStageCreateInfo> shaderStages = { vertShaderStageInfo, fragShaderStageInfo };

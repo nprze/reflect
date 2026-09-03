@@ -1,10 +1,10 @@
 #pragma once
 #include "font/font.h"
-#include "renderer_p/shader/vulkan_shader.h"
 #include "renderer_p/frame/frame_data.h"
 
 namespace rfct {
 	class RfctSwapChain;
+	class RfctShader;
 	struct UIVertexBuffer {
 		inline UIVertexBuffer(uint32_t size, const std::string& debugName = "glyphsVertexBuffer")
 			: buffer(debugName.c_str(), size, vk::BufferUsageFlagBits::eVertexBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU),
@@ -50,10 +50,10 @@ namespace rfct {
 		font* getDefaultFont() { return &m_defaultFont; }
 		vk::DescriptorSetLayout getDescriptorSetLayout();
 	private:
-		vulkanShader m_vertexMostShader;
-		vulkanShader m_fragMostShader;
-		vulkanShader m_vertexImageShader;
-		vulkanShader m_fragImageShader;
+		RfctShader* m_vertexMostShader;
+		RfctShader* m_fragMostShader;
+		RfctShader* m_vertexImageShader;
+		RfctShader* m_fragImageShader;
 		vk::UniquePipelineLayout m_PipelineLayout;
 		vk::UniqueDescriptorSetLayout m_descriptorSetLayout;
 		vk::UniqueDescriptorPool m_DescriptorPool;

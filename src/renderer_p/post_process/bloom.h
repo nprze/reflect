@@ -1,9 +1,9 @@
 #pragma once
 #include <glm/glm.hpp>
-#include "renderer_p/shader/vulkan_shader.h"
 #include "renderer_p/frame/frame_data.h"
 
 namespace rfct {
+	class RfctShader;
 	class renderImagesManager;
 	class RfctSwapChain;
 	struct layoutTemporaryHolder {
@@ -20,12 +20,12 @@ namespace rfct {
 	};
 	class postprocPipeline {
 	public:
-		postprocPipeline(vk::Device device, vk::RenderPass renderPass, vulkanShader* shaderRef, 
+		postprocPipeline(vk::Device device, vk::RenderPass renderPass, const std::string& vertexShaderPath,
 			const std::string& fragmentShaderPath, layoutTemporaryHolder pipelineLayoutStuff);
 		~postprocPipeline();
 	private:
-		vulkanShader* m_vertexShader;
-		vulkanShader m_fragShader;
+		RfctShader* m_vertexShader;
+		RfctShader* m_fragShader;
 		vk::UniquePipeline m_pipeline;
 		vk::DescriptorSetLayout m_descSetLayout;
 		vk::PipelineLayout m_pipelineLayout;
@@ -42,7 +42,7 @@ namespace rfct {
 			vk::CommandBuffer commandBuffer, vk::RenderPass renderPass, uint32_t imageIndex, uint32_t swapchainImage);
 		void onSwapchainExtentChanged(renderImagesManager& imageManager, vk::Device device);
 	private:
-		vulkanShader vertexShader;
+		RfctShader* vertexShader;
 		bloomSamplerHolder m_imageSampler;
 		postprocPipeline m_gaussianPipeline;
 		postprocPipeline m_compositePipeline;

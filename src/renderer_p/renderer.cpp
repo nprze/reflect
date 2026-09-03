@@ -71,6 +71,13 @@ void rfct::RfctRenderer::Render(frameContext& frameContext) {
             m_device.GetPhysicalDevice(), m_device.GetDevice(), m_surface.GetSurface());
 		imageIndex = acquireImageResult.imageIndex;
 
+        if (acquireImageResult.needsRecreation) {
+            m_renderImages.CreateResources(m_device, m_queue, m_allocator, m_swapChain);
+            m_bloomRes.onSwapchainExtentChanged(m_renderImages, m_device.GetDevice());
+            acquireImageResult = m_swapChain.AcquireNextImage(frameData.m_ImageAvaibleSemaphore.get(), VK_NULL_HANDLE,
+                m_device.GetPhysicalDevice(), m_device.GetDevice(), m_surface.GetSurface());
+            imageIndex = acquireImageResult.imageIndex;
+		}
 		RFCT_ASSERT(acquireImageResult.Succeeded(), "Failed to acquire swapchain image!");
         // createResources();
         // RfctRenderer::getRen().getBloomRes().onSwapchainExtentChanged();

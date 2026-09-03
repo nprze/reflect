@@ -12,9 +12,9 @@ namespace rfct {
 		renderImagesManager(rfct::RfctDevice& deviceWrapper, rfct::RfctQueue& queueWrapper,
 			RfctVulkanMemAllocator& allocatorWrapper, RfctSwapChain& swapChainWrapper);
 		~renderImagesManager();
-	private:
 		void CreateResources(rfct::RfctDevice& deviceWrapper, rfct::RfctQueue& queueWrapper,
 			RfctVulkanMemAllocator& allocatorWrapper, RfctSwapChain& swapChainWrapper);
+	private:
 		void CreateImageViews(RfctSwapChain& swapChainWrapper, vk::Device device);
 		void CreateImages(rfct::RfctDevice& deviceWrapper, rfct::RfctQueue& queueWrapper,
 			RfctVulkanMemAllocator& allocatorWrapper, RfctSwapChain& swapChainWrapper);

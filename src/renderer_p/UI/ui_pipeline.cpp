@@ -1,13 +1,13 @@
 #include "ui_pipeline.h"
 #include "renderer_p/renderer.h"
 #include "renderer_p/components/renderer_components.h"
-
+#include "assets/asset_manager.h"
 
 rfct::UIPipelines::UIPipelines(vk::RenderPass renderPass, vk::Device device)
-    : m_vertexMostShader("shaders/UI/UIeverything_vert.spv"), 
-    m_fragMostShader("shaders/UI/UIeverything_frag.spv"), 
-    m_vertexImageShader("shaders/UI/UIimage_vert.spv"),
-    m_fragImageShader("shaders/UI/UIimage_frag.spv"),
+    : m_vertexMostShader(GetAssetManager().GetOrLoadShader(device, "shaders/UI/UIeverything_vert.spv")), 
+    m_fragMostShader(GetAssetManager().GetOrLoadShader(device, "shaders/UI/UIeverything_frag.spv")), 
+    m_vertexImageShader(GetAssetManager().GetOrLoadShader(device, "shaders/UI/UIimage_vert.spv")),
+    m_fragImageShader(GetAssetManager().GetOrLoadShader(device, "shaders/UI/UIimage_frag.spv")),
     m_imageVertexBuffer(6 * RFCT_MAX_BUTTON_COUNT * sizeof(GlyphVertex)),
     m_UIVertexBuffer(RFCT_MAX_UI_CHARS * 6 * sizeof(GlyphVertex)),
     m_debugDrawUIVertexBuffer(RFCT_DEBUG_DRAW_VERTEX_BUFFER_MAX_SIZE),
@@ -23,12 +23,12 @@ void rfct::UIPipelines::createPipeline(vk::RenderPass renderPass, vk::Device dev
     // Shaders
     vk::PipelineShaderStageCreateInfo vertShaderStageInfo = {};
     vertShaderStageInfo.stage = vk::ShaderStageFlagBits::eVertex;
-    vertShaderStageInfo.module = m_vertexMostShader.getShaderModule();
+    vertShaderStageInfo.module = m_vertexMostShader->getShaderModule();
     vertShaderStageInfo.pName = "main";
 
     vk::PipelineShaderStageCreateInfo fragShaderStageInfo = {};
     fragShaderStageInfo.stage = vk::ShaderStageFlagBits::eFragment;
-    fragShaderStageInfo.module = m_fragMostShader.getShaderModule();
+    fragShaderStageInfo.module = m_fragMostShader->getShaderModule();
     fragShaderStageInfo.pName = "main";
 
     std::vector<vk::PipelineShaderStageCreateInfo> shaderStages = { vertShaderStageInfo, fragShaderStageInfo };
@@ -125,13 +125,13 @@ void rfct::UIPipelines::createPipeline(vk::RenderPass renderPass, vk::Device dev
     // Image Pipeline (for dialogues)
     vk::PipelineShaderStageCreateInfo newvertShaderStageInfo = {};
     newvertShaderStageInfo.stage = vk::ShaderStageFlagBits::eVertex;
-    newvertShaderStageInfo.module = m_vertexImageShader.getShaderModule();
+    newvertShaderStageInfo.module = m_vertexImageShader->getShaderModule();
     newvertShaderStageInfo.pName = "main";
 
 
     vk::PipelineShaderStageCreateInfo newfragShaderStageInfo = {};
     newfragShaderStageInfo.stage = vk::ShaderStageFlagBits::eFragment;
-    newfragShaderStageInfo.module = m_fragImageShader.getShaderModule();
+    newfragShaderStageInfo.module = m_fragImageShader->getShaderModule();
     newfragShaderStageInfo.pName = "main";
 
     std::vector<vk::PipelineShaderStageCreateInfo> newshaderStages = { newvertShaderStageInfo, newfragShaderStageInfo };

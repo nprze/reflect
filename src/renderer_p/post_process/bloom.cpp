@@ -1,5 +1,6 @@
 #include "bloom.h"
 #include "renderer_p/components/renderer_components.h"
+#include "assets/asset_manager.h"
 #include "renderer_p/frame/render_target_manager.h"
 
 namespace rfct {
@@ -181,10 +182,10 @@ namespace rfct {
 	}
 
     bloomResurcesHolder::bloomResurcesHolder(RfctQueue& queue, renderImagesManager& imageManager, vk::RenderPass renderPass, vk::Device device)
-        : vertexShader("shaders/post_proc/fullscreen_vert.spv"),
+        : vertexShader(GetAssetManager().GetOrLoadShader(device, "shaders/post_proc/fullscreen_vert.spv")),
         m_imageSampler(device),
-        m_gaussianPipeline(device, renderPass, &vertexShader, "shaders/post_proc/gaussian_blur_frag.spv", GaussianBlurPipelineLayout(device)),
-        m_compositePipeline(device, renderPass, &vertexShader, "shaders/post_proc/composite_frag.spv", CompositePipelineLayout(device)) {
+        m_gaussianPipeline(device, renderPass, "shaders/post_proc/fullscreen_vert.spv", "shaders/post_proc/gaussian_blur_frag.spv", GaussianBlurPipelineLayout(device)),
+        m_compositePipeline(device, renderPass, "shaders/post_proc/fullscreen_vert.spv", "shaders/post_proc/composite_frag.spv", CompositePipelineLayout(device)) {
         RFCT_PROFILE_FUNCTION();
         // descriptor pool
         vk::DescriptorPoolSize poolSize = {};
@@ -491,9 +492,9 @@ namespace rfct {
         updateDescSets(imageManager, device);
     }
 
-    postprocPipeline::postprocPipeline(vk::Device device, vk::RenderPass renderPass, vulkanShader* shaderRef, const std::string& fragmentShaderPath, layoutTemporaryHolder pipelineLayoutStuff):
-        m_vertexShader(shaderRef), 
-        m_fragShader(fragmentShaderPath), 
+    postprocPipeline::postprocPipeline(vk::Device device, vk::RenderPass renderPass, const std::string& vertexShaderPath, const std::string& fragmentShaderPath, layoutTemporaryHolder pipelineLayoutStuff):
+        m_vertexShader(GetAssetManager().GetOrLoadShader(device, vertexShaderPath)), 
+        m_fragShader(GetAssetManager().GetOrLoadShader(device, fragmentShaderPath)), 
         m_pipelineLayout(pipelineLayoutStuff.pipeline),
         m_descSetLayout(pipelineLayoutStuff.descSet)
     { 
@@ -506,7 +507,7 @@ namespace rfct {
 
         vk::PipelineShaderStageCreateInfo fragShaderStageInfo = {};
         fragShaderStageInfo.stage = vk::ShaderStageFlagBits::eFragment;
-        fragShaderStageInfo.module = m_fragShader.getShaderModule();
+        fragShaderStageInfo.module = m_fragShader->getShaderModule();
         fragShaderStageInfo.pName = "main";
 
         std::vector<vk::PipelineShaderStageCreateInfo> shaderStages = { vertShaderStageInfo, fragShaderStageInfo };

@@ -2,10 +2,10 @@
 #include <glm/glm.hpp>
 #include "renderer_p/buffer/vulkan_buffer.h"
 #include "renderer_p/frame/frame_data.h"
-#include "renderer_p/shader/vulkan_shader.h"
 
 namespace rfct {
 	class RfctSwapChain;
+	class RfctShader;
 	struct SmallVertex {
 		glm::vec3 pos;
 		glm::vec3 color;
@@ -63,8 +63,8 @@ namespace rfct {
 	private:
 		debugDrawVertexBuffer m_triangleBuffer;
 		debugDrawVertexBuffer m_lineBuffer;
-		vulkanShader m_vertexShader;
-		vulkanShader m_fragShader;
+		RfctShader* m_vertexShader;
+		RfctShader* m_fragShader;
 		vk::UniquePipelineLayout m_PipelineLayout;
 		// Triangle pipeline
 		vk::UniquePipeline m_trianglePipeline;
