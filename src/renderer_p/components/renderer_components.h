@@ -4,6 +4,9 @@
 #include "platform_window.h"
 
 namespace rfct {
+	class RfctShader;
+	class frameData;
+
 	class RfctVulkanInstance {
 	public:
 		vk::Instance& GetInstance() { return m_instance.get(); }
@@ -61,7 +64,7 @@ namespace rfct {
 		void RecreateSwapChain(vk::PhysicalDevice physicalDevice, vk::Device device, vk::SurfaceKHR surface);
 		RfctAcquireNextImageResult AcquireNextImage(const vk::Semaphore& semaphore, vk::Fence fence, vk::PhysicalDevice physicalDevice, vk::Device device, vk::SurfaceKHR surface); // will recreate swapchain if unoptimal
 	public:
-		bool framebufferResized = false;
+		bool m_framebufferResized = false;
 	private:
 		vk::UniqueSwapchainKHR m_swapChain;
 		vk::Extent2D m_swapChainExtent;
@@ -89,5 +92,25 @@ namespace rfct {
 		~RfctVulkanMemAllocator();
 	private:
 		VmaAllocator m_allocator;
+	};
+
+	class RfctRenderPipeline {
+		struct RfctRenderPipelineSpec {
+			std::string vertexShaderPath;
+			std::string fragmentShaderPath;
+			vk::VertexInputBindingDescription vertexInputBindingDescription;
+			std::vector<vk::VertexInputAttributeDescription> vertexInputAttributeDescriptions;
+			std::vector<vk::DescriptorSetLayout> descriptorSetLayouts;
+			bool MSAA4x = false;
+		};
+	public:
+		RfctRenderPipeline(const RfctRenderPipelineSpec& spec, vk::RenderPass renderPass, vk::Device device);
+		void CreatePipeline(const RfctRenderPipelineSpec& spec, vk::RenderPass renderPass, vk::Device device);
+		void RecordCommandBuffer(frameContext* ctx, RfctSwapChain& swapChainWrapper, frameData& frameData, vk::Framebuffer framebuffer, vk::RenderPass renderPass);
+	private:
+		RfctShader* m_vertexShader;
+		RfctShader* m_fragShader;
+		vk::UniquePipelineLayout m_pipelineLayout;
+		vk::UniquePipeline m_graphicsPipeline;
 	};
 }

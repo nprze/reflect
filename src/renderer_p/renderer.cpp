@@ -151,7 +151,6 @@ void rfct::RfctRenderer::Render(frameContext& frameContext) {
         }else{
             if (presRes != vk::Result::eSuccess){
                 RFCT_INFO("other present error");
-
             }
         }
     }
