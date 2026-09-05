@@ -6,6 +6,22 @@ namespace rfct {
 	class RfctQueue;
 	class RfctSwapChain;
 	class RfctVulkanMemAllocator;
+
+	class RfctRenderImage {
+	public:
+		struct RfctRenderImageSpec {
+			bool initalizeFramebuffer;
+		};
+	public:
+		bool hasFrameBuffer;
+		bool wasAllocatedUsingVMA; // usually yes, swap chain image wasn't
+		vk::Image m_image;
+		VmaAllocation m_imageAllocation;
+		vk::UniqueImageView m_imageView;
+		vk::UniqueFramebuffer m_frameBuffer;
+	};
+	void CreateImageNoDeps(RfctRenderImage& renderImageOut, const RfctRenderImage::RfctRenderImageSpec& spec, );
+
 	// class designed to hold the framebuffers and images
 	class renderImagesManager {
 	public:

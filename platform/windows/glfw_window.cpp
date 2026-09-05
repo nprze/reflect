@@ -5,7 +5,7 @@
 
 void FramebufferResizeCallback(GLFWwindow* window, int width, int height) {
 	RFCT_PROFILE_FUNCTION();
-	rfct::GetRen().GetSwapChain().framebufferResized = true;
+	rfct::GetRen().GetSwapChain().m_framebufferResized = true;
     vk::Extent2D newExtent = { static_cast<uint32_t>(width), static_cast<uint32_t>(height) };
     rfct::GetRen().GetWindow().SetExtent(newExtent);
     if (width == 0 && height == 0)

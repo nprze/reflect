@@ -17,7 +17,6 @@ namespace rfct {
 		RFCT_PLATFORM_WINDOW& GetWindow() { return m_window; }
 		RfctVulkanInstance& GetInstanceWrapper() { return m_instance; }
 		renderImagesManager& GetRenderImagesManager() { return m_renderImages; }
-		vulkanRasterizerPipeline& GetRasterizerPipeline() { return m_rasterizerPipeline; }
 		bloomResurcesHolder& GetBloomRes() { return m_bloomRes; }
 		VmaAllocator& GetAllocator() { return m_allocator.GetAllocator(); }
 		RfctSwapChain& GetSwapChain() { return m_swapChain; }

@@ -46,13 +46,13 @@ void rfct::RfctRenderer::UpdateWindow(RFCT_NATIVE_WINDOW_ANDROID RFCT_NATIVE_WIN
 #ifdef ANDROID_BUILD
     m_device.getDevice().waitIdle();
     if (m_surface.surface) {
-        m_instance.getInstance().destroySurfaceKHR(m_surface.surface);
+        m_instance.GetInstance().destroySurfaceKHR(m_surface.surface);
         m_surface.surface = VK_NULL_HANDLE;
     }
     m_window.destroyWind();
     m_window = AndroidWindow(RFCT_NATIVE_WINDOW_ANDROID_VAR);
-    m_surface.newSurface(m_window.createSurface(getInstance()));
-    RFCT_WARN("destroying widnow and surface. creating new surface with width, hwight: ({}, {})", m_window.getExtent().width, m_window.getExtent().height);
+    m_surface.newSurface(m_window.createSurface(GetInstance()));
+    RFCT_WARN("destroying widnow and surface. creating new surface with width, height: ({}, {})", m_window.getExtent().width, m_window.getExtent().height);
 #endif
 };
 
@@ -146,7 +146,7 @@ void rfct::RfctRenderer::Render(frameContext& frameContext) {
 
         vk::Result presRes = m_device.GetQueue().GetPresentQueue().presentKHR(&presentInfo);
         if (presRes == vk::Result::eSuboptimalKHR){
-            m_swapChain.framebufferResized = true;
+            m_swapChain.m_framebufferResized = true;
             RFCT_INFO("recreation needed");
         }else{
             if (presRes != vk::Result::eSuccess){
