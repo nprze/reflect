@@ -10,17 +10,32 @@ namespace rfct {
 	class RfctRenderImage {
 	public:
 		struct RfctRenderImageSpec {
-			bool initalizeFramebuffer;
+			bool initalizeFramebuffer = false;
+			vk::Extent2D extent = { 1, 1 };
+			vk::Format dafaultFormat = vk::Format::eB8G8R8A8Unorm;
+			vk::ImageLayout dafaultLayout = vk::ImageLayout::eColorAttachmentOptimal;
+			std::string debugName = "image";
+			VmaMemoryUsage memoryUsage = VMA_MEMORY_USAGE_GPU_ONLY;
 		};
 	public:
+		void TransformLayoutSync(vk::ImageLayout newLayout, RfctDevice& deviceWrapper, RfctQueue& queue);
+		static void CreateImageNoDeps(RfctRenderImage& renderImageOut, const RfctRenderImage::RfctRenderImageSpec& spec, vk::Device device);
+	private:
+		void AllocateImage(const RfctRenderImage::RfctRenderImageSpec& spec, RfctDevice& deviceWrapper,
+			RfctQueue& queueWrapper, RfctVulkanMemAllocator& allocatorWrapper);
+		void CreateImageView(RfctSwapChain& swapChainWrapper, vk::Device device);
+	public:
 		bool hasFrameBuffer;
-		bool wasAllocatedUsingVMA; // usually yes, swap chain image wasn't
+		bool wasAllocatedUsingVMA; // usually yes, swap chain could be one exception
+		vk::Extent2D m_extent;
+		std::string m_debugName;
 		vk::Image m_image;
 		VmaAllocation m_imageAllocation;
 		vk::UniqueImageView m_imageView;
 		vk::UniqueFramebuffer m_frameBuffer;
+		vk::ImageLayout m_currentLayout = vk::ImageLayout::eUndefined;
+		vk::Format m_format;
 	};
-	void CreateImageNoDeps(RfctRenderImage& renderImageOut, const RfctRenderImage::RfctRenderImageSpec& spec, );
 
 	// class designed to hold the framebuffers and images
 	class renderImagesManager {
