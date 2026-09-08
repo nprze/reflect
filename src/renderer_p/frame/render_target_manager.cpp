@@ -5,7 +5,7 @@
 void TransformImage(rfct::RfctDevice& deviceWrapper, rfct::RfctQueue& queue, vk::Image im, vk::ImageLayout newLayout) {
 }
 
-void rfct::renderImagesManager::CreateImages(rfct::RfctDevice& deviceWrapper, rfct::RfctQueue& queueWrapper,
+void rfct::RfctRenderImagesManager::CreateImages(rfct::RfctDevice& deviceWrapper, rfct::RfctQueue& queueWrapper,
     RfctVulkanMemAllocator& allocatorWrapper, RfctSwapChain& swapChainWrapper) {
     RFCT_PROFILE_FUNCTION();
     m_sceneImages.resize(m_swapchainImages.size());
@@ -45,7 +45,7 @@ void rfct::renderImagesManager::CreateImages(rfct::RfctDevice& deviceWrapper, rf
     }
 }
 
-void rfct::renderImagesManager::CreateImageViews(RfctSwapChain& swapChainWrapper, vk::Device device) {
+void rfct::RfctRenderImagesManager::CreateImageViews(RfctSwapChain& swapChainWrapper, vk::Device device) {
     RFCT_PROFILE_FUNCTION();
     m_swapChainImageViews.resize(m_swapchainImages.size());
     m_sceneImageViews.resize(m_sceneImages.size());
@@ -90,7 +90,7 @@ void rfct::renderImagesManager::CreateImageViews(RfctSwapChain& swapChainWrapper
     }
 }
 
-void rfct::renderImagesManager::CreateRenderPasses(vk::Device device, vk::SampleCountFlagBits msaaSamples) {
+void rfct::RfctRenderImagesManager::CreateRenderPasses(vk::Device device, vk::SampleCountFlagBits msaaSamples) {
     RFCT_PROFILE_FUNCTION();
     {
         vk::AttachmentDescription colorAttachment = {};
@@ -356,7 +356,7 @@ void rfct::renderImagesManager::CreateRenderPasses(vk::Device device, vk::Sample
     }
 }
 
-void rfct::renderImagesManager::CreateFrameBuffers(RfctSwapChain& swapChainWrapper, vk::Device device) {
+void rfct::RfctRenderImagesManager::CreateFrameBuffers(RfctSwapChain& swapChainWrapper, vk::Device device) {
     RFCT_PROFILE_FUNCTION();
     m_swapchainFramebuffers.resize(m_swapChainImageViews.size());
     m_sceneFramebuffers.resize(m_swapChainImageViews.size());
@@ -419,7 +419,7 @@ void rfct::renderImagesManager::CreateFrameBuffers(RfctSwapChain& swapChainWrapp
     }
 }
 
-void rfct::renderImagesManager::CreateMSAAres(RfctSwapChain& swapChainWrapper, RfctVulkanMemAllocator& allocatorWrapper, vk::Device device, vk::SampleCountFlagBits msaaSamples) {
+void rfct::RfctRenderImagesManager::CreateMSAAres(RfctSwapChain& swapChainWrapper, RfctVulkanMemAllocator& allocatorWrapper, vk::Device device, vk::SampleCountFlagBits msaaSamples) {
     RFCT_PROFILE_FUNCTION();
     m_msaaColorImages.resize(m_swapChainImageViews.size());
     m_msaaImageAllocations.resize(m_swapChainImageViews.size());
@@ -455,7 +455,7 @@ void rfct::renderImagesManager::CreateMSAAres(RfctSwapChain& swapChainWrapper, R
     }
 }
 
-void rfct::renderImagesManager::CleanupMSAAres(RfctVulkanMemAllocator& allocatorWrapper) {
+void rfct::RfctRenderImagesManager::CleanupMSAAres(RfctVulkanMemAllocator& allocatorWrapper) {
     RFCT_PROFILE_FUNCTION();
     if (m_msaaColorImages.size()) {
         for (uint32_t i = 0; i < m_msaaColorImages.size(); i++) {
@@ -464,7 +464,7 @@ void rfct::renderImagesManager::CleanupMSAAres(RfctVulkanMemAllocator& allocator
     }
 }
 
-void rfct::renderImagesManager::CleanupImages(RfctVulkanMemAllocator& allocatorWrapper) {
+void rfct::RfctRenderImagesManager::CleanupImages(RfctVulkanMemAllocator& allocatorWrapper) {
     RFCT_PROFILE_FUNCTION();
     for (uint32_t i = 0; i < m_bloom1ImagesAllocations.size(); i++) {
         vmaDestroyImage(allocatorWrapper.GetAllocator(), static_cast<VkImage>(m_bloom1Images[i]), m_bloom1ImagesAllocations[i]);
@@ -473,23 +473,23 @@ void rfct::renderImagesManager::CleanupImages(RfctVulkanMemAllocator& allocatorW
     }
 }
 
-rfct::renderImagesManager::renderImagesManager(rfct::RfctDevice& deviceWrapper, rfct::RfctQueue& queueWrapper,
+rfct::RfctRenderImagesManager::RfctRenderImagesManager(rfct::RfctDevice& deviceWrapper, rfct::RfctQueue& queueWrapper,
     RfctVulkanMemAllocator& allocatorWrapper, RfctSwapChain& swapChainWrapper) {
     CreateRenderPasses(deviceWrapper.GetDevice());
     CreateResources(deviceWrapper, queueWrapper, allocatorWrapper, swapChainWrapper);
 }
 
-rfct::renderImagesManager::~renderImagesManager() {
+rfct::RfctRenderImagesManager::~RfctRenderImagesManager() {
     // TODO: Do the actual cleanup before destructor
     /* CleanupMSAAres();
     CleanupImages();*/  
 }
 
-void rfct::renderImagesManager::CreateResources(rfct::RfctDevice& deviceWrapper, rfct::RfctQueue& queueWrapper,
+void rfct::RfctRenderImagesManager::CreateResources(rfct::RfctDevice& deviceWrapper, rfct::RfctQueue& queueWrapper,
     RfctVulkanMemAllocator& allocatorWrapper, RfctSwapChain& swapChainWrapper) {
 	auto swapChainImagesResult = deviceWrapper.GetDevice().getSwapchainImagesKHR(swapChainWrapper.GetSwapChain());
 	RFCT_VULKAN_CHECK(swapChainImagesResult.result);
-    m_swapchainImages = swapChainImagesResult.value;
+    std::vector<vk::Image> swapChainImages = swapChainImagesResult.value;
     for (uint32_t i = 0; i < RFCT_FRAMES_IN_FLIGHT + 1; i++) {
         TransformImage(deviceWrapper, queueWrapper, m_swapchainImages[i], vk::ImageLayout::ePresentSrcKHR);
     }
@@ -569,15 +569,50 @@ void rfct::RfctRenderImage::TransformLayoutSync(vk::ImageLayout newLayout, RfctD
     deviceWrapper.GetDevice().destroyFence(fence);
 }
 
+void rfct::RfctRenderImage::CreateImageAndView(const RfctRenderImageSpec& spec, RfctDevice& deviceWrapper, RfctVulkanInstance& instanceWrapper, RfctQueue& queueWrapper, RfctVulkanMemAllocator& allocatorWrapper) {
+    RFCT_PROFILE_FUNCTION();
+    m_format = spec.dafaultFormat;
+    m_extent = spec.extent;
+	m_debugName = spec.debugName;
+    AllocateImage(spec, deviceWrapper, queueWrapper, allocatorWrapper);
+    instanceWrapper.SetObjectName(m_image, m_debugName, vk::ObjectType::eImage, deviceWrapper.GetDevice());
+	CreateImageView(deviceWrapper.GetDevice());
+}
+
+void rfct::RfctRenderImage::InitFrameBuffer(std::vector<RfctRenderImage*> attachments, vk::RenderPass renderPass, vk::Device device) {
+    RFCT_PROFILE_FUNCTION();
+	std::vector<vk::ImageView> imageViews(attachments.size());
+	vk::Extent2D extent = attachments[0]->m_extent;
+    for (size_t i = 0; i < attachments.size(); i++) {
+		RFCT_ASSERT(attachments[i] != nullptr);
+		imageViews.push_back(attachments[i]->m_imageView.get());
+		RFCT_ASSERT(attachments[i]->m_extent == extent);
+    }
+    vk::FramebufferCreateInfo frameBufferCreateInfo = {};
+    frameBufferCreateInfo.renderPass = renderPass;
+    frameBufferCreateInfo.attachmentCount = static_cast<uint32_t>(imageViews.size());
+    frameBufferCreateInfo.pAttachments = imageViews.data();
+    frameBufferCreateInfo.width = extent.width;
+    frameBufferCreateInfo.height = extent.height;
+    frameBufferCreateInfo.layers = 1;
+    m_frameBuffer = device.createFramebufferUnique(frameBufferCreateInfo).value;
+	hasFrameBuffer = true;
+}
+
+void rfct::RfctRenderImage::Cleanup(RfctVulkanMemAllocator& allocatorWrapper, vk::Device device) {
+    if (wasAllocatedUsingVMA) {
+        vmaDestroyImage(allocatorWrapper.GetAllocator(), static_cast<VkImage>(m_image), m_imageAllocation);
+		wasAllocatedUsingVMA = false;
+    }
+}
+
 void rfct::RfctRenderImage::AllocateImage(const RfctRenderImage::RfctRenderImageSpec& spec, RfctDevice& deviceWrapper, RfctQueue& queueWrapper, RfctVulkanMemAllocator& allocatorWrapper) {
     RFCT_PROFILE_FUNCTION();
-	m_format = spec.dafaultFormat;
-	m_extent = spec.extent;
     // Create Vulkan image
     vk::ImageCreateInfo imageInfo({}, vk::ImageType::e2D, m_format,
         { static_cast<uint32_t>(m_extent.width), static_cast<uint32_t>(m_extent.height), 1 }, 1, 1,
-        vk::SampleCountFlagBits::e1, vk::ImageTiling::eOptimal,
-        vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eColorAttachment,
+        spec.imageSamples, vk::ImageTiling::eOptimal,
+        spec.usage,
         vk::SharingMode::eExclusive);
 
     VmaAllocationCreateInfo imageAllocInfo{};
@@ -588,9 +623,10 @@ void rfct::RfctRenderImage::AllocateImage(const RfctRenderImage::RfctRenderImage
         RFCT_CRITICAL("Failed to create Vulkan image");
     }
 	TransformLayoutSync(spec.dafaultLayout, deviceWrapper, queueWrapper);
+    wasAllocatedUsingVMA = true;
 }
 
-void rfct::RfctRenderImage::CreateImageView(RfctSwapChain& swapChainWrapper, vk::Device device) {
+void rfct::RfctRenderImage::CreateImageView(vk::Device device) {
     RFCT_PROFILE_FUNCTION();
     vk::ImageViewCreateInfo viewCreateInfo = {};
     viewCreateInfo.image = m_image;
@@ -599,7 +635,6 @@ void rfct::RfctRenderImage::CreateImageView(RfctSwapChain& swapChainWrapper, vk:
     viewCreateInfo.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
     viewCreateInfo.subresourceRange.levelCount = 1;
     viewCreateInfo.subresourceRange.layerCount = 1;
-
     auto imageViewResult = device.createImageViewUnique(viewCreateInfo);
     RFCT_VULKAN_CHECK(imageViewResult.result);
     m_imageView = std::move(imageViewResult.value);

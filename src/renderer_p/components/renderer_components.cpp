@@ -299,6 +299,20 @@ rfct::RfctVulkanInstance::RfctVulkanInstance() {
 #endif // !RFCT_VULKAN_DEBUG_OFF
 }
 
+void rfct::RfctVulkanInstance::SetObjectName(void* objectHandle, const std::string& name, vk::ObjectType objectType, vk::Device device) {
+	RFCT_PROFILE_FUNCTION();
+#ifndef RFCT_VULKAN_DEBUG_OFF
+	if (!GetDynamicLoader().vkSetDebugUtilsObjectNameEXT) {
+		RFCT_CRITICAL("Failed to load vkSetDebugUtilsObjectNameEXT!");
+	}
+	vk::DebugUtilsObjectNameInfoEXT nameInfo{};
+	nameInfo.objectType = objectType;
+	nameInfo.objectHandle = (uintptr_t)(objectHandle);
+	nameInfo.pObjectName = name.c_str();
+	device.setDebugUtilsObjectNameEXT(nameInfo, GetDynamicLoader());
+#endif // RFCT_VULKAN_DEBUG_OFF
+}
+
 rfct::RfctQueue::RfctQueue(vk::Device device, vk::PhysicalDevice physicalDevice, vk::SurfaceKHR surface)
 	: m_device(device) {
 	RFCT_PROFILE_FUNCTION();

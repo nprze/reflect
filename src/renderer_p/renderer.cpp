@@ -155,19 +155,3 @@ void rfct::RfctRenderer::Render(frameContext& frameContext) {
         }
     }
 }
-
-void rfct::RfctRenderer::SetObjectName(void* objectHandle, const std::string& name, vk::ObjectType objectType) {
-    RFCT_PROFILE_FUNCTION();
-#ifndef RFCT_VULKAN_DEBUG_OFF
-    if (!m_instance.GetDynamicLoader().vkSetDebugUtilsObjectNameEXT) {
-        RFCT_CRITICAL("Failed to load vkSetDebugUtilsObjectNameEXT!");
-    }
-
-    vk::DebugUtilsObjectNameInfoEXT nameInfo{};
-    nameInfo.objectType = objectType;
-    nameInfo.objectHandle = (uintptr_t)(objectHandle);
-    nameInfo.pObjectName = name.c_str();
-
-    m_device.GetDevice().setDebugUtilsObjectNameEXT(nameInfo, m_instance.GetDynamicLoader());
-#endif // RFCT_VULKAN_DEBUG_OFF
-}

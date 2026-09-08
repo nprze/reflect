@@ -1,12 +1,12 @@
 #pragma once
-/*
 #include <cstdint>
 #include <string>
 #include <vector>
 #include <functional>
 
 namespace rfct {
-	using CommandList = std::string;
+	// TODO: Fix this monstrocity workaround
+	using namespace ::std;
 
 	static constexpr uint32_t kPlacementAlignment = 65536; // 64 KB
 
@@ -22,11 +22,14 @@ namespace rfct {
 		Present
 	};
 
+	class CommandList {
+	};
+
 	struct ResourceDesc {
 		uint32_t width = 0;
 		uint32_t height = 0;
 		Format format = Format::RGBA8;
-		std::string name;
+		string name;
 	};
 
 	struct ResourceHandle {
@@ -36,13 +39,13 @@ namespace rfct {
 
 	struct ResourceVersion {
 		uint32_t writerPassIndex = UINT32_MAX;
-		std::vector<uint32_t> readerPassIndices;
+		vector<uint32_t> readerPassIndices;
 		bool HasWriter() const { return writerPassIndex != UINT32_MAX; }
 	};
 
 	struct ResourceEntry {
 		ResourceDesc desc;
-		std::vector<ResourceVersion> versions;
+		vector<ResourceVersion> versions;
 		ResourceState currentState = ResourceState::Undefined;
 		bool imported = false; // e.g swapchain is imported
 	};
@@ -67,22 +70,22 @@ namespace rfct {
 	};
 
 	struct RenderPass {
-		std::string name;
-		std::function<void(uint32_t)> Setup;
-		std::function<void(CommandList*)> Execute;
-		std::vector<ResourceHandle> reads;
-		std::vector<ResourceHandle> writes;
-		std::vector<ResourceHandle> readAndWrites;
-		std::vector<uint32_t> dependsOnPasses;
-		std::vector<uint32_t> successorPasses;
+		string name;
+		function<void(uint32_t)> Setup;
+		function<void(CommandList*)> Execute;
+		vector<ResourceHandle> reads;
+		vector<ResourceHandle> writes;
+		vector<ResourceHandle> readAndWrites;
+		vector<uint32_t> dependsOnPasses;
+		vector<uint32_t> successorPasses;
 		uint32_t inDegree = 0;
 		bool used = false; // for culling
 	};
 
 	struct CompiledPlan {
-		std::vector<uint32_t> sortedPasses;
-		std::vector<uint32_t> memBlockMapping;
-		std::vector<std::vector<Barrier>> barriers;
+		vector<uint32_t> sortedPasses;
+		vector<uint32_t> memBlockMapping;
+		vector<vector<Barrier>> barriers;
 	};
 
 	inline uint32_t AlignUp(uint32_t value, uint32_t alignment) {
@@ -110,8 +113,8 @@ namespace rfct {
 		ResourceHandle CreateResource(const ResourceDesc& desc);
 		ResourceHandle ImportResource(const ResourceDesc& desc, ResourceState initialState = ResourceState::Undefined);
 		template <typename SetupFn, typename ExecFn>
-		uint32_t AddPass(const std::string& name, SetupFn&& setup, ExecFn&& exec) {
-			m_passes.push_back({ name, std::forward<SetupFn>(setup), std::forward<ExecFn>(exec) });
+		uint32_t AddPass(const string& name, SetupFn&& setup, ExecFn&& exec) {
+			m_passes.push_back({ name, forward<SetupFn>(setup), forward<ExecFn>(exec) });
 			uint32_t passIdx = static_cast<uint32_t>(m_passes.size() - 1);
 			m_passes.back().Setup(passIdx);
 			return passIdx;
@@ -127,20 +130,20 @@ namespace rfct {
 	private:
 		// building
 		void BuildEdges();
-		std::vector<uint32_t> TopoSort();
-		void Cull(const std::vector<uint32_t>& sortedPasses);
+		vector<uint32_t> TopoSort();
+		void Cull(const vector<uint32_t>& sortedPasses);
 		ResourceState StateForUsage(ResourceHandle h, bool isWrite);
-		std::vector<std::vector<Barrier>> ComputeBarriers(const std::vector<uint32_t>& sortedPasses, const std::vector<uint32_t>& blockMapping);
+		vector<vector<Barrier>> ComputeBarriers(const vector<uint32_t>& sortedPasses, const vector<uint32_t>& blockMapping);
 		// execution
 		void Execute(const CompiledPlan& plan, CommandList* cmdList);
-		void ApplyBarriers(const std::vector<Barrier>& barriers, CommandList* cmdList);
+		void ApplyBarriers(const vector<Barrier>& barriers, CommandList* cmdList);
 		void ApplyBarrier(const Barrier& barrier, CommandList* cmdList);
 		// resource aliasing
-		std::vector<Lifetime> ScanLifetimes(const std::vector<uint32_t>& sorted);
-		std::vector<uint32_t> AliasResources(const std::vector<Lifetime>& lifetimes);
+		vector<Lifetime> ScanLifetimes(const vector<uint32_t>& sorted);
+		vector<uint32_t> AliasResources(const vector<Lifetime>& lifetimes);
 	private:
-		std::vector<RenderPass> m_passes;
-		std::vector<ResourceEntry> m_entries;
+		vector<RenderPass> m_passes;
+		vector<ResourceEntry> m_entries;
 		ResourceHandle m_presentResource;
+
 	};
-}*/

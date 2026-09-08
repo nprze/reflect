@@ -12,6 +12,7 @@ namespace rfct {
 		RFCT_VULKAN_LOADER_NAMESPACE::DispatchLoaderDynamic& GetDynamicLoader() { return m_dynamicLoader; }
 	public:
 		RfctVulkanInstance();
+		void SetObjectName(void* objectHandle, const std::string& name, vk::ObjectType objectType, vk::Device device);
 	private:
 		vk::UniqueInstance m_instance;
 		bool m_debugEnabled = false;

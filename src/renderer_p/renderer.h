@@ -30,7 +30,6 @@ namespace rfct {
 		~RfctRenderer();
         void UpdateWindow(RFCT_NATIVE_WINDOW_ANDROID RFCT_NATIVE_WINDOW_ANDROID_VAR);
 		void Render(frameContext& frameContext);
-		void SetObjectName(void* objectHandle, const std::string& name, vk::ObjectType objectType);
 	private:
 		bool m_uselessBool = false;
         RFCT_PLATFORM_WINDOW m_window;
