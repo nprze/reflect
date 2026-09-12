@@ -3,7 +3,7 @@
 #include <string>
 #include <vector>
 #include <functional>
-
+/*
 namespace rfct {
 	// TODO: Fix this monstrocity workaround
 	using namespace ::std;
@@ -147,3 +147,4 @@ namespace rfct {
 		ResourceHandle m_presentResource;
 
 	};
+	*/

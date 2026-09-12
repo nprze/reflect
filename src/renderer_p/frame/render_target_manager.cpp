@@ -12,10 +12,6 @@ void rfct::RfctRenderImagesManager::CreateImages(rfct::RfctDevice& deviceWrapper
     m_bloom1Images.resize(m_swapchainImages.size());
     m_bloom2Images.resize(m_swapchainImages.size());
 
-    m_sceneImagesAllocations.resize(m_swapchainImages.size());
-    m_bloom1ImagesAllocations.resize(m_swapchainImages.size());
-    m_bloom2ImagesAllocations.resize(m_swapchainImages.size());
-
     for (size_t i = 0; i < m_swapchainImages.size(); i++) {
         // Create Vulkan image
         vk::ImageCreateInfo imageInfo({}, vk::ImageType::e2D, swapChainWrapper.GetSurfaceFormat().format,
@@ -491,7 +487,7 @@ void rfct::RfctRenderImagesManager::CreateResources(rfct::RfctDevice& deviceWrap
 	RFCT_VULKAN_CHECK(swapChainImagesResult.result);
     std::vector<vk::Image> swapChainImages = swapChainImagesResult.value;
     for (uint32_t i = 0; i < RFCT_FRAMES_IN_FLIGHT + 1; i++) {
-        TransformImage(deviceWrapper, queueWrapper, m_swapchainImages[i], vk::ImageLayout::ePresentSrcKHR);
+        TransformImage(deviceWrapper, queueWrapper, swapChainImages[i], vk::ImageLayout::ePresentSrcKHR);
     }
     CleanupImages(allocatorWrapper);
         

@@ -45,6 +45,12 @@ namespace rfct {
 		vk::Format m_format;
 	};
 
+	class RfctRenderPass {
+	public:
+		struct RfctRenderPassSpec {
+		};
+	};
+
 	// temporary solution- want to have framegraph owning render images and frame buffers
 	class RfctRenderImagesManager {
 	public:

@@ -2,7 +2,7 @@
 #include <unordered_set>
 #include <queue>
 #include <numeric>
-
+/*
 // helper functions
 uint32_t minUint(uint32_t a, uint32_t b) { return a < b ? a : b; }
 uint32_t maxUint(uint32_t a, uint32_t b) { return a > b ? a : b; }
@@ -298,3 +298,5 @@ D3D12_RESOURCE_STATES rfct::EnumToResState(rfct::ResourceState state) {
     rfct_SOFT_ASSERT(false); // Achievement got: How Did We Get Here?
     return D3D12_RESOURCE_STATE_COMMON;
 }
+
+*/
