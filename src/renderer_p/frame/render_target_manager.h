@@ -1,4 +1,5 @@
 #pragma once
+#include <vulkan/vulkan.hpp>
 #include <vma/vk_mem_alloc.h>
 
 namespace rfct {
@@ -16,14 +17,17 @@ namespace rfct {
 			vk::Format dafaultFormat = vk::Format::eB8G8R8A8Unorm;
 			std::string debugName = "renderImage";
 			// image create
+			bool allocateImage = true;
+			vk::Image image = nullptr; // should hold valid image handle if allocateImage is false
 			VmaMemoryUsage memoryUsage = VMA_MEMORY_USAGE_GPU_ONLY;
-			vk::SampleCountFlags imageSamples = vk::SampleCountFlagBits::e1;
+			vk::SampleCountFlagBits imageSamples = vk::SampleCountFlagBits::e1;
 			vk::ImageUsageFlags usage = vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled;
 			// runtime settings
 			vk::ImageLayout dafaultLayout = vk::ImageLayout::eColorAttachmentOptimal;
 		};
 	public:
 		void TransformLayoutSync(vk::ImageLayout newLayout, RfctDevice& deviceWrapper, RfctQueue& queue);
+		void TransformLayoutAsync(vk::ImageLayout newLayout, vk::CommandBuffer commandBuffer);
 		void CreateImageAndView(const RfctRenderImageSpec& spec, RfctDevice& deviceWrapper,
 			RfctVulkanInstance& instanceWrapper, RfctQueue& queueWrapper, RfctVulkanMemAllocator& allocatorWrapper);
 		void InitFrameBuffer(std::vector<RfctRenderImage*> attachments, vk::RenderPass renderPass, vk::Device device);
@@ -43,39 +47,39 @@ namespace rfct {
 		vk::UniqueFramebuffer m_frameBuffer;
 		vk::ImageLayout m_currentLayout = vk::ImageLayout::eUndefined;
 		vk::Format m_format;
-	};
-
-	class RfctRenderPass {
-	public:
-		struct RfctRenderPassSpec {
-		};
+		vk::SampleCountFlags m_sampleCount;
 	};
 
 	// temporary solution- want to have framegraph owning render images and frame buffers
 	class RfctRenderImagesManager {
 	public:
-		RfctRenderImagesManager(rfct::RfctDevice& deviceWrapper, rfct::RfctQueue& queueWrapper,
+		RfctRenderImage& GetSceneImage(size_t index) { return m_sceneImages[index]; }
+		RfctRenderImage& GetBloom1Image(size_t index) { return m_bloom1Images[index]; }
+		RfctRenderImage& GetBloom2Image(size_t index) { return m_bloom2Images[index]; }
+		RfctRenderImage& GetSwapChainImage(size_t index) { return m_swapchainImages[index]; }
+		vk::RenderPass GetUIRenderPass() { return m_UIRenderPass.get(); }
+		vk::RenderPass GetpresentToColorAttachmentRenderPass() { return m_presentToColorAttachment.get(); }
+		vk::RenderPass GetIntermediateClearRenderPass() { return m_IntermediateClearRenderPass.get(); }
+		vk::RenderPass GetIntermediateRenderPass() { return m_IntermediateRenderPass.get(); }
+		vk::RenderPass GetSceneRenderPass() { return m_sceneRenderPass.get(); }
+	public:
+		RfctRenderImagesManager(rfct::RfctDevice& deviceWrapper, RfctVulkanInstance& instanceWrapper, rfct::RfctQueue& queueWrapper,
 			RfctVulkanMemAllocator& allocatorWrapper, RfctSwapChain& swapChainWrapper);
 		~RfctRenderImagesManager();
-		void CreateResources(rfct::RfctDevice& deviceWrapper, rfct::RfctQueue& queueWrapper,
+		void CreateResources(rfct::RfctDevice& deviceWrapper, RfctVulkanInstance& instanceWrapper, rfct::RfctQueue& queueWrapper,
 			RfctVulkanMemAllocator& allocatorWrapper, RfctSwapChain& swapChainWrapper);
 	private:
-		void CreateImageViews(RfctSwapChain& swapChainWrapper, vk::Device device);
-		void CreateImages(rfct::RfctDevice& deviceWrapper, rfct::RfctQueue& queueWrapper,
-			RfctVulkanMemAllocator& allocatorWrapper, RfctSwapChain& swapChainWrapper);
+		void CreateImages(vk::SampleCountFlagBits msaaSamples, rfct::RfctDevice& deviceWrapper, RfctVulkanInstance& instanceWrapper, 
+			rfct::RfctQueue& queueWrapper, RfctVulkanMemAllocator& allocatorWrapper, RfctSwapChain& swapChainWrapper);
 		void CreateFrameBuffers(RfctSwapChain& swapChainWrapper, vk::Device device);
-		void CreateMSAAres(RfctSwapChain& swapChainWrapper, RfctVulkanMemAllocator& allocatorWrapper, vk::Device device, vk::SampleCountFlagBits msaaSamples = vk::SampleCountFlagBits::e4);
-		void CleanupMSAAres(RfctVulkanMemAllocator& allocatorWrapper);
-		void CleanupImages(RfctVulkanMemAllocator& allocatorWrapper);
+		void CleanupImages(RfctVulkanMemAllocator& allocatorWrapper, vk::Device& device);
 		void CreateRenderPasses(vk::Device device, vk::SampleCountFlagBits msaaSamples = vk::SampleCountFlagBits::e4);
-
-
+	private:
 		vk::UniqueRenderPass m_UIRenderPass;
 		vk::UniqueRenderPass m_presentToColorAttachment;
 		vk::UniqueRenderPass m_IntermediateClearRenderPass;
 		vk::UniqueRenderPass m_IntermediateRenderPass;
 		vk::UniqueRenderPass m_sceneRenderPass;
-
 		std::vector<RfctRenderImage> m_sceneImages;
 		std::vector<RfctRenderImage> m_bloom1Images;
 		std::vector<RfctRenderImage> m_bloom2Images;

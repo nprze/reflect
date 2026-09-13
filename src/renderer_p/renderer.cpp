@@ -26,7 +26,7 @@ rfct::RfctRenderer::RfctRenderer(RFCT_RENDERER_ARGUMENTS)
     m_queue(m_device.GetDevice(), m_device.GetPhysicalDevice(), m_surface.GetSurface()),
     m_allocator(m_device.GetPhysicalDevice(), m_device.GetDevice(), m_instance.GetInstance()),
 	m_swapChain(m_device.GetPhysicalDevice(), m_device.GetDevice(), m_surface.GetSurface()),
-    m_renderImages(m_device, m_queue, m_allocator, m_swapChain),
+    m_renderImages(m_device, m_instance, m_queue, m_allocator, m_swapChain),
     m_framesInFlight(m_allocator, m_queue, m_device.GetDevice()), 
     m_rasterizerPipeline(m_renderImages.GetSceneRenderPass(), m_device.GetDevice()), 
     m_bloomRes(m_queue, m_renderImages, m_renderImages.GetIntermediateRenderPass(), m_device.GetDevice()),
@@ -72,7 +72,7 @@ void rfct::RfctRenderer::Render(frameContext& frameContext) {
 		imageIndex = acquireImageResult.imageIndex;
 
         if (acquireImageResult.needsRecreation) {
-            m_renderImages.CreateResources(m_device, m_queue, m_allocator, m_swapChain);
+            m_renderImages.CreateResources(m_device, m_instance,m_queue, m_allocator, m_swapChain);
             m_bloomRes.onSwapchainExtentChanged(m_renderImages, m_device.GetDevice());
             acquireImageResult = m_swapChain.AcquireNextImage(frameData.m_ImageAvaibleSemaphore.get(), VK_NULL_HANDLE,
                 m_device.GetPhysicalDevice(), m_device.GetDevice(), m_surface.GetSurface());
@@ -92,16 +92,16 @@ void rfct::RfctRenderer::Render(frameContext& frameContext) {
         RFCT_PROFILE_SCOPE("command buffers record");
         auto jobs = std::make_shared<rfct::jobTracker>();
         jobSystem::get().KickJob([&]() {
-            m_rasterizerPipeline.RecordCommandBuffer(&frameContext, m_swapChain, frameData, m_renderImages.GetSceneFrameBuffer(frameContext.frame), m_renderImages.GetSceneRenderPass());
+            m_rasterizerPipeline.RecordCommandBuffer(&frameContext, m_swapChain, frameData, m_renderImages.GetSceneImage(frameContext.frame).m_frameBuffer.get(), m_renderImages.GetSceneRenderPass());
             }, *jobs);
         jobSystem::get().KickJob([&]() {
             m_bloomRes.blum(&frameContext, m_renderImages, m_swapChain, frameData, m_renderImages.GetIntermediateClearRenderPass(), imageIndex);
             }, *jobs);
         jobSystem::get().KickJob([&]() {
-            debugDraw::flush(&frameContext, frameData, m_renderImages.GetSwapChainFrameBuffer(imageIndex), m_renderImages.GetIntermediateRenderPass());
+            debugDraw::flush(&frameContext, frameData, m_renderImages.GetSwapChainImage(imageIndex).m_frameBuffer.get(), m_renderImages.GetIntermediateRenderPass());
             }, *jobs);
         jobSystem::get().KickJob([&]() {
-            m_UIPipeline.draw(m_swapChain, frameData, m_renderImages.GetSwapChainFrameBuffer(imageIndex), m_renderImages.GetUIRenderPass());
+            m_UIPipeline.draw(m_swapChain, frameData, m_renderImages.GetSwapChainImage(imageIndex).m_frameBuffer.get(), m_renderImages.GetUIRenderPass());
             }, *jobs);
         jobs->waitAll();
     }

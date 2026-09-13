@@ -4,7 +4,7 @@
 
 namespace rfct {
 	class RfctShader;
-	class renderImagesManager;
+	class RfctRenderImagesManager;
 	class RfctSwapChain;
 	struct layoutTemporaryHolder {
 		vk::PipelineLayout pipeline;
@@ -34,13 +34,13 @@ namespace rfct {
 	};
 	class bloomResurcesHolder {
 	public:
-		bloomResurcesHolder(RfctQueue& queue, renderImagesManager& imageManager, vk::RenderPass renderPass, vk::Device device);
-		void updateDescSets(renderImagesManager& imageManager, vk::Device device);
-		void blum(frameContext* ctx, renderImagesManager& imageManager, RfctSwapChain& swapChain,
+		bloomResurcesHolder(RfctQueue& queue, RfctRenderImagesManager& imageManager, vk::RenderPass renderPass, vk::Device device);
+		void updateDescSets(RfctRenderImagesManager& imageManager, vk::Device device);
+		void blum(frameContext* ctx, RfctRenderImagesManager& imageManager, RfctSwapChain& swapChain,
 			frameData& fd, vk::RenderPass renderPass, uint32_t imageIndex);
-		void recordCommandBuffer(renderImagesManager& imageManager, RfctSwapChain& swapChain,
+		void recordCommandBuffer(RfctRenderImagesManager& imageManager, RfctSwapChain& swapChain,
 			vk::CommandBuffer commandBuffer, vk::RenderPass renderPass, uint32_t imageIndex, uint32_t swapchainImage);
-		void onSwapchainExtentChanged(renderImagesManager& imageManager, vk::Device device);
+		void onSwapchainExtentChanged(RfctRenderImagesManager& imageManager, vk::Device device);
 	private:
 		RfctShader* vertexShader;
 		bloomSamplerHolder m_imageSampler;

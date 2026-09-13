@@ -6,54 +6,6 @@
 namespace rfct {
     constexpr uint32_t count = RFCT_FRAMES_IN_FLIGHT + 1;
     constexpr uint32_t bloomMultiply = 3;
-    // helper function
-    void transitionImageLayout(vk::CommandBuffer commandBuffer, vk::Image image, vk::ImageLayout oldLayout, vk::ImageLayout newLayout) {
-		RFCT_PROFILE_FUNCTION();
-        vk::ImageSubresourceRange subresourceRange = {
-            vk::ImageAspectFlagBits::eColor,
-            0, 1,
-            0, 1
-        };
-        vk::AccessFlags srcAccessMask;
-        vk::AccessFlags dstAccessMask;
-        vk::PipelineStageFlags srcStage;
-        vk::PipelineStageFlags dstStage;
-
-        if (oldLayout == vk::ImageLayout::eColorAttachmentOptimal && newLayout == vk::ImageLayout::eShaderReadOnlyOptimal) {
-            srcAccessMask = vk::AccessFlagBits::eColorAttachmentWrite;
-            dstAccessMask = vk::AccessFlagBits::eShaderRead;
-            srcStage = vk::PipelineStageFlagBits::eColorAttachmentOutput;
-            dstStage = vk::PipelineStageFlagBits::eFragmentShader;
-        }
-        else if (oldLayout == vk::ImageLayout::eShaderReadOnlyOptimal && newLayout == vk::ImageLayout::eColorAttachmentOptimal) {
-            srcAccessMask = vk::AccessFlagBits::eShaderRead;
-            dstAccessMask = vk::AccessFlagBits::eColorAttachmentWrite;
-            srcStage = vk::PipelineStageFlagBits::eFragmentShader;
-            dstStage = vk::PipelineStageFlagBits::eColorAttachmentOutput;
-        }
-        else {
-            RFCT_CRITICAL("Unsupported layout transition");
-        }
-
-        vk::ImageMemoryBarrier barrier{};
-        barrier.oldLayout = oldLayout;
-        barrier.newLayout = newLayout;
-        barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        barrier.image = image;
-        barrier.subresourceRange = subresourceRange;
-        barrier.srcAccessMask = srcAccessMask;
-        barrier.dstAccessMask = dstAccessMask;
-
-        commandBuffer.pipelineBarrier(
-            srcStage,
-            dstStage,
-            vk::DependencyFlags{},
-            nullptr, nullptr,
-            barrier
-        );
-    }
-
     // pipeline layouts
     layoutTemporaryHolder TresholdPipelineLayout(vk::Device device) {
         RFCT_PROFILE_FUNCTION();
@@ -181,7 +133,7 @@ namespace rfct {
         m_sampler = device.createSamplerUnique(samplerInfo).value;
 	}
 
-    bloomResurcesHolder::bloomResurcesHolder(RfctQueue& queue, renderImagesManager& imageManager, vk::RenderPass renderPass, vk::Device device)
+    bloomResurcesHolder::bloomResurcesHolder(RfctQueue& queue, RfctRenderImagesManager& imageManager, vk::RenderPass renderPass, vk::Device device)
         : vertexShader(GetAssetManager().GetOrLoadShader(device, "shaders/post_proc/fullscreen_vert.spv")),
         m_imageSampler(device),
         m_gaussianPipeline(device, renderPass, "shaders/post_proc/fullscreen_vert.spv", "shaders/post_proc/gaussian_blur_frag.spv", GaussianBlurPipelineLayout(device)),
@@ -257,7 +209,7 @@ namespace rfct {
         m_bloomCommandBuffer = std::move(device.allocateCommandBuffersUnique(allocInfoBloom).value);
     }
 
-    void bloomResurcesHolder::updateDescSets(renderImagesManager& imageManager, vk::Device device) {
+    void bloomResurcesHolder::updateDescSets(RfctRenderImagesManager& imageManager, vk::Device device) {
         RFCT_PROFILE_FUNCTION();
         // update descriptor sets
         for (size_t i = 0; i < count; ++i) {
@@ -266,7 +218,7 @@ namespace rfct {
                 vk::DescriptorImageInfo imageInfo;
 
                 imageInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
-                imageInfo.imageView = imageManager.GetSceneImageView(i);
+                imageInfo.imageView = imageManager.GetSceneImage(i).m_imageView.get();
                 imageInfo.sampler = m_imageSampler.m_sampler.get();
 
                 vk::WriteDescriptorSet writeDescriptorSet = {};
@@ -284,7 +236,7 @@ namespace rfct {
                 vk::DescriptorImageInfo imageInfo;
 
                 imageInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
-                imageInfo.imageView = imageManager.GetBloom2ImageView(i);
+                imageInfo.imageView = imageManager.GetBloom2Image(i).m_imageView.get();
                 imageInfo.sampler = m_imageSampler.m_sampler.get();
 
                 vk::WriteDescriptorSet writeDescriptorSet = {};
@@ -301,7 +253,7 @@ namespace rfct {
                 // composite
                 vk::DescriptorImageInfo imageInfo0;
                 imageInfo0.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
-                imageInfo0.imageView = imageManager.GetSceneImageView(i); // Image 0
+                imageInfo0.imageView = imageManager.GetSceneImage(i).m_imageView.get(); // Image 0
                 imageInfo0.sampler = m_imageSampler.m_sampler.get();
 
                 vk::WriteDescriptorSet writeDescriptorSet0 = {};
@@ -314,7 +266,7 @@ namespace rfct {
 
                 vk::DescriptorImageInfo imageInfo1;
                 imageInfo1.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
-                imageInfo1.imageView = imageManager.GetBloom1ImageView(i); // Image 1
+                imageInfo1.imageView = imageManager.GetBloom1Image(i).m_imageView.get(); // Image 1
                 imageInfo1.sampler = m_imageSampler.m_sampler.get();
 
                 vk::WriteDescriptorSet writeDescriptorSet1 = {};
@@ -331,26 +283,26 @@ namespace rfct {
         }
     }
 
-    void bloomResurcesHolder::blum(frameContext* ctx, renderImagesManager& imageManager, RfctSwapChain& swapChain, 
+    void bloomResurcesHolder::blum(frameContext* ctx, RfctRenderImagesManager& imageManager, RfctSwapChain& swapChain, 
         frameData& fd, vk::RenderPass renderPass, uint32_t imageIndex) {
         RFCT_PROFILE_FUNCTION();
         recordCommandBuffer(imageManager, swapChain, m_bloomCommandBuffer[ctx->frame].get(), imageManager.GetIntermediateClearRenderPass(), ctx->frame, imageIndex);
         fd.m_BloomCommandBuffer = m_bloomCommandBuffer[ctx->frame].get();
     }
 
-    void bloomResurcesHolder::recordCommandBuffer(renderImagesManager& imageManager, RfctSwapChain& swapChain, 
+    void bloomResurcesHolder::recordCommandBuffer(RfctRenderImagesManager& imageManager, RfctSwapChain& swapChain, 
         vk::CommandBuffer commandBuffer, vk::RenderPass renderPass, uint32_t imageIndex, uint32_t swapchainImage) {
 		RFCT_PROFILE_FUNCTION();
         commandBuffer.reset({});
         vk::CommandBufferBeginInfo beginInfo = {};
         commandBuffer.begin(beginInfo);
-        transitionImageLayout(commandBuffer, imageManager.GetSceneImage(imageIndex), vk::ImageLayout::eColorAttachmentOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);
+		imageManager.GetSceneImage(imageIndex).TransformLayoutAsync(vk::ImageLayout::eShaderReadOnlyOptimal, commandBuffer);
 
         {
             // bloom 0 pipeline
             vk::RenderPassBeginInfo renderPassInfo = {};
             renderPassInfo.renderPass = renderPass;
-            renderPassInfo.framebuffer = imageManager.GetBloom2FrameBuffer(imageIndex);
+            renderPassInfo.framebuffer = imageManager.GetBloom2Image(imageIndex).m_frameBuffer.get();
             renderPassInfo.renderArea.offset = vk::Offset2D{ 0, 0 };
             renderPassInfo.renderArea.extent = swapChain.GetExtent();
             renderPassInfo.clearValueCount = 1;
@@ -395,12 +347,11 @@ namespace rfct {
         }
         {
             // bloom 1 pipeline
-            transitionImageLayout(commandBuffer, imageManager.GetBloom2Image(imageIndex), vk::ImageLayout::eColorAttachmentOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);
-            //transitionImageLayout(commandBuffer, imageManager.GetBloom1Image(imageIndex), vk::ImageLayout::eShaderReadOnlyOptimal, vk::ImageLayout::eColorAttachmentOptimal);
+			imageManager.GetBloom2Image(imageIndex).TransformLayoutAsync(vk::ImageLayout::eShaderReadOnlyOptimal, commandBuffer);
 
             vk::RenderPassBeginInfo renderPassInfo = {};
             renderPassInfo.renderPass = renderPass;
-            renderPassInfo.framebuffer = imageManager.GetBloom1FrameBuffer(imageIndex);
+            renderPassInfo.framebuffer = imageManager.GetBloom1Image(imageIndex).m_frameBuffer.get();
             renderPassInfo.renderArea.offset = vk::Offset2D{ 0, 0 };
             renderPassInfo.renderArea.extent = swapChain.GetExtent();
             renderPassInfo.clearValueCount = 1;
@@ -445,11 +396,11 @@ namespace rfct {
         }
         {
             // composite pipeline
-            transitionImageLayout(commandBuffer, imageManager.GetBloom1Image(imageIndex), vk::ImageLayout::eColorAttachmentOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);
+			imageManager.GetBloom1Image(imageIndex).TransformLayoutAsync(vk::ImageLayout::eShaderReadOnlyOptimal, commandBuffer);
 
             vk::RenderPassBeginInfo renderPassInfo = {};
             renderPassInfo.renderPass = imageManager.GetpresentToColorAttachmentRenderPass();
-            renderPassInfo.framebuffer = imageManager.GetSwapChainFrameBuffer(swapchainImage);
+            renderPassInfo.framebuffer = imageManager.GetSwapChainImage(imageIndex).m_frameBuffer.get();
             renderPassInfo.renderArea.offset = vk::Offset2D{ 0, 0 };
             renderPassInfo.renderArea.extent = swapChain.GetExtent();
             renderPassInfo.clearValueCount = 1;
@@ -480,14 +431,14 @@ namespace rfct {
             commandBuffer.draw(3, 1, 0, 0);
             commandBuffer.endRenderPass();
         }
-        transitionImageLayout(commandBuffer, imageManager.GetSceneImage(imageIndex), vk::ImageLayout::eShaderReadOnlyOptimal, vk::ImageLayout::eColorAttachmentOptimal);
-        transitionImageLayout(commandBuffer, imageManager.GetBloom1Image(imageIndex), vk::ImageLayout::eShaderReadOnlyOptimal, vk::ImageLayout::eColorAttachmentOptimal);
-        transitionImageLayout(commandBuffer, imageManager.GetBloom2Image(imageIndex), vk::ImageLayout::eShaderReadOnlyOptimal, vk::ImageLayout::eColorAttachmentOptimal);
+        imageManager.GetSceneImage(imageIndex).TransformLayoutAsync(vk::ImageLayout::eColorAttachmentOptimal, commandBuffer);
+        imageManager.GetBloom1Image(imageIndex).TransformLayoutAsync(vk::ImageLayout::eColorAttachmentOptimal, commandBuffer);
+        imageManager.GetBloom2Image(imageIndex).TransformLayoutAsync(vk::ImageLayout::eColorAttachmentOptimal, commandBuffer);
 
         commandBuffer.end();
     }
 
-    void bloomResurcesHolder::onSwapchainExtentChanged(renderImagesManager& imageManager, vk::Device device) {
+    void bloomResurcesHolder::onSwapchainExtentChanged(RfctRenderImagesManager& imageManager, vk::Device device) {
 		RFCT_PROFILE_FUNCTION();
         updateDescSets(imageManager, device);
     }
