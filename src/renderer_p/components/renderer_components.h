@@ -4,7 +4,7 @@
 #include "platform_window.h"
 
 namespace rfct {
-	class frameData;
+	class RfctFrameSyncData;
 
 	class RfctVulkanInstance {
 	public:

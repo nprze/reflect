@@ -17,7 +17,7 @@ float rfct::debugDraw::drawText(const std::string& text, glm::vec2 startPosition
     return instance->text(GetRen().GetUIPipeline(), text, startPosition, scale);
 }
 
-void rfct::debugDraw::flush(frameContext* ctx, frameData& fd, vk::Framebuffer framebuffer, vk::RenderPass renderPass) {
+void rfct::debugDraw::flush(frameContext* ctx, RfctFrameSyncData& fd, vk::Framebuffer framebuffer, vk::RenderPass renderPass) {
     instance->draw(ctx, GetRen().GetSwapChain(), fd, framebuffer, renderPass);
 }
 
@@ -169,7 +169,7 @@ void rfct::debugDraw::createDebugPipelines(vk::RenderPass renderPass, vk::Device
     m_linePipeline = device.createGraphicsPipelineUnique({}, linePipelineInfo).value;
 }
 
-void rfct::debugDraw::draw(frameContext* ctx, RfctSwapChain& swapChain, frameData& fd, vk::Framebuffer framebuffer, vk::RenderPass renderPass) {
+void rfct::debugDraw::draw(frameContext* ctx, RfctSwapChain& swapChain, RfctFrameSyncData& fd, vk::Framebuffer framebuffer, vk::RenderPass renderPass) {
     RFCT_PROFILE_FUNCTION();
 	if (m_triangleBuffer.vertexCount == 0 && m_lineBuffer.vertexCount == 0) {
         ctx->renderDebugDraw = false;
@@ -208,7 +208,7 @@ void rfct::debugDraw::draw(frameContext* ctx, RfctSwapChain& swapChain, frameDat
     commandBuffer.setLineWidth(1.f);
 
     // Camera Descriptor
-    commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_PipelineLayout.get(), 0, fd.getCameraUboDescSet((uint32_t)(ctx->frame)), {});
+    commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_PipelineLayout.get(), 0, fd.getCameraUboDescSet(), {});
 
     // Debug trigs
     if(m_triangleBuffer.vertexCount!=0){

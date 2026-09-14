@@ -2,14 +2,14 @@
 #include "renderer_p/frame/frame_data.h"
 
 namespace rfct {
-	class framesInFlight {
+	class RfctFrameInFlight {
 	public:
-		framesInFlight(RfctVulkanMemAllocator& allocator, RfctQueue& queue, vk::Device device);
-		~framesInFlight();
-		frameData& getNextFrame(uint32_t frame_index);
+		RfctFrameInFlight(RfctVulkanMemAllocator& allocator, RfctQueue& queue, vk::Device device);
+		~RfctFrameInFlight();
+		RfctFrameSyncData& GetNextFrame(uint32_t frame_index) { return *m_frames[frame_index].get(); }
 	private:
 		uint32_t m_nextFrame = 0;
-		std::vector<unique<frameData>> m_frames;
+		std::vector<unique<RfctFrameSyncData>> m_frames;
 		std::vector<vk::UniqueFence> m_fences;
 	};
 }

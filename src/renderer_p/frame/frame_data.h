@@ -7,13 +7,13 @@
 namespace rfct {
 	class RfctVulkanMemAllocator;
 	class RfctQueue;
-    class frameData {
+    class RfctFrameSyncData {
     public:
-        frameData(RfctVulkanMemAllocator& allocatorWrapper, RfctQueue& queue, vk::Device device, vk::Fence lastFramePresentFinishedFence, vk::Fence thisFramePresentFinishedFence);
+        RfctFrameSyncData(RfctVulkanMemAllocator& allocatorWrapper, RfctQueue& queue, vk::Device device, vk::Fence lastFramePresentFinishedFence, vk::Fence thisFramePresentFinishedFence);
 		void prepareFrame(const frameContext& ctx, uint32_t BufferIndex, float changeSceneEffectMultiplier);
         void WaitForFences(vk::Device device);
         void ResetFences(vk::Device device);
-		vk::DescriptorSet& getCameraUboDescSet(uint32_t BufferIndex) { return m_descriptors.getCameraDescSet(BufferIndex); }
+		vk::DescriptorSet& getCameraUboDescSet() { return m_descriptors.getCameraDescSet(0); }
 		vk::DescriptorSet& getUICameraUboDescSet() { return m_UIcameradescriptors.getCameraDescSet(0); }
         vk::SubmitInfo sceneSubmitInfo(const frameContext& ctx) const;
         vk::SubmitInfo bloomSubmitInfo(const frameContext& ctx) const;
@@ -42,7 +42,7 @@ namespace rfct {
 		vk::Fence m_thisFrameRenderFinishedFence;
 		vk::Fence m_lastFrameRenderFinishedFence;
 
-		std::array<ubo, RFCT_FRAMES_IN_FLIGHT> m_cameraUbo;
+		ubo m_sceneCameraUbo;
 		ubo m_UIcameraUbo;
 
 		descriptors m_descriptors;

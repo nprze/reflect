@@ -39,7 +39,7 @@ namespace rfct {
 		RfctVulkanMemAllocator m_allocator;
 		RfctSwapChain m_swapChain;
 		RfctRenderImagesManager m_renderImages;
-		framesInFlight m_framesInFlight;
+		RfctFrameInFlight m_framesInFlight;
 		vulkanRasterizerPipeline m_rasterizerPipeline;
 		bloomResurcesHolder m_bloomRes;
 		debugDraw m_debugDraw;

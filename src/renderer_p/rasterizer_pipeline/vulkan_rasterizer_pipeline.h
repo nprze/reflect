@@ -3,7 +3,7 @@
 namespace rfct {
 	class renderData;
 	class RfctSwapChain;
-	class frameData;
+	class RfctFrameSyncData;
 	class RfctShader;
 	class vulkanRasterizerPipeline
 	{
@@ -12,7 +12,7 @@ namespace rfct {
 	public:
 		vulkanRasterizerPipeline(vk::RenderPass renderPass, vk::Device device);
 		void CreatePipeline(vk::RenderPass renderPass, vk::Device device);
-		void RecordCommandBuffer(frameContext* ctx, RfctSwapChain& swapChainWrapper, frameData& frameData, vk::Framebuffer framebuffer, vk::RenderPass renderPass);
+		void RecordCommandBuffer(frameContext* ctx, RfctSwapChain& swapChainWrapper, RfctFrameSyncData& RfctFrameSyncData, vk::Framebuffer framebuffer, vk::RenderPass renderPass);
 	private:
 		RfctShader* m_vertexShader;
 		RfctShader* m_fragShader;

@@ -317,7 +317,7 @@ void rfct::RfctRenderImagesManager::CreateFrameBuffers(RfctSwapChain& swapChainW
     }
 }
 
-void rfct::RfctRenderImagesManager::CleanupImages(RfctVulkanMemAllocator& allocatorWrapper, vk::Device& device) {
+void rfct::RfctRenderImagesManager::CleanupResources(RfctVulkanMemAllocator& allocatorWrapper, vk::Device& device) {
     RFCT_PROFILE_FUNCTION();
     for (uint32_t i = 0; i < m_bloom1Images.size(); i++) {
 		m_bloom1Images[i].Cleanup(allocatorWrapper, device);
@@ -331,12 +331,6 @@ rfct::RfctRenderImagesManager::RfctRenderImagesManager(rfct::RfctDevice& deviceW
     RfctVulkanMemAllocator& allocatorWrapper, RfctSwapChain& swapChainWrapper) {
     CreateRenderPasses(deviceWrapper.GetDevice());
     CreateResources(deviceWrapper, instanceWrapper, queueWrapper, allocatorWrapper, swapChainWrapper);
-}
-
-rfct::RfctRenderImagesManager::~RfctRenderImagesManager() {
-    // TODO: Do the actual cleanup before destructor
-    /* CleanupMSAAres();
-    CleanupImages();*/  
 }
 
 void rfct::RfctRenderImagesManager::CreateResources(rfct::RfctDevice& deviceWrapper, RfctVulkanInstance& instanceWrapper, rfct::RfctQueue& queueWrapper,
@@ -358,9 +352,8 @@ void rfct::RfctRenderImagesManager::CreateResources(rfct::RfctDevice& deviceWrap
     }
 
     // Other images
-    CleanupImages(allocatorWrapper, deviceWrapper.GetDevice());        
+    CleanupResources(allocatorWrapper, deviceWrapper.GetDevice());        
     CreateImages(vk::SampleCountFlagBits::e4, deviceWrapper, instanceWrapper, queueWrapper, allocatorWrapper, swapChainWrapper);
-
     CreateFrameBuffers(swapChainWrapper, deviceWrapper.GetDevice());
 }
 

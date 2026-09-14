@@ -15,7 +15,7 @@ inline static glm::mat4 getUIMatrix(vk::Extent2D extent) {
     return screenRot * glm::ortho(0.0f, static_cast<float>(extent.width), 0.0f, static_cast<float>(extent.height));
 }
 
-rfct::frameData::frameData(RfctVulkanMemAllocator& allocatorWrapper, RfctQueue& queue, vk::Device device, 
+rfct::RfctFrameSyncData::RfctFrameSyncData(RfctVulkanMemAllocator& allocatorWrapper, RfctQueue& queue, vk::Device device, 
     vk::Fence lastFramePresentFinishedFence, vk::Fence thisFramePresentFinishedFence) : 
     m_lastFrameRenderFinishedFence(lastFramePresentFinishedFence), 
     m_thisFrameRenderFinishedFence(thisFramePresentFinishedFence), 
@@ -53,40 +53,38 @@ rfct::frameData::frameData(RfctVulkanMemAllocator& allocatorWrapper, RfctQueue& 
     m_bloomFinishedSemaphore = device.createSemaphoreUnique(semaphoreInfo).value;
     m_renderFinishedSemaphore = device.createSemaphoreUnique(semaphoreInfo).value;
 
-	for (size_t i = 0; i < RFCT_FRAMES_IN_FLIGHT; i++) {
-        m_descriptors.bindCameraUbo(m_cameraUbo[i].getBuffer(), i);
-	}
+    m_descriptors.bindCameraUbo(m_sceneCameraUbo.getBuffer(), 0);
 	m_UIcameradescriptors.bindCameraUbo(m_UIcameraUbo.getBuffer(), 0);
 }
 
-void rfct::frameData::prepareFrame(const frameContext& ctx, uint32_t BufferIndex, float changeSceneEffectMultiplier) {
-    m_cameraUbo[BufferIndex].updateUboData(getVPMatrix(), ctx.globalTime, changeSceneEffectMultiplier);
+void rfct::RfctFrameSyncData::prepareFrame(const frameContext& ctx, uint32_t BufferIndex, float changeSceneEffectMultiplier) {
+    m_sceneCameraUbo.updateUboData(getVPMatrix(), ctx.globalTime, changeSceneEffectMultiplier);
     m_UIcameraUbo.updateUboData(getUIMatrix({ 400, 400 }), ctx.globalTime, changeSceneEffectMultiplier); // TODO: fix extent getting 
 }
 
-void rfct::frameData::WaitForFences(vk::Device device) {
+void rfct::RfctFrameSyncData::WaitForFences(vk::Device device) {
     RFCT_PROFILE_FUNCTION();
     RFCT_VULKAN_CHECK(device.waitForFences(1, &m_thisFrameRenderFinishedFence, VK_TRUE, UINT64_MAX));
 }
 
-void rfct::frameData::ResetFences(vk::Device device) {
+void rfct::RfctFrameSyncData::ResetFences(vk::Device device) {
 	RFCT_PROFILE_FUNCTION();
     RFCT_VULKAN_CHECK(device.resetFences(1, &m_thisFrameRenderFinishedFence));
 }
 
-vk::SubmitInfo rfct::frameData::sceneSubmitInfo(const frameContext& ctx) const {
+vk::SubmitInfo rfct::RfctFrameSyncData::sceneSubmitInfo(const frameContext& ctx) const {
     return vk::SubmitInfo()
         .setWaitSemaphores(m_ImageAvaibleSemaphore.get())
         .setCommandBuffers(m_sceneCommandBuffer.get())
         .setSignalSemaphores(m_sceneFinishedSemaphore.get());
 }
-vk::SubmitInfo rfct::frameData::bloomSubmitInfo(const frameContext& ctx) const {
+vk::SubmitInfo rfct::RfctFrameSyncData::bloomSubmitInfo(const frameContext& ctx) const {
     return vk::SubmitInfo()
         .setWaitSemaphores(m_sceneFinishedSemaphore.get())
         .setCommandBuffers(m_BloomCommandBuffer)
         .setSignalSemaphores(m_bloomFinishedSemaphore.get());
 }
-vk::SubmitInfo rfct::frameData::debugDrawSubmitInfo(const frameContext& ctx) const {
+vk::SubmitInfo rfct::RfctFrameSyncData::debugDrawSubmitInfo(const frameContext& ctx) const {
     RFCT_ASSERT(ctx.renderDebugDraw);
     return vk::SubmitInfo()
         .setWaitSemaphores(m_bloomFinishedSemaphore.get())
@@ -94,7 +92,7 @@ vk::SubmitInfo rfct::frameData::debugDrawSubmitInfo(const frameContext& ctx) con
         .setSignalSemaphores(m_debugDrawFinishedSemaphore.get());
 }
 
-vk::SubmitInfo rfct::frameData::uiSubmitInfo(const frameContext& ctx) const {
+vk::SubmitInfo rfct::RfctFrameSyncData::uiSubmitInfo(const frameContext& ctx) const {
     return vk::SubmitInfo()
         .setWaitSemaphores((ctx.renderDebugDraw ? m_debugDrawFinishedSemaphore.get() : m_bloomFinishedSemaphore.get()))
         .setCommandBuffers(m_uiCommandBuffer.get())

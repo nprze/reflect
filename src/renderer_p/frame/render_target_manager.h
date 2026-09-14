@@ -65,14 +65,13 @@ namespace rfct {
 	public:
 		RfctRenderImagesManager(rfct::RfctDevice& deviceWrapper, RfctVulkanInstance& instanceWrapper, rfct::RfctQueue& queueWrapper,
 			RfctVulkanMemAllocator& allocatorWrapper, RfctSwapChain& swapChainWrapper);
-		~RfctRenderImagesManager();
 		void CreateResources(rfct::RfctDevice& deviceWrapper, RfctVulkanInstance& instanceWrapper, rfct::RfctQueue& queueWrapper,
 			RfctVulkanMemAllocator& allocatorWrapper, RfctSwapChain& swapChainWrapper);
+		void CleanupResources(RfctVulkanMemAllocator& allocatorWrapper, vk::Device& device);
 	private:
 		void CreateImages(vk::SampleCountFlagBits msaaSamples, rfct::RfctDevice& deviceWrapper, RfctVulkanInstance& instanceWrapper, 
 			rfct::RfctQueue& queueWrapper, RfctVulkanMemAllocator& allocatorWrapper, RfctSwapChain& swapChainWrapper);
 		void CreateFrameBuffers(RfctSwapChain& swapChainWrapper, vk::Device device);
-		void CleanupImages(RfctVulkanMemAllocator& allocatorWrapper, vk::Device& device);
 		void CreateRenderPasses(vk::Device device, vk::SampleCountFlagBits msaaSamples = vk::SampleCountFlagBits::e4);
 	private:
 		vk::UniqueRenderPass m_UIRenderPass;

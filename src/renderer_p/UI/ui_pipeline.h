@@ -31,7 +31,7 @@ namespace rfct {
 		UIPipelines(vk::RenderPass renderPass, vk::Device device);
 		void createPipeline(vk::RenderPass renderPass, vk::Device device);
 		void createDescriptorSet(vk::Device device);
-		void draw(RfctSwapChain& swapChain, frameData& fd, vk::Framebuffer framebuffer, vk::RenderPass renderPass);
+		void draw(RfctSwapChain& swapChain, RfctFrameSyncData& fd, vk::Framebuffer framebuffer, vk::RenderPass renderPass);
 		float debugText(const std::string& text, glm::vec2 startPosition, float scale);
 
 		float addTextVertices(UIVertexBuffer* rd, const std::string& text, glm::vec2 position, float scale, const glm::vec3& color = { 1.f, 0.f, 0.f }, font* f = nullptr); // returns the cursor end x position
