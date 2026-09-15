@@ -1,17 +1,21 @@
 #pragma once
 #include <vulkan/vulkan.hpp>
 #include <string>
+#include "renderer_p/buffer/vulkan_buffer.h"
+#include <glm/glm.hpp>
 
 namespace rfct {
     class RfctShader {
     public:
+        vk::ShaderModule getShaderModule() { return m_shaderModule.get(); }
+    public:
         RfctShader(vk::Device device, const std::string& spirvFilePath);
-        inline vk::ShaderModule getShaderModule() { return m_shaderModule.get(); }
     private:
         vk::UniqueShaderModule m_shaderModule;
     };
 
 	class RfctRenderPipeline {
+	public:
 		struct RfctRenderPipelineSpec {
 			std::string vertexShaderPath;
 			std::string fragmentShaderPath;
@@ -30,16 +34,28 @@ namespace rfct {
 		vk::UniquePipeline m_graphicsPipeline;
 	};
 
-	// A class to hold camera descriptors that are per frame in flight.
-	// Camera descriptors are separate, bcs they should always use set 0, binding 0 in shader also camera can freely be reused between scenes so there is no point in moving it to scene specific render data
-	// The ssbo (matrices data) is held in scene render data class
-	class RfctDescriptor {
+	struct RfctUniformData {
+		glm::mat4 vp;
+		float globalTime;
+		float changeSceneEffectMultiplier;
+	};
+	class RfctUniformBuffer {
 	public:
-		RfctDescriptor(uint32_t size = 1);
-		void bindCameraUbo(vk::Buffer ubo, uint32_t index);
-		vk::DescriptorSet& getCameraDescSet(uint32_t index) { return m_cameraUboDescSet[index].get(); }
+		static vk::DescriptorSetLayout GetUniformDescriptorSetLayout(vk::Device device);
+		static void DestroyUniformDescriptorSetLayout(vk::Device device);
+	public:
+		vk::DescriptorSet& GetCameraDescSet() { return m_cameraUboDescSet.get(); }
+		vk::Buffer GetBuffer() { return m_buffer.buffer; }
+	public:
+		RfctUniformBuffer(vk::Device device);
+		void DestroyUniformBuffer();
+		void UpdateUniformData(const RfctUniformData& newData);
 	private:
+		void BindBufferToDescriptor(vk::Buffer buffer, vk::Device device);
+	private:
+		VulkanBuffer m_buffer;
+		void* m_mappedBuffer;
 		vk::UniqueDescriptorPool m_descriptorPool;
-		std::vector<vk::UniqueDescriptorSet> m_cameraUboDescSet;
+		vk::UniqueDescriptorSet m_cameraUboDescSet;
 	};
 }

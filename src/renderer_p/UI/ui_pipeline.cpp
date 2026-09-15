@@ -95,7 +95,7 @@ void rfct::UIPipelines::createPipeline(vk::RenderPass renderPass, vk::Device dev
     // Pipeline layout
     vk::PipelineLayoutCreateInfo pipelineLayoutInfo = {};
     pipelineLayoutInfo.setLayoutCount = 2;
-    vk::DescriptorSetLayout dscSetLayouts[] = { ubo::getDescriptorSetLayout(), getDescriptorSetLayout() };
+    vk::DescriptorSetLayout dscSetLayouts[] = { RfctUniformBuffer::GetUniformDescriptorSetLayout(device), getDescriptorSetLayout() };
     pipelineLayoutInfo.pSetLayouts = dscSetLayouts;
     m_PipelineLayout = device.createPipelineLayoutUnique(pipelineLayoutInfo).value;
 

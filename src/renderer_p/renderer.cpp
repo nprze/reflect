@@ -35,11 +35,10 @@ rfct::RfctRenderer::RfctRenderer(RFCT_RENDERER_ARGUMENTS)
 {
 }
 
-rfct::RfctRenderer::~RfctRenderer() {
-	// TODO: do cleanup (probably want to move to separate function ?) 
-    //cleanupAssetsCommandPool();
-	m_renderImages.CleanupResources(m_allocator, m_device.GetDevice());
-};
+void rfct::RfctRenderer::DestroyRenderer() {
+    m_renderImages.CleanupResources(m_allocator, m_device.GetDevice());
+    RfctUniformBuffer::DestroyUniformDescriptorSetLayout(m_device.GetDevice());
+}
 
 void rfct::RfctRenderer::UpdateWindow(RFCT_NATIVE_WINDOW_ANDROID RFCT_NATIVE_WINDOW_ANDROID_VAR) {
     RFCT_PROFILE_FUNCTION();

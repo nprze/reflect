@@ -94,7 +94,7 @@ void rfct::vulkanRasterizerPipeline::CreatePipeline(vk::RenderPass renderPass, v
     // Pipeline layout
     vk::PipelineLayoutCreateInfo pipelineLayoutInfo = {};
     pipelineLayoutInfo.setLayoutCount = 2;
-    vk::DescriptorSetLayout dscSetLayouts[] = { ubo::getDescriptorSetLayout(), renderData::getDescriptorSetLayout() };
+    vk::DescriptorSetLayout dscSetLayouts[] = { RfctUniformBuffer::GetUniformDescriptorSetLayout(device), renderData::getDescriptorSetLayout() };
     pipelineLayoutInfo.pSetLayouts = dscSetLayouts;
     m_pipelineLayout = device.createPipelineLayoutUnique(pipelineLayoutInfo).value;
 

@@ -1,6 +1,7 @@
 #include "render_objects.h"
 #include "assets/assets_utils.h"
 #include "assets/asset_manager.h"
+#include <vma/vk_mem_alloc.h>
 #include <fstream>
 
 rfct::RfctShader::RfctShader(vk::Device device, const std::string& spirvFilePath) {
@@ -128,4 +129,85 @@ void rfct::RfctRenderPipeline::CreatePipeline(const RfctRenderPipelineSpec& spec
 	pipelineInfo.subpass = 0;
 
 	m_graphicsPipeline = device.createGraphicsPipelineUnique({}, pipelineInfo).value;
+}
+
+vk::DescriptorSetLayout uboDescriptorSetLayout;
+
+vk::DescriptorSetLayout rfct::RfctUniformBuffer::GetUniformDescriptorSetLayout(vk::Device device) {
+	if (uboDescriptorSetLayout) {
+		return uboDescriptorSetLayout;
+	}
+	vk::DescriptorSetLayoutBinding layoutBinding{};
+	layoutBinding.binding = 0;
+	layoutBinding.descriptorType = vk::DescriptorType::eUniformBuffer;
+	layoutBinding.descriptorCount = 1;
+	layoutBinding.stageFlags = vk::ShaderStageFlagBits::eVertex;
+	layoutBinding.pImmutableSamplers = nullptr;
+
+	vk::DescriptorSetLayoutCreateInfo layoutCreateInfo{};
+	layoutCreateInfo.bindingCount = 1;
+	layoutCreateInfo.pBindings = &layoutBinding;
+
+	uboDescriptorSetLayout = device.createDescriptorSetLayout(layoutCreateInfo).value;
+	return uboDescriptorSetLayout;
+}
+
+void rfct::RfctUniformBuffer::DestroyUniformDescriptorSetLayout(vk::Device device) {
+	device.destroyDescriptorSetLayout(uboDescriptorSetLayout);
+}
+
+rfct::RfctUniformBuffer::RfctUniformBuffer(vk::Device device) : m_buffer("uniform buffer", sizeof(RfctUniformData), 
+		vk::BufferUsageFlagBits::eUniformBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU) {
+	m_mappedBuffer = m_buffer.Map();
+
+	// Create pool
+	std::array<vk::DescriptorPoolSize, 1> poolSizes = { {
+	   { vk::DescriptorType::eUniformBuffer, 1 },
+	} };
+
+	vk::DescriptorPoolCreateInfo poolCreateInfo(
+		vk::DescriptorPoolCreateFlags(vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet), 1,
+		poolSizes.size(), poolSizes.data()
+	);
+	m_descriptorPool = device.createDescriptorPoolUnique(poolCreateInfo).value;
+
+	// Allocate uniform buffer descriptor set
+	vk::DescriptorSetAllocateInfo allocInfo{};
+	allocInfo.descriptorPool = m_descriptorPool.get();
+	allocInfo.descriptorSetCount = 1;
+	vk::DescriptorSetLayout descriptorSetLayout = RfctUniformBuffer::GetUniformDescriptorSetLayout(device);
+	allocInfo.pSetLayouts = &descriptorSetLayout;
+	auto descriptorSets = device.allocateDescriptorSetsUnique(allocInfo);
+	m_cameraUboDescSet = std::move(descriptorSets.value[0]);
+
+	BindBufferToDescriptor(m_buffer.buffer, device);
+}
+
+void rfct::RfctUniformBuffer::DestroyUniformBuffer() {
+	m_buffer.Unmap();
+}
+
+void rfct::RfctUniformBuffer::UpdateUniformData(const RfctUniformData& newData) {
+	RFCT_PROFILE_FUNCTION();
+	memcpy(m_mappedBuffer, &newData, sizeof(RfctUniformData));
+}
+
+void rfct::RfctUniformBuffer::BindBufferToDescriptor(vk::Buffer buffer, vk::Device device) {
+	if (!m_cameraUboDescSet.get()) {
+		RFCT_CRITICAL("Camera UBO descriptor set is null");
+	}
+	vk::DescriptorBufferInfo bufferInfo{};
+	bufferInfo.buffer = buffer;
+	bufferInfo.offset = 0;
+	bufferInfo.range = VK_WHOLE_SIZE;
+
+	vk::WriteDescriptorSet descriptorWrite{};
+	descriptorWrite.dstSet = m_cameraUboDescSet.get();
+	descriptorWrite.dstBinding = 0;
+	descriptorWrite.dstArrayElement = 0;
+	descriptorWrite.descriptorType = vk::DescriptorType::eUniformBuffer;
+	descriptorWrite.descriptorCount = 1;
+	descriptorWrite.pBufferInfo = &bufferInfo;
+
+	device.updateDescriptorSets(descriptorWrite, nullptr);
 }

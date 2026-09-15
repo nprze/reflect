@@ -15,7 +15,3 @@ rfct::RfctFrameInFlight::RfctFrameInFlight(RfctVulkanMemAllocator& allocator, Rf
 		RFCT_TRACE("Frame in flight #{0} created", i);
 	}
 }
-
-rfct::RfctFrameInFlight::~RfctFrameInFlight() {
-	ubo::destroyDescriptorSetLayout();
-}

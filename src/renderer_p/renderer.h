@@ -24,9 +24,9 @@ namespace rfct {
 		float GetAspectRatio() { return m_window.GetAspectRatio(); }
 		vk::Extent2D GetExtent() { return m_window.GetExtent(); }
 		UIPipelines& GetUIPipeline() { return m_UIPipeline; };
-
+	public:
         RfctRenderer(RFCT_RENDERER_ARGUMENTS);
-		~RfctRenderer();
+		void DestroyRenderer();
         void UpdateWindow(RFCT_NATIVE_WINDOW_ANDROID RFCT_NATIVE_WINDOW_ANDROID_VAR);
 		void Render(frameContext& frameContext);
 	private:

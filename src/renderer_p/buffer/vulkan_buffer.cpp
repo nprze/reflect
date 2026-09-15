@@ -14,8 +14,6 @@ rfct::VulkanBuffer::VulkanBuffer(const char* name, vk::DeviceSize size, vk::Buff
     allocCreateInfo.flags = allocFlags | VMA_ALLOCATION_CREATE_USER_DATA_COPY_STRING_BIT;
     allocCreateInfo.pUserData = (void*)name;
 
-
-
     VkBuffer vkBuffer;
     VkResult res = vmaCreateBuffer(allocator, &bufferCreateInfo,
         &allocCreateInfo, &vkBuffer, &allocation, nullptr);

@@ -17,9 +17,8 @@ inline static glm::mat4 getUIMatrix(vk::Extent2D extent) {
 
 rfct::RfctFrameSyncData::RfctFrameSyncData(RfctVulkanMemAllocator& allocatorWrapper, RfctQueue& queue, vk::Device device, 
     vk::Fence lastFramePresentFinishedFence, vk::Fence thisFramePresentFinishedFence) : 
-    m_lastFrameRenderFinishedFence(lastFramePresentFinishedFence), 
-    m_thisFrameRenderFinishedFence(thisFramePresentFinishedFence), 
-    m_descriptors(RFCT_FRAMES_IN_FLIGHT) {
+        m_lastFrameRenderFinishedFence(lastFramePresentFinishedFence), m_thisFrameRenderFinishedFence(thisFramePresentFinishedFence), 
+        m_sceneUniform(device), m_UIUniform(device) {
     RFCT_PROFILE_FUNCTION();
     vk::CommandPoolCreateInfo poolInfo {
         vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
@@ -52,14 +51,16 @@ rfct::RfctFrameSyncData::RfctFrameSyncData(RfctVulkanMemAllocator& allocatorWrap
     m_debugDrawFinishedSemaphore = device.createSemaphoreUnique(semaphoreInfo).value;
     m_bloomFinishedSemaphore = device.createSemaphoreUnique(semaphoreInfo).value;
     m_renderFinishedSemaphore = device.createSemaphoreUnique(semaphoreInfo).value;
-
-    m_descriptors.bindCameraUbo(m_sceneCameraUbo.getBuffer(), 0);
-	m_UIcameradescriptors.bindCameraUbo(m_UIcameraUbo.getBuffer(), 0);
 }
 
 void rfct::RfctFrameSyncData::prepareFrame(const frameContext& ctx, uint32_t BufferIndex, float changeSceneEffectMultiplier) {
-    m_sceneCameraUbo.updateUboData(getVPMatrix(), ctx.globalTime, changeSceneEffectMultiplier);
-    m_UIcameraUbo.updateUboData(getUIMatrix({ 400, 400 }), ctx.globalTime, changeSceneEffectMultiplier); // TODO: fix extent getting 
+	RfctUniformData cameraData;
+	cameraData.vp = getVPMatrix();
+	cameraData.globalTime = ctx.globalTime;
+	cameraData.changeSceneEffectMultiplier = changeSceneEffectMultiplier;
+    m_sceneUniform.UpdateUniformData(cameraData);
+    cameraData.vp = getUIMatrix({ 400, 400 } ); // TODO: fix extent getting 
+    m_UIUniform.UpdateUniformData(cameraData);
 }
 
 void rfct::RfctFrameSyncData::WaitForFences(vk::Device device) {

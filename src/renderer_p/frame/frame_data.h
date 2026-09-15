@@ -1,7 +1,6 @@
 #pragma once
 #include "context.h"
-#include "renderer_p/descriptors/ubo.h"
-#include "renderer_p/descriptors/camera_descriptors.h"
+#include "renderer_p/components/render_objects.h"
 #include <vulkan/vulkan.hpp>
 
 namespace rfct {
@@ -13,8 +12,8 @@ namespace rfct {
 		void prepareFrame(const frameContext& ctx, uint32_t BufferIndex, float changeSceneEffectMultiplier);
         void WaitForFences(vk::Device device);
         void ResetFences(vk::Device device);
-		vk::DescriptorSet& getCameraUboDescSet() { return m_descriptors.getCameraDescSet(0); }
-		vk::DescriptorSet& getUICameraUboDescSet() { return m_UIcameradescriptors.getCameraDescSet(0); }
+		vk::DescriptorSet& getCameraUboDescSet() { return m_sceneUniform.GetCameraDescSet(); }
+		vk::DescriptorSet& getUICameraUboDescSet() { return m_UIUniform.GetCameraDescSet(); }
         vk::SubmitInfo sceneSubmitInfo(const frameContext& ctx) const;
         vk::SubmitInfo bloomSubmitInfo(const frameContext& ctx) const;
         vk::SubmitInfo debugDrawSubmitInfo(const frameContext& ctx) const;
@@ -42,11 +41,8 @@ namespace rfct {
 		vk::Fence m_thisFrameRenderFinishedFence;
 		vk::Fence m_lastFrameRenderFinishedFence;
 
-		ubo m_sceneCameraUbo;
-		ubo m_UIcameraUbo;
-
-		descriptors m_descriptors;
-		descriptors m_UIcameradescriptors;
+		RfctUniformBuffer m_sceneUniform;
+		RfctUniformBuffer m_UIUniform;
     private:
         friend class RfctRenderer;
         friend class debugDraw;
