@@ -4,37 +4,9 @@
 #include "renderer_p/frame/render_target_manager.h"
 
 namespace rfct {
-    constexpr uint32_t count = RFCT_FRAMES_IN_FLIGHT + 1;
+    constexpr uint32_t count = RFCT_FRAMES_IN_FLIGHT;
     constexpr uint32_t bloomMultiply = 3;
     // pipeline layouts
-    layoutTemporaryHolder TresholdPipelineLayout(vk::Device device) {
-        RFCT_PROFILE_FUNCTION();
-        // descriptor set layout
-        vk::DescriptorSetLayoutBinding layoutBinding = {};
-        layoutBinding.binding = 0;
-        layoutBinding.descriptorType = vk::DescriptorType::eCombinedImageSampler;
-        layoutBinding.descriptorCount = 1;
-        layoutBinding.stageFlags = vk::ShaderStageFlagBits::eFragment;
-
-        vk::DescriptorSetLayoutCreateInfo layoutCreateInfo = {};
-        layoutCreateInfo.bindingCount = 1;
-        layoutCreateInfo.pBindings = &layoutBinding;
-        vk::DescriptorSetLayout descSetLayout = device.createDescriptorSetLayout(layoutCreateInfo).value;
-
-        // Pipeline layout
-        vk::PipelineLayoutCreateInfo pipelineLayoutInfo = {};
-        pipelineLayoutInfo.setLayoutCount = 1;
-        vk::DescriptorSetLayout dscSetLayouts[] = { descSetLayout };
-        pipelineLayoutInfo.pSetLayouts = dscSetLayouts;
-        pipelineLayoutInfo.pushConstantRangeCount = 0;
-        vk::PipelineLayout lay = device.createPipelineLayout(pipelineLayoutInfo).value;
-
-        layoutTemporaryHolder holder;
-        holder.descSet = descSetLayout;
-        holder.pipeline = lay;
-        return holder;
-    }
-    
     layoutTemporaryHolder GaussianBlurPipelineLayout(vk::Device device) {
         RFCT_PROFILE_FUNCTION();
         // descriptor set layout
@@ -295,7 +267,7 @@ namespace rfct {
 		RFCT_PROFILE_FUNCTION();
         commandBuffer.reset({});
         vk::CommandBufferBeginInfo beginInfo = {};
-        commandBuffer.begin(beginInfo);
+        RFCT_VULKAN_CHECK(commandBuffer.begin(beginInfo));
 		imageManager.GetSceneImage(imageIndex).TransformLayoutAsync(vk::ImageLayout::eShaderReadOnlyOptimal, commandBuffer);
 
         {
@@ -435,7 +407,7 @@ namespace rfct {
         imageManager.GetBloom1Image(imageIndex).TransformLayoutAsync(vk::ImageLayout::eColorAttachmentOptimal, commandBuffer);
         imageManager.GetBloom2Image(imageIndex).TransformLayoutAsync(vk::ImageLayout::eColorAttachmentOptimal, commandBuffer);
 
-        commandBuffer.end();
+        RFCT_VULKAN_CHECK(commandBuffer.end());
     }
 
     void bloomResurcesHolder::onSwapchainExtentChanged(RfctRenderImagesManager& imageManager, vk::Device device) {

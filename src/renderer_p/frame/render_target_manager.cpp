@@ -369,7 +369,7 @@ void rfct::RfctRenderImage::TransformLayoutSync(vk::ImageLayout newLayout, RfctD
     vk::CommandBuffer commandBuffer = cmdBuffersAllocResult.value[0];
 
     vk::CommandBufferBeginInfo beginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
-    commandBuffer.begin(beginInfo);
+    RFCT_VULKAN_CHECK(commandBuffer.begin(beginInfo));
 
     vk::ImageMemoryBarrier barrier{};
     barrier.oldLayout = m_currentLayout;
@@ -408,7 +408,7 @@ void rfct::RfctRenderImage::TransformLayoutSync(vk::ImageLayout newLayout, RfctD
         nullptr, nullptr, barrier
     );
 
-    commandBuffer.end();
+    RFCT_VULKAN_CHECK(commandBuffer.end());
 
     vk::SubmitInfo submitInfo({}, {}, commandBuffer);
     vk::FenceCreateInfo fenceInfo;

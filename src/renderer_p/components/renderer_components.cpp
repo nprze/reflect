@@ -309,7 +309,10 @@ void rfct::RfctVulkanInstance::SetObjectName(void* objectHandle, const std::stri
 	nameInfo.objectType = objectType;
 	nameInfo.objectHandle = (uintptr_t)(objectHandle);
 	nameInfo.pObjectName = name.c_str();
-	device.setDebugUtilsObjectNameEXT(nameInfo, GetDynamicLoader());
+	vk::Result debugNameResult = device.setDebugUtilsObjectNameEXT(nameInfo, GetDynamicLoader());
+	if (debugNameResult != vk::Result::eSuccess) {
+		RFCT_INFO("couldn't set debug name for {}", name);
+	}
 #endif // RFCT_VULKAN_DEBUG_OFF
 }
 
@@ -322,7 +325,7 @@ rfct::RfctQueue::RfctQueue(vk::Device device, vk::PhysicalDevice physicalDevice,
 
 void rfct::RfctQueue::SubmitGraphics(const vk::SubmitInfo& submitInfo, vk::Fence fence) {
 	RFCT_PROFILE_FUNCTION();
-	m_graphicsQueue.submit(submitInfo, fence);
+	RFCT_VULKAN_CHECK(m_graphicsQueue.submit(submitInfo, fence));
 }
 
 rfct::RfctSwapChain::RfctSwapChain(vk::PhysicalDevice physicalDevice, vk::Device device, vk::SurfaceKHR surface) {
@@ -400,7 +403,7 @@ void rfct::RfctSwapChain::CreateSwapChain(vk::PhysicalDevice physicalDevice, vk:
 
 void rfct::RfctSwapChain::RecreateSwapChain(vk::PhysicalDevice physicalDevice, vk::Device device, vk::SurfaceKHR surface) {
 	RFCT_PROFILE_FUNCTION();
-	device.waitIdle();
+	RFCT_VULKAN_CHECK(device.waitIdle());
 #ifdef ANDROID_BUILD
 	device.destroySwapchainKHR(m_swapChain.get());
 	*m_swapChain = nullptr;

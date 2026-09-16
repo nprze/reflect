@@ -34,9 +34,9 @@ namespace rfct {
 		void draw(RfctSwapChain& swapChain, RfctFrameSyncData& fd, vk::Framebuffer framebuffer, vk::RenderPass renderPass);
 		float debugText(const std::string& text, glm::vec2 startPosition, float scale);
 
-		float addTextVertices(UIVertexBuffer* rd, const std::string& text, glm::vec2 position, float scale, const glm::vec3& color = { 1.f, 0.f, 0.f }, font* f = nullptr); // returns the cursor end x position
-		float addTextVerticesHeight(const std::string& text, glm::vec2 position, float height, const glm::vec3& color = { 1.f, 0.f, 0.f }, font* f = nullptr); // takes in height (in 0.0 to  1.0)
-		inline float addTextVertices(const std::string& text, glm::vec2 position, float scale, const glm::vec3& color = { 1.f, 0.f, 0.f }, font* f = nullptr) {
+		float addTextVertices(UIVertexBuffer* rd, const std::string& text, glm::vec2 position, float scale, const glm::vec3& color = { 1.f, 0.f, 0.f }, RfctFont* f = nullptr); // returns the cursor end x position
+		float addTextVerticesHeight(const std::string& text, glm::vec2 position, float height, const glm::vec3& color = { 1.f, 0.f, 0.f }, RfctFont* f = nullptr); // takes in height (in 0.0 to  1.0)
+		inline float addTextVertices(const std::string& text, glm::vec2 position, float scale, const glm::vec3& color = { 1.f, 0.f, 0.f }, RfctFont* f = nullptr) {
 			return addTextVertices(&m_UIVertexBuffer, text, position, scale, color, f);
 		}
 
@@ -47,7 +47,7 @@ namespace rfct {
 		void addImage(const glm::vec2& min, const glm::vec2& max, bindableImage* image, const glm::vec2& texCoordMin = { 0.f,0.f }, const glm::vec2& texCoordMax = { 1.f,1.f });
 		void removeImage(bindableImage* image);
 
-		font* getDefaultFont() { return &m_defaultFont; }
+		RfctFont* getDefaultFont() { return &m_defaultFont; }
 		vk::DescriptorSetLayout getDescriptorSetLayout();
 	private:
 		RfctShader* m_vertexMostShader;
@@ -67,7 +67,7 @@ namespace rfct {
 		vk::UniquePipeline m_pipeline;
 		vk::UniquePipeline m_imagePipeline;
 
-		font m_defaultFont;
+		RfctFont m_defaultFont;
 		UIVertexBuffer m_imageVertexBuffer;
 		UIVertexBuffer m_UIVertexBuffer;
 		UIVertexBuffer m_debugDrawUIVertexBuffer;

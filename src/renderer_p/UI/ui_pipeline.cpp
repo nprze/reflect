@@ -177,7 +177,7 @@ void rfct::UIPipelines::draw(RfctSwapChain& swapChain, RfctFrameSyncData& fd, vk
 
     commandBuffer.reset({});
     vk::CommandBufferBeginInfo beginInfo = {};
-    commandBuffer.begin(beginInfo);
+    RFCT_VULKAN_CHECK(commandBuffer.begin(beginInfo));
 
     vk::RenderPassBeginInfo renderPassInfo = {};
     renderPassInfo.renderPass = renderPass;
@@ -236,7 +236,7 @@ void rfct::UIPipelines::draw(RfctSwapChain& swapChain, RfctFrameSyncData& fd, vk
 
     commandBuffer.endRenderPass();
 
-    commandBuffer.end();
+    RFCT_VULKAN_CHECK(commandBuffer.end());
     m_imageVertexBuffer.postFrame();
     m_UIVertexBuffer.postFrame();
     m_debugDrawUIVertexBuffer.postFrame();
@@ -426,7 +426,7 @@ void rfct::UIPipelines::removeImage(bindableImage* image) {
     }
 }
 
-float rfct::UIPipelines::addTextVertices(UIVertexBuffer* rd, const std::string& text, glm::vec2 position, float scale, const glm::vec3& color, font* f) {
+float rfct::UIPipelines::addTextVertices(UIVertexBuffer* rd, const std::string& text, glm::vec2 position, float scale, const glm::vec3& color, RfctFont* f) {
     RFCT_PROFILE_FUNCTION();
     if (!f) f = &m_defaultFont;
     vk::Extent2D windowExtent = GetRen().GetWindow().GetExtent();
@@ -438,7 +438,7 @@ float rfct::UIPipelines::addTextVertices(UIVertexBuffer* rd, const std::string& 
     std::vector<GlyphVertex> vertices;
 
     for (char c : text) {
-        const glyph* g = f->getGlyph(c);
+        const RfctFontGlyph* g = f->getGlyph(c);
 
         float y0 = cursorY + g->yoffset * scale;
         float y1 = y0 + g->height * scale;
@@ -475,7 +475,7 @@ float rfct::UIPipelines::addTextVertices(UIVertexBuffer* rd, const std::string& 
     return cursorX;
 }
 
-float rfct::UIPipelines::addTextVerticesHeight(const std::string& text, glm::vec2 position, float height, const glm::vec3& color, font* f) {
+float rfct::UIPipelines::addTextVerticesHeight(const std::string& text, glm::vec2 position, float height, const glm::vec3& color, RfctFont* f) {
     RFCT_PROFILE_FUNCTION();
     if (!f) f = &m_defaultFont;
     float scale = f->fontScale * height ;

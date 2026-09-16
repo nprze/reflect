@@ -128,7 +128,7 @@ void rfct::vulkanRasterizerPipeline::RecordCommandBuffer(frameContext* ctx, Rfct
 
     commandBuffer.reset({});
     vk::CommandBufferBeginInfo beginInfo = {};
-    commandBuffer.begin(beginInfo);
+    RFCT_VULKAN_CHECK(commandBuffer.begin(beginInfo));
 
     std::array<vk::ClearValue, 1> clearValues = {};
     clearValues[0].color = vk::ClearColorValue(std::array<float, 4>{0.0f, 0.0f, 0.0f, 1.0f});
@@ -187,5 +187,5 @@ void rfct::vulkanRasterizerPipeline::RecordCommandBuffer(frameContext* ctx, Rfct
     objectSystems::get().customDrawObjects(commandBuffer, ctx);
 
     commandBuffer.endRenderPass();
-    commandBuffer.end();
+    RFCT_VULKAN_CHECK(commandBuffer.end());
 }

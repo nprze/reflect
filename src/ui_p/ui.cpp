@@ -237,7 +237,7 @@ void rfct::drawUI(frameContext* ctx, RfctSwapChain& swapChain) {
 	uint32_t elementCount = UINodes[currentNodeIndex].childrenCount + (hasBackButton ? 1 : 0);
 	float totalHeight = UINodes[currentNodeIndex].childrenCount * oneLineHeight + (UINodes[currentNodeIndex].childrenCount - 1) * interline * imageExtent.y;
 	float startY = 0.5f * imageExtent.y - (0.5f * totalHeight);
-	font* defaultFont = GetRen().GetUIPipeline().getDefaultFont();
+	RfctFont* defaultFont = GetRen().GetUIPipeline().getDefaultFont();
 
 	for (uint32_t i = 0; i < UINodes[currentNodeIndex].childrenCount; i++) {
 		uint32_t childIndex = UINodes[currentNodeIndex].childrenIndices[i];

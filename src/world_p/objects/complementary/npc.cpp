@@ -44,7 +44,7 @@ namespace rfct {
         glm::vec2 screenSpaceTextPos = getVPMatrix() * glm::vec4(talkPopupPosition.x, talkPopupPosition.y + 2.f, 0.f, 1.f);
         vk::Extent2D winExtent = GetRen().GetExtent();
 		glm::vec2 appScreenSpacePos = (screenSpaceTextPos + glm::vec2(1.f, 1.f)) * 0.5f * glm::vec2(winExtent.width, winExtent.height);
-        font* defaultFont = GetRen().GetUIPipeline().getDefaultFont();
+        RfctFont* defaultFont = GetRen().GetUIPipeline().getDefaultFont();
         float width = defaultFont->getTextWidth("TALK", 0.055f * winExtent.height) * 0.5f;
 		appScreenSpacePos.x -= width;
         GetRen().GetUIPipeline().addTextVerticesHeight(std::string("TALK"), appScreenSpacePos, 0.04f * winExtent.height, glm::vec3(1.f, 1.f, 1.f));

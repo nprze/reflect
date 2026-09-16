@@ -179,7 +179,7 @@ void rfct::debugDraw::draw(frameContext* ctx, RfctSwapChain& swapChain, RfctFram
     vk::CommandBuffer commandBuffer = fd.m_debugDrawCommandBuffer.get();
     commandBuffer.reset({});
     vk::CommandBufferBeginInfo beginInfo = {};
-    commandBuffer.begin(beginInfo);
+    RFCT_VULKAN_CHECK(commandBuffer.begin(beginInfo));
 
     vk::RenderPassBeginInfo renderPassInfo = {};
     renderPassInfo.renderPass = renderPass;
@@ -227,7 +227,7 @@ void rfct::debugDraw::draw(frameContext* ctx, RfctSwapChain& swapChain, RfctFram
         commandBuffer.draw(m_lineBuffer.vertexCount, 1, 0, 0);
     }
     commandBuffer.endRenderPass();
-    commandBuffer.end();
+    RFCT_VULKAN_CHECK(commandBuffer.end());
 	m_triangleBuffer.postFrame();
 	m_lineBuffer.postFrame();
 }

@@ -2,11 +2,11 @@
 
 namespace rfct {
 	class image;
-	class font;
+	class RfctFont;
 	struct buttonImageSerializeData;
 
 	void loadImage(const std::string& path, image* imageOut);
 	void createDummyImage(image* imageOut);
-	void loadGlyphs(const std::string& path, font* fontOut);
+	void loadGlyphs(const std::string& path, RfctFont* fontOut);
 	void loadButtonImage(const std::string& path, buttonImageSerializeData* buttonImageSerializedDataOut);
 }

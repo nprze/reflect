@@ -78,9 +78,7 @@ void rfct::RfctRenderer::Render(frameContext& frameContext) {
                 m_device.GetPhysicalDevice(), m_device.GetDevice(), m_surface.GetSurface());
             imageIndex = acquireImageResult.imageIndex;
 		}
-		RFCT_ASSERT(acquireImageResult.Succeeded(), "Failed to acquire swapchain image!");
-        // createResources();
-        // RfctRenderer::getRen().getBloomRes().onSwapchainExtentChanged();
+		RFCT_ASSERT(acquireImageResult.Succeeded()) // Failed to acquire swapchain image
         if (acquireImageResult.imageIndex == -1)
         {
             return;

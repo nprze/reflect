@@ -58,7 +58,7 @@ void rfct::uploadVertices(const std::vector<Vertex>& vertices, VulkanBuffer* buf
     vk::CommandBufferBeginInfo beginInfo;
     beginInfo.flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit;
 
-    commandBuffer.begin(beginInfo);
+    RFCT_VULKAN_CHECK(commandBuffer.begin(beginInfo));
 
     vk::BufferCopy copyRegion;
     copyRegion.srcOffset = 0;
@@ -70,14 +70,14 @@ void rfct::uploadVertices(const std::vector<Vertex>& vertices, VulkanBuffer* buf
         buffer->buffer,
         copyRegion);
 
-    commandBuffer.end();
+    RFCT_VULKAN_CHECK(commandBuffer.end());
 
     vk::SubmitInfo submitInfo;
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &commandBuffer;
 
-    GetRen().GetQueue().GetPresentQueue().submit(submitInfo);
-    GetRen().GetQueue().GetPresentQueue().waitIdle();
+    RFCT_VULKAN_CHECK(GetRen().GetQueue().GetPresentQueue().submit(submitInfo));
+    RFCT_VULKAN_CHECK(GetRen().GetQueue().GetPresentQueue().waitIdle());
 
     vmaDestroyBuffer(GetRen().GetAllocator(), stagingBuffer, stagingBufferAllocation);
     GetRen().GetDevice().freeCommandBuffers(GetAssetsCommandPool(GetRen().GetDeviceWrapper()), commandBuffer);

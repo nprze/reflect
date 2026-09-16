@@ -58,14 +58,14 @@ void rfct::loadImage(const std::string& path, image* imageOut) {
     vk::CommandBuffer commandBuffer = GetRen().GetDevice().allocateCommandBuffers(allocInfo).value[0];
 
     vk::CommandBufferBeginInfo beginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
-    commandBuffer.begin(beginInfo);
+    RFCT_VULKAN_CHECK(commandBuffer.begin(beginInfo));
 
     // Transition image layout and copy buffer data
     imageOut->transitionImageLayout(commandBuffer, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal);
     imageOut->copyBufferToImage(commandBuffer, stagingBuffer);
     imageOut->transitionImageLayout(commandBuffer, vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);
 
-    commandBuffer.end();
+    RFCT_VULKAN_CHECK(commandBuffer.end());
 
     vk::SubmitInfo submitInfo({}, {}, commandBuffer);
     vk::FenceCreateInfo fenceInfo;
@@ -108,12 +108,12 @@ void rfct::createDummyImage(image* imageOut) {
     vk::CommandBuffer commandBuffer = GetRen().GetDevice().allocateCommandBuffers(allocInfo).value[0];
 
     vk::CommandBufferBeginInfo beginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
-    commandBuffer.begin(beginInfo);
+    RFCT_VULKAN_CHECK(commandBuffer.begin(beginInfo));
 
     // Transition image layout and copy buffer data
     imageOut->transitionImageLayout(commandBuffer, vk::ImageLayout::eUndefined, vk::ImageLayout::eShaderReadOnlyOptimal);
 
-    commandBuffer.end();
+    RFCT_VULKAN_CHECK(commandBuffer.end());
 
     vk::SubmitInfo submitInfo({}, {}, commandBuffer);
     vk::FenceCreateInfo fenceInfo;
@@ -130,7 +130,7 @@ void rfct::createDummyImage(image* imageOut) {
     imageOut->m_imageView = GetRen().GetDevice().createImageView(viewInfo).value;
 }
 
-void rfct::loadGlyphs(const std::string& path, font* fontOut) {
+void rfct::loadGlyphs(const std::string& path, RfctFont* fontOut) {
     RFCT_PROFILE_FUNCTION();
     std::ifstream file;
     if (!OpenAssetFile(path, &file)) {
@@ -144,7 +144,7 @@ void rfct::loadGlyphs(const std::string& path, font* fontOut) {
             std::istringstream stream(line);
             std::string key;
             int id = -1;
-            glyph g{};
+            RfctFontGlyph g{};
             while (stream >> key) {
                 if (key.find("id=") == 0) id = std::stoi(key.substr(3));
                 else if (key.find("x=") == 0) g.x = std::stof(key.substr(2));
