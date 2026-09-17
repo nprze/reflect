@@ -1,150 +1,106 @@
 #pragma once
-#include <cstdint>
-#include <string>
-#include <vector>
-#include <functional>
-/*
+#include "context.h"
+
 namespace rfct {
-	// TODO: Fix this monstrocity workaround
-	using namespace ::std;
+	using CommandList = std::vector<std::string>;
 
-	static constexpr uint32_t kPlacementAlignment = 65536; // 64 KB
-
-	enum class Format {
-		RGBA8,
-		D32F
-	};
-
-	enum class ResourceState {
+	enum class RfctFGResourceState {
 		Undefined,
 		RenderTarget,
 		ShaderRead,
 		Present
 	};
 
-	class CommandList {
+	enum class RfctFGFormat {
+		RGBA8,
+		D32F
 	};
 
-	struct ResourceDesc {
-		uint32_t width = 0;
-		uint32_t height = 0;
-		Format format = Format::RGBA8;
-		string name;
-	};
-
-	struct ResourceHandle {
+	struct RfctFGResourceHandle {
 		uint32_t resourceIndex = UINT32_MAX;
 		bool IsValid() const { return resourceIndex != UINT32_MAX; }
 	};
 
-	struct ResourceVersion {
-		uint32_t writerPassIndex = UINT32_MAX;
-		vector<uint32_t> readerPassIndices;
-		bool HasWriter() const { return writerPassIndex != UINT32_MAX; }
+	struct RfctFGPassHandle {
+		uint32_t passIndex = UINT32_MAX;
+		bool IsValid() const { return passIndex != UINT32_MAX; }
 	};
 
-	struct ResourceEntry {
-		ResourceDesc desc;
-		vector<ResourceVersion> versions;
-		ResourceState currentState = ResourceState::Undefined;
-		bool imported = false; // e.g swapchain is imported
+	struct RfctFGMemBlockHandle {
+		uint32_t blockIndex = UINT32_MAX;
+		bool IsValid() const { return blockIndex != UINT32_MAX; }
 	};
 
-	struct PhysicalBlock {
-		uint32_t sizeBytes = 0;
-		uint32_t availAfterPass = 0; // sorted
+	struct RfctFGResourceLifetime {
+		RfctFGPassHandle firstUsePass; // sorted pass index
+		RfctFGPassHandle lastUsePass = { 0 }; // last sorted pass
 	};
 
-	struct Lifetime {
-		uint32_t firstUsePass = UINT32_MAX; // sorted pass index
-		uint32_t lastUsePass = 0; // last sorted pass
-		bool isTransient = true; // false for externally owned resources
-	};
-
-	struct Barrier {
+	struct RfctFGBarrier {
 		uint32_t resourceIndex;
-		ResourceState oldState;
-		ResourceState newState;
-		bool isAliasing = false;
-		uint32_t aliasBeforeResource = UINT32_MAX;
+		RfctFGResourceState oldState;
+		RfctFGResourceState newState;
 	};
 
-	struct RenderPass {
-		string name;
-		function<void(uint32_t)> Setup;
-		function<void(CommandList*)> Execute;
-		vector<ResourceHandle> reads;
-		vector<ResourceHandle> writes;
-		vector<ResourceHandle> readAndWrites;
-		vector<uint32_t> dependsOnPasses;
-		vector<uint32_t> successorPasses;
+	struct RfctFGResourceDesc {
+		uint32_t width = 0;
+		uint32_t height = 0;
+		RfctFGFormat format = RfctFGFormat::RGBA8;
+		std::string name;
+	};
+
+	struct RfctFGResourceVersion {
+		RfctFGPassHandle writerPass;
+		std::vector<RfctFGPassHandle> readerPasses;
+		bool HasWriter() const { return writerPass.IsValid(); }
+	};
+
+	struct RfctFGResourceEntry {
+		RfctFGResourceDesc desc;
+		std::vector<RfctFGResourceVersion> versions;
+		RfctFGResourceState currentState = RfctFGResourceState::Undefined;
+	};
+
+	struct RfctFGRenderPass {
+		std::string name;
+		std::function<void(RfctFGPassHandle)> Setup;
+		std::function<void(CommandList*)> Execute;
+		std::vector<RfctFGResourceHandle> reads;
+		std::vector<RfctFGResourceHandle> writes;
+		std::vector<RfctFGPassHandle> dependsOnPasses;
+		std::vector<RfctFGPassHandle> successorPasses;
 		uint32_t inDegree = 0;
 		bool used = false; // for culling
 	};
 
-	struct CompiledPlan {
-		vector<uint32_t> sortedPasses;
-		vector<uint32_t> memBlockMapping;
-		vector<vector<Barrier>> barriers;
+	struct RfctFGCompiledPlan {
+		std::vector<RfctFGPassHandle> sortedPasses;
+		std::vector<RfctFGMemBlockHandle> memBlockMapping;
+		std::vector<std::vector<RfctFGBarrier>> barriers;
 	};
 
-	inline uint32_t AlignUp(uint32_t value, uint32_t alignment) {
-		return(value + alignment - 1) & ~(alignment - 1);
-	}
-
-	inline uint32_t BytesPerPixel(Format fmt) {
-		switch (fmt) {
-		case Format::RGBA8:
-			return 4;
-		case Format::D32F:
-			return 4;
-		default:
-			RFCT_CRITICAL("Unknown format");
-		}
-	}
-
-	inline uint32_t AllocSize(const ResourceDesc& desc) {
-		uint32_t raw = desc.width * desc.height * BytesPerPixel(desc.format);
-		return AlignUp(raw, kPlacementAlignment);
-	}
-
-	class FrameGraph {
+	class RfctFrameGraph {
 	public:
-		ResourceHandle CreateResource(const ResourceDesc& desc);
-		ResourceHandle ImportResource(const ResourceDesc& desc, ResourceState initialState = ResourceState::Undefined);
-		template <typename SetupFn, typename ExecFn>
-		uint32_t AddPass(const string& name, SetupFn&& setup, ExecFn&& exec) {
-			m_passes.push_back({ name, forward<SetupFn>(setup), forward<ExecFn>(exec) });
-			uint32_t passIdx = static_cast<uint32_t>(m_passes.size() - 1);
-			m_passes.back().Setup(passIdx);
-			return passIdx;
-		};
-		void PreparePresent(ResourceHandle handle);
-		void Read(uint32_t passIdx, ResourceHandle handle);
-		void Write(uint32_t passIdx, ResourceHandle handle);
-		CompiledPlan Compile();
-		void Execute(CommandList* cmdList);
-		void Reset();
-		void ForgetAllResources();
-		ResourceDesc& GetResourceDesc(ResourceHandle handle);
+		RfctFGPassHandle AddPass(const std::string& name, std::function<void(RfctFGPassHandle)>&& setup, std::function<void(CommandList*)>&& exec);
+		RfctFGResourceHandle ImportResource(const RfctFGResourceDesc& desc, RfctFGResourceState initialState = RfctFGResourceState::Undefined);
+		void Read(RfctFGPassHandle passIdx, RfctFGResourceHandle handle);
+		void Write(RfctFGPassHandle passIdx, RfctFGResourceHandle handle);
 	private:
 		// building
 		void BuildEdges();
-		vector<uint32_t> TopoSort();
-		void Cull(const vector<uint32_t>& sortedPasses);
-		ResourceState StateForUsage(ResourceHandle h, bool isWrite);
-		vector<vector<Barrier>> ComputeBarriers(const vector<uint32_t>& sortedPasses, const vector<uint32_t>& blockMapping);
+		std::vector<RfctFGPassHandle> TopoSort();
+		void Cull(const std::vector<RfctFGPassHandle>& sortedPasses);
+		RfctFGResourceState StateForUsage(RfctFGResourceHandle h, bool isWrite);
+		std::vector<std::vector<RfctFGBarrier>> ComputeBarriers(const std::vector<RfctFGPassHandle>& sortedPasses, const std::vector<RfctFGMemBlockHandle>& blockMapping);
 		// execution
-		void Execute(const CompiledPlan& plan, CommandList* cmdList);
-		void ApplyBarriers(const vector<Barrier>& barriers, CommandList* cmdList);
-		void ApplyBarrier(const Barrier& barrier, CommandList* cmdList);
+		void Execute(const RfctFGCompiledPlan& plan, CommandList* cmdList);
+		void ApplyBarriers(const std::vector<RfctFGBarrier>& barriers, CommandList* cmdList);
+		void ApplyBarrier(const RfctFGBarrier& barrier, CommandList* cmdList);
 		// resource aliasing
-		vector<Lifetime> ScanLifetimes(const vector<uint32_t>& sorted);
-		vector<uint32_t> AliasResources(const vector<Lifetime>& lifetimes);
+		std::vector<RfctFGResourceLifetime> ScanLifetimes(const std::vector<RfctFGPassHandle>& sorted);
+		std::vector<uint32_t> AliasResources(const std::vector<RfctFGResourceLifetime>& lifetimes);
 	private:
-		vector<RenderPass> m_passes;
-		vector<ResourceEntry> m_entries;
-		ResourceHandle m_presentResource;
-
+		std::vector<RfctFGRenderPass> m_passes;
+		std::vector<RfctFGResourceEntry> m_entries;
 	};
-	*/
+};
