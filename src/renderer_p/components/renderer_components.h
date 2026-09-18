@@ -2,6 +2,7 @@
 #include <vulkan/vulkan.hpp>
 #include <vma/vk_mem_alloc.h>
 #include "platform_window.h"
+#include "render_objects.h"
 
 namespace rfct {
 	class RfctFrameSyncData;
@@ -92,5 +93,13 @@ namespace rfct {
 		~RfctVulkanMemAllocator();
 	private:
 		VmaAllocator m_allocator;
+	};
+
+	class RfctPipelineManager {
+	public:
+		RfctRenderPipeline* CreatePipeline(RfctRenderPipeline::RfctRenderPipelineSpec& pipelineSpec, vk::RenderPass renderPass, vk::Device device);
+		void PostCreatePipelines(vk::Device device);
+	private:
+		std::vector<RfctRenderPipeline> m_pipelines;
 	};
 }

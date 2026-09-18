@@ -1,6 +1,7 @@
 #include "render_objects.h"
 #include "assets/assets_utils.h"
 #include "assets/asset_manager.h"
+#include "renderer_components.h"
 #include <vma/vk_mem_alloc.h>
 #include <fstream>
 
@@ -21,27 +22,31 @@ rfct::RfctShader::RfctShader(vk::Device device, const std::string& spirvFilePath
     createInfo.setCodeSize(buffer.size());
     createInfo.setPCode(reinterpret_cast<const uint32_t*>(buffer.data()));
 
-    m_shaderModule = device.createShaderModuleUnique(createInfo).value;
+    m_shaderModule = device.createShaderModule(createInfo).value;
 }
 
-rfct::RfctRenderPipeline::RfctRenderPipeline(const RfctRenderPipelineSpec& spec, vk::RenderPass renderPass, vk::Device device)
-	: m_vertexShader(GetAssetManager().GetOrLoadShader(device, spec.vertexShaderPath)),
-	m_fragShader(GetAssetManager().GetOrLoadShader(device, spec.fragmentShaderPath)) {
+void rfct::RfctShader::DestroyShader(vk::Device device) {
+	device.destroyShaderModule(m_shaderModule);
+}
+
+rfct::RfctRenderPipeline::RfctRenderPipeline(const RfctRenderPipelineSpec& spec, vk::RenderPass renderPass, vk::Device device) {
 	RFCT_PROFILE_FUNCTION();
 	CreatePipeline(spec, renderPass, device);
 }
 
 void rfct::RfctRenderPipeline::CreatePipeline(const RfctRenderPipelineSpec& spec, vk::RenderPass renderPass, vk::Device device) {
 	RFCT_PROFILE_FUNCTION();
+	RfctShader* vshader = GetAssetManager().GetOrLoadShader(device, spec.vertexShaderPath);
+	RfctShader* fshader = GetAssetManager().GetOrLoadShader(device, spec.fragmentShaderPath);
 	// Shaders
 	vk::PipelineShaderStageCreateInfo vertShaderStageInfo = {};
 	vertShaderStageInfo.stage = vk::ShaderStageFlagBits::eVertex;
-	vertShaderStageInfo.module = m_vertexShader->getShaderModule();
+	vertShaderStageInfo.module = vshader->getShaderModule();
 	vertShaderStageInfo.pName = "main";
 
 	vk::PipelineShaderStageCreateInfo fragShaderStageInfo = {};
 	fragShaderStageInfo.stage = vk::ShaderStageFlagBits::eFragment;
-	fragShaderStageInfo.module = m_fragShader->getShaderModule();
+	fragShaderStageInfo.module = fshader->getShaderModule();
 	fragShaderStageInfo.pName = "main";
 
 	std::vector<vk::PipelineShaderStageCreateInfo> shaderStages = { vertShaderStageInfo, fragShaderStageInfo };
@@ -106,7 +111,7 @@ void rfct::RfctRenderPipeline::CreatePipeline(const RfctRenderPipelineSpec& spec
 	vk::PipelineLayoutCreateInfo pipelineLayoutInfo = {};
 	pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(spec.descriptorSetLayouts.size());
 	pipelineLayoutInfo.pSetLayouts = spec.descriptorSetLayouts.data();
-	m_pipelineLayout = device.createPipelineLayoutUnique(pipelineLayoutInfo).value;
+	m_pipelineLayout = device.createPipelineLayout(pipelineLayoutInfo).value;
 
 	vk::PipelineViewportStateCreateInfo viewportState = {};
 	viewportState.viewportCount = 1;
@@ -124,11 +129,16 @@ void rfct::RfctRenderPipeline::CreatePipeline(const RfctRenderPipelineSpec& spec
 	pipelineInfo.pDepthStencilState = &depthStencil;
 	pipelineInfo.pDynamicState = &dynamicState;
 	pipelineInfo.pViewportState = &viewportState;
-	pipelineInfo.layout = m_pipelineLayout.get();
+	pipelineInfo.layout = m_pipelineLayout;
 	pipelineInfo.renderPass = renderPass;
 	pipelineInfo.subpass = 0;
 
 	m_graphicsPipeline = device.createGraphicsPipelineUnique({}, pipelineInfo).value;
+}
+
+void rfct::RfctRenderPipeline::DestroyPipeline(vk::Device device) {
+    device.destroyPipelineLayout(m_pipelineLayout);
+    device.destroyPipeline(m_graphicsPipeline);
 }
 
 vk::DescriptorSetLayout uboDescriptorSetLayout;
@@ -210,4 +220,196 @@ void rfct::RfctUniformBuffer::BindBufferToDescriptor(vk::Buffer buffer, vk::Devi
 	descriptorWrite.pBufferInfo = &bufferInfo;
 
 	device.updateDescriptorSets(descriptorWrite, nullptr);
+}
+
+
+void rfct::RfctRenderImage::TransformLayoutSync(vk::ImageLayout newLayout, RfctDevice& deviceWrapper, RfctQueue& queue) {
+    RFCT_PROFILE_FUNCTION();
+    vk::CommandBufferAllocateInfo allocInfo(
+        rfct::GetAssetsCommandPool(deviceWrapper),
+        vk::CommandBufferLevel::ePrimary,
+        1
+    );
+    auto cmdBuffersAllocResult = deviceWrapper.GetDevice().allocateCommandBuffers(allocInfo);
+    RFCT_VULKAN_CHECK(cmdBuffersAllocResult.result);
+    vk::CommandBuffer commandBuffer = cmdBuffersAllocResult.value[0];
+
+    vk::CommandBufferBeginInfo beginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
+    RFCT_VULKAN_CHECK(commandBuffer.begin(beginInfo));
+
+    vk::ImageMemoryBarrier barrier{};
+    barrier.oldLayout = m_currentLayout;
+    barrier.newLayout = newLayout;
+    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.image = m_image;
+    barrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
+    barrier.subresourceRange.baseMipLevel = 0;
+    barrier.subresourceRange.levelCount = 1;
+    barrier.subresourceRange.baseArrayLayer = 0;
+    barrier.subresourceRange.layerCount = 1;
+
+    vk::PipelineStageFlags sourceStage;
+    vk::PipelineStageFlags destinationStage;
+
+    barrier.srcAccessMask = vk::AccessFlags{}; // oldLayout is always undefined
+
+    if (newLayout == vk::ImageLayout::eColorAttachmentOptimal) {
+        barrier.dstAccessMask = vk::AccessFlagBits::eColorAttachmentWrite;
+        sourceStage = vk::PipelineStageFlagBits::eTopOfPipe;
+        destinationStage = vk::PipelineStageFlagBits::eColorAttachmentOutput;
+    }
+    else if (newLayout == vk::ImageLayout::ePresentSrcKHR) {
+        barrier.dstAccessMask = vk::AccessFlagBits::eMemoryRead;
+        sourceStage = vk::PipelineStageFlagBits::eTopOfPipe;
+        destinationStage = vk::PipelineStageFlagBits::eBottomOfPipe;
+    }
+    else {
+        RFCT_CRITICAL("Unsupported layout transition in transformImage");
+    }
+
+    commandBuffer.pipelineBarrier(
+        sourceStage, destinationStage,
+        vk::DependencyFlags{},
+        nullptr, nullptr, barrier
+    );
+
+    RFCT_VULKAN_CHECK(commandBuffer.end());
+
+    vk::SubmitInfo submitInfo({}, {}, commandBuffer);
+    vk::FenceCreateInfo fenceInfo;
+    auto fenceCreateResult = deviceWrapper.GetDevice().createFence(fenceInfo);
+    RFCT_VULKAN_CHECK(fenceCreateResult.result);
+    vk::Fence fence = fenceCreateResult.value;
+    queue.SubmitGraphics(submitInfo, fence);
+    RFCT_VULKAN_CHECK(deviceWrapper.GetDevice().waitForFences(fence, VK_TRUE, UINT64_MAX));
+
+    m_currentLayout = newLayout;
+    deviceWrapper.GetDevice().freeCommandBuffers(rfct::GetAssetsCommandPool(deviceWrapper), commandBuffer);
+    deviceWrapper.GetDevice().destroyFence(fence);
+}
+
+void rfct::RfctRenderImage::TransformLayoutAsync(vk::ImageLayout newLayout, vk::CommandBuffer commandBuffer) {
+    RFCT_PROFILE_FUNCTION();
+    vk::ImageSubresourceRange subresourceRange = {
+        vk::ImageAspectFlagBits::eColor,
+        0, 1,
+        0, 1
+    };
+    vk::AccessFlags srcAccessMask;
+    vk::AccessFlags dstAccessMask;
+    vk::PipelineStageFlags srcStage;
+    vk::PipelineStageFlags dstStage;
+
+    if (m_currentLayout == vk::ImageLayout::eColorAttachmentOptimal && newLayout == vk::ImageLayout::eShaderReadOnlyOptimal) {
+        srcAccessMask = vk::AccessFlagBits::eColorAttachmentWrite;
+        dstAccessMask = vk::AccessFlagBits::eShaderRead;
+        srcStage = vk::PipelineStageFlagBits::eColorAttachmentOutput;
+        dstStage = vk::PipelineStageFlagBits::eFragmentShader;
+    }
+    else if (m_currentLayout == vk::ImageLayout::eShaderReadOnlyOptimal && newLayout == vk::ImageLayout::eColorAttachmentOptimal) {
+        srcAccessMask = vk::AccessFlagBits::eShaderRead;
+        dstAccessMask = vk::AccessFlagBits::eColorAttachmentWrite;
+        srcStage = vk::PipelineStageFlagBits::eFragmentShader;
+        dstStage = vk::PipelineStageFlagBits::eColorAttachmentOutput;
+    }
+    else {
+        RFCT_CRITICAL("Unsupported layout transition");
+    }
+    vk::ImageMemoryBarrier barrier{};
+    barrier.oldLayout = m_currentLayout;
+    barrier.newLayout = newLayout;
+    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.image = m_image;
+    barrier.subresourceRange = subresourceRange;
+    barrier.srcAccessMask = srcAccessMask;
+    barrier.dstAccessMask = dstAccessMask;
+
+    commandBuffer.pipelineBarrier(
+        srcStage,
+        dstStage,
+        vk::DependencyFlags{},
+        nullptr, nullptr,
+        barrier
+    );
+    m_currentLayout = newLayout;
+}
+
+void rfct::RfctRenderImage::CreateImageAndView(const RfctRenderImageSpec& spec, RfctDevice& deviceWrapper, RfctVulkanInstance& instanceWrapper, RfctQueue& queueWrapper, RfctVulkanMemAllocator& allocatorWrapper) {
+    RFCT_PROFILE_FUNCTION();
+    m_format = spec.dafaultFormat;
+    m_extent = spec.extent;
+    m_debugName = spec.debugName;
+    m_sampleCount = spec.imageSamples;
+    if (spec.allocateImage) {
+        AllocateImage(spec, deviceWrapper, queueWrapper, allocatorWrapper);
+    }
+    else {
+        m_image = spec.image;
+    }
+    TransformLayoutSync(spec.dafaultLayout, deviceWrapper, queueWrapper);
+    instanceWrapper.SetObjectName(m_image, m_debugName, vk::ObjectType::eImage, deviceWrapper.GetDevice());
+    CreateImageView(deviceWrapper.GetDevice());
+}
+
+void rfct::RfctRenderImage::InitFrameBuffer(std::vector<RfctRenderImage*> attachments, vk::RenderPass renderPass, vk::Device device) {
+    RFCT_PROFILE_FUNCTION();
+    std::vector<vk::ImageView> imageViews;
+    imageViews.reserve(attachments.size());
+    vk::Extent2D extent = m_extent;
+    for (size_t i = 0; i < attachments.size(); i++) {
+        RFCT_ASSERT(attachments[i] != nullptr);
+        imageViews.push_back(attachments[i]->m_imageView.get());
+        RFCT_ASSERT(attachments[i]->m_extent == extent && attachments[i]->m_extent != vk::Extent2D(1, 1));
+    }
+    vk::FramebufferCreateInfo frameBufferCreateInfo = {};
+    frameBufferCreateInfo.renderPass = renderPass;
+    frameBufferCreateInfo.attachmentCount = static_cast<uint32_t>(imageViews.size());
+    frameBufferCreateInfo.pAttachments = imageViews.data();
+    frameBufferCreateInfo.width = extent.width;
+    frameBufferCreateInfo.height = extent.height;
+    frameBufferCreateInfo.layers = 1;
+    m_frameBuffer = device.createFramebufferUnique(frameBufferCreateInfo).value;
+    hasFrameBuffer = true;
+}
+
+void rfct::RfctRenderImage::Cleanup(RfctVulkanMemAllocator& allocatorWrapper, vk::Device device) {
+    if (wasAllocatedUsingVMA) {
+        vmaDestroyImage(allocatorWrapper.GetAllocator(), static_cast<VkImage>(m_image), m_imageAllocation);
+        wasAllocatedUsingVMA = false;
+    }
+}
+
+void rfct::RfctRenderImage::AllocateImage(const RfctRenderImage::RfctRenderImageSpec& spec, RfctDevice& deviceWrapper, RfctQueue& queueWrapper, RfctVulkanMemAllocator& allocatorWrapper) {
+    RFCT_PROFILE_FUNCTION();
+    // Create Vulkan image
+    vk::ImageCreateInfo imageInfo({}, vk::ImageType::e2D, m_format,
+        { static_cast<uint32_t>(m_extent.width), static_cast<uint32_t>(m_extent.height), 1 }, 1, 1,
+        spec.imageSamples, vk::ImageTiling::eOptimal,
+        spec.usage,
+        vk::SharingMode::eExclusive);
+
+    VmaAllocationCreateInfo imageAllocInfo{};
+    imageAllocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+
+    if (vmaCreateImage(allocatorWrapper.GetAllocator(), reinterpret_cast<const VkImageCreateInfo*>(&imageInfo), &imageAllocInfo,
+        reinterpret_cast<VkImage*>(&m_image), &m_imageAllocation, nullptr) != VK_SUCCESS) {
+        RFCT_CRITICAL("Failed to create Vulkan image");
+    }
+    wasAllocatedUsingVMA = true;
+}
+
+void rfct::RfctRenderImage::CreateImageView(vk::Device device) {
+    RFCT_PROFILE_FUNCTION();
+    vk::ImageViewCreateInfo viewCreateInfo = {};
+    viewCreateInfo.image = m_image;
+    viewCreateInfo.viewType = vk::ImageViewType::e2D;
+    viewCreateInfo.format = m_format;
+    viewCreateInfo.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
+    viewCreateInfo.subresourceRange.levelCount = 1;
+    viewCreateInfo.subresourceRange.layerCount = 1;
+    auto imageViewResult = device.createImageViewUnique(viewCreateInfo);
+    RFCT_VULKAN_CHECK(imageViewResult.result);
+    m_imageView = std::move(imageViewResult.value);
 }

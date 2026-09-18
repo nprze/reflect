@@ -496,3 +496,12 @@ rfct::RfctVulkanMemAllocator::RfctVulkanMemAllocator(vk::PhysicalDevice physical
 rfct::RfctVulkanMemAllocator::~RfctVulkanMemAllocator() {
 	vmaDestroyAllocator(m_allocator);
 }
+
+rfct::RfctRenderPipeline* rfct::RfctPipelineManager::CreatePipeline(RfctRenderPipeline::RfctRenderPipelineSpec& pipelineSpec, vk::RenderPass renderPass, vk::Device device) {
+	m_pipelines.push_back(RfctRenderPipeline(pipelineSpec, renderPass, device));
+	return &m_pipelines.back();
+}
+
+void rfct::RfctPipelineManager::PostCreatePipelines(vk::Device device) {
+	GetAssetManager().DestroyAllShaders(device);
+}

@@ -9,3 +9,10 @@ rfct::RfctShader* rfct::RfctAssetManager::GetOrLoadShader(vk::Device device, con
 	auto [it, inserted] = m_shaders.try_emplace(path, device, path);
 	return &it->second;
 }
+
+void rfct::RfctAssetManager::DestroyAllShaders(vk::Device device) {
+	for (auto& [key, value] : m_shaders) {
+		value.DestroyShader(device);
+	}
+	m_shaders.clear();
+}

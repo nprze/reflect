@@ -1,4 +1,5 @@
 #include "frame_graph.h"
+#include <numeric>
 
 uint32_t MinUint(uint32_t a, uint32_t b) { return a < b ? a : b; }
 uint32_t MaxUint(uint32_t a, uint32_t b) { return a > b ? a : b; }
@@ -41,6 +42,32 @@ void rfct::RfctFrameGraph::Write(RfctFGPassHandle pass, RfctFGResourceHandle han
     m_entries[handle.resourceIndex].versions.back().writerPass = pass;
     // save for sync
     m_passes[pass.passIndex].writes.push_back(handle);
+}
+
+rfct::RfctFGCompiledPlan rfct::RfctFrameGraph::Compile() {
+    BuildEdges();
+    std::vector<RfctFGPassHandle> sortedPasses = TopoSort();
+    Cull(sortedPasses);
+    std::vector<RfctFGResourceLifetime> lifetimes = ScanLifetimes(sortedPasses);
+    std::vector<RfctFGMemBlockHandle> physicalBlockMapping = AliasResources(lifetimes);
+    std::vector<std::vector<RfctFGBarrier>> barriers = ComputeBarriers(sortedPasses, physicalBlockMapping);
+    return { std::move(sortedPasses), std::move(physicalBlockMapping), std::move(barriers) };
+}
+
+void rfct::RfctFrameGraph::Execute(CommandList* cmdList) {
+    Execute(Compile(), cmdList);
+    Reset();
+}
+
+void rfct::RfctFrameGraph::Reset() {
+    m_passes.clear();
+    for (RfctFGResourceEntry& entry : m_entries) {
+        entry.versions.clear();
+    }
+}
+
+void rfct::RfctFrameGraph::ForgetAllResources() {
+    m_entries.clear();
 }
 
 void rfct::RfctFrameGraph::BuildEdges() {
@@ -198,7 +225,8 @@ std::vector<rfct::RfctFGResourceLifetime> rfct::RfctFrameGraph::ScanLifetimes(co
     return life;
 }
 
-std::vector<uint32_t> rfct::RfctFrameGraph::AliasResources(const std::vector<RfctFGResourceLifetime>& lifetimes) {
-    RFCT_ASSERT(false); // TODO: actually implement this
-    return std::vector<uint32_t>();
+std::vector<rfct::RfctFGMemBlockHandle> rfct::RfctFrameGraph::AliasResources(const std::vector<RfctFGResourceLifetime>& lifetimes) {
+    // TODO: Aliasing
+    std::vector<RfctFGMemBlockHandle> memBlockMapping(m_entries.size(), { UINT32_MAX });
+    return memBlockMapping;
 }

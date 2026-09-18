@@ -85,6 +85,10 @@ namespace rfct {
 		RfctFGResourceHandle ImportResource(const RfctFGResourceDesc& desc, RfctFGResourceState initialState = RfctFGResourceState::Undefined);
 		void Read(RfctFGPassHandle passIdx, RfctFGResourceHandle handle);
 		void Write(RfctFGPassHandle passIdx, RfctFGResourceHandle handle);
+		RfctFGCompiledPlan Compile();
+		void Execute(CommandList* cmdList);
+		void Reset();
+		void ForgetAllResources();
 	private:
 		// building
 		void BuildEdges();
@@ -98,7 +102,7 @@ namespace rfct {
 		void ApplyBarrier(const RfctFGBarrier& barrier, CommandList* cmdList);
 		// resource aliasing
 		std::vector<RfctFGResourceLifetime> ScanLifetimes(const std::vector<RfctFGPassHandle>& sorted);
-		std::vector<uint32_t> AliasResources(const std::vector<RfctFGResourceLifetime>& lifetimes);
+		std::vector<RfctFGMemBlockHandle> AliasResources(const std::vector<RfctFGResourceLifetime>& lifetimes);
 	private:
 		std::vector<RfctFGRenderPass> m_passes;
 		std::vector<RfctFGResourceEntry> m_entries;

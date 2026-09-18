@@ -9,6 +9,7 @@ namespace rfct {
 	class RfctAssetManager {
 	public:
 		RfctShader* GetOrLoadShader(vk::Device device, const std::string& path);
+		void DestroyAllShaders(vk::Device device);
 	private:
 		std::map<std::string, RfctShader> m_shaders;
 	};

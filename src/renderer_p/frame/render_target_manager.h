@@ -1,6 +1,7 @@
 #pragma once
 #include <vulkan/vulkan.hpp>
 #include <vma/vk_mem_alloc.h>
+#include "renderer_p/components/render_objects.h"
 
 namespace rfct {
 	class RfctDevice;
@@ -8,47 +9,6 @@ namespace rfct {
 	class RfctSwapChain;
 	class RfctVulkanInstance;
 	class RfctVulkanMemAllocator;
-
-	class RfctRenderImage {
-	public:
-		struct RfctRenderImageSpec {
-			// settings
-			vk::Extent2D extent = { 1, 1 };
-			vk::Format dafaultFormat = vk::Format::eB8G8R8A8Unorm;
-			std::string debugName = "renderImage";
-			// image create
-			bool allocateImage = true;
-			vk::Image image = nullptr; // should hold valid image handle if allocateImage is false
-			VmaMemoryUsage memoryUsage = VMA_MEMORY_USAGE_GPU_ONLY;
-			vk::SampleCountFlagBits imageSamples = vk::SampleCountFlagBits::e1;
-			vk::ImageUsageFlags usage = vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled;
-			// runtime settings
-			vk::ImageLayout dafaultLayout = vk::ImageLayout::eColorAttachmentOptimal;
-		};
-	public:
-		void TransformLayoutSync(vk::ImageLayout newLayout, RfctDevice& deviceWrapper, RfctQueue& queue);
-		void TransformLayoutAsync(vk::ImageLayout newLayout, vk::CommandBuffer commandBuffer);
-		void CreateImageAndView(const RfctRenderImageSpec& spec, RfctDevice& deviceWrapper,
-			RfctVulkanInstance& instanceWrapper, RfctQueue& queueWrapper, RfctVulkanMemAllocator& allocatorWrapper);
-		void InitFrameBuffer(std::vector<RfctRenderImage*> attachments, vk::RenderPass renderPass, vk::Device device);
-		void Cleanup(RfctVulkanMemAllocator& allocatorWrapper, vk::Device device);
-	private:
-		void AllocateImage(const RfctRenderImage::RfctRenderImageSpec& spec, RfctDevice& deviceWrapper,
-			RfctQueue& queueWrapper, RfctVulkanMemAllocator& allocatorWrapper);
-		void CreateImageView(vk::Device device);
-	public:
-		bool hasFrameBuffer;
-		bool wasAllocatedUsingVMA = false; // usually yes, swap chain could be one exception
-		vk::Extent2D m_extent;
-		std::string m_debugName;
-		vk::Image m_image;
-		VmaAllocation m_imageAllocation;
-		vk::UniqueImageView m_imageView;
-		vk::UniqueFramebuffer m_frameBuffer;
-		vk::ImageLayout m_currentLayout = vk::ImageLayout::eUndefined;
-		vk::Format m_format;
-		vk::SampleCountFlags m_sampleCount;
-	};
 
 	// temporary solution- want to have framegraph owning render images and frame buffers
 	class RfctRenderImagesManager {
