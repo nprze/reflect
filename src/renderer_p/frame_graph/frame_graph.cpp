@@ -104,8 +104,8 @@ std::vector<rfct::RfctFGPassHandle> rfct::RfctFrameGraph::TopoSort() {
         }
     }
     // the graph has a cycle
-    RFCT_ASSERT(order.size() == m_passes.size(), "Cycle detected!")
-        return order;
+    RFCT_ASSERT(order.size() == m_passes.size()) // Cycle detected
+    return order;
 }
 
 void rfct::RfctFrameGraph::Cull(const std::vector<RfctFGPassHandle>& sortedPasses) {

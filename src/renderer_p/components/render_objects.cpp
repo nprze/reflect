@@ -29,6 +29,53 @@ void rfct::RfctShader::DestroyShader(vk::Device device) {
 	device.destroyShaderModule(m_shaderModule);
 }
 
+void rfct::RfctRenderBuffer::CreateBuffer(RfctRenderBufferSpec& spec, RfctVulkanMemAllocator* allocatorWrapper) {
+    m_allocatorWrapperRef = allocatorWrapper;
+    RFCT_PROFILE_FUNCTION();
+    VkBufferCreateInfo bufferCreateInfo{};
+    bufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    bufferCreateInfo.size = spec.size;
+    bufferCreateInfo.usage = static_cast<VkBufferUsageFlags>(spec.usage);
+    VmaAllocationCreateInfo allocCreateInfo{};
+    allocCreateInfo.usage = spec.memoryUsage;
+    allocCreateInfo.requiredFlags = spec.requiredFlags;
+    allocCreateInfo.flags = spec.allocFlags | VMA_ALLOCATION_CREATE_USER_DATA_COPY_STRING_BIT;
+    allocCreateInfo.pUserData = (void*)spec.name;
+
+    VkBuffer vkBuffer;
+    VkResult res = vmaCreateBuffer(m_allocatorWrapperRef->GetAllocator(), &bufferCreateInfo,
+        &allocCreateInfo, &vkBuffer, &m_allocation, nullptr);
+    if (res != VK_SUCCESS) {
+        RFCT_CRITICAL("Buffer creation failed with code: {0}", (uint32_t)res);
+    }
+    m_buffer = vk::Buffer(vkBuffer);
+}
+
+void rfct::RfctRenderBuffer::DestroyBuffer() {
+    RFCT_PROFILE_FUNCTION();
+    if (m_allocation) vmaDestroyBuffer(m_allocatorWrapperRef->GetAllocator(), static_cast<VkBuffer>(m_buffer), m_allocation);
+}
+
+void* rfct::RfctRenderBuffer::Map() {
+    void* m_mappedData = nullptr;
+    VkResult res = vmaMapMemory(m_allocatorWrapperRef->GetAllocator(), m_allocation, &m_mappedData);
+    if (res != VK_SUCCESS) {
+        RFCT_CRITICAL("Failed to map Vulkan buffer memory.");
+    }
+    return m_mappedData;
+}
+
+void rfct::RfctRenderBuffer::Unmap() {
+    vmaUnmapMemory(m_allocatorWrapperRef->GetAllocator(), m_allocation);
+}
+
+void rfct::RfctRenderBuffer::CopyData(const void* data, size_t size) {
+    RFCT_PROFILE_FUNCTION();
+    void* m_mappedData = Map();
+    std::memcpy(m_mappedData, data, size);
+    Unmap();
+}
+
 rfct::RfctRenderPipeline::RfctRenderPipeline(const RfctRenderPipelineSpec& spec, vk::RenderPass renderPass, vk::Device device) {
 	RFCT_PROFILE_FUNCTION();
 	CreatePipeline(spec, renderPass, device);
@@ -133,7 +180,7 @@ void rfct::RfctRenderPipeline::CreatePipeline(const RfctRenderPipelineSpec& spec
 	pipelineInfo.renderPass = renderPass;
 	pipelineInfo.subpass = 0;
 
-	m_graphicsPipeline = device.createGraphicsPipelineUnique({}, pipelineInfo).value;
+	m_graphicsPipeline = device.createGraphicsPipeline({}, pipelineInfo).value;
 }
 
 void rfct::RfctRenderPipeline::DestroyPipeline(vk::Device device) {
@@ -166,31 +213,54 @@ void rfct::RfctUniformBuffer::DestroyUniformDescriptorSetLayout(vk::Device devic
 	device.destroyDescriptorSetLayout(uboDescriptorSetLayout);
 }
 
-rfct::RfctUniformBuffer::RfctUniformBuffer(vk::Device device) : m_buffer("uniform buffer", sizeof(RfctUniformData), 
-		vk::BufferUsageFlagBits::eUniformBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU) {
-	m_mappedBuffer = m_buffer.Map();
+void rfct::RfctUniformBuffer::CreateUniformBuffer(RfctVulkanMemAllocator& memAllocatorWrapper, vk::Device device) {
+    RfctRenderBuffer::RfctRenderBufferSpec bufferSpec;
+    bufferSpec.name = "uniform buffer";
+    bufferSpec.size = sizeof(RfctUniformData);
+    bufferSpec.usage = vk::BufferUsageFlagBits::eUniformBuffer;
+    bufferSpec.memoryUsage = VMA_MEMORY_USAGE_CPU_TO_GPU;
+    m_buffer.CreateBuffer(bufferSpec, &memAllocatorWrapper);
 
-	// Create pool
-	std::array<vk::DescriptorPoolSize, 1> poolSizes = { {
-	   { vk::DescriptorType::eUniformBuffer, 1 },
-	} };
+    m_mappedBuffer = m_buffer.Map();
 
-	vk::DescriptorPoolCreateInfo poolCreateInfo(
-		vk::DescriptorPoolCreateFlags(vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet), 1,
-		poolSizes.size(), poolSizes.data()
-	);
-	m_descriptorPool = device.createDescriptorPoolUnique(poolCreateInfo).value;
+    // Create pool
+    std::array<vk::DescriptorPoolSize, 1> poolSizes = { {
+       { vk::DescriptorType::eUniformBuffer, 1 },
+    } };
 
-	// Allocate uniform buffer descriptor set
-	vk::DescriptorSetAllocateInfo allocInfo{};
-	allocInfo.descriptorPool = m_descriptorPool.get();
-	allocInfo.descriptorSetCount = 1;
-	vk::DescriptorSetLayout descriptorSetLayout = RfctUniformBuffer::GetUniformDescriptorSetLayout(device);
-	allocInfo.pSetLayouts = &descriptorSetLayout;
-	auto descriptorSets = device.allocateDescriptorSetsUnique(allocInfo);
-	m_cameraUboDescSet = std::move(descriptorSets.value[0]);
+    vk::DescriptorPoolCreateInfo poolCreateInfo(
+        vk::DescriptorPoolCreateFlags(vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet), 1,
+        poolSizes.size(), poolSizes.data()
+    );
+    m_descriptorPool = device.createDescriptorPoolUnique(poolCreateInfo).value;
 
-	BindBufferToDescriptor(m_buffer.buffer, device);
+    // Allocate uniform buffer descriptor set
+    vk::DescriptorSetAllocateInfo allocInfo{};
+    allocInfo.descriptorPool = m_descriptorPool.get();
+    allocInfo.descriptorSetCount = 1;
+    vk::DescriptorSetLayout descriptorSetLayout = RfctUniformBuffer::GetUniformDescriptorSetLayout(device);
+    allocInfo.pSetLayouts = &descriptorSetLayout;
+    auto descriptorSets = device.allocateDescriptorSetsUnique(allocInfo);
+    m_cameraUboDescSet = std::move(descriptorSets.value[0]);
+
+    // bind buffer to descriptor set
+    if (!m_cameraUboDescSet.get()) {
+        RFCT_CRITICAL("Camera UBO descriptor set is null");
+    }
+    vk::DescriptorBufferInfo bufferInfo{};
+    bufferInfo.buffer = m_buffer.GetBuffer();
+    bufferInfo.offset = 0;
+    bufferInfo.range = VK_WHOLE_SIZE;
+
+    vk::WriteDescriptorSet descriptorWrite{};
+    descriptorWrite.dstSet = m_cameraUboDescSet.get();
+    descriptorWrite.dstBinding = 0;
+    descriptorWrite.dstArrayElement = 0;
+    descriptorWrite.descriptorType = vk::DescriptorType::eUniformBuffer;
+    descriptorWrite.descriptorCount = 1;
+    descriptorWrite.pBufferInfo = &bufferInfo;
+
+    device.updateDescriptorSets(descriptorWrite, nullptr);
 }
 
 void rfct::RfctUniformBuffer::DestroyUniformBuffer() {
@@ -201,27 +271,6 @@ void rfct::RfctUniformBuffer::UpdateUniformData(const RfctUniformData& newData) 
 	RFCT_PROFILE_FUNCTION();
 	memcpy(m_mappedBuffer, &newData, sizeof(RfctUniformData));
 }
-
-void rfct::RfctUniformBuffer::BindBufferToDescriptor(vk::Buffer buffer, vk::Device device) {
-	if (!m_cameraUboDescSet.get()) {
-		RFCT_CRITICAL("Camera UBO descriptor set is null");
-	}
-	vk::DescriptorBufferInfo bufferInfo{};
-	bufferInfo.buffer = buffer;
-	bufferInfo.offset = 0;
-	bufferInfo.range = VK_WHOLE_SIZE;
-
-	vk::WriteDescriptorSet descriptorWrite{};
-	descriptorWrite.dstSet = m_cameraUboDescSet.get();
-	descriptorWrite.dstBinding = 0;
-	descriptorWrite.dstArrayElement = 0;
-	descriptorWrite.descriptorType = vk::DescriptorType::eUniformBuffer;
-	descriptorWrite.descriptorCount = 1;
-	descriptorWrite.pBufferInfo = &bufferInfo;
-
-	device.updateDescriptorSets(descriptorWrite, nullptr);
-}
-
 
 void rfct::RfctRenderImage::TransformLayoutSync(vk::ImageLayout newLayout, RfctDevice& deviceWrapper, RfctQueue& queue) {
     RFCT_PROFILE_FUNCTION();

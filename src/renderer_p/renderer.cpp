@@ -28,11 +28,12 @@ rfct::RfctRenderer::RfctRenderer(RFCT_RENDERER_ARGUMENTS)
 	m_swapChain(m_device.GetPhysicalDevice(), m_device.GetDevice(), m_surface.GetSurface()),
     m_renderImages(m_device, m_instance, m_queue, m_allocator, m_swapChain),
     m_framesInFlight(m_allocator, m_queue, m_device.GetDevice()), 
-    m_rasterizerPipeline(m_renderImages.GetSceneRenderPass(), m_device.GetDevice()), 
     m_bloomRes(m_queue, m_renderImages, m_renderImages.GetIntermediateRenderPass(), m_device.GetDevice()),
     m_debugDraw(m_renderImages.GetIntermediateRenderPass(), m_device.GetDevice()),
     m_UIPipeline(m_renderImages.GetUIRenderPass(), m_device.GetDevice())
 {
+    m_frameGraph.GetResources().CreateUniformBuffers(m_allocator, m_device.GetDevice());
+    m_scenePass.CreatePassResources(m_renderImages.GetSceneRenderPass(), m_pipelineManager, m_device.GetDevice());
 }
 
 void rfct::RfctRenderer::DestroyRenderer() {
@@ -58,23 +59,23 @@ void rfct::RfctRenderer::UpdateWindow(RFCT_NATIVE_WINDOW_ANDROID RFCT_NATIVE_WIN
 
 void rfct::RfctRenderer::Render(frameContext& frameContext) {
     RFCT_PROFILE_FUNCTION();
-	RfctFrameSyncData& RfctFrameSyncData = m_framesInFlight.GetNextFrame(frameContext.frame);
+	frameSyncDataTemp& frameSyncDataTemp = m_framesInFlight.GetNextFrame(frameContext.frameInFlightIndex);
     {
         RFCT_PROFILE_SCOPE("fences wait");
-        RfctFrameSyncData.WaitForFences(m_device.GetDevice());
+        frameSyncDataTemp.WaitForFences(m_device.GetDevice());
     }
 
     uint32_t imageIndex;
     {
         RFCT_PROFILE_SCOPE("get sawpchain image");
-        rfct::RfctSwapChain::RfctAcquireNextImageResult acquireImageResult = m_swapChain.AcquireNextImage(RfctFrameSyncData.m_ImageAvaibleSemaphore.get(), VK_NULL_HANDLE,
+        rfct::RfctSwapChain::RfctAcquireNextImageResult acquireImageResult = m_swapChain.AcquireNextImage(frameSyncDataTemp.m_ImageAvaibleSemaphore.get(), VK_NULL_HANDLE,
             m_device.GetPhysicalDevice(), m_device.GetDevice(), m_surface.GetSurface());
 		imageIndex = acquireImageResult.imageIndex;
 
         if (acquireImageResult.needsRecreation) {
             m_renderImages.CreateResources(m_device, m_instance,m_queue, m_allocator, m_swapChain);
             m_bloomRes.onSwapchainExtentChanged(m_renderImages, m_device.GetDevice());
-            acquireImageResult = m_swapChain.AcquireNextImage(RfctFrameSyncData.m_ImageAvaibleSemaphore.get(), VK_NULL_HANDLE,
+            acquireImageResult = m_swapChain.AcquireNextImage(frameSyncDataTemp.m_ImageAvaibleSemaphore.get(), VK_NULL_HANDLE,
                 m_device.GetPhysicalDevice(), m_device.GetDevice(), m_surface.GetSurface());
             imageIndex = acquireImageResult.imageIndex;
 		}
@@ -84,22 +85,22 @@ void rfct::RfctRenderer::Render(frameContext& frameContext) {
             return;
         }
     }
-    RfctFrameSyncData.ResetFences(m_device.GetDevice());
-    RfctFrameSyncData.prepareFrame(frameContext, frameContext.frame, world::getWorld().changeSceneEffectMultiplier);
+    frameSyncDataTemp.ResetFences(m_device.GetDevice());
+    m_frameGraph.GetResources().PreFrame(frameContext, world::getWorld().changeSceneEffectMultiplier);
     {
         RFCT_PROFILE_SCOPE("command buffers record");
         auto jobs = std::make_shared<rfct::jobTracker>();
         jobSystem::get().KickJob([&]() {
-            m_rasterizerPipeline.RecordCommandBuffer(&frameContext, m_swapChain, RfctFrameSyncData, m_renderImages.GetSceneImage(frameContext.frame).m_frameBuffer.get(), m_renderImages.GetSceneRenderPass());
+            m_scenePass.RecordCommandBuffer(&frameContext, m_swapChain, frameSyncDataTemp, m_renderImages.GetSceneImage(frameContext.frameInFlightIndex).m_frameBuffer.get(), m_renderImages.GetSceneRenderPass());
             }, *jobs);
         jobSystem::get().KickJob([&]() {
-            m_bloomRes.blum(&frameContext, m_renderImages, m_swapChain, RfctFrameSyncData, m_renderImages.GetIntermediateClearRenderPass(), imageIndex);
+            m_bloomRes.blum(&frameContext, m_renderImages, m_swapChain, frameSyncDataTemp, m_renderImages.GetIntermediateClearRenderPass(), imageIndex);
             }, *jobs);
         jobSystem::get().KickJob([&]() {
-            debugDraw::flush(&frameContext, RfctFrameSyncData, m_renderImages.GetSwapChainImage(imageIndex).m_frameBuffer.get(), m_renderImages.GetIntermediateRenderPass());
+            debugDraw::flush(&frameContext, frameSyncDataTemp, m_renderImages.GetSwapChainImage(imageIndex).m_frameBuffer.get(), m_renderImages.GetIntermediateRenderPass());
             }, *jobs);
         jobSystem::get().KickJob([&]() {
-            m_UIPipeline.draw(m_swapChain, RfctFrameSyncData, m_renderImages.GetSwapChainImage(imageIndex).m_frameBuffer.get(), m_renderImages.GetUIRenderPass());
+            m_UIPipeline.draw(m_swapChain, frameSyncDataTemp, m_renderImages.GetSwapChainImage(imageIndex).m_frameBuffer.get(), m_renderImages.GetUIRenderPass());
             }, *jobs);
         jobs->waitAll();
     }
@@ -107,33 +108,33 @@ void rfct::RfctRenderer::Render(frameContext& frameContext) {
         RFCT_PROFILE_SCOPE("command buffer submissions");
         constexpr vk::PipelineStageFlags waitStages[] = { vk::PipelineStageFlagBits::eColorAttachmentOutput };
 
-        vk::SubmitInfo sceneSubmitInfo = RfctFrameSyncData.sceneSubmitInfo(frameContext);
+        vk::SubmitInfo sceneSubmitInfo = frameSyncDataTemp.sceneSubmitInfo(frameContext);
         sceneSubmitInfo.pWaitDstStageMask = waitStages;
         m_queue.SubmitGraphics(sceneSubmitInfo);
 
-        vk::SubmitInfo bloomSubmitInfo = RfctFrameSyncData.bloomSubmitInfo(frameContext);
+        vk::SubmitInfo bloomSubmitInfo = frameSyncDataTemp.bloomSubmitInfo(frameContext);
         bloomSubmitInfo.pWaitDstStageMask = waitStages;
         m_queue.SubmitGraphics(bloomSubmitInfo);
         if (frameContext.renderDebugDraw) 
         {
-            vk::SubmitInfo debugDrawSubmitInfo = RfctFrameSyncData.debugDrawSubmitInfo(frameContext);
+            vk::SubmitInfo debugDrawSubmitInfo = frameSyncDataTemp.debugDrawSubmitInfo(frameContext);
             debugDrawSubmitInfo.pWaitDstStageMask = waitStages;
             m_queue.SubmitGraphics(debugDrawSubmitInfo);
         }
 
-        vk::SubmitInfo uiSubmitInfo = RfctFrameSyncData.uiSubmitInfo(frameContext);
+        vk::SubmitInfo uiSubmitInfo = frameSyncDataTemp.uiSubmitInfo(frameContext);
         uiSubmitInfo.pWaitDstStageMask = waitStages;
-        m_queue.SubmitGraphics(uiSubmitInfo, RfctFrameSyncData.m_thisFrameRenderFinishedFence);
+        m_queue.SubmitGraphics(uiSubmitInfo, frameSyncDataTemp.m_thisFrameRenderFinishedFence);
     }
     {
         RFCT_PROFILE_SCOPE("image present");
         vk::PresentInfoKHR presentInfo{};
         presentInfo.sType = vk::StructureType::ePresentInfoKHR;
 
-        RFCT_VULKAN_CHECK(m_device.GetDevice().waitForFences(1, &RfctFrameSyncData.m_thisFrameRenderFinishedFence, VK_TRUE, UINT64_MAX));
+        RFCT_VULKAN_CHECK(m_device.GetDevice().waitForFences(1, &frameSyncDataTemp.m_thisFrameRenderFinishedFence, VK_TRUE, UINT64_MAX));
 
         presentInfo.waitSemaphoreCount = 1;
-        const vk::Semaphore& sem = RfctFrameSyncData.m_renderFinishedSemaphore.get();
+        const vk::Semaphore& sem = frameSyncDataTemp.m_renderFinishedSemaphore.get();
         presentInfo.pWaitSemaphores = &sem;
 
         presentInfo.swapchainCount = 1;

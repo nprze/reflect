@@ -1,4 +1,5 @@
 #pragma once
+#include "fg_resources.h"
 #include "context.h"
 
 namespace rfct {
@@ -89,6 +90,7 @@ namespace rfct {
 		void Execute(CommandList* cmdList);
 		void Reset();
 		void ForgetAllResources();
+		RfctFrameGraphResources& GetResources() { return m_resources; };
 	private:
 		// building
 		void BuildEdges();
@@ -106,5 +108,6 @@ namespace rfct {
 	private:
 		std::vector<RfctFGRenderPass> m_passes;
 		std::vector<RfctFGResourceEntry> m_entries;
+		RfctFrameGraphResources m_resources;
 	};
 };

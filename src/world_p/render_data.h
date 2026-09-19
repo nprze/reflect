@@ -16,7 +16,7 @@ namespace rfct {
 		void updateDynamicVertices(const frameContext* ctx, const size_t objBufferOffset, void* vertices, const size_t size);
 		uint32_t addStaticMat(void* data);
 		uint32_t addDynamicMat(const frameContext* ctx, void* data);
-		uint32_t addDynamicVertices(std::vector<Vertex>* vertices, uint32_t frame, uint32_t numVertices = 0, uint32_t location = UINT32_MAX);
+		uint32_t addDynamicVertices(std::vector<Vertex>* vertices, uint32_t frameInFlightIndex, uint32_t numVertices = 0, uint32_t location = UINT32_MAX);
 		objectLocation addStaticObject(std::vector<Vertex>* vertices, glm::mat4* matrix);
 		objectLocation addDynamicObject(std::vector<Vertex>* vertices, glm::mat4* matrix, const frameContext& fc = {}, uint32_t numVertices = 0);
 		uint32_t reserveSuitableVertexBufferLocation(size_t numVertices);

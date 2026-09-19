@@ -5,7 +5,7 @@
 #include "render_objects.h"
 
 namespace rfct {
-	class RfctFrameSyncData;
+	class frameSyncDataTemp;
 
 	class RfctVulkanInstance {
 	public:

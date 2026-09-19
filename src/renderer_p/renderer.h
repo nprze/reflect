@@ -7,6 +7,8 @@
 #include "renderer_p/rasterizer_pipeline/vulkan_rasterizer_pipeline.h"
 #include "renderer_p/UI/ui_pipeline.h"
 #include "renderer_p/post_process/bloom.h"
+#include "renderer_p/components/render_passes.h"
+#include "renderer_p/frame_graph/frame_graph.h"
 
 namespace rfct {
 	class RfctRenderer {
@@ -24,6 +26,7 @@ namespace rfct {
 		float GetAspectRatio() { return m_window.GetAspectRatio(); }
 		vk::Extent2D GetExtent() { return m_window.GetExtent(); }
 		UIPipelines& GetUIPipeline() { return m_UIPipeline; };
+		RfctFrameGraph& GetFrameGraph() { return m_frameGraph; }
 	public:
         RfctRenderer(RFCT_RENDERER_ARGUMENTS);
 		void DestroyRenderer();
@@ -40,7 +43,9 @@ namespace rfct {
 		RfctSwapChain m_swapChain;
 		RfctRenderImagesManager m_renderImages;
 		RfctFrameInFlight m_framesInFlight;
-		vulkanRasterizerPipeline m_rasterizerPipeline;
+		RfctFrameGraph m_frameGraph;
+		RfctPipelineManager m_pipelineManager;
+		RfctScenePass m_scenePass;
 		bloomResurcesHolder m_bloomRes;
 		debugDraw m_debugDraw;
 		UIPipelines m_UIPipeline;

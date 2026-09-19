@@ -11,7 +11,7 @@ rfct::RfctFrameInFlight::RfctFrameInFlight(RfctVulkanMemAllocator& allocator, Rf
 		m_fences[i] = std::move(fenceCreateResult.value);
 	}
 	for (uint32_t i = 0; i < RFCT_FRAMES_IN_FLIGHT; i++) {
-		m_frames.push_back(std::make_unique<RfctFrameSyncData>(allocator, queue, device, (m_fences[(i + (RFCT_FRAMES_IN_FLIGHT - 1)) % RFCT_FRAMES_IN_FLIGHT]).get(), m_fences[i].get()));
+		m_frames.push_back(std::make_unique<frameSyncDataTemp>(allocator, queue, device, (m_fences[(i + (RFCT_FRAMES_IN_FLIGHT - 1)) % RFCT_FRAMES_IN_FLIGHT]).get(), m_fences[i].get()));
 		RFCT_TRACE("Frame in flight #{0} created", i);
 	}
 }

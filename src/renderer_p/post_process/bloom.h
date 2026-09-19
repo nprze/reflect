@@ -37,7 +37,7 @@ namespace rfct {
 		bloomResurcesHolder(RfctQueue& queue, RfctRenderImagesManager& imageManager, vk::RenderPass renderPass, vk::Device device);
 		void updateDescSets(RfctRenderImagesManager& imageManager, vk::Device device);
 		void blum(frameContext* ctx, RfctRenderImagesManager& imageManager, RfctSwapChain& swapChain,
-			RfctFrameSyncData& fd, vk::RenderPass renderPass, uint32_t imageIndex);
+			frameSyncDataTemp& fd, vk::RenderPass renderPass, uint32_t imageIndex);
 		void recordCommandBuffer(RfctRenderImagesManager& imageManager, RfctSwapChain& swapChain,
 			vk::CommandBuffer commandBuffer, vk::RenderPass renderPass, uint32_t imageIndex, uint32_t swapchainImage);
 		void onSwapchainExtentChanged(RfctRenderImagesManager& imageManager, vk::Device device);

@@ -256,10 +256,10 @@ namespace rfct {
     }
 
     void bloomResurcesHolder::blum(frameContext* ctx, RfctRenderImagesManager& imageManager, RfctSwapChain& swapChain, 
-        RfctFrameSyncData& fd, vk::RenderPass renderPass, uint32_t imageIndex) {
+        frameSyncDataTemp& fd, vk::RenderPass renderPass, uint32_t imageIndex) {
         RFCT_PROFILE_FUNCTION();
-        recordCommandBuffer(imageManager, swapChain, m_bloomCommandBuffer[ctx->frame].get(), imageManager.GetIntermediateClearRenderPass(), ctx->frame, imageIndex);
-        fd.m_BloomCommandBuffer = m_bloomCommandBuffer[ctx->frame].get();
+        recordCommandBuffer(imageManager, swapChain, m_bloomCommandBuffer[ctx->frameInFlightIndex].get(), imageManager.GetIntermediateClearRenderPass(), ctx->frameInFlightIndex, imageIndex);
+        fd.m_BloomCommandBuffer = m_bloomCommandBuffer[ctx->frameInFlightIndex].get();
     }
 
     void bloomResurcesHolder::recordCommandBuffer(RfctRenderImagesManager& imageManager, RfctSwapChain& swapChain, 

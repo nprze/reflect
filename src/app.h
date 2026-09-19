@@ -16,6 +16,6 @@ namespace rfct {
 		void cleanGameSystems();
     private:
 		size_t currentFrame = -1; // the frame in flight which resources to use this frame
-        RfctRenderer m_Renderer;
+        RfctRenderer m_renderer;
 	};
 }

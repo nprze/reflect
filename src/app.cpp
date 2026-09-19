@@ -12,7 +12,7 @@
 bool rfct::reflectApplication::isAppMinimised;
 
 rfct::reflectApplication::reflectApplication(RFCT_APP_ARGS)
-    : m_Renderer(RFCT_RENDERER_ARGUMENTS_VAR) {
+    : m_renderer(RFCT_RENDERER_ARGUMENTS_VAR) {
     {
         RFCT_PROFILE_SCOPE("app init");
 	    input::getInput().init();
@@ -36,7 +36,7 @@ rfct::reflectApplication::~reflectApplication() {
 }
 
 void rfct::reflectApplication::updateWindow(RFCT_APP_ARGS) {
-    m_Renderer.UpdateWindow(RFCT_NATIVE_WINDOW_ANDROID_VAR);
+    m_renderer.UpdateWindow(RFCT_NATIVE_WINDOW_ANDROID_VAR);
 };
 
 void rfct::reflectApplication::update() {
@@ -55,10 +55,11 @@ void rfct::reflectApplication::update() {
     currentFrame = (currentFrame + 1) % RFCT_FRAMES_IN_FLIGHT;
     frameContext context = {
         .dt = deltaTime.count(),
-		.globalTime = globalTime,
-        .frame = currentFrame,
+        .globalTime = globalTime,
+        .frameInFlightIndex = currentFrame,
         .scene = &world::getWorld().getCurrentScene(),
-        .state = getState()
+        .state = getState(),
+        .frameGraph = &m_renderer.GetFrameGraph()
     };
 
     static float accumulator = 0.f;

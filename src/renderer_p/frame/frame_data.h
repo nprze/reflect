@@ -1,24 +1,20 @@
 #pragma once
 #include "context.h"
-#include "renderer_p/components/render_objects.h"
 #include <vulkan/vulkan.hpp>
 
 namespace rfct {
 	class RfctVulkanMemAllocator;
 	class RfctQueue;
-    class RfctFrameSyncData {
+    class frameSyncDataTemp {
     public:
-        RfctFrameSyncData(RfctVulkanMemAllocator& allocatorWrapper, RfctQueue& queue, vk::Device device, vk::Fence lastFramePresentFinishedFence, vk::Fence thisFramePresentFinishedFence);
-		void prepareFrame(const frameContext& ctx, uint32_t BufferIndex, float changeSceneEffectMultiplier);
+        frameSyncDataTemp(RfctVulkanMemAllocator& allocatorWrapper, RfctQueue& queue, vk::Device device, vk::Fence lastFramePresentFinishedFence, vk::Fence thisFramePresentFinishedFence);
         void WaitForFences(vk::Device device);
         void ResetFences(vk::Device device);
-		vk::DescriptorSet& getCameraUboDescSet() { return m_sceneUniform.GetCameraDescSet(); }
-		vk::DescriptorSet& getUICameraUboDescSet() { return m_UIUniform.GetCameraDescSet(); }
         vk::SubmitInfo sceneSubmitInfo(const frameContext& ctx) const;
         vk::SubmitInfo bloomSubmitInfo(const frameContext& ctx) const;
         vk::SubmitInfo debugDrawSubmitInfo(const frameContext& ctx) const;
         vk::SubmitInfo uiSubmitInfo(const frameContext& ctx) const;
-    private:
+    public:
         vk::UniqueCommandPool m_sceneCommandPool;
         vk::UniqueCommandBuffer m_sceneCommandBuffer;
         vk::UniqueSemaphore m_sceneFinishedSemaphore;
@@ -41,8 +37,6 @@ namespace rfct {
 		vk::Fence m_thisFrameRenderFinishedFence;
 		vk::Fence m_lastFrameRenderFinishedFence;
 
-		RfctUniformBuffer m_sceneUniform;
-		RfctUniformBuffer m_UIUniform;
     private:
         friend class RfctRenderer;
         friend class debugDraw;

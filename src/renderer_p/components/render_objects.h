@@ -1,10 +1,15 @@
 #pragma once
 #include <vulkan/vulkan.hpp>
 #include <string>
-#include "renderer_p/buffer/vulkan_buffer.h"
 #include <glm/glm.hpp>
+#include <vma/vk_mem_alloc.h>
 
 namespace rfct {
+	class RfctDevice;
+	class RfctVulkanInstance;
+	class RfctQueue;
+	class RfctVulkanMemAllocator;
+
     class RfctShader {
     public:
         vk::ShaderModule getShaderModule() { return m_shaderModule; }
@@ -14,6 +19,29 @@ namespace rfct {
     private:
         vk::ShaderModule m_shaderModule;
     };
+
+	class RfctRenderBuffer {
+	public:
+		struct RfctRenderBufferSpec {
+			const char* name;
+			vk::DeviceSize size;
+			vk::BufferUsageFlags usage;
+			VmaMemoryUsage memoryUsage;
+			VkMemoryPropertyFlags requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+			VmaAllocationCreateFlags allocFlags = 0;
+		};
+	public:
+		vk::Buffer GetBuffer() { return m_buffer; }
+		void CreateBuffer(RfctRenderBufferSpec& spec, RfctVulkanMemAllocator* allocatorWrapper);
+		void DestroyBuffer();
+		void* Map();
+		void Unmap();
+		void CopyData(const void* data, size_t size);
+	private:
+		RfctVulkanMemAllocator* m_allocatorWrapperRef;
+		vk::Buffer m_buffer;
+		VmaAllocation m_allocation;
+	};
 
 	class RfctRenderPipeline {
 	public:
@@ -30,6 +58,7 @@ namespace rfct {
 		void CreatePipeline(const RfctRenderPipelineSpec& spec, vk::RenderPass renderPass, vk::Device device);
 		void DestroyPipeline(vk::Device device);
 		vk::Pipeline GetPipeline() { return m_graphicsPipeline; };
+		vk::PipelineLayout GetPipelineLayout() { return m_pipelineLayout; };
 	private:
 		vk::PipelineLayout m_pipelineLayout;
 		vk::Pipeline m_graphicsPipeline;
@@ -47,15 +76,13 @@ namespace rfct {
 		static void DestroyUniformDescriptorSetLayout(vk::Device device);
 	public:
 		vk::DescriptorSet& GetCameraDescSet() { return m_cameraUboDescSet.get(); }
-		vk::Buffer GetBuffer() { return m_buffer.buffer; }
+		vk::Buffer GetBuffer() { return m_buffer.GetBuffer(); }
 	public:
-		RfctUniformBuffer(vk::Device device);
+		void CreateUniformBuffer(RfctVulkanMemAllocator& memAllocatorWrapper, vk::Device device);
 		void DestroyUniformBuffer();
 		void UpdateUniformData(const RfctUniformData& newData);
 	private:
-		void BindBufferToDescriptor(vk::Buffer buffer, vk::Device device);
-	private:
-		VulkanBuffer m_buffer;
+		RfctRenderBuffer m_buffer;
 		void* m_mappedBuffer;
 		vk::UniqueDescriptorPool m_descriptorPool;
 		vk::UniqueDescriptorSet m_cameraUboDescSet;

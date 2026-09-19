@@ -2,7 +2,7 @@
 #include "renderer_p/renderer.h"
 
 rfct::VulkanBuffer::VulkanBuffer(const char* name, vk::DeviceSize size, vk::BufferUsageFlags usage, VmaMemoryUsage memoryUsage, VkMemoryPropertyFlags requiredFlags, VmaAllocationCreateFlags allocFlags) {
-	RFCT_PROFILE_FUNCTION();
+    RFCT_PROFILE_FUNCTION();
     VmaAllocator allocator = GetRen().GetAllocator();
     VkBufferCreateInfo bufferCreateInfo{};
     bufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;

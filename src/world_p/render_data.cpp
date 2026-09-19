@@ -154,12 +154,12 @@ void rfct::renderData::clearAllData() {
 }
 
 void rfct::renderData::updateMat(const frameContext* ctx, const uint32_t& objIndexInSSBO, glm::mat4* mat) {
-	char* finalPtr = (char*)m_mappedMatsDataDynamic[ctx->frame] + objIndexInSSBO * sizeof(glm::mat4);
+	char* finalPtr = (char*)m_mappedMatsDataDynamic[ctx->frameInFlightIndex] + objIndexInSSBO * sizeof(glm::mat4);
 	memcpy(finalPtr, mat, sizeof(glm::mat4));
 }
 
 void rfct::renderData::updateDynamicVertices(const frameContext* ctx, const size_t objBufferOffset, void* vertices, const size_t size) {
-	char* finalPtr = (char*)m_mappedVerticesDataDynamic[ctx->frame] + (objBufferOffset * sizeof(Vertex));
+	char* finalPtr = (char*)m_mappedVerticesDataDynamic[ctx->frameInFlightIndex] + (objBufferOffset * sizeof(Vertex));
 	memcpy(finalPtr, vertices, size);
 }
 
@@ -176,13 +176,13 @@ uint32_t rfct::renderData::addDynamicMat(const frameContext* ctx, void* data) {
 	if (m_matricesFreeIndices.size() != 0) {
 		size_t index = m_matricesFreeIndices.back();
 		m_matricesFreeIndices.pop_back();
-		char* finalPtr = ((char*)m_mappedMatsDataDynamic[ctx->frame]) + (index * sizeof(glm::mat4));
+		char* finalPtr = ((char*)m_mappedMatsDataDynamic[ctx->frameInFlightIndex]) + (index * sizeof(glm::mat4));
 		memcpy(finalPtr, data, sizeof(glm::mat4));
 		return index;
 
 	}
 	else {
-		char* finalPtr = ((char*)m_mappedMatsDataDynamic[ctx->frame]) + (m_matsCounterDynamic * sizeof(glm::mat4));
+		char* finalPtr = ((char*)m_mappedMatsDataDynamic[ctx->frameInFlightIndex]) + (m_matsCounterDynamic * sizeof(glm::mat4));
 		memcpy(finalPtr, data, sizeof(glm::mat4));
 		RFCT_ASSERT(m_matsCounterDynamic < RFCT_MAX_DYNAMIC_OBJ_ON_SCENE);
 		return m_matsCounterDynamic++;
@@ -204,12 +204,12 @@ uint32_t rfct::renderData::reserveSuitableVertexBufferLocation(size_t numVertice
 	return m_verticesCountDynamicObj;
 }
 
-uint32_t rfct::renderData::addDynamicVertices(std::vector<Vertex>* vertices, uint32_t frame, uint32_t numVertices, uint32_t location) {
+uint32_t rfct::renderData::addDynamicVertices(std::vector<Vertex>* vertices, uint32_t frameInFlightIndex, uint32_t numVertices, uint32_t location) {
 	RFCT_PROFILE_FUNCTION();
 	if (location == UINT32_MAX) {
 		location = reserveSuitableVertexBufferLocation(numVertices);
 	}
-	void* finalPtr = (char*)(m_mappedVerticesDataDynamic[frame]) + (location * sizeof(Vertex));
+	void* finalPtr = (char*)(m_mappedVerticesDataDynamic[frameInFlightIndex]) + (location * sizeof(Vertex));
 	std::memcpy(finalPtr, vertices->data(), numVertices * sizeof(Vertex));
 	return location;
 }
@@ -234,7 +234,7 @@ rfct::objectLocation rfct::renderData::addDynamicObject(std::vector<Vertex>* ver
 	frameContext ctx = {};
 	objLoc.indexInSSBO = addDynamicMat(&ctx, matrix);
 	for (uint8_t i = 1; i < RFCT_FRAMES_IN_FLIGHT; ++i) {
-		ctx.frame = i;
+		ctx.frameInFlightIndex = i;
 		updateMat(&ctx, objLoc.indexInSSBO, matrix);
 	}
 	for (Vertex& ver : *vertices) {
@@ -252,9 +252,9 @@ rfct::objectLocation rfct::renderData::addDynamicObject(std::vector<Vertex>* ver
 
 void rfct::renderData::removeDynamicObject(const dynamicSSBOIndexComponent& ssboData, const vertexRenderInfoComponent& vertexRenderInfo, bool addToFreelist, const frameContext* ctx) {
 	RFCT_PROFILE_FUNCTION();
-	char* finalPtr = ((char*)m_mappedMatsDataDynamic[ctx->frame]) + (ssboData.indexInSSBO * sizeof(glm::mat4));
+	char* finalPtr = ((char*)m_mappedMatsDataDynamic[ctx->frameInFlightIndex]) + (ssboData.indexInSSBO * sizeof(glm::mat4));
 	memset(finalPtr, 0, sizeof(glm::mat4));
-	char* finalPtrVer = ((char*)m_mappedVerticesDataDynamic[ctx->frame]) + (vertexRenderInfo.vertexBufferOffset * sizeof(Vertex));
+	char* finalPtrVer = ((char*)m_mappedVerticesDataDynamic[ctx->frameInFlightIndex]) + (vertexRenderInfo.vertexBufferOffset * sizeof(Vertex));
 	memset(finalPtrVer, 0, vertexRenderInfo.verticesCount * sizeof(Vertex));
 	if (!addToFreelist) return;
 	m_matricesFreeIndices.push_back(ssboData.indexInSSBO);
@@ -268,7 +268,7 @@ void rfct::renderData::removeDynamicEntity(entity e) {
 	frameContext noCtx = {};
 	removeDynamicObject(ssbo, vData, true, &noCtx);
 	for (uint8_t i = 1; i < RFCT_FRAMES_IN_FLIGHT; i++) {
-		noCtx.frame = i;
+		noCtx.frameInFlightIndex = i;
 		removeDynamicObject(ssbo, vData, false, &noCtx);
 	}
 }
