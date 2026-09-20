@@ -91,6 +91,7 @@ namespace rfct {
 		void Reset();
 		void ForgetAllResources();
 		RfctFrameGraphResources& GetResources() { return m_resources; };
+		RfctFrameGraphPerFrameResources& GetFrameResources(uint32_t i) { return m_resources.GetFrameResources(i); }
 	private:
 		// building
 		void BuildEdges();

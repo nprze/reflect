@@ -6,6 +6,8 @@
 #include "renderer_p/frame/frame_data.h"
 #include "world_p/scene.h"
 #include "world_p/player/player_animations.h"
+#include "renderer_p/frame_graph/frame_graph.h"
+#include "context.h"
 
 void rfct::RfctScenePass::CreatePassResources(vk::RenderPass renderPass, RfctPipelineManager& pipelineManager, vk::Device device) {
     RFCT_PROFILE_FUNCTION();
@@ -25,8 +27,14 @@ void rfct::RfctScenePass::CreatePassResources(vk::RenderPass renderPass, RfctPip
 
     m_pipelineRef = pipelineManager.CreatePipeline(scenePipeline, renderPass, device);
 }
+void rfct::RfctScenePass::DestroyPassResources(vk::Device device) {
+    m_pipelineRef->DestroyPipeline(device);
+}
+
 void rfct::RfctScenePass::RecordCommandBuffer(frameContext* ctx, RfctSwapChain& swapChainWrapper, frameSyncDataTemp& frameSyncDataTemp, vk::Framebuffer framebuffer, vk::RenderPass renderPass) {
     RFCT_PROFILE_FUNCTION();
+    RfctFrameGraphPerFrameResources& frameGraphOwnedCurrentFrameResources = ctx->frameGraph->GetFrameResources(ctx->frameInFlightIndex);
+
     const renderData& renderdata = ctx->scene->getRenderData();
     vk::CommandBuffer commandBuffer = frameSyncDataTemp.m_sceneCommandBuffer.get();
 
@@ -68,24 +76,23 @@ void rfct::RfctScenePass::RecordCommandBuffer(frameContext* ctx, RfctSwapChain& 
         vk::Buffer vertexBuffers[] = { renderdata.m_VertexBufferStatic.m_Buffer.buffer };
         commandBuffer.bindVertexBuffers(0, 1, vertexBuffers, offsets);
 
-        vk::DescriptorSet sets[] = { frameSyncDataTemp.getCameraUboDescSet(), renderdata.m_DescriptorSetStatic.get() };
+        vk::DescriptorSet sets[] = { frameGraphOwnedCurrentFrameResources.GetSceneUniformBuffer().GetCameraDescSet(), renderdata.m_DescriptorSetStatic.get()};
         commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_pipelineRef->GetPipelineLayout(), 0, sets, {});
 
         commandBuffer.draw(renderdata.m_verticesCountStaticObj, 1, 0, 0);
     }
 
+    vk::DescriptorSet sets[] = { frameGraphOwnedCurrentFrameResources.GetSceneUniformBuffer().GetCameraDescSet(), renderdata.m_DescriptorSetsDynamic[ctx->frameInFlightIndex].get() };
     if (renderdata.m_verticesCountDynamicObj) {
 
         vk::Buffer vertexBuffers[] = { renderdata.m_VertexBufferDynamic[ctx->frameInFlightIndex]->buffer };
         commandBuffer.bindVertexBuffers(0, 1, vertexBuffers, offsets);
 
-        vk::DescriptorSet sets[] = { frameSyncDataTemp.getCameraUboDescSet(), renderdata.m_DescriptorSetsDynamic[ctx->frameInFlightIndex].get() };
         commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_pipelineRef->GetPipelineLayout(), 0, sets, {});
 
         commandBuffer.draw(renderdata.m_verticesCountDynamicObj, 1, 0, 0);
     }
 
-    vk::DescriptorSet sets[] = { frameSyncDataTemp.getCameraUboDescSet(), renderdata.m_DescriptorSetsDynamic[ctx->frameInFlightIndex].get() };
     commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_pipelineRef->GetPipelineLayout(), 0, sets, {});
     playerAnimations::get().drawPlayer(commandBuffer);
     objectSystems::get().customDrawObjects(commandBuffer, ctx);

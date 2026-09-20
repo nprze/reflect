@@ -265,6 +265,7 @@ void rfct::RfctUniformBuffer::CreateUniformBuffer(RfctVulkanMemAllocator& memAll
 
 void rfct::RfctUniformBuffer::DestroyUniformBuffer() {
 	m_buffer.Unmap();
+    m_buffer.DestroyBuffer();
 }
 
 void rfct::RfctUniformBuffer::UpdateUniformData(const RfctUniformData& newData) {

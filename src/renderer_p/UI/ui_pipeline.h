@@ -1,6 +1,7 @@
 #pragma once
 #include "font/font.h"
 #include "renderer_p/frame/frame_data.h"
+#include "renderer_p/buffer/vulkan_buffer.h"
 
 namespace rfct {
 	class RfctSwapChain;
@@ -31,7 +32,7 @@ namespace rfct {
 		UIPipelines(vk::RenderPass renderPass, vk::Device device);
 		void createPipeline(vk::RenderPass renderPass, vk::Device device);
 		void createDescriptorSet(vk::Device device);
-		void draw(RfctSwapChain& swapChain, frameSyncDataTemp& fd, vk::Framebuffer framebuffer, vk::RenderPass renderPass);
+		void draw(const frameContext& ctx, RfctSwapChain& swapChain, frameSyncDataTemp& fd, vk::Framebuffer framebuffer, vk::RenderPass renderPass);
 		float debugText(const std::string& text, glm::vec2 startPosition, float scale);
 
 		float addTextVertices(UIVertexBuffer* rd, const std::string& text, glm::vec2 position, float scale, const glm::vec3& color = { 1.f, 0.f, 0.f }, RfctFont* f = nullptr); // returns the cursor end x position

@@ -126,6 +126,8 @@ void rfct::vulkanRasterizerPipeline::RecordCommandBuffer(frameContext* ctx, Rfct
     const renderData& renderdata = ctx->scene->getRenderData();
     vk::CommandBuffer commandBuffer = frameSyncDataTemp.m_sceneCommandBuffer.get();
 
+    RfctFrameGraphPerFrameResources& frameGraphOwnedCurrentFrameResources = ctx->frameGraph->GetFrameResources(ctx->frameInFlightIndex);
+
     commandBuffer.reset({});
     vk::CommandBufferBeginInfo beginInfo = {};
     RFCT_VULKAN_CHECK(commandBuffer.begin(beginInfo));
@@ -164,7 +166,7 @@ void rfct::vulkanRasterizerPipeline::RecordCommandBuffer(frameContext* ctx, Rfct
         vk::Buffer vertexBuffers[] = { renderdata.m_VertexBufferStatic.m_Buffer.buffer };
         commandBuffer.bindVertexBuffers(0, 1, vertexBuffers, offsets);
 
-        vk::DescriptorSet sets[] = { frameSyncDataTemp.getCameraUboDescSet(), renderdata.m_DescriptorSetStatic.get() };
+        vk::DescriptorSet sets[] = { frameGraphOwnedCurrentFrameResources.GetSceneUniformBuffer().GetCameraDescSet(), renderdata.m_DescriptorSetStatic.get() };
         commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_pipelineLayout.get(), 0, sets, {});
 
         commandBuffer.draw(renderdata.m_verticesCountStaticObj, 1, 0, 0);
@@ -175,13 +177,13 @@ void rfct::vulkanRasterizerPipeline::RecordCommandBuffer(frameContext* ctx, Rfct
         vk::Buffer vertexBuffers[] = { renderdata.m_VertexBufferDynamic[ctx->frameInFlightIndex]->buffer};
         commandBuffer.bindVertexBuffers(0, 1, vertexBuffers, offsets);
 
-        vk::DescriptorSet sets[] = { frameSyncDataTemp.getCameraUboDescSet(), renderdata.m_DescriptorSetsDynamic[ctx->frameInFlightIndex].get() };
+        vk::DescriptorSet sets[] = { frameGraphOwnedCurrentFrameResources.GetSceneUniformBuffer().GetCameraDescSet(), renderdata.m_DescriptorSetsDynamic[ctx->frameInFlightIndex].get() };
         commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_pipelineLayout.get(), 0, sets, {});
 
         commandBuffer.draw(renderdata.m_verticesCountDynamicObj, 1, 0, 0);
     }
 
-    vk::DescriptorSet sets[] = { frameSyncDataTemp.getCameraUboDescSet(), renderdata.m_DescriptorSetsDynamic[ctx->frameInFlightIndex].get() };
+    vk::DescriptorSet sets[] = { frameGraphOwnedCurrentFrameResources.GetSceneUniformBuffer().GetCameraDescSet(), renderdata.m_DescriptorSetsDynamic[ctx->frameInFlightIndex].get() };
     commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_pipelineLayout.get(), 0, sets, {});
     playerAnimations::get().drawPlayer(commandBuffer);
     objectSystems::get().customDrawObjects(commandBuffer, ctx);

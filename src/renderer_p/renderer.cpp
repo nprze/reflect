@@ -37,6 +37,8 @@ rfct::RfctRenderer::RfctRenderer(RFCT_RENDERER_ARGUMENTS)
 }
 
 void rfct::RfctRenderer::DestroyRenderer() {
+    m_frameGraph.GetResources().DestroyResources();
+    m_scenePass.DestroyPassResources(m_device.GetDevice());
     m_renderImages.CleanupResources(m_allocator, m_device.GetDevice());
     RfctUniformBuffer::DestroyUniformDescriptorSetLayout(m_device.GetDevice());
 }
@@ -100,7 +102,7 @@ void rfct::RfctRenderer::Render(frameContext& frameContext) {
             debugDraw::flush(&frameContext, frameSyncDataTemp, m_renderImages.GetSwapChainImage(imageIndex).m_frameBuffer.get(), m_renderImages.GetIntermediateRenderPass());
             }, *jobs);
         jobSystem::get().KickJob([&]() {
-            m_UIPipeline.draw(m_swapChain, frameSyncDataTemp, m_renderImages.GetSwapChainImage(imageIndex).m_frameBuffer.get(), m_renderImages.GetUIRenderPass());
+            m_UIPipeline.draw(frameContext, m_swapChain, frameSyncDataTemp, m_renderImages.GetSwapChainImage(imageIndex).m_frameBuffer.get(), m_renderImages.GetUIRenderPass());
             }, *jobs);
         jobs->waitAll();
     }

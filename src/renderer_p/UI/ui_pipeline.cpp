@@ -2,6 +2,7 @@
 #include "renderer_p/renderer.h"
 #include "renderer_p/components/renderer_components.h"
 #include "assets/asset_manager.h"
+#include "renderer_p/frame_graph/fg_resources.h"
 
 rfct::UIPipelines::UIPipelines(vk::RenderPass renderPass, vk::Device device)
     : m_vertexMostShader(GetAssetManager().GetOrLoadShader(device, "shaders/UI/UIeverything_vert.spv")), 
@@ -169,9 +170,10 @@ void rfct::UIPipelines::createDescriptorSet(vk::Device device) {
 	m_textureIndexMap.reserve(RFCT_UI_TEXTURE_BINDINGS);
 }
 
-void rfct::UIPipelines::draw(RfctSwapChain& swapChain, frameSyncDataTemp& fd, vk::Framebuffer framebuffer, vk::RenderPass renderPass) {
+void rfct::UIPipelines::draw(const frameContext& ctx, RfctSwapChain& swapChain, frameSyncDataTemp& fd, vk::Framebuffer framebuffer, vk::RenderPass renderPass) {
     RFCT_PROFILE_FUNCTION();
     if (m_UIVertexBuffer.vertexCount == 0 && m_debugDrawUIVertexBuffer.vertexCount == 0) return;
+    RfctFrameGraphPerFrameResources& currentFrameFGOwnedResources = ctx.frameGraph->GetResources().GetFrameResources(ctx.frameInFlightIndex);
 
     vk::CommandBuffer commandBuffer = fd.m_uiCommandBuffer.get();
 
@@ -205,7 +207,7 @@ void rfct::UIPipelines::draw(RfctSwapChain& swapChain, frameSyncDataTemp& fd, vk
 
 
     // Descriptors
-    vk::DescriptorSet descSets[] = { fd.getUICameraUboDescSet(), m_DescriptorSet.get() };
+    vk::DescriptorSet descSets[] = { currentFrameFGOwnedResources.GetUIUniformBuffer().GetCameraDescSet(), m_DescriptorSet.get()};
     commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_PipelineLayout.get(), 0, descSets, {});
     
     if (m_imageVertexBuffer.vertexCount != 0) {

@@ -38,9 +38,9 @@ namespace rfct {
 		void Unmap();
 		void CopyData(const void* data, size_t size);
 	private:
-		RfctVulkanMemAllocator* m_allocatorWrapperRef;
+		RfctVulkanMemAllocator* m_allocatorWrapperRef = nullptr;
 		vk::Buffer m_buffer;
-		VmaAllocation m_allocation;
+		VmaAllocation m_allocation = nullptr;
 	};
 
 	class RfctRenderPipeline {

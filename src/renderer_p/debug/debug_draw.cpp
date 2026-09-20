@@ -175,6 +175,7 @@ void rfct::debugDraw::draw(frameContext* ctx, RfctSwapChain& swapChain, frameSyn
         ctx->renderDebugDraw = false;
 		return;
 	}
+    RfctFrameGraphPerFrameResources& frameGraphOwnedCurrentFrameResources = ctx->frameGraph->GetFrameResources(ctx->frameInFlightIndex);
     ctx->renderDebugDraw = true;
     vk::CommandBuffer commandBuffer = fd.m_debugDrawCommandBuffer.get();
     commandBuffer.reset({});
@@ -208,7 +209,7 @@ void rfct::debugDraw::draw(frameContext* ctx, RfctSwapChain& swapChain, frameSyn
     commandBuffer.setLineWidth(1.f);
 
     // Camera Descriptor
-    commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_PipelineLayout.get(), 0, fd.getCameraUboDescSet(), {});
+    commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_PipelineLayout.get(), 0, frameGraphOwnedCurrentFrameResources.GetSceneUniformBuffer().GetCameraDescSet(), {});
 
     // Debug trigs
     if(m_triangleBuffer.vertexCount!=0){
