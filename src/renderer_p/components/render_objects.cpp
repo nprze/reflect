@@ -463,3 +463,58 @@ void rfct::RfctRenderImage::CreateImageView(vk::Device device) {
     RFCT_VULKAN_CHECK(imageViewResult.result);
     m_imageView = std::move(imageViewResult.value);
 }
+
+void rfct::RfctRenderPass::CreateRenderPass(RfctRenderPassSpec& passSpec, vk::Device device) {
+    vk::AttachmentReference colorAttachmentRef = {};
+    colorAttachmentRef.attachment = 0;
+    colorAttachmentRef.layout = vk::ImageLayout::eColorAttachmentOptimal;
+
+    vk::AttachmentReference resolveAttachmentRef = {};
+    resolveAttachmentRef.attachment = 1;
+    resolveAttachmentRef.layout = vk::ImageLayout::eColorAttachmentOptimal;
+
+    vk::SubpassDescription subpass = {};
+    subpass.pipelineBindPoint = vk::PipelineBindPoint::eGraphics;
+    subpass.colorAttachmentCount = 1;
+    subpass.pColorAttachments = &colorAttachmentRef;
+    if (passSpec.resolveAttachment) {
+        subpass.pResolveAttachments = &resolveAttachmentRef;
+    }
+
+    vk::SubpassDependency dependency = {};
+    dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+    dependency.dstSubpass = 0;
+    dependency.srcStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput;
+    dependency.dstStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput;
+    dependency.srcAccessMask = vk::AccessFlagBits::eNone;
+    dependency.dstAccessMask = vk::AccessFlagBits::eColorAttachmentWrite;
+
+    vk::SubpassDependency dependency2 = {};
+    dependency2.srcSubpass = 0;
+    dependency2.dstSubpass = VK_SUBPASS_EXTERNAL;
+    dependency2.srcStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput;
+    dependency2.dstStageMask = vk::PipelineStageFlagBits::eBottomOfPipe;
+    dependency2.srcAccessMask = vk::AccessFlagBits::eColorAttachmentWrite;
+    dependency2.dstAccessMask = vk::AccessFlagBits::eNone;
+    dependency2.dependencyFlags = vk::DependencyFlagBits::eByRegion;
+
+    vk::RenderPassCreateInfo renderPassInfo = {};
+    std::array<vk::SubpassDependency, 2> dependencies = { dependency, dependency2 };
+    renderPassInfo.dependencyCount = static_cast<uint32_t>(dependencies.size());
+    renderPassInfo.pDependencies = dependencies.data();
+    renderPassInfo.subpassCount = 1;
+    renderPassInfo.pSubpasses = &subpass;
+
+    std::array<vk::AttachmentDescription, 2> attachments;
+    attachments[0] = passSpec.colorAttachmentDesc;
+    attachments[1] = passSpec.resolveAttachmentDesc;
+
+    renderPassInfo.attachmentCount = static_cast<uint32_t>(passSpec.resolveAttachment ? 2 : 1);
+    renderPassInfo.pAttachments = attachments.data();
+
+    m_pass = device.createRenderPass(renderPassInfo).value;
+}
+
+void rfct::RfctRenderPass::DestroyRenderPass(vk::Device device) {
+    device.destroyRenderPass(m_pass);
+}

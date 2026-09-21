@@ -21,7 +21,6 @@ namespace rfct {
 		vk::RenderPass GetpresentToColorAttachmentRenderPass() { return m_presentToColorAttachment.get(); }
 		vk::RenderPass GetIntermediateClearRenderPass() { return m_IntermediateClearRenderPass.get(); }
 		vk::RenderPass GetIntermediateRenderPass() { return m_IntermediateRenderPass.get(); }
-		vk::RenderPass GetSceneRenderPass() { return m_sceneRenderPass.get(); }
 	public:
 		RfctRenderImagesManager(rfct::RfctDevice& deviceWrapper, RfctVulkanInstance& instanceWrapper, rfct::RfctQueue& queueWrapper,
 			RfctVulkanMemAllocator& allocatorWrapper, RfctSwapChain& swapChainWrapper);
@@ -38,7 +37,6 @@ namespace rfct {
 		vk::UniqueRenderPass m_presentToColorAttachment;
 		vk::UniqueRenderPass m_IntermediateClearRenderPass;
 		vk::UniqueRenderPass m_IntermediateRenderPass;
-		vk::UniqueRenderPass m_sceneRenderPass;
 		std::vector<RfctRenderImage> m_sceneImages;
 		std::vector<RfctRenderImage> m_bloom1Images;
 		std::vector<RfctRenderImage> m_bloom2Images;

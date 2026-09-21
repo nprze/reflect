@@ -1,4 +1,4 @@
-#include "render_passes.h"
+#include "graphics_pass.h"
 #include "renderer_p/rasterizer_pipeline/vertex.h"
 #include "world_p/render_data.h"
 #include "render_objects.h"
@@ -9,8 +9,30 @@
 #include "renderer_p/frame_graph/frame_graph.h"
 #include "context.h"
 
-void rfct::RfctScenePass::CreatePassResources(vk::RenderPass renderPass, RfctPipelineManager& pipelineManager, vk::Device device) {
+void rfct::RfctScenePass::CreatePassResources(RfctPipelineManager& pipelineManager, vk::Device device) {
     RFCT_PROFILE_FUNCTION();
+    // pass
+    RfctRenderPass::RfctRenderPassSpec passSpec;
+    passSpec.colorAttachmentDesc.format = vk::Format::eB8G8R8A8Unorm;
+    passSpec.colorAttachmentDesc.samples = vk::SampleCountFlagBits::e4;
+    passSpec.colorAttachmentDesc.loadOp = vk::AttachmentLoadOp::eClear;
+    passSpec.colorAttachmentDesc.storeOp = vk::AttachmentStoreOp::eDontCare;
+    passSpec.colorAttachmentDesc.stencilLoadOp = vk::AttachmentLoadOp::eDontCare;
+    passSpec.colorAttachmentDesc.stencilStoreOp = vk::AttachmentStoreOp::eDontCare;
+    passSpec.colorAttachmentDesc.initialLayout = vk::ImageLayout::eUndefined;
+    passSpec.colorAttachmentDesc.finalLayout = vk::ImageLayout::eColorAttachmentOptimal;
+    passSpec.resolveAttachmentDesc.format = vk::Format::eB8G8R8A8Unorm;
+    passSpec.resolveAttachmentDesc.samples = vk::SampleCountFlagBits::e1;
+    passSpec.resolveAttachmentDesc.loadOp = vk::AttachmentLoadOp::eDontCare;
+    passSpec.resolveAttachmentDesc.storeOp = vk::AttachmentStoreOp::eStore;
+    passSpec.resolveAttachmentDesc.stencilLoadOp = vk::AttachmentLoadOp::eDontCare;
+    passSpec.resolveAttachmentDesc.stencilStoreOp = vk::AttachmentStoreOp::eDontCare;
+    passSpec.resolveAttachmentDesc.initialLayout = vk::ImageLayout::eUndefined;
+    passSpec.resolveAttachmentDesc.finalLayout = vk::ImageLayout::eColorAttachmentOptimal;
+
+    m_renderPass.CreateRenderPass(passSpec, device);
+
+    // pipeline
 	RfctRenderPipeline::RfctRenderPipelineSpec scenePipeline;
     scenePipeline.vertexShaderPath = "shaders/basic/basic_vert.spv";
     scenePipeline.fragmentShaderPath = "shaders/basic/basic_frag.spv";
@@ -25,13 +47,13 @@ void rfct::RfctScenePass::CreatePassResources(vk::RenderPass renderPass, RfctPip
     std::vector<vk::DescriptorSetLayout> descSetLayouts = { RfctUniformBuffer::GetUniformDescriptorSetLayout(device), renderData::getDescriptorSetLayout() };
     scenePipeline.descriptorSetLayouts = descSetLayouts;
 
-    m_pipelineRef = pipelineManager.CreatePipeline(scenePipeline, renderPass, device);
+    m_pipelineRef = pipelineManager.CreatePipeline(scenePipeline, m_renderPass.GetPass(), device);
 }
 void rfct::RfctScenePass::DestroyPassResources(vk::Device device) {
     m_pipelineRef->DestroyPipeline(device);
 }
 
-void rfct::RfctScenePass::RecordCommandBuffer(frameContext* ctx, RfctSwapChain& swapChainWrapper, frameSyncDataTemp& frameSyncDataTemp, vk::Framebuffer framebuffer, vk::RenderPass renderPass) {
+void rfct::RfctScenePass::RecordCommandBuffer(frameContext* ctx, RfctSwapChain& swapChainWrapper, frameSyncDataTemp& frameSyncDataTemp, vk::Framebuffer framebuffer) {
     RFCT_PROFILE_FUNCTION();
     RfctFrameGraphPerFrameResources& frameGraphOwnedCurrentFrameResources = ctx->frameGraph->GetFrameResources(ctx->frameInFlightIndex);
 
@@ -46,7 +68,7 @@ void rfct::RfctScenePass::RecordCommandBuffer(frameContext* ctx, RfctSwapChain& 
     clearValues[0].color = vk::ClearColorValue(std::array<float, 4>{0.0f, 0.0f, 0.0f, 1.0f});
 
     vk::RenderPassBeginInfo renderPassInfo = {};
-    renderPassInfo.renderPass = renderPass;
+    renderPassInfo.renderPass = m_renderPass.GetPass();
     renderPassInfo.framebuffer = framebuffer;
     renderPassInfo.renderArea.offset = vk::Offset2D{ 0, 0 };
     renderPassInfo.renderArea.extent = swapChainWrapper.GetExtent();

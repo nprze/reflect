@@ -4,7 +4,6 @@
 #include "renderer_p/frame/frame_resource_manager.h"
 #include "renderer_p/frame/render_target_manager.h"
 #include "renderer_p/debug/debug_draw.h"
-#include "renderer_p/rasterizer_pipeline/vulkan_rasterizer_pipeline.h"
 #include "renderer_p/UI/ui_pipeline.h"
 #include "renderer_p/post_process/bloom.h"
 #include "renderer_p/components/render_passes.h"

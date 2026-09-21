@@ -93,7 +93,7 @@ void rfct::RfctRenderer::Render(frameContext& frameContext) {
         RFCT_PROFILE_SCOPE("command buffers record");
         auto jobs = std::make_shared<rfct::jobTracker>();
         jobSystem::get().KickJob([&]() {
-            m_scenePass.RecordCommandBuffer(&frameContext, m_swapChain, frameSyncDataTemp, m_renderImages.GetSceneImage(frameContext.frameInFlightIndex).m_frameBuffer.get(), m_renderImages.GetSceneRenderPass());
+            m_scenePass.RecordCommandBuffer(&frameContext, m_swapChain, frameSyncDataTemp, m_renderImages.GetSceneImage(frameContext.frameInFlightIndex).m_frameBuffer.get());
             }, *jobs);
         jobSystem::get().KickJob([&]() {
             m_bloomRes.blum(&frameContext, m_renderImages, m_swapChain, frameSyncDataTemp, m_renderImages.GetIntermediateClearRenderPass(), imageIndex);

@@ -88,6 +88,23 @@ namespace rfct {
 		vk::UniqueDescriptorSet m_cameraUboDescSet;
 	};
 
+	class RfctRenderPass {
+	public:
+		struct RfctRenderPassSpec {
+			vk::AttachmentDescription colorAttachmentDesc;
+			bool resolveAttachment = false;
+			vk::AttachmentDescription resolveAttachmentDesc;
+		};
+	public:
+		vk::RenderPass GetPass() { return m_pass; }
+		void CreateRenderPass(RfctRenderPassSpec& passSpec, vk::Device device);
+		void DestroyRenderPass(vk::Device device);
+	private:
+		vk::RenderPass m_pass;
+		vk::ImageLayout m_prePassFramebufferLayout;
+		vk::ImageLayout m_postPassFramebufferLayout;
+	};
+
 	class RfctRenderImage {
 	public:
 		struct RfctRenderImageSpec {

@@ -23,13 +23,19 @@ namespace rfct {
 	public:
 		void PreFrame(const frameContext& ctx, float changeSceneEffectMultiplier);
 		void CreateUniformBuffers(RfctVulkanMemAllocator& memAllocatorWrapper, vk::Device device);
-		void DestroyResources();
+		void CreateRenderPasses(vk::Device device);
+		void DestroyResources(vk::Device device);
 	private:
-		vk::UniqueRenderPass m_UIRenderPass;
-		vk::UniqueRenderPass m_presentToColorAttachment;
-		vk::UniqueRenderPass m_IntermediateClearRenderPass;
-		vk::UniqueRenderPass m_IntermediateRenderPass;
-		vk::UniqueRenderPass m_sceneRenderPass;
+		RfctRenderPass m_UIRenderPass;
+		RfctRenderPass m_presentToColorAttachment;
+		RfctRenderPass m_IntermediateClearRenderPass;
+		RfctRenderPass m_IntermediateRenderPass;
+		RfctRenderPass m_sceneRenderPass;
+		std::vector<RfctRenderImage> m_sceneImages;
+		std::vector<RfctRenderImage> m_bloom1Images;
+		std::vector<RfctRenderImage> m_bloom2Images;
+		std::vector<RfctRenderImage> m_swapchainImages;
+		std::vector<RfctRenderImage> m_msaaColorImages;
 		RfctFrameGraphPerFrameResources m_perFrameResources[RFCT_FRAMES_IN_FLIGHT];
 	};
 }
