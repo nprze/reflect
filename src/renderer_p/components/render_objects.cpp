@@ -393,7 +393,7 @@ void rfct::RfctRenderImage::CreateImageAndView(const RfctRenderImageSpec& spec, 
     m_debugName = spec.debugName;
     m_sampleCount = spec.imageSamples;
     if (spec.allocateImage) {
-        AllocateImage(spec, deviceWrapper, queueWrapper, allocatorWrapper);
+        AllocateImage(spec, allocatorWrapper);
     }
     else {
         m_image = spec.image;
@@ -431,7 +431,7 @@ void rfct::RfctRenderImage::Cleanup(RfctVulkanMemAllocator& allocatorWrapper, vk
     }
 }
 
-void rfct::RfctRenderImage::AllocateImage(const RfctRenderImage::RfctRenderImageSpec& spec, RfctDevice& deviceWrapper, RfctQueue& queueWrapper, RfctVulkanMemAllocator& allocatorWrapper) {
+void rfct::RfctRenderImage::AllocateImage(const RfctRenderImage::RfctRenderImageSpec& spec, RfctVulkanMemAllocator& allocatorWrapper) {
     RFCT_PROFILE_FUNCTION();
     // Create Vulkan image
     vk::ImageCreateInfo imageInfo({}, vk::ImageType::e2D, m_format,

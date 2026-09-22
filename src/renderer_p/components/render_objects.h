@@ -129,8 +129,7 @@ namespace rfct {
 		void InitFrameBuffer(std::vector<RfctRenderImage*> attachments, vk::RenderPass renderPass, vk::Device device);
 		void Cleanup(RfctVulkanMemAllocator& allocatorWrapper, vk::Device device);
 	private:
-		void AllocateImage(const RfctRenderImage::RfctRenderImageSpec& spec, RfctDevice& deviceWrapper,
-			RfctQueue& queueWrapper, RfctVulkanMemAllocator& allocatorWrapper);
+		void AllocateImage(const RfctRenderImage::RfctRenderImageSpec& spec, RfctVulkanMemAllocator& allocatorWrapper);
 		void CreateImageView(vk::Device device);
 	public:
 		bool hasFrameBuffer;

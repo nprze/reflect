@@ -9,9 +9,9 @@ namespace rfct {
 	class frameSyncDataTemp;
 	struct frameContext;
 
-	class RfctScenePass {
+	class RfctSceneGraphicsPass {
 	public:
-		void CreatePassResources(RfctPipelineManager& pipelineManager, vk::Device device);
+		void CreatePassResources(RfctRenderPass* renderPass, RfctPipelineManager& pipelineManager, vk::Device device);
 		void DestroyPassResources(vk::Device device);
 		void RecordCommandBuffer(frameContext* ctx, RfctSwapChain& swapChainWrapper, frameSyncDataTemp& frameSyncDataTemp, vk::Framebuffer framebuffer);
 	private:

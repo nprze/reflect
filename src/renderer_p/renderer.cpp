@@ -26,14 +26,13 @@ rfct::RfctRenderer::RfctRenderer(RFCT_RENDERER_ARGUMENTS)
     m_queue(m_device.GetDevice(), m_device.GetPhysicalDevice(), m_surface.GetSurface()),
     m_allocator(m_device.GetPhysicalDevice(), m_device.GetDevice(), m_instance.GetInstance()),
 	m_swapChain(m_device.GetPhysicalDevice(), m_device.GetDevice(), m_surface.GetSurface()),
-    m_renderImages(m_device, m_instance, m_queue, m_allocator, m_swapChain),
     m_framesInFlight(m_allocator, m_queue, m_device.GetDevice()), 
     m_bloomRes(m_queue, m_renderImages, m_renderImages.GetIntermediateRenderPass(), m_device.GetDevice()),
     m_debugDraw(m_renderImages.GetIntermediateRenderPass(), m_device.GetDevice()),
     m_UIPipeline(m_renderImages.GetUIRenderPass(), m_device.GetDevice())
 {
     m_frameGraph.GetResources().CreateUniformBuffers(m_allocator, m_device.GetDevice());
-    m_scenePass.CreatePassResources(m_renderImages.GetSceneRenderPass(), m_pipelineManager, m_device.GetDevice());
+    m_scenePass.CreatePassResources( m_pipelineManager, m_device.GetDevice());
 }
 
 void rfct::RfctRenderer::DestroyRenderer() {
@@ -64,7 +63,7 @@ void rfct::RfctRenderer::Render(frameContext& frameContext) {
 	frameSyncDataTemp& frameSyncDataTemp = m_framesInFlight.GetNextFrame(frameContext.frameInFlightIndex);
     {
         RFCT_PROFILE_SCOPE("fences wait");
-        frameSyncDataTemp.WaitForFences(m_device.GetDevice());
+        frameSyncDataTemp.WaitImageRenderFinished(m_device.GetDevice());
     }
 
     uint32_t imageIndex;
@@ -133,7 +132,7 @@ void rfct::RfctRenderer::Render(frameContext& frameContext) {
         vk::PresentInfoKHR presentInfo{};
         presentInfo.sType = vk::StructureType::ePresentInfoKHR;
 
-        RFCT_VULKAN_CHECK(m_device.GetDevice().waitForFences(1, &frameSyncDataTemp.m_thisFrameRenderFinishedFence, VK_TRUE, UINT64_MAX));
+        //RFCT_VULKAN_CHECK(m_device.GetDevice().waitForFences(1, &frameSyncDataTemp.m_thisFrameRenderFinishedFence, VK_TRUE, UINT64_MAX));
 
         presentInfo.waitSemaphoreCount = 1;
         const vk::Semaphore& sem = frameSyncDataTemp.m_renderFinishedSemaphore.get();
