@@ -60,7 +60,7 @@ void rfct::initKindlingsVars(scene* parentScene) {
     }
 }
 
-void rfct::spawnKindling(frameContext* fc, const glm::vec2& position, const glm::vec2& playerVel , uint32_t var) {
+void rfct::spawnKindling(RfctFrameContext* fc, const glm::vec2& position, const glm::vec2& playerVel , uint32_t var) {
     RFCT_PROFILE_FUNCTION();
     for (uint32_t i = 0; i < var + 1; ++i) {
         glm::mat4 transMat = glm::translate(glm::mat4(1.f), glm::vec3(position, 0.f));
@@ -80,7 +80,7 @@ void rfct::spawnKindling(frameContext* fc, const glm::vec2& position, const glm:
     }
 }
 
-void rfct::updateKindlings(frameContext* ctx) {
+void rfct::updateKindlings(RfctFrameContext* ctx) {
     RFCT_PROFILE_FUNCTION();
     // in fixed update
     auto kindlingParticlesComponentsQuery = ecs::get().view<kindlingParticleComponent, sinusoidFloatComponent, angularVelocityComponent, positionComponent, rotationComponent, scaleComponent, dynamicSSBOIndexComponent>();
@@ -113,7 +113,7 @@ void rfct::updateKindlings(frameContext* ctx) {
         };
 }
 
-void rfct::updateKindlingMatrices(frameContext* ctx) {
+void rfct::updateKindlingMatrices(RfctFrameContext* ctx) {
     RFCT_PROFILE_FUNCTION();
     renderData& rd = ctx->scene->getRenderData();
     auto kindlingParticlesComponentsQuery = ecs::get().view<kindlingParticleComponent, dynamicSSBOIndexComponent, positionComponent, rotationComponent, scaleComponent>();

@@ -96,7 +96,7 @@ namespace rfct {
 	};
     struct playerStateComponent {
         bool allowToJump = false;
-        playerState  state = playerState::normal;
+        playerState  currentGameState = playerState::normal;
         uint8_t dashCharges = 0;
     };
     struct playerLifeComponent {

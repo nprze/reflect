@@ -60,7 +60,7 @@ namespace rfct {
 			transform trans = {};
 			trans.pos = { e.position };
 			glm::mat4 model = getModelMatrixFromTransform(trans);
-			frameContext noCtx{};
+			RfctFrameContext noCtx{};
 
 			dynamicObjCollisionCallbackComponent dynColCallback;
 			dynColCallback.handler = onCollision_JumpBooster_DynamicObj;
@@ -84,7 +84,7 @@ namespace rfct {
 		}
 	};
 
-	void jumpBoosters::updateSystem(frameContext* ctx) { 
+	void jumpBoosters::updateSystem(RfctFrameContext* ctx) { 
 		RFCT_PROFILE_FUNCTION();
 		auto jumpBoosterQuery = ecs::get().view<scaleComponent, dynamicBoxColliderComponent, jumpBoosterComponent, dynamicSSBOIndexComponent>();
 		for (auto [ent, sc, box, en, i] : jumpBoosterQuery.each()) {

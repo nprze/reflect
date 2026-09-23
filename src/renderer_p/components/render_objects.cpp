@@ -99,8 +99,8 @@ void rfct::RfctRenderPipeline::CreatePipeline(const RfctRenderPipelineSpec& spec
 	std::vector<vk::PipelineShaderStageCreateInfo> shaderStages = { vertShaderStageInfo, fragShaderStageInfo };
 
 	vk::PipelineVertexInputStateCreateInfo vertexInputInfo = {};
-	vertexInputInfo.vertexBindingDescriptionCount = 1;
-	vertexInputInfo.pVertexBindingDescriptions = &spec.vertexInputBindingDescription;
+	vertexInputInfo.vertexBindingDescriptionCount = spec.enableVetexBinding ? 1 : 0;
+	vertexInputInfo.pVertexBindingDescriptions = spec.enableVetexBinding ? &spec.vertexInputBindingDescription : VK_NULL_HANDLE;
 	vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(spec.vertexInputAttributeDescriptions.size());
 	vertexInputInfo.pVertexAttributeDescriptions = spec.vertexInputAttributeDescriptions.data();
 
@@ -120,14 +120,21 @@ void rfct::RfctRenderPipeline::CreatePipeline(const RfctRenderPipelineSpec& spec
 
 	// Multisample State
 	vk::PipelineMultisampleStateCreateInfo multisampling = {};
-	multisampling.rasterizationSamples = vk::SampleCountFlagBits::e4;
+	multisampling.rasterizationSamples = spec.MSAA4x ? vk::SampleCountFlagBits::e4 : vk::SampleCountFlagBits::e1;
 	multisampling.sampleShadingEnable = VK_FALSE;
 
 	// Color Blend State
 	vk::PipelineColorBlendAttachmentState colorBlendAttachment = {};
-	colorBlendAttachment.blendEnable = VK_FALSE;
-	colorBlendAttachment.srcColorBlendFactor = vk::BlendFactor::eOne;
-	colorBlendAttachment.dstColorBlendFactor = vk::BlendFactor::eZero;
+    if (spec.enableColorBlend) {
+        colorBlendAttachment.blendEnable = VK_TRUE;
+        colorBlendAttachment.srcColorBlendFactor = vk::BlendFactor::eSrcAlpha;
+        colorBlendAttachment.dstColorBlendFactor = vk::BlendFactor::eOneMinusSrcAlpha;
+    }
+    else {
+        colorBlendAttachment.blendEnable = VK_FALSE;
+        colorBlendAttachment.srcColorBlendFactor = vk::BlendFactor::eOne;
+        colorBlendAttachment.dstColorBlendFactor = vk::BlendFactor::eZero;
+    }
 	colorBlendAttachment.colorBlendOp = vk::BlendOp::eAdd;
 	colorBlendAttachment.srcAlphaBlendFactor = vk::BlendFactor::eOne;
 	colorBlendAttachment.dstAlphaBlendFactor = vk::BlendFactor::eZero;
@@ -158,6 +165,8 @@ void rfct::RfctRenderPipeline::CreatePipeline(const RfctRenderPipelineSpec& spec
 	vk::PipelineLayoutCreateInfo pipelineLayoutInfo = {};
 	pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(spec.descriptorSetLayouts.size());
 	pipelineLayoutInfo.pSetLayouts = spec.descriptorSetLayouts.data();
+    pipelineLayoutInfo.pushConstantRangeCount = static_cast<uint32_t>(spec.pushConstantRanges.size());
+    pipelineLayoutInfo.pPushConstantRanges = spec.pushConstantRanges.data();
 	m_pipelineLayout = device.createPipelineLayout(pipelineLayoutInfo).value;
 
 	vk::PipelineViewportStateCreateInfo viewportState = {};

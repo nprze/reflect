@@ -7,7 +7,7 @@
 #include "sound_p/sound.h"
 
 namespace rfct {
-	using ActionFunction = void(*)(rfct::frameContext*);
+	using ActionFunction = void(*)(rfct::RfctFrameContext&);
 	// FAT STRUCT
 	struct UINode {
 		std::string label;
@@ -91,11 +91,11 @@ namespace rfct {
 			triangleDecorations.push_back(decor);
 		}
 	}
-	void updateDecors(frameContext* ctx) {
+	void updateDecors(RfctFrameContext& ctx) {
 		RFCT_PROFILE_FUNCTION();
 		float aspectRatio = imageExtent.x / imageExtent.y;
 		for (triangleDecoration& decor : triangleDecorations) {
-			decor.angle += ctx->dt * 20.f;
+			decor.angle += ctx.dt * 20.f;
 			glm::mat2 rotationMatrix = glm::mat2(
 				glm::vec2(glm::cos(glm::radians(decor.angle)), -glm::sin(glm::radians(decor.angle))),
 				glm::vec2(glm::sin(glm::radians(decor.angle)), glm::cos(glm::radians(decor.angle)))
@@ -107,10 +107,10 @@ namespace rfct {
 			}
 			decor.pos.y += additionalBoost;
 
-			decor.pos += decor.dir * ctx->dt * .05f;
+			decor.pos += decor.dir * ctx.dt * .05f;
 			decor.dir = glm::normalize(decor.dir + glm::vec2(
-				(static_cast<float>(rand() % 2000) / 1000.f - 1.f) * ctx->dt * 4.f,
-				(static_cast<float>(rand() % 2000) / 1000.f - 1.f) * ctx->dt * 4.f
+				(static_cast<float>(rand() % 2000) / 1000.f - 1.f) * ctx.dt * 4.f,
+				(static_cast<float>(rand() % 2000) / 1000.f - 1.f) * ctx.dt * 4.f
 			));
 			if (decor.pos.x < -0.1f) decor.pos.x = 1.1f;
 			if (decor.pos.x > 1.1f) decor.pos.x = -0.1f;
@@ -130,18 +130,18 @@ namespace rfct {
 }
 
 // actions
-void actionResume(rfct::frameContext* ctx) {
+void actionResume(rfct::RfctFrameContext& ctx) {
 	timeSinceStateChange = 0.f;
-	ctx->state = beforePauseMenuState;
+	ctx.currentGameState = beforePauseMenuState;
 	currentNodeIndex = -1;
 	while (!previousNodeIndices.empty()) previousNodeIndices.pop();
 	rfct::cleanupDecors();
 }
-void actionQuit(rfct::frameContext* ctx) {
+void actionQuit(rfct::RfctFrameContext& ctx) {
 	rfct::userSettings::get().dumpUserSettings();
 	glfwSetWindowShouldClose(rfct::GetRen().GetWindow().GetHandle(), true);
 }
-void actionProgressDeveloper(rfct::frameContext* ctx) {
+void actionProgressDeveloper(rfct::RfctFrameContext& ctx) {
 	static uint32_t progress = 0;
 	progress += 1;
 	if (progress >= 7) {
@@ -160,7 +160,7 @@ void actionProgressDeveloper(rfct::frameContext* ctx) {
 		UINodes[3].childrenCount = 2;
 	}
 }
-void actionTellStory(rfct::frameContext* ctx) {
+void actionTellStory(rfct::RfctFrameContext& ctx) {
 	static uint32_t storyProgress = 0;
 	storyProgress += 1;
 	if (storyProgress == 1)UINodes[11].label = "thank you for playing smokes.";
@@ -168,7 +168,7 @@ void actionTellStory(rfct::frameContext* ctx) {
 	else if (storyProgress == 5) UINodes[11].label = ">:3";
 	else if (storyProgress == 7) UINodes[11].label = "Please enjoy the game.";
 }
-void actionEmpty(rfct::frameContext* ctx) {}
+void actionEmpty(rfct::RfctFrameContext& ctx) {}
 
 rfct::gameState rfct::getState() {
 	if (input::getInput().openClosePauseMenu && timeSinceStateChange > 1.f) {
@@ -194,15 +194,15 @@ void rfct::updateLastState(gameState newState) {
 	lastState = newState;
 }
 
-void rfct::drawUI(frameContext* ctx, RfctSwapChain& swapChain) {
+void rfct::drawUI(RfctFrameContext& ctx, RfctSwapChain& swapChain) {
 	// general updates
-	timeSinceStateChange += ctx->dt;
-	globalTime += ctx->dt;
-	changeSelectionCooldown = std::clamp(changeSelectionCooldown - ctx->dt, 0.f, 0.25f);
+	timeSinceStateChange += ctx.dt;
+	globalTime += ctx.dt;
+	changeSelectionCooldown = std::clamp(changeSelectionCooldown - ctx.dt, 0.f, 0.25f);
 
-	int fps = static_cast<int>(std::floor(1.0 / ctx->dt));
+	int fps = static_cast<int>(std::floor(1.0 / ctx.dt));
 	debugDraw::drawText("fps: " + std::to_string(fps), glm::vec2(0, 0), 0.07f);
-	if (ctx->state != gameState::menu || currentNodeIndex == -1) return;
+	if (ctx.currentGameState != gameState::menu || currentNodeIndex == -1) return;
 
 	// helper
 	imageExtent = { static_cast<float>(GetRen().GetSwapChain().GetExtent().width), static_cast<float>(GetRen().GetSwapChain().GetExtent().height)};

@@ -7,13 +7,13 @@
 namespace rfct {
 	struct nearestObject;
 	std::pair<glm::vec2, int> getNearestEdgePos(const glm::vec2& PlayerPos, entity vine);
-	glm::vec2 simulateVinePlayerIsHolding(entity player, entity vineEntity, int vineEdgeIndex, const frameContext* fc); // returns the player pos
+	glm::vec2 simulateVinePlayerIsHolding(entity player, entity vineEntity, int vineEdgeIndex, const RfctFrameContext* fc); // returns the player pos
 	struct vines : objectSystem {
 		void initSystem() {};
 		void spawnData(scene* s, sceneSerializedData* sd);
-		void resetLevel(const frameContext* ctx);
-		void updateVisuals(const frameContext* ctx);
-		void updateSystem(frameContext* ctx);
+		void resetLevel(const RfctFrameContext* ctx);
+		void updateVisuals(const RfctFrameContext* ctx);
+		void updateSystem(RfctFrameContext* ctx);
 		void cleanupSystem() {};
 
 		void onStartHolding(nearestObject& nearest);

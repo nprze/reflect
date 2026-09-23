@@ -374,7 +374,7 @@ void rfct::buildDynamicBVH(std::vector<BVHnode>* BVHnodes) {
     }
 }
 
-void rfct::physicsStep(const frameContext* ctx) {
+void rfct::physicsStep(const RfctFrameContext* ctx) {
 	RFCT_PROFILE_FUNCTION();
     auto gravityVelocityPositionBoxQuery = ecs::get().view<gravityComponent, velocityComponent, positionComponent, dynamicBoxColliderComponent, staticObjCollisionCallbackComponent>();
     for (auto [ent, gravity, velocity, position, dynamicBox, callback] : gravityVelocityPositionBoxQuery.each()) {

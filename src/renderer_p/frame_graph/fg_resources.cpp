@@ -52,16 +52,16 @@ void rfct::RfctFrameGraphPerFrameResources::ResetFences(vk::Device device) {
     RFCT_VULKAN_CHECK(device.resetFences(1, &m_thisFrameRenderFinishedFence));
 }
 
-vk::SubmitInfo rfct::RfctFrameGraphPerFrameResources::GetSubmitInfo(const frameContext& ctx) const {
+vk::SubmitInfo rfct::RfctFrameGraphPerFrameResources::GetSubmitInfo() const {
     return vk::SubmitInfo()
         .setWaitSemaphores(m_ImageAvaibleSemaphore)
-        .setCommandBuffers(m_commandBuffer)
-        .setSignalSemaphores(m_renderFinishedSemaphore);
+        .setCommandBuffers(m_commandBuffer);
+        // .setSignalSemaphores(m_renderFinishedSemaphore);
 }
 
 
 
-void rfct::RfctFrameGraphResources::PreFrame(const frameContext& ctx, float changeSceneEffectMultiplier) {
+void rfct::RfctFrameGraphResources::PreFrame(const RfctFrameContext& ctx, float changeSceneEffectMultiplier) {
 	RfctUniformData cameraData;
 	cameraData.vp = getVPMatrix();
 	cameraData.globalTime = ctx.globalTime;

@@ -12,15 +12,15 @@ namespace rfct {
 		renderData();
 		~renderData();
 		void clearAllData();
-		void updateMat(const frameContext* ctx, const uint32_t& objIndexInSSBO, glm::mat4* mat);
-		void updateDynamicVertices(const frameContext* ctx, const size_t objBufferOffset, void* vertices, const size_t size);
+		void updateMat(const RfctFrameContext* ctx, const uint32_t& objIndexInSSBO, glm::mat4* mat);
+		void updateDynamicVertices(const RfctFrameContext* ctx, const size_t objBufferOffset, void* vertices, const size_t size);
 		uint32_t addStaticMat(void* data);
-		uint32_t addDynamicMat(const frameContext* ctx, void* data);
+		uint32_t addDynamicMat(const RfctFrameContext* ctx, void* data);
 		uint32_t addDynamicVertices(std::vector<Vertex>* vertices, uint32_t frameInFlightIndex, uint32_t numVertices = 0, uint32_t location = UINT32_MAX);
 		objectLocation addStaticObject(std::vector<Vertex>* vertices, glm::mat4* matrix);
-		objectLocation addDynamicObject(std::vector<Vertex>* vertices, glm::mat4* matrix, const frameContext& fc = {}, uint32_t numVertices = 0);
+		objectLocation addDynamicObject(std::vector<Vertex>* vertices, glm::mat4* matrix, const RfctFrameContext& fc = {}, uint32_t numVertices = 0);
 		uint32_t reserveSuitableVertexBufferLocation(size_t numVertices);
-		void removeDynamicObject(const dynamicSSBOIndexComponent& ssboData, const vertexRenderInfoComponent& vertexRenderInfo, bool addToFreelist = false, const frameContext* ctx = {});
+		void removeDynamicObject(const dynamicSSBOIndexComponent& ssboData, const vertexRenderInfoComponent& vertexRenderInfo, bool addToFreelist = false, const RfctFrameContext* ctx = {});
 		void removeDynamicEntity(entity e); // clears both matrices and vertices
 		void removeAnimatedEntity(entity e); // only clears matrices
 	private:

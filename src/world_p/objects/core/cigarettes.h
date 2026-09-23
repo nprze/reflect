@@ -4,16 +4,16 @@
 
 namespace rfct {
     class scene;
-    struct frameContext;
+    struct RfctFrameContext;
     struct cigarettes : public objectSystem {
         void initSystem();
         void spawnData(scene* s, sceneSerializedData* sd) {};
-        void resetLevel(const frameContext* ctx);
-        void updateVisuals(const frameContext* ctx);
-        void updateSystem(frameContext* ctx);
+        void resetLevel(const RfctFrameContext* ctx);
+        void updateVisuals(const RfctFrameContext* ctx);
+        void updateSystem(RfctFrameContext* ctx);
         inline void cleanupSystem() {};
 
-        void onDash(frameContext* fc, const entity entityPlayer, const bool facingRight);
-        entity constructCigarette(const frameContext* fc, const entity entityPlayer, const bool facingRight);
+        void onDash(RfctFrameContext* fc, const entity entityPlayer, const bool facingRight);
+        entity constructCigarette(const RfctFrameContext* fc, const entity entityPlayer, const bool facingRight);
     };
 }

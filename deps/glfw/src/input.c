@@ -1388,16 +1388,16 @@ GLFWAPI const char* glfwGetGamepadName(int jid)
     return js->mapping->name;
 }
 
-GLFWAPI int glfwGetGamepadState(int jid, GLFWgamepadstate* state)
+GLFWAPI int glfwGetGamepadState(int jid, GLFWgamepadstate* currentGameState)
 {
     int i;
     _GLFWjoystick* js;
 
     assert(jid >= GLFW_JOYSTICK_1);
     assert(jid <= GLFW_JOYSTICK_LAST);
-    assert(state != NULL);
+    assert(currentGameState != NULL);
 
-    memset(state, 0, sizeof(GLFWgamepadstate));
+    memset(currentGameState, 0, sizeof(GLFWgamepadstate));
 
     _GLFW_REQUIRE_INIT_OR_RETURN(GLFW_FALSE);
 
@@ -1431,12 +1431,12 @@ GLFWAPI int glfwGetGamepadState(int jid, GLFWgamepadstate* state)
             if (e->axisOffset < 0 || (e->axisOffset == 0 && e->axisScale > 0))
             {
                 if (value >= 0.f)
-                    state->buttons[i] = GLFW_PRESS;
+                    currentGameState->buttons[i] = GLFW_PRESS;
             }
             else
             {
                 if (value <= 0.f)
-                    state->buttons[i] = GLFW_PRESS;
+                    currentGameState->buttons[i] = GLFW_PRESS;
             }
         }
         else if (e->type == _GLFW_JOYSTICK_HATBIT)
@@ -1444,10 +1444,10 @@ GLFWAPI int glfwGetGamepadState(int jid, GLFWgamepadstate* state)
             const unsigned int hat = e->index >> 4;
             const unsigned int bit = e->index & 0xf;
             if (js->hats[hat] & bit)
-                state->buttons[i] = GLFW_PRESS;
+                currentGameState->buttons[i] = GLFW_PRESS;
         }
         else if (e->type == _GLFW_JOYSTICK_BUTTON)
-            state->buttons[i] = js->buttons[e->index];
+            currentGameState->buttons[i] = js->buttons[e->index];
     }
 
     for (i = 0;  i <= GLFW_GAMEPAD_AXIS_LAST;  i++)
@@ -1456,19 +1456,19 @@ GLFWAPI int glfwGetGamepadState(int jid, GLFWgamepadstate* state)
         if (e->type == _GLFW_JOYSTICK_AXIS)
         {
             const float value = js->axes[e->index] * e->axisScale + e->axisOffset;
-            state->axes[i] = fminf(fmaxf(value, -1.f), 1.f);
+            currentGameState->axes[i] = fminf(fmaxf(value, -1.f), 1.f);
         }
         else if (e->type == _GLFW_JOYSTICK_HATBIT)
         {
             const unsigned int hat = e->index >> 4;
             const unsigned int bit = e->index & 0xf;
             if (js->hats[hat] & bit)
-                state->axes[i] = 1.f;
+                currentGameState->axes[i] = 1.f;
             else
-                state->axes[i] = -1.f;
+                currentGameState->axes[i] = -1.f;
         }
         else if (e->type == _GLFW_JOYSTICK_BUTTON)
-            state->axes[i] = js->buttons[e->index] * 2.f - 1.f;
+            currentGameState->axes[i] = js->buttons[e->index] * 2.f - 1.f;
     }
 
     return GLFW_TRUE;

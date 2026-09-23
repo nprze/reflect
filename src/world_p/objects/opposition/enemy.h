@@ -5,11 +5,11 @@ namespace rfct {
 	struct enemies : objectSystem {
 		void initSystem();
 		void spawnData(scene* s, sceneSerializedData* sd);
-		void resetLevel(const frameContext* ctx) {};
-		void updateVisuals(const frameContext* ctx);
-		void updateSystem(frameContext* ctx);
+		void resetLevel(const RfctFrameContext* ctx) {};
+		void updateVisuals(const RfctFrameContext* ctx);
+		void updateSystem(RfctFrameContext* ctx);
 		void cleanupSystem();
 
-		void drawFrameAnimSprites(vk::CommandBuffer& cmd, frameContext* ctx);
+		void drawFrameAnimSprites(vk::CommandBuffer& cmd, RfctFrameContext* ctx);
 	};
 }

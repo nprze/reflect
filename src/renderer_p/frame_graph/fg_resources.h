@@ -2,7 +2,7 @@
 #include "renderer_p/components/render_objects.h"
 
 namespace rfct {
-	struct frameContext;
+	struct RfctFrameContext;
 	class RfctSwapChain;
 
 	class RfctFrameGraphPerFrameResources {
@@ -19,7 +19,7 @@ namespace rfct {
 	public:
 		void WaitImageRenderFinished(vk::Device device);
 		void ResetFences(vk::Device device);
-		vk::SubmitInfo GetSubmitInfo(const frameContext& ctx) const;
+		vk::SubmitInfo GetSubmitInfo() const;
 	public:
 		vk::CommandPool m_commandPool;
 		vk::CommandBuffer m_commandBuffer;
@@ -33,7 +33,7 @@ namespace rfct {
 	public:
 		RfctFrameGraphPerFrameResources& GetFrameResources(uint32_t i) { return m_perFrameResources[i]; }
 	public:
-		void PreFrame(const frameContext& ctx, float changeSceneEffectMultiplier);
+		void PreFrame(const RfctFrameContext& ctx, float changeSceneEffectMultiplier);
 		void CreateResources(RfctDevice& deviceWrapper, RfctVulkanInstance& instanceWrapper, RfctQueue& queueWrapper,
 			RfctVulkanMemAllocator& allocatorWrapper, RfctSwapChain& swapChainWrapper);
 		void DestroyResources(RfctVulkanMemAllocator& allocatorWrapper, vk::Device& device);

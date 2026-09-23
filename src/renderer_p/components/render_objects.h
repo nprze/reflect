@@ -51,7 +51,10 @@ namespace rfct {
 			vk::VertexInputBindingDescription vertexInputBindingDescription;
 			std::vector<vk::VertexInputAttributeDescription> vertexInputAttributeDescriptions;
 			std::vector<vk::DescriptorSetLayout> descriptorSetLayouts;
+			std::vector<vk::PushConstantRange> pushConstantRanges;
 			bool MSAA4x = false;
+			bool enableVetexBinding = true;
+			bool enableColorBlend = false;
 		};
 	public:
 		RfctRenderPipeline(const RfctRenderPipelineSpec& spec, vk::RenderPass renderPass, vk::Device device);

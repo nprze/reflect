@@ -29,7 +29,7 @@ namespace rfct {
         RfctRenderer(RFCT_RENDERER_ARGUMENTS);
 		void DestroyRenderer();
         void UpdateWindow(RFCT_NATIVE_WINDOW_ANDROID RFCT_NATIVE_WINDOW_ANDROID_VAR);
-		void Render(frameContext& frameContext);
+		void Render(RfctFrameContext& frameCtx);
 	private:
 		bool m_uselessBool = false;
         RFCT_PLATFORM_WINDOW m_window;

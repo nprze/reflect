@@ -87,7 +87,7 @@ namespace rfct {
 			trans.pos = { e.position };
 			trans.scale.scale = { oneSeventytieth , oneSeventytieth };
 			glm::mat4 model = getModelMatrixFromTransform(trans);
-			frameContext noCtx{};
+			RfctFrameContext noCtx{};
 
 			staticObjCollisionCallbackComponent colCallback;
 			colCallback.handler = onCollision_Enemy_StaticObj;
@@ -129,7 +129,7 @@ namespace rfct {
 		}
 	};
 
-	void enemies::updateVisuals(const frameContext* ctx) {
+	void enemies::updateVisuals(const RfctFrameContext* ctx) {
 		RFCT_PROFILE_FUNCTION();
 		auto enemyQuery = ecs::get().view<velocityComponent, positionComponent, scaleComponent, enemyComponent>();
 		for (auto [ent, vel, pos, sc, en] : enemyQuery.each()) {
@@ -137,7 +137,7 @@ namespace rfct {
 		}
 	};
 
-	void enemies::updateSystem(frameContext* ctx) {
+	void enemies::updateSystem(RfctFrameContext* ctx) {
 		RFCT_PROFILE_FUNCTION();
 		auto enemyQuery = ecs::get().view<velocityComponent, positionComponent, scaleComponent, enemyComponent>();
 		for (auto [ent, vel, pos, sc, en] : enemyQuery.each()) {
@@ -205,7 +205,7 @@ namespace rfct {
 		animBuffer.cleanupBuffer();
 	}
 
-	void enemies::drawFrameAnimSprites(vk::CommandBuffer& cmd, frameContext* ctx) {
+	void enemies::drawFrameAnimSprites(vk::CommandBuffer& cmd, RfctFrameContext* ctx) {
 		RFCT_PROFILE_FUNCTION();
 		vk::Buffer vertexBuffers[] = { animBuffer.getBuffer() };
 

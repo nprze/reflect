@@ -16,12 +16,12 @@ namespace rfct{
 		void init();
 		void cleanupBuffer();
 		void loadSceneData(sceneSerializedData* serializeData, scene* parentScene);
-		void systemsFixedUpdate(frameContext* fc);
-		void updateVisuals(frameContext* fc);
-		void customDrawObjects(vk::CommandBuffer& cmd, frameContext* ctx);
-		void respawn(frameContext* fc);
-		void onPlayerDash(frameContext* fc, const entity entityPlayer, const bool facingRight); // to be called before physics update
-		void onStartHolding(playerState state, nearestObject& nearest);
+		void systemsFixedUpdate(RfctFrameContext* fc);
+		void updateVisuals(RfctFrameContext* fc);
+		void customDrawObjects(vk::CommandBuffer& cmd, RfctFrameContext* ctx);
+		void respawn(RfctFrameContext* fc);
+		void onPlayerDash(RfctFrameContext* fc, const entity entityPlayer, const bool facingRight); // to be called before physics update
+		void onStartHolding(playerState currentGameState, nearestObject& nearest);
 		void onEndHolding();
 	public:
 		cigarettes m_cigSystem;

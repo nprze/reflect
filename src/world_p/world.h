@@ -12,11 +12,11 @@ namespace rfct {
 		void initWorld(const std::string& path);
 		void loadScene(const std::string& path);
 		void cleanWorld();
-		void worldFixedUpdate(frameContext& context, uint64_t timesToUpdate);
-		void worldVisualUpdate(frameContext& context);
+		void worldFixedUpdate(RfctFrameContext& context, uint64_t timesToUpdate);
+		void worldVisualUpdate(RfctFrameContext& context);
         void addScreenTransform(float degree);
-		void startSwitchScene(frameContext& ctx);
-		void switchScenes(frameContext& ctx);
+		void startSwitchScene(RfctFrameContext& ctx);
+		void switchScenes(RfctFrameContext& ctx);
 		uint32_t getSceneToLoad(glm::vec2& lastBlockExit);
 		renderData& getRenderData() { return *m_RenderData; };
 		scene& getCurrentScene() { return *m_currentScene; };

@@ -170,7 +170,7 @@ void rfct::UIPipelines::createDescriptorSet(vk::Device device) {
 	m_textureIndexMap.reserve(RFCT_UI_TEXTURE_BINDINGS);
 }
 
-void rfct::UIPipelines::draw(const frameContext& ctx, RfctSwapChain& swapChain, frameSyncDataTemp& fd, vk::Framebuffer framebuffer, vk::RenderPass renderPass) {
+void rfct::UIPipelines::draw(const RfctFrameContext& ctx, RfctSwapChain& swapChain, frameSyncDataTemp& fd, vk::Framebuffer framebuffer, vk::RenderPass renderPass) {
     RFCT_PROFILE_FUNCTION();
     if (m_UIVertexBuffer.vertexCount == 0 && m_debugDrawUIVertexBuffer.vertexCount == 0) return;
     RfctFrameGraphPerFrameResources& currentFrameFGOwnedResources = ctx.frameGraph->GetResources().GetFrameResources(ctx.frameInFlightIndex);

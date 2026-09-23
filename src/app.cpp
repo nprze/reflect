@@ -53,12 +53,12 @@ void rfct::reflectApplication::update() {
 	globalTime += deltaTime.count();
 
     currentFrame = (currentFrame + 1) % RFCT_FRAMES_IN_FLIGHT;
-    frameContext context = {
+    RfctFrameContext context = {
         .dt = deltaTime.count(),
         .globalTime = globalTime,
         .frameInFlightIndex = currentFrame,
         .scene = &world::getWorld().getCurrentScene(),
-        .state = getState(),
+        .currentGameState = getState(),
         .frameGraph = &m_renderer.GetFrameGraph()
     };
 
@@ -97,10 +97,10 @@ void rfct::reflectApplication::update() {
 		}
     }
 
-    updateLastState(context.state);
+    updateLastState(context.currentGameState);
 }
 
-void rfct::reflectApplication::fixedUpdate(frameContext& ctx, uint64_t times) {
+void rfct::reflectApplication::fixedUpdate(RfctFrameContext& ctx, uint64_t times) {
     RFCT_PROFILE_FUNCTION();
     world::getWorld().worldFixedUpdate(ctx, times);
 }

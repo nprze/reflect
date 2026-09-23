@@ -35,7 +35,7 @@ void rfct::objectSystems::loadSceneData(sceneSerializedData* serializeData, scen
 	m_jumpBoostSystem.spawnData(parentScene, serializeData);
 }
 
-void rfct::objectSystems::systemsFixedUpdate(frameContext* fc) {
+void rfct::objectSystems::systemsFixedUpdate(RfctFrameContext* fc) {
 	RFCT_PROFILE_FUNCTION();
 	m_cigSystem.updateSystem(fc);
 	m_enemySystem.updateSystem(fc);
@@ -45,7 +45,7 @@ void rfct::objectSystems::systemsFixedUpdate(frameContext* fc) {
 	m_jumpBoostSystem.updateSystem(fc);
 }
 
-void rfct::objectSystems::updateVisuals(frameContext* fc){
+void rfct::objectSystems::updateVisuals(RfctFrameContext* fc){
 	RFCT_PROFILE_FUNCTION();
 	m_cigSystem.updateVisuals(fc);
 	m_enemySystem.updateVisuals(fc);
@@ -54,22 +54,22 @@ void rfct::objectSystems::updateVisuals(frameContext* fc){
 	m_spikeSystem.updateVisuals(fc);
 	m_jumpBoostSystem.updateVisuals(fc);
 }
-void rfct::objectSystems::customDrawObjects(vk::CommandBuffer& cmd, frameContext* ctx) {
+void rfct::objectSystems::customDrawObjects(vk::CommandBuffer& cmd, RfctFrameContext* ctx) {
 	RFCT_PROFILE_FUNCTION();
 	m_enemySystem.drawFrameAnimSprites(cmd, ctx);
 	// TODO: grass should be drawn here to be displayed over
 }
-void rfct::objectSystems::respawn(frameContext* fc) {
+void rfct::objectSystems::respawn(RfctFrameContext* fc) {
 	RFCT_PROFILE_FUNCTION();
 	m_cigSystem.resetLevel(fc);
 	m_vineSystem.resetLevel(fc);
 }
-void rfct::objectSystems::onPlayerDash(frameContext* fc, const entity entityPlayer, const bool facingRight) {
+void rfct::objectSystems::onPlayerDash(RfctFrameContext* fc, const entity entityPlayer, const bool facingRight) {
 	RFCT_PROFILE_FUNCTION();
 	m_cigSystem.onDash(fc, entityPlayer, facingRight);
 }
 
-void rfct::objectSystems::onStartHolding(playerState state, nearestObject& nearest) {
+void rfct::objectSystems::onStartHolding(playerState currentGameState, nearestObject& nearest) {
 	RFCT_PROFILE_FUNCTION();
 	if (nearest.vineIndex >= 0)
 		m_vineSystem.onStartHolding(nearest);

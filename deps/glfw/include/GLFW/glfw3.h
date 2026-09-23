@@ -5908,7 +5908,7 @@ GLFWAPI const char* glfwGetGamepadName(int jid);
  *
  *  @ingroup input
  */
-GLFWAPI int glfwGetGamepadState(int jid, GLFWgamepadstate* state);
+GLFWAPI int glfwGetGamepadState(int jid, GLFWgamepadstate* currentGameState);
 
 /*! @brief Sets the clipboard to the specified string.
  *

@@ -516,7 +516,7 @@ void _glfwInputErrorWin32(int error, const char* description)
 void _glfwUpdateKeyNamesWin32(void)
 {
     int key;
-    BYTE state[256] = {0};
+    BYTE currentGameState[256] = {0};
 
     memset(_glfw.win32.keynames, 0, sizeof(_glfw.win32.keynames));
 
@@ -544,7 +544,7 @@ void _glfwUpdateKeyNamesWin32(void)
         else
             vk = MapVirtualKeyW(scancode, MAPVK_VSC_TO_VK);
 
-        length = ToUnicode(vk, scancode, state,
+        length = ToUnicode(vk, scancode, currentGameState,
                            chars, sizeof(chars) / sizeof(WCHAR),
                            0);
 
@@ -552,7 +552,7 @@ void _glfwUpdateKeyNamesWin32(void)
         {
             // This is a dead key, so we need a second simulated key press
             // to make it output its own character (usually a diacritic)
-            length = ToUnicode(vk, scancode, state,
+            length = ToUnicode(vk, scancode, currentGameState,
                                chars, sizeof(chars) / sizeof(WCHAR),
                                0);
         }

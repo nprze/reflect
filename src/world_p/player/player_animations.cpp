@@ -40,7 +40,7 @@ void rfct::playerAnimations::unloadAnimations()
 	buffer.cleanupBuffer();
 }
 
-void rfct::playerAnimations::update(const glm::vec2& playerVel, const glm::vec2& playerPos, frameContext& ctx, entity player)
+void rfct::playerAnimations::update(const glm::vec2& playerVel, const glm::vec2& playerPos, RfctFrameContext& ctx, entity player)
 {
 	RFCT_PROFILE_SCOPE("player animation update");
 	entt::registry& reg = ecs::get();
@@ -58,7 +58,7 @@ void rfct::playerAnimations::update(const glm::vec2& playerVel, const glm::vec2&
 		reg.get<rotationComponent>(player).rotation.z = 0.0f;
 	}
 	constexpr float velocityTreshold = 0.03f;
-	switch (ps.state) {
+	switch (ps.currentGameState) {
 	case playerState::normal: {
 		if (pvel.velocity.y < -velocityTreshold) {
 			// falling
@@ -134,7 +134,7 @@ void rfct::playerAnimations::update(const glm::vec2& playerVel, const glm::vec2&
 		break;
 	}
 	default: {
-		RFCT_CRITICAL("state unknown: {}", (uint8_t)ps.state);
+		RFCT_CRITICAL("state unknown: {}", (uint8_t)ps.currentGameState);
 	}
 	}
 

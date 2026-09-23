@@ -30,14 +30,14 @@ void rfct::dialogue::fullLoad() {
 	displayPart.reserve(10);
 }
 
-void rfct::dialogue::visualUpdate(const frameContext* ctx) {
+void rfct::dialogue::visualUpdate(const RfctFrameContext* ctx) {
 	RFCT_PROFILE_FUNCTION();
 	updateBackground(ctx);
 	updateText(ctx);
 	updateImage(ctx);
 }
 
-bool rfct::dialogue::update(const frameContext* ctx) {
+bool rfct::dialogue::update(const RfctFrameContext* ctx) {
 	RFCT_PROFILE_FUNCTION();
  	if (!loaded) return false;
 	timeTillChangeOfIndexIsPossible -= ctx->dt;
@@ -111,7 +111,7 @@ void rfct::dialogue::getDialogueData() {
 	}
 }
 
-void rfct::dialogue::updateText(const frameContext* ctx) {
+void rfct::dialogue::updateText(const RfctFrameContext* ctx) {
 	RFCT_PROFILE_FUNCTION();
 	if (displayPart.size() == 0) getDialogueData();
 
@@ -141,7 +141,7 @@ void rfct::dialogue::updateText(const frameContext* ctx) {
 	}
 }
 
-void rfct::dialogue::updateImage(const frameContext* ctx) {
+void rfct::dialogue::updateImage(const RfctFrameContext* ctx) {
 	RFCT_PROFILE_FUNCTION();
 	if (currentSpritesheet == nullptr) changeSpritesheet();
 	spritesheetCycle currentCycle = currentSpritesheet->cycles[currentCycleName];
@@ -177,7 +177,7 @@ void rfct::dialogue::updateImage(const frameContext* ctx) {
 		bgOffsetInPixel + glm::vec2{ portraitOffsetInPixel + portraitSizeInPixel, portraitOffsetInPixel + portraitSizeInPixel }, & (currentSpritesheet->spriteSheetImage), texMin, texMax);
 }
 
-void rfct::dialogue::updateBackground(const frameContext* ctx) {
+void rfct::dialogue::updateBackground(const RfctFrameContext* ctx) {
 	RFCT_PROFILE_FUNCTION();
 	if (currentSpritesheet == nullptr) changeSpritesheet();
 	glm::vec2 backgroundBegin = currentSpritesheet->backgroundBegin;

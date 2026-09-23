@@ -51,10 +51,10 @@ namespace rfct {
 		static debugTriangle* requestTriangles(uint32_t count);
 		static debugLine* requestLines(uint32_t count);
 		static float drawText(const std::string& text, glm::vec2 startPosition, float scale);
-		static void flush(frameContext* ctx, frameSyncDataTemp& fd, vk::Framebuffer framebuffer, vk::RenderPass renderPass);
+		static void flush(RfctFrameContext* ctx, frameSyncDataTemp& fd, vk::Framebuffer framebuffer, vk::RenderPass renderPass);
 	private:
 		debugDraw(vk::RenderPass renderPass, vk::Device device);
-		void draw(frameContext* ctx, RfctSwapChain& swapChain, frameSyncDataTemp& fd, vk::Framebuffer framebuffer, vk::RenderPass renderPass);
+		void draw(RfctFrameContext* ctx, RfctSwapChain& swapChain, frameSyncDataTemp& fd, vk::Framebuffer framebuffer, vk::RenderPass renderPass);
 		debugTriangle* requestNTriangles(uint32_t count);
 		debugLine* requestNLines(uint32_t count);
 		float text(UIPipelines& uiPipeline, const std::string& text, glm::vec2 startPosition, float scale);

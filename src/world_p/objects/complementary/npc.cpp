@@ -36,7 +36,7 @@ namespace rfct {
         }
     };
 
-    void npcs::updateVisuals(const frameContext* ctx) {
+    void npcs::updateVisuals(const RfctFrameContext* ctx) {
         if (m_currentlyPlayingDialogue != nullptr) {
 			m_currentlyPlayingDialogue->visualUpdate(ctx);
         }
@@ -50,12 +50,12 @@ namespace rfct {
         GetRen().GetUIPipeline().addTextVerticesHeight(std::string("TALK"), appScreenSpacePos, 0.04f * winExtent.height, glm::vec3(1.f, 1.f, 1.f));
     }
 
-    void npcs::updateSystem(frameContext* ctx) {
+    void npcs::updateSystem(RfctFrameContext* ctx) {
         RFCT_PROFILE_FUNCTION();
 		lastTalkedCooldown = std::max(0.f, lastTalkedCooldown - ctx->dt);
         auto& reg = ecs::get();
 
-        if (ctx->state == gameState::gameplay) {
+        if (ctx->currentGameState == gameState::gameplay) {
 			float nearestDistanceSqared = FLT_MAX;
 			entity nearestNPC = entt::null;
             auto gravityVelocityPositionBoxQuery = ecs::get().view<positionComponent, interactionDistanceComponent, dialoguePathComponent>();
@@ -77,8 +77,8 @@ namespace rfct {
             talkPopupVisible = false;
             if (nearestDistanceSqared != FLT_MAX) {
                 const auto& playerState = reg.get<playerStateComponent>(ctx->scene->getPlayer());
-                if (input::getInput().hold && playerState.state == playerState::normal && lastTalkedCooldown <= 0.f) {
-                    ctx->state = gameState::stateDialogue;
+                if (input::getInput().hold && playerState.currentGameState == playerState::normal && lastTalkedCooldown <= 0.f) {
+                    ctx->currentGameState = gameState::stateDialogue;
                     startDialogue(reg.get<dialoguePathComponent>(nearestNPC).dialoguePath);
                     talkPopupVisible = false;
                 }
@@ -89,11 +89,11 @@ namespace rfct {
 			}
         }
 
-        if (ctx->state == gameState::stateDialogue) {
+        if (ctx->currentGameState == gameState::stateDialogue) {
             if (m_currentlyPlayingDialogue->update(ctx)) {
                 delete m_currentlyPlayingDialogue;
                 m_currentlyPlayingDialogue = nullptr;
-                ctx->state = gameState::gameplay;
+                ctx->currentGameState = gameState::gameplay;
 				lastTalkedCooldown = 0.5f;
             }
         }

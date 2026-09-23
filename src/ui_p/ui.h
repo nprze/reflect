@@ -6,5 +6,5 @@ namespace rfct {
 	void updateLastState(gameState newState);
 
 	void defineUI();
-	void drawUI(frameContext* ctx, RfctSwapChain& swapChain);
+	void drawUI(RfctFrameContext& ctx, RfctSwapChain& swapChain);
 }

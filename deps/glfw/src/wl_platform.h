@@ -473,7 +473,7 @@ typedef struct _GLFWlibraryWayland
         void*                   handle;
         struct xkb_context*     context;
         struct xkb_keymap*      keymap;
-        struct xkb_state*       state;
+        struct xkb_state*       currentGameState;
 
         struct xkb_compose_state* composeState;
 
