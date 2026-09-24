@@ -28,6 +28,7 @@ void rfct::RfctSceneGraphicsPass::CreatePassResources(RfctRenderPass* renderPass
 
     m_pipelineRef = pipelineManager.CreatePipeline(scenePipeline, m_renderPassRef->GetPass(), device);
 }
+
 void rfct::RfctSceneGraphicsPass::DestroyPassResources(vk::Device device) {
     m_pipelineRef->DestroyPipeline(device);
 }
@@ -102,283 +103,206 @@ void rfct::RfctSceneGraphicsPass::RecordCommandBuffer(RfctFrameContext& ctx, fra
     RFCT_VULKAN_CHECK(commandBuffer.end());
 }
 
-void rfct::RfctBloomGraphicsPass::CreateBloomPassResources(RfctRenderPass* renderPass, RfctPipelineManager& pipelineManager, vk::Device device) {
+void rfct::RfctBloomGraphicsPass::CreateBloomPassResources(RfctRenderPass* gaussianPass, RfctRenderPass* compositePass, RfctPipelineManager& pipelineManager, vk::Device device) {
     RFCT_PROFILE_FUNCTION();
-    RfctRenderPipeline::RfctRenderPipelineSpec gaussianBlurPipeline;
-    gaussianBlurPipeline.descriptorSetLayouts;
-    // descriptor set layout
-    vk::DescriptorSetLayoutBinding layoutBinding = {};
-    layoutBinding.binding = 0;
-    layoutBinding.descriptorType = vk::DescriptorType::eCombinedImageSampler;
-    layoutBinding.descriptorCount = 1;
-    layoutBinding.stageFlags = vk::ShaderStageFlagBits::eFragment;
+    m_gaussianPass = gaussianPass;
+    m_compositePass = compositePass;
+    {
+        RFCT_PROFILE_SCOPE("Create gaussian pipeline");
+        // descriptor set layout
+        vk::DescriptorSetLayoutBinding layoutBinding = {};
+        layoutBinding.binding = 0;
+        layoutBinding.descriptorType = vk::DescriptorType::eCombinedImageSampler;
+        layoutBinding.descriptorCount = 1;
+        layoutBinding.stageFlags = vk::ShaderStageFlagBits::eFragment;
 
-    vk::DescriptorSetLayoutCreateInfo layoutCreateInfo = {};
-    layoutCreateInfo.bindingCount = 1;
-    layoutCreateInfo.pBindings = &layoutBinding;
+        vk::DescriptorSetLayoutCreateInfo layoutCreateInfo = {};
+        layoutCreateInfo.bindingCount = 1;
+        layoutCreateInfo.pBindings = &layoutBinding;
 
-    vk::DescriptorSetLayout descSetLayout = device.createDescriptorSetLayout(layoutCreateInfo).value;
+        m_gaussianPipelineDescLayout = device.createDescriptorSetLayout(layoutCreateInfo).value;
 
-    vk::PushConstantRange pushConstantRange{};
-    pushConstantRange.stageFlags = vk::ShaderStageFlagBits::eFragment;
-    pushConstantRange.offset = 0;
-    pushConstantRange.size = sizeof(RfctBloomGraphicsPass::RfctBloomPushConstants);
+        vk::PushConstantRange pushConstantRange{};
+        pushConstantRange.stageFlags = vk::ShaderStageFlagBits::eFragment;
+        pushConstantRange.offset = 0;
+        pushConstantRange.size = sizeof(RfctBloomGraphicsPass::RfctBloomPushConstants);
 
-    // Pipeline layout
-    vk::PipelineLayoutCreateInfo pipelineLayoutInfo = {};
-    pipelineLayoutInfo.setLayoutCount = 1;
-    vk::DescriptorSetLayout dscSetLayouts[] = { descSetLayout };
-    pipelineLayoutInfo.pSetLayouts = dscSetLayouts;
-    pipelineLayoutInfo.pushConstantRangeCount = 1;
-    pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
-    vk::PipelineLayout lay = device.createPipelineLayout(pipelineLayoutInfo).value;
+        RfctRenderPipeline::RfctRenderPipelineSpec gaussianBlurPipeline;
+        gaussianBlurPipeline.vertexShaderPath = "shaders/post_proc/fullscreen_vert.spv";
+        gaussianBlurPipeline.fragmentShaderPath = "shaders/post_proc/gaussian_blur_frag.spv";
+        gaussianBlurPipeline.MSAA4x = true;
+        gaussianBlurPipeline.enableVetexBinding = false;
+        gaussianBlurPipeline.descriptorSetLayouts = { m_gaussianPipelineDescLayout };
+        gaussianBlurPipeline.pushConstantRanges = { pushConstantRange };
+        gaussianBlurPipeline.enableColorBlend = true;
 
+        m_gaussianPipelineRef = pipelineManager.CreatePipeline(gaussianBlurPipeline, m_gaussianPass->GetPass(), device);
+    }
+    {
+        RFCT_PROFILE_SCOPE("Create composite pipeline");
+        // descriptor set layout
+        vk::DescriptorSetLayoutBinding layoutBinding = {};
+        layoutBinding.binding = 0;
+        layoutBinding.descriptorType = vk::DescriptorType::eCombinedImageSampler;
+        layoutBinding.descriptorCount = 1;
+        layoutBinding.stageFlags = vk::ShaderStageFlagBits::eFragment;
+
+        vk::DescriptorSetLayoutBinding layoutBinding1 = {};
+        layoutBinding1.binding = 1;
+        layoutBinding1.descriptorType = vk::DescriptorType::eCombinedImageSampler;
+        layoutBinding1.descriptorCount = 1;
+        layoutBinding1.stageFlags = vk::ShaderStageFlagBits::eFragment;
+
+        vk::DescriptorSetLayoutCreateInfo layoutCreateInfo = {};
+        std::array<vk::DescriptorSetLayoutBinding, 2> bindings = { layoutBinding, layoutBinding1 };
+        layoutCreateInfo.bindingCount = 2;
+        layoutCreateInfo.pBindings = bindings.data();
+
+        m_compositePipelineDescLayout = device.createDescriptorSetLayout(layoutCreateInfo).value;
+
+        RfctRenderPipeline::RfctRenderPipelineSpec compositePipeline;
+        compositePipeline.vertexShaderPath = "shaders/post_proc/fullscreen_vert.spv";
+        compositePipeline.fragmentShaderPath = "shaders/post_proc/composite_frag.spv";
+        compositePipeline.MSAA4x = true;
+        compositePipeline.enableVetexBinding = false;
+        compositePipeline.descriptorSetLayouts = { m_compositePipelineDescLayout };
+        compositePipeline.enableColorBlend = true;
+
+        m_compositePipelineRef = pipelineManager.CreatePipeline(compositePipeline, m_compositePass->GetPass(), device);
+    }
+    {
+        RFCT_PROFILE_SCOPE("Create sampler");
+        vk::SamplerCreateInfo samplerInfo{};
+        samplerInfo.magFilter = vk::Filter::eLinear;
+        samplerInfo.minFilter = vk::Filter::eLinear;
+
+        samplerInfo.addressModeU = vk::SamplerAddressMode::eClampToEdge;
+        samplerInfo.addressModeV = vk::SamplerAddressMode::eClampToEdge;
+        samplerInfo.addressModeW = vk::SamplerAddressMode::eClampToEdge;
+
+        samplerInfo.anisotropyEnable = VK_FALSE;
+        samplerInfo.maxAnisotropy = 1.0f;
+
+        samplerInfo.borderColor = vk::BorderColor::eIntOpaqueBlack;
+        samplerInfo.unnormalizedCoordinates = VK_FALSE;
+
+        samplerInfo.compareEnable = VK_FALSE;
+        samplerInfo.compareOp = vk::CompareOp::eAlways;
+
+        samplerInfo.mipmapMode = vk::SamplerMipmapMode::eLinear;
+        samplerInfo.mipLodBias = 0.0f;
+        samplerInfo.minLod = 0.0f;
+        samplerInfo.maxLod = VK_LOD_CLAMP_NONE;
+
+        m_imageSampler = device.createSampler(samplerInfo).value;
+    }
+    {
+        RFCT_PROFILE_SCOPE("Allocate descriptor sets");
+        vk::DescriptorPoolSize poolSize = {};
+        poolSize.type = vk::DescriptorType::eCombinedImageSampler;
+        poolSize.descriptorCount = RFCT_FRAMES_IN_FLIGHT * (1 + 1 + 1 + 2);
+
+        vk::DescriptorPoolCreateInfo poolInfo = {};
+        poolInfo.flags = vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet;
+        poolInfo.poolSizeCount = 1;
+        poolInfo.pPoolSizes = &poolSize;
+        poolInfo.maxSets = RFCT_FRAMES_IN_FLIGHT * 3;
+
+        m_descriptorPool = device.createDescriptorPool(poolInfo).value;
+        {
+            std::array<vk::DescriptorSetLayout, RFCT_FRAMES_IN_FLIGHT> sets = {};
+            for (uint32_t i = 0; i < RFCT_FRAMES_IN_FLIGHT; ++i) { sets[i] = m_gaussianPipelineDescLayout; }
+            vk::DescriptorSetAllocateInfo allocInfo(m_descriptorPool, RFCT_FRAMES_IN_FLIGHT, sets.data());
+            m_gaussian1ImageDescriptorSet = std::move(device.allocateDescriptorSets(allocInfo).value);
+        }
+        {
+            std::array<vk::DescriptorSetLayout, RFCT_FRAMES_IN_FLIGHT> sets = {};
+            for (uint32_t i = 0; i < RFCT_FRAMES_IN_FLIGHT; ++i) { sets[i] = m_gaussianPipelineDescLayout; }
+            vk::DescriptorSetAllocateInfo allocInfo(m_descriptorPool, RFCT_FRAMES_IN_FLIGHT, sets.data());
+            m_gaussian2ImageDescriptorSet = std::move(device.allocateDescriptorSets(allocInfo).value);
+        }
+        {
+
+            std::array<vk::DescriptorSetLayout, RFCT_FRAMES_IN_FLIGHT> sets = {};
+            for (uint32_t i = 0; i < RFCT_FRAMES_IN_FLIGHT; ++i) { sets[i] = m_compositePipelineDescLayout; }
+            vk::DescriptorSetAllocateInfo allocInfo(m_descriptorPool, RFCT_FRAMES_IN_FLIGHT, sets.data());
+            m_compositeImageDescriptorSet = std::move(device.allocateDescriptorSets(allocInfo).value);
+        }
+    }
+}
+
+void rfct::RfctBloomGraphicsPass::UpdateGaussian1DescSets(uint32_t frameInFlightIndex, vk::ImageView imageView, vk::Device device) {
+    vk::DescriptorImageInfo imageInfo;
+
+    imageInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+    imageInfo.imageView = imageView;
+    imageInfo.sampler = m_imageSampler;
+
+    vk::WriteDescriptorSet writeDescriptorSet = {};
+    writeDescriptorSet.dstSet = m_gaussian1ImageDescriptorSet[frameInFlightIndex];
+    writeDescriptorSet.dstBinding = 0;
+    writeDescriptorSet.dstArrayElement = 0;
+    writeDescriptorSet.descriptorType = vk::DescriptorType::eCombinedImageSampler;
+    writeDescriptorSet.descriptorCount = 1;
+    writeDescriptorSet.pImageInfo = &imageInfo;
+
+    device.updateDescriptorSets({ writeDescriptorSet }, nullptr);
+}
+
+void rfct::RfctBloomGraphicsPass::UpdateGaussian2DescSets(uint32_t frameInFlightIndex, vk::ImageView imageView, vk::Device device) {
+    vk::DescriptorImageInfo imageInfo;
+
+    imageInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+    imageInfo.imageView = imageView;
+    imageInfo.sampler = m_imageSampler;
+
+    vk::WriteDescriptorSet writeDescriptorSet = {};
+    writeDescriptorSet.dstSet = m_gaussian2ImageDescriptorSet[frameInFlightIndex];
+    writeDescriptorSet.dstBinding = 0;
+    writeDescriptorSet.dstArrayElement = 0;
+    writeDescriptorSet.descriptorType = vk::DescriptorType::eCombinedImageSampler;
+    writeDescriptorSet.descriptorCount = 1;
+    writeDescriptorSet.pImageInfo = &imageInfo;
+
+    device.updateDescriptorSets({ writeDescriptorSet }, nullptr);
+}
+
+void rfct::RfctBloomGraphicsPass::UpdateCompositeDescSets(uint32_t frameInFlightIndex, vk::ImageView imageView0, vk::ImageView imageView1, vk::Device device) {
     // composite
-    RFCT_PROFILE_FUNCTION();
-    // descriptor set layout
-    vk::DescriptorSetLayoutBinding layoutBinding = {};
-    layoutBinding.binding = 0;
-    layoutBinding.descriptorType = vk::DescriptorType::eCombinedImageSampler;
-    layoutBinding.descriptorCount = 1;
-    layoutBinding.stageFlags = vk::ShaderStageFlagBits::eFragment;
+    vk::DescriptorImageInfo imageInfo0;
+    imageInfo0.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+    imageInfo0.imageView = imageView0;
+    imageInfo0.sampler = m_imageSampler;
 
-    vk::DescriptorSetLayoutBinding layoutBinding1 = {};
-    layoutBinding1.binding = 1;
-    layoutBinding1.descriptorType = vk::DescriptorType::eCombinedImageSampler;
-    layoutBinding1.descriptorCount = 1;
-    layoutBinding1.stageFlags = vk::ShaderStageFlagBits::eFragment;
+    vk::WriteDescriptorSet writeDescriptorSet0 = {};
+    writeDescriptorSet0.dstSet = m_compositeImageDescriptorSet[frameInFlightIndex];
+    writeDescriptorSet0.dstBinding = 0;
+    writeDescriptorSet0.dstArrayElement = 0;
+    writeDescriptorSet0.descriptorType = vk::DescriptorType::eCombinedImageSampler;
+    writeDescriptorSet0.descriptorCount = 1;
+    writeDescriptorSet0.pImageInfo = &imageInfo0;
 
-    vk::DescriptorSetLayoutCreateInfo layoutCreateInfo = {};
-    std::array<vk::DescriptorSetLayoutBinding, 2> bindings = { layoutBinding, layoutBinding1 };
-    layoutCreateInfo.bindingCount = 2;
-    layoutCreateInfo.pBindings = bindings.data();
+    vk::DescriptorImageInfo imageInfo1;
+    imageInfo1.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+    imageInfo1.imageView = imageView1;
+    imageInfo1.sampler = m_imageSampler;
 
-    vk::DescriptorSetLayout descSetLayout = device.createDescriptorSetLayout(layoutCreateInfo).value;
+    vk::WriteDescriptorSet writeDescriptorSet1 = {};
+    writeDescriptorSet1.dstSet = m_compositeImageDescriptorSet[frameInFlightIndex];
+    writeDescriptorSet1.dstBinding = 1;
+    writeDescriptorSet1.dstArrayElement = 0;
+    writeDescriptorSet1.descriptorType = vk::DescriptorType::eCombinedImageSampler;
+    writeDescriptorSet1.descriptorCount = 1;
+    writeDescriptorSet1.pImageInfo = &imageInfo1;
 
-    // Pipeline layout
-    vk::PipelineLayoutCreateInfo pipelineLayoutInfo = {};
-    pipelineLayoutInfo.setLayoutCount = 1;
-    vk::DescriptorSetLayout dscSetLayouts[] = { descSetLayout };
-    pipelineLayoutInfo.pSetLayouts = dscSetLayouts;
-    pipelineLayoutInfo.pushConstantRangeCount = 0;
-    vk::PipelineLayout lay = device.createPipelineLayout(pipelineLayoutInfo).value;
-
-    layoutTemporaryHolder holder;
-    holder.descSet = descSetLayout;
-    holder.pipeline = lay;
-    return holder;
-
-    RFCT_PROFILE_FUNCTION();
-    m_renderPassRef = renderPass;
-    // pipeline
-    scenePipeline.vertexShaderPath = "shaders/basic/basic_vert.spv";
-    scenePipeline.fragmentShaderPath = "shaders/basic/basic_frag.spv";
-    scenePipeline.MSAA4x = true;
-    auto attributeDesc = Vertex::getAttributeDescriptions();
-    std::vector<vk::VertexInputAttributeDescription> vecAttributeDesc;
-    vecAttributeDesc.reserve(attributeDesc.size());
-    for (uint32_t i = 0; i < attributeDesc.size(); i++)
-        vecAttributeDesc.push_back(attributeDesc[i]);
-    scenePipeline.vertexInputAttributeDescriptions = vecAttributeDesc;
-    scenePipeline.vertexInputBindingDescription = Vertex::getBindingDescription();
-    std::vector<vk::DescriptorSetLayout> descSetLayouts = { RfctUniformBuffer::GetUniformDescriptorSetLayout(device), renderData::getDescriptorSetLayout() };
-    scenePipeline.descriptorSetLayouts = descSetLayouts;
-
-    m_pipelineRef = pipelineManager.CreatePipeline(scenePipeline, m_renderPassRef->GetPass(), device);
-    // sampler
-    vk::SamplerCreateInfo samplerInfo{};
-    samplerInfo.magFilter = vk::Filter::eLinear;
-    samplerInfo.minFilter = vk::Filter::eLinear;
-
-    samplerInfo.addressModeU = vk::SamplerAddressMode::eClampToEdge;
-    samplerInfo.addressModeV = vk::SamplerAddressMode::eClampToEdge;
-    samplerInfo.addressModeW = vk::SamplerAddressMode::eClampToEdge;
-
-    samplerInfo.anisotropyEnable = VK_FALSE;
-    samplerInfo.maxAnisotropy = 1.0f;
-
-    samplerInfo.borderColor = vk::BorderColor::eIntOpaqueBlack;
-    samplerInfo.unnormalizedCoordinates = VK_FALSE;
-
-    samplerInfo.compareEnable = VK_FALSE;
-    samplerInfo.compareOp = vk::CompareOp::eAlways;
-
-    samplerInfo.mipmapMode = vk::SamplerMipmapMode::eLinear;
-    samplerInfo.mipLodBias = 0.0f;
-    samplerInfo.minLod = 0.0f;
-    samplerInfo.maxLod = VK_LOD_CLAMP_NONE;
-
-    m_sampler = device.createSamplerUnique(samplerInfo).value;
+    std::array<vk::WriteDescriptorSet, 2> writeSets = { writeDescriptorSet0, writeDescriptorSet1 };
+    device.updateDescriptorSets(writeSets, nullptr);
 }
 
-constexpr uint32_t count = RFCT_FRAMES_IN_FLIGHT;
 constexpr uint32_t bloomMultiply = 3;
-// pipeline layouts
-
-bloomResurcesHolder::bloomResurcesHolder(RfctQueue& queue, RfctRenderImagesManager& imageManager, vk::RenderPass renderPass, vk::Device device)
-    : vertexShader(GetAssetManager().GetOrLoadShader(device, "shaders/post_proc/fullscreen_vert.spv")),
-    m_imageSampler(device),
-    m_gaussianPipeline(device, renderPass, "shaders/post_proc/fullscreen_vert.spv", "shaders/post_proc/gaussian_blur_frag.spv", GaussianBlurPipelineLayout(device)),
-    m_compositePipeline(device, renderPass, "shaders/post_proc/fullscreen_vert.spv", "shaders/post_proc/composite_frag.spv", CompositePipelineLayout(device)) {
+void rfct::RfctBloomGraphicsPass::RecordCommandBuffer(RfctFrameContext& ctx) {
     RFCT_PROFILE_FUNCTION();
-    // descriptor pool
-    vk::DescriptorPoolSize poolSize = {};
-    poolSize.type = vk::DescriptorType::eCombinedImageSampler;
-    poolSize.descriptorCount = count * (1 + 1 + 1 + 2);
-
-    vk::DescriptorPoolCreateInfo poolInfo = {};
-    poolInfo.flags = vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet;
-    poolInfo.poolSizeCount = 1;
-    poolInfo.pPoolSizes = &poolSize;
-    poolInfo.maxSets = count * 4;
-
-    m_descriptorPool = device.createDescriptorPoolUnique(poolInfo).value;
-    {
-        vk::DescriptorSetLayout dsLayout = m_gaussianPipeline.m_descSetLayout;
-
-        std::array<vk::DescriptorSetLayout, count> sets = {};
-
-        for (uint32_t i = 0; i < count; ++i) {
-            sets[i] = dsLayout;
-        }
-        vk::DescriptorSetAllocateInfo allocInfo(
-            m_descriptorPool.get(),
-            count,
-            sets.data()
-        );
-
-        m_gaussian1SceneImageDescriptorSet = std::move(device.allocateDescriptorSetsUnique(allocInfo).value);
-    }
-    {
-        vk::DescriptorSetLayout dsLayout = m_gaussianPipeline.m_descSetLayout;
-        std::array<vk::DescriptorSetLayout, count> sets = {};
-
-        for (uint32_t i = 0; i < count; ++i) {
-            sets[i] = dsLayout;
-        }
-        vk::DescriptorSetAllocateInfo allocInfo(
-            m_descriptorPool.get(),
-            count,
-            sets.data()
-        );
-
-        m_gaussian2SceneImageDescriptorSet = std::move(device.allocateDescriptorSetsUnique(allocInfo).value);
-    }
-    {
-        vk::DescriptorSetLayout dsLayout = m_compositePipeline.m_descSetLayout;
-        std::array<vk::DescriptorSetLayout, count> sets = {};
-
-        for (uint32_t i = 0; i < count; ++i) {
-            sets[i] = dsLayout;
-        }
-        vk::DescriptorSetAllocateInfo allocInfo(
-            m_descriptorPool.get(),
-            count,
-            sets.data()
-        );
-
-        m_compositeImageDescriptorSet = std::move(device.allocateDescriptorSetsUnique(allocInfo).value);
-    }
-    updateDescSets(imageManager, device);
-    // create command buffers
-    vk::CommandPoolCreateInfo cmdpoolInfo{
-        vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
-        queue.GetGraphicsQueueFamilyIndex()
-    };
-    m_bloomCommandPool = device.createCommandPoolUnique(cmdpoolInfo).value;
-
-    vk::CommandBufferAllocateInfo allocInfoBloom{ m_bloomCommandPool.get(), vk::CommandBufferLevel::ePrimary, RFCT_FRAMES_IN_FLIGHT };
-    m_bloomCommandBuffer = std::move(device.allocateCommandBuffersUnique(allocInfoBloom).value);
-}
-
-
-void bloomResurcesHolder::updateDescSets(RfctRenderImagesManager& imageManager, vk::Device device) {
-    RFCT_PROFILE_FUNCTION();
-    // update descriptor sets
-    for (size_t i = 0; i < count; ++i) {
-        {
-            // blur 1
-            vk::DescriptorImageInfo imageInfo;
-
-            imageInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
-            imageInfo.imageView = imageManager.GetSceneImage(i).m_imageView.get();
-            imageInfo.sampler = m_imageSampler.m_sampler.get();
-
-            vk::WriteDescriptorSet writeDescriptorSet = {};
-            writeDescriptorSet.dstSet = m_gaussian1SceneImageDescriptorSet[i].get();
-            writeDescriptorSet.dstBinding = 0;
-            writeDescriptorSet.dstArrayElement = 0;
-            writeDescriptorSet.descriptorType = vk::DescriptorType::eCombinedImageSampler;
-            writeDescriptorSet.descriptorCount = 1;
-            writeDescriptorSet.pImageInfo = &imageInfo;
-
-            device.updateDescriptorSets({ writeDescriptorSet }, nullptr);
-        }
-        {
-            // blur 2
-            vk::DescriptorImageInfo imageInfo;
-
-            imageInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
-            imageInfo.imageView = imageManager.GetBloom2Image(i).m_imageView.get();
-            imageInfo.sampler = m_imageSampler.m_sampler.get();
-
-            vk::WriteDescriptorSet writeDescriptorSet = {};
-            writeDescriptorSet.dstSet = m_gaussian2SceneImageDescriptorSet[i].get();
-            writeDescriptorSet.dstBinding = 0;
-            writeDescriptorSet.dstArrayElement = 0;
-            writeDescriptorSet.descriptorType = vk::DescriptorType::eCombinedImageSampler;
-            writeDescriptorSet.descriptorCount = 1;
-            writeDescriptorSet.pImageInfo = &imageInfo;
-
-            device.updateDescriptorSets({ writeDescriptorSet }, nullptr);
-        }
-        {
-            // composite
-            vk::DescriptorImageInfo imageInfo0;
-            imageInfo0.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
-            imageInfo0.imageView = imageManager.GetSceneImage(i).m_imageView.get(); // Image 0
-            imageInfo0.sampler = m_imageSampler.m_sampler.get();
-
-            vk::WriteDescriptorSet writeDescriptorSet0 = {};
-            writeDescriptorSet0.dstSet = m_compositeImageDescriptorSet[i].get();
-            writeDescriptorSet0.dstBinding = 0;
-            writeDescriptorSet0.dstArrayElement = 0;
-            writeDescriptorSet0.descriptorType = vk::DescriptorType::eCombinedImageSampler;
-            writeDescriptorSet0.descriptorCount = 1;
-            writeDescriptorSet0.pImageInfo = &imageInfo0;
-
-            vk::DescriptorImageInfo imageInfo1;
-            imageInfo1.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
-            imageInfo1.imageView = imageManager.GetBloom1Image(i).m_imageView.get(); // Image 1
-            imageInfo1.sampler = m_imageSampler.m_sampler.get();
-
-            vk::WriteDescriptorSet writeDescriptorSet1 = {};
-            writeDescriptorSet1.dstSet = m_compositeImageDescriptorSet[i].get();
-            writeDescriptorSet1.dstBinding = 1;
-            writeDescriptorSet1.dstArrayElement = 0;
-            writeDescriptorSet1.descriptorType = vk::DescriptorType::eCombinedImageSampler;
-            writeDescriptorSet1.descriptorCount = 1;
-            writeDescriptorSet1.pImageInfo = &imageInfo1;
-
-            std::array<vk::WriteDescriptorSet, 2> writeSets = { writeDescriptorSet0, writeDescriptorSet1 };
-            device.updateDescriptorSets(writeSets, nullptr);
-        }
-    }
-}
-
-void bloomResurcesHolder::blum(RfctFrameContext* ctx, RfctRenderImagesManager& imageManager, RfctSwapChain& swapChain,
-    frameSyncDataTemp& fd, vk::RenderPass renderPass, uint32_t imageIndex) {
-    RFCT_PROFILE_FUNCTION();
-    recordCommandBuffer(imageManager, swapChain, m_bloomCommandBuffer[ctx->frameInFlightIndex].get(), imageManager.GetIntermediateClearRenderPass(), ctx->frameInFlightIndex, imageIndex);
-    fd.m_BloomCommandBuffer = m_bloomCommandBuffer[ctx->frameInFlightIndex].get();
-}
-
-void bloomResurcesHolder::recordCommandBuffer(RfctRenderImagesManager& imageManager, RfctSwapChain& swapChain,
-    vk::CommandBuffer commandBuffer, vk::RenderPass renderPass, uint32_t imageIndex, uint32_t swapchainImage) {
-    RFCT_PROFILE_FUNCTION();
-    commandBuffer.reset({});
-    vk::CommandBufferBeginInfo beginInfo = {};
-    RFCT_VULKAN_CHECK(commandBuffer.begin(beginInfo));
+    vk::CommandBuffer commandBuffer = ctx.graphicsCmdBffr;
     imageManager.GetSceneImage(imageIndex).TransformLayoutAsync(vk::ImageLayout::eShaderReadOnlyOptimal, commandBuffer);
 
     {
@@ -524,108 +448,4 @@ void bloomResurcesHolder::recordCommandBuffer(RfctRenderImagesManager& imageMana
 void bloomResurcesHolder::onSwapchainExtentChanged(RfctRenderImagesManager& imageManager, vk::Device device) {
     RFCT_PROFILE_FUNCTION();
     updateDescSets(imageManager, device);
-}
-
-postprocPipeline::postprocPipeline(vk::Device device, vk::RenderPass renderPass, const std::string& vertexShaderPath, const std::string& fragmentShaderPath, layoutTemporaryHolder pipelineLayoutStuff) :
-    m_vertexShader(GetAssetManager().GetOrLoadShader(device, vertexShaderPath)),
-    m_fragShader(GetAssetManager().GetOrLoadShader(device, fragmentShaderPath)),
-    m_pipelineLayout(pipelineLayoutStuff.pipeline),
-    m_descSetLayout(pipelineLayoutStuff.descSet) {
-    RFCT_PROFILE_FUNCTION();
-    // Shaders
-    vk::PipelineShaderStageCreateInfo vertShaderStageInfo = {};
-    vertShaderStageInfo.stage = vk::ShaderStageFlagBits::eVertex;
-    vertShaderStageInfo.module = m_vertexShader->getShaderModule();
-    vertShaderStageInfo.pName = "main";
-
-    vk::PipelineShaderStageCreateInfo fragShaderStageInfo = {};
-    fragShaderStageInfo.stage = vk::ShaderStageFlagBits::eFragment;
-    fragShaderStageInfo.module = m_fragShader->getShaderModule();
-    fragShaderStageInfo.pName = "main";
-
-    std::vector<vk::PipelineShaderStageCreateInfo> shaderStages = { vertShaderStageInfo, fragShaderStageInfo };
-
-    vk::PipelineVertexInputStateCreateInfo vertexInputInfo = {};
-    vertexInputInfo.vertexBindingDescriptionCount = 0;
-    vertexInputInfo.vertexAttributeDescriptionCount = 0;
-    vertexInputInfo.pVertexBindingDescriptions = VK_NULL_HANDLE;
-    vertexInputInfo.pVertexAttributeDescriptions = VK_NULL_HANDLE;
-
-    vk::PipelineInputAssemblyStateCreateInfo inputAssembly = {};
-    inputAssembly.topology = vk::PrimitiveTopology::eTriangleList;
-    inputAssembly.primitiveRestartEnable = VK_FALSE;
-
-    // Rasterization State
-    vk::PipelineRasterizationStateCreateInfo rasterizer = {};
-    rasterizer.depthClampEnable = VK_FALSE;
-    rasterizer.rasterizerDiscardEnable = VK_FALSE;
-    rasterizer.polygonMode = vk::PolygonMode::eFill;
-    rasterizer.lineWidth = 1.0f;
-
-    rasterizer.cullMode = vk::CullModeFlagBits::eNone;
-    rasterizer.frontFace = vk::FrontFace::eClockwise;
-    rasterizer.depthBiasEnable = VK_FALSE;
-
-    // Multisample State
-    vk::PipelineMultisampleStateCreateInfo multisampling = {};
-    multisampling.rasterizationSamples = vk::SampleCountFlagBits::e1;
-
-    vk::PipelineColorBlendAttachmentState colorBlendAttachment = {};
-    colorBlendAttachment.blendEnable = VK_TRUE;
-    colorBlendAttachment.srcColorBlendFactor = vk::BlendFactor::eSrcAlpha;
-    colorBlendAttachment.dstColorBlendFactor = vk::BlendFactor::eOneMinusSrcAlpha;
-    colorBlendAttachment.colorBlendOp = vk::BlendOp::eAdd;
-    colorBlendAttachment.srcAlphaBlendFactor = vk::BlendFactor::eOne;
-    colorBlendAttachment.dstAlphaBlendFactor = vk::BlendFactor::eZero;
-    colorBlendAttachment.alphaBlendOp = vk::BlendOp::eAdd;
-    colorBlendAttachment.colorWriteMask = vk::ColorComponentFlagBits::eR |
-        vk::ColorComponentFlagBits::eG |
-        vk::ColorComponentFlagBits::eB |
-        vk::ColorComponentFlagBits::eA;
-
-    vk::PipelineColorBlendStateCreateInfo colorBlending = {};
-    colorBlending.logicOpEnable = VK_FALSE;
-    colorBlending.attachmentCount = 1;
-    colorBlending.pAttachments = &colorBlendAttachment;
-
-    vk::PipelineDepthStencilStateCreateInfo depthStencil = {};
-
-    // Dynamic State
-    std::vector<vk::DynamicState> dynamicStates = {
-        vk::DynamicState::eViewport,
-        vk::DynamicState::eScissor
-    };
-
-    vk::PipelineDynamicStateCreateInfo dynamicState = {};
-    dynamicState.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
-    dynamicState.pDynamicStates = dynamicStates.data();
-
-    vk::PipelineViewportStateCreateInfo viewportState = {};
-    viewportState.viewportCount = 1;
-    viewportState.scissorCount = 1;
-
-    // Pipeline
-    vk::GraphicsPipelineCreateInfo pipelineInfo = {};
-    pipelineInfo.stageCount = 2;
-    pipelineInfo.pStages = shaderStages.data();
-    pipelineInfo.pVertexInputState = &vertexInputInfo;
-    pipelineInfo.pInputAssemblyState = &inputAssembly;
-    pipelineInfo.pRasterizationState = &rasterizer;
-    pipelineInfo.pMultisampleState = &multisampling;
-    pipelineInfo.pColorBlendState = &colorBlending;
-    pipelineInfo.pDepthStencilState = &depthStencil;
-    pipelineInfo.pDynamicState = &dynamicState;
-    pipelineInfo.pViewportState = &viewportState;
-    pipelineInfo.layout = m_pipelineLayout;
-    pipelineInfo.renderPass = renderPass;
-    pipelineInfo.subpass = 0;
-
-    m_pipeline = device.createGraphicsPipelineUnique({}, pipelineInfo).value;
-}
-
-postprocPipeline::~postprocPipeline() {
-    RFCT_PROFILE_FUNCTION();
-    // TODO: cleanup
-    /*device.destroyPipelineLayout(m_pipelineLayout);
-    device.destroyDescriptorSetLayout(m_descSetLayout);*/
 }

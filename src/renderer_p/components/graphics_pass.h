@@ -26,21 +26,23 @@ namespace rfct {
 			float res;
 		};
 	public:
-		void CreateBloomPassResources(RfctRenderPass* renderPass, RfctPipelineManager& pipelineManager, vk::Device device);
-		void updateDescSets(RfctRenderImagesManager& imageManager, vk::Device device);
-		void blum(RfctFrameContext* ctx, RfctRenderImagesManager& imageManager, RfctSwapChain& swapChain,
-			frameSyncDataTemp& fd, vk::RenderPass renderPass, uint32_t imageIndex);
-		void recordCommandBuffer(RfctRenderImagesManager& imageManager, RfctSwapChain& swapChain,
-			vk::CommandBuffer commandBuffer, vk::RenderPass renderPass, uint32_t imageIndex, uint32_t swapchainImage);
+		void CreateBloomPassResources(RfctRenderPass* gaussianPass, RfctRenderPass* compositePass, RfctPipelineManager& pipelineManager, vk::Device device);
+		void UpdateGaussian1DescSets(uint32_t frameInFlightIndex, vk::ImageView imageView, vk::Device device);
+		void UpdateGaussian2DescSets(uint32_t frameInFlightIndex, vk::ImageView imageView, vk::Device device);
+		void UpdateCompositeDescSets(uint32_t frameInFlightIndex, vk::ImageView imageView0, vk::ImageView imageView1, vk::Device device);
+		void RecordCommandBuffer(RfctFrameContext& ctx);
 		void onSwapchainExtentChanged(RfctRenderImagesManager& imageManager, vk::Device device);
 	private:
-		vk::UniqueSampler m_imageSampler;
-		RfctRenderPipeline* m_gaussianPipeline;
-		RfctRenderPipeline* m_compositePipeline;
-		vk::UniqueDescriptorPool m_descriptorPool;
+		vk::Sampler m_imageSampler;
+		RfctRenderPipeline* m_gaussianPipelineRef;
+		RfctRenderPipeline* m_compositePipelineRef;
+		RfctRenderPass* m_gaussianPass;
+		RfctRenderPass* m_compositePass;
+		vk::DescriptorPool m_descriptorPool;
 		vk::DescriptorSetLayout m_gaussianPipelineDescLayout;
-		std::vector<vk::UniqueDescriptorSet> m_gaussian1SceneImageDescriptorSet; // image 0
-		std::vector<vk::UniqueDescriptorSet> m_gaussian2SceneImageDescriptorSet; // image 2
-		std::vector<vk::UniqueDescriptorSet> m_compositeImageDescriptorSet; // image 0 and 1
+		vk::DescriptorSetLayout m_compositePipelineDescLayout;
+		std::vector<vk::DescriptorSet> m_gaussian1ImageDescriptorSet;
+		std::vector<vk::DescriptorSet> m_gaussian2ImageDescriptorSet;
+		std::vector<vk::DescriptorSet> m_compositeImageDescriptorSet;
 	};
 }
