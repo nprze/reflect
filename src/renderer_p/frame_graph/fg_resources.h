@@ -44,7 +44,7 @@ namespace rfct {
 			RfctVulkanMemAllocator& allocatorWrapper, RfctSwapChain& swapChainWrapper);
 		void CreateFrameBuffers(RfctSwapChain& swapChainWrapper, vk::Device device);
 		void DestroyImages(RfctVulkanMemAllocator& allocatorWrapper, vk::Device& device);
-	private:
+	public: // temporarily public
 		RfctRenderPass m_UIRenderPass;
 		RfctRenderPass m_presentToColorAttachment;
 		RfctRenderPass m_IntermediateClearRenderPass;

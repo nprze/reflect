@@ -7,6 +7,7 @@ namespace rfct {
 	class RfctRenderPipeline;
 	class RfctSwapChain;
 	class frameSyncDataTemp;
+	class RfctRenderImagesManager;
 	struct RfctFrameContext;
 
 	class RfctSceneGraphicsPass {
@@ -26,12 +27,13 @@ namespace rfct {
 			float res;
 		};
 	public:
-		void CreateBloomPassResources(RfctRenderPass* gaussianPass, RfctRenderPass* compositePass, RfctPipelineManager& pipelineManager, vk::Device device);
+		void CreatePassResources(RfctRenderPass* gaussianPass, RfctRenderPass* compositePass, RfctPipelineManager& pipelineManager, vk::Device device);
 		void UpdateGaussian1DescSets(uint32_t frameInFlightIndex, vk::ImageView imageView, vk::Device device);
 		void UpdateGaussian2DescSets(uint32_t frameInFlightIndex, vk::ImageView imageView, vk::Device device);
 		void UpdateCompositeDescSets(uint32_t frameInFlightIndex, vk::ImageView imageView0, vk::ImageView imageView1, vk::Device device);
 		void RecordCommandBuffer(RfctFrameContext& ctx);
-		void onSwapchainExtentChanged(RfctRenderImagesManager& imageManager, vk::Device device);
+		void DestroyPassResources(vk::Device device);
+		void OnSwapchainExtentChanged(RfctRenderImagesManager& imageManager, vk::Device device);
 	private:
 		vk::Sampler m_imageSampler;
 		RfctRenderPipeline* m_gaussianPipelineRef;

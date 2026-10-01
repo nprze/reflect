@@ -17,7 +17,7 @@ bool SetRenderer(rfct::RfctRenderer* renderer) {
 }
 
 rfct::RfctRenderer::RfctRenderer(RFCT_RENDERER_ARGUMENTS)
-	: m_uselessBool(SetRenderer(this)),
+	: m_legacyBool(SetRenderer(this)),
     m_window(RFCT_WINDOWS_WINDOW_ARGUMENTS RFCT_NATIVE_WINDOW_ANDROID_VAR),
     m_instance(), 
     m_surface(m_window.CreateSurface(m_instance.GetInstance())),

@@ -1,10 +1,8 @@
 #pragma once
 #include "platform_window.h"
 #include "components/renderer_components.h"
-#include "renderer_p/frame/frame_resource_manager.h"
 #include "renderer_p/debug/debug_draw.h"
 #include "renderer_p/UI/ui_pipeline.h"
-#include "renderer_p/post_process/bloom.h"
 #include "renderer_p/components/graphics_pass.h"
 #include "renderer_p/frame_graph/frame_graph.h"
 
@@ -16,7 +14,6 @@ namespace rfct {
 		vk::Instance& GetInstance() { return m_instance.GetInstance(); }
 		RFCT_PLATFORM_WINDOW& GetWindow() { return m_window; }
 		RfctVulkanInstance& GetInstanceWrapper() { return m_instance; }
-		bloomResurcesHolder& GetBloomRes() { return m_bloomRes; }
 		VmaAllocator& GetAllocator() { return m_allocator.GetAllocator(); }
 		RfctSwapChain& GetSwapChain() { return m_swapChain; }
 		RfctQueue& GetQueue() { return m_queue; }
@@ -31,7 +28,7 @@ namespace rfct {
         void UpdateWindow(RFCT_NATIVE_WINDOW_ANDROID RFCT_NATIVE_WINDOW_ANDROID_VAR);
 		void Render(RfctFrameContext& frameCtx);
 	private:
-		bool m_uselessBool = false;
+		bool m_legacyBool = false;
         RFCT_PLATFORM_WINDOW m_window;
 		RfctVulkanInstance m_instance;
 		RfctSurfaceWrapper m_surface;
@@ -39,11 +36,10 @@ namespace rfct {
 		RfctQueue m_queue;
 		RfctVulkanMemAllocator m_allocator;
 		RfctSwapChain m_swapChain;
-		RfctFrameInFlight m_framesInFlight;
 		RfctFrameGraph m_frameGraph;
 		RfctPipelineManager m_pipelineManager;
 		RfctSceneGraphicsPass m_scenePass;
-		bloomResurcesHolder m_bloomRes;
+		RfctBloomGraphicsPass m_bloomPass;
 		debugDraw m_debugDraw;
 		UIPipelines m_UIPipeline;
 	};

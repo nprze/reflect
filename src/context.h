@@ -10,6 +10,8 @@ namespace rfct {
 	};
 	class scene;
 	class RfctFrameGraph;
+	class RfctFrameGraphResources;
+	class RfctFrameGraphPerFrameResources;
 	// structure to be passed around as update context
 	struct RfctFrameContext {
 		float dt; // delta time
@@ -22,6 +24,8 @@ namespace rfct {
 		size_t frameInFlightIndex; // number <0, RFCT_FRAMES_IN_FLIGHT) of the frame which will be updated. this will be used to get the actual frame in flight resources 
 		vk::Extent2D imageExtent;
 		RfctFrameGraph* frameGraph;
+		RfctFrameGraphResources& fgResources;
+		RfctFrameGraphPerFrameResources& currentFrameResources;
 		vk::CommandBuffer graphicsCmdBffr;
 	};
 }

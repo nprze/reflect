@@ -56,10 +56,12 @@ void rfct::reflectApplication::update() {
     RfctFrameContext context = {
         .dt = deltaTime.count(),
         .globalTime = globalTime,
-        .frameInFlightIndex = currentFrame,
         .scene = &world::getWorld().getCurrentScene(),
         .currentGameState = getState(),
-        .frameGraph = &m_renderer.GetFrameGraph()
+        .frameInFlightIndex = currentFrame,
+        .frameGraph = &m_renderer.GetFrameGraph(),
+		.fgResources = m_renderer.GetFrameGraph().GetResources(),
+        .currentFrameResources = m_renderer.GetFrameGraph().GetFrameResources(currentFrame)
     };
 
     static float accumulator = 0.f;
@@ -74,7 +76,7 @@ void rfct::reflectApplication::update() {
 
         jobSystem::get().KickJob([&]() {
                 RFCT_PROFILE_SCOPE("ui draw");
-                drawUI(&context, GetRen().GetSwapChain());
+                drawUI(context, GetRen().GetSwapChain());
 			}, context.wholeUpdateTracker);
 #ifdef ANDROID_BUILD
         jobSystem::get().KickJob([&]() {

@@ -35,38 +35,38 @@ void rfct::objectSystems::loadSceneData(sceneSerializedData* serializeData, scen
 	m_jumpBoostSystem.spawnData(parentScene, serializeData);
 }
 
-void rfct::objectSystems::systemsFixedUpdate(RfctFrameContext* fc) {
+void rfct::objectSystems::systemsFixedUpdate(RfctFrameContext& fc) {
 	RFCT_PROFILE_FUNCTION();
-	m_cigSystem.updateSystem(fc);
-	m_enemySystem.updateSystem(fc);
-	m_vineSystem.updateSystem(fc);
-	m_npcSystem.updateSystem(fc);
-	m_spikeSystem.updateSystem(fc);
-	m_jumpBoostSystem.updateSystem(fc);
+	m_cigSystem.updateSystem(&fc);
+	m_enemySystem.updateSystem(&fc);
+	m_vineSystem.updateSystem(&fc);
+	m_npcSystem.updateSystem(&fc);
+	m_spikeSystem.updateSystem(&fc);
+	m_jumpBoostSystem.updateSystem(&fc);
 }
 
-void rfct::objectSystems::updateVisuals(RfctFrameContext* fc){
+void rfct::objectSystems::updateVisuals(RfctFrameContext& fc){
 	RFCT_PROFILE_FUNCTION();
-	m_cigSystem.updateVisuals(fc);
-	m_enemySystem.updateVisuals(fc);
- 	m_vineSystem.updateVisuals(fc);
-	m_npcSystem.updateVisuals(fc);
-	m_spikeSystem.updateVisuals(fc);
-	m_jumpBoostSystem.updateVisuals(fc);
+	m_cigSystem.updateVisuals(&fc);
+	m_enemySystem.updateVisuals(&fc);
+ 	m_vineSystem.updateVisuals(&fc);
+	m_npcSystem.updateVisuals(&fc);
+	m_spikeSystem.updateVisuals(&fc);
+	m_jumpBoostSystem.updateVisuals(&fc);
 }
-void rfct::objectSystems::customDrawObjects(vk::CommandBuffer& cmd, RfctFrameContext* ctx) {
+void rfct::objectSystems::customDrawObjects(vk::CommandBuffer& cmd, RfctFrameContext& ctx) {
 	RFCT_PROFILE_FUNCTION();
-	m_enemySystem.drawFrameAnimSprites(cmd, ctx);
+	m_enemySystem.drawFrameAnimSprites(cmd, &ctx);
 	// TODO: grass should be drawn here to be displayed over
 }
-void rfct::objectSystems::respawn(RfctFrameContext* fc) {
+void rfct::objectSystems::respawn(RfctFrameContext& fc) {
 	RFCT_PROFILE_FUNCTION();
-	m_cigSystem.resetLevel(fc);
-	m_vineSystem.resetLevel(fc);
+	m_cigSystem.resetLevel(&fc);
+	m_vineSystem.resetLevel(&fc);
 }
-void rfct::objectSystems::onPlayerDash(RfctFrameContext* fc, const entity entityPlayer, const bool facingRight) {
+void rfct::objectSystems::onPlayerDash(RfctFrameContext& fc, const entity entityPlayer, const bool facingRight) {
 	RFCT_PROFILE_FUNCTION();
-	m_cigSystem.onDash(fc, entityPlayer, facingRight);
+	m_cigSystem.onDash(&fc, entityPlayer, facingRight);
 }
 
 void rfct::objectSystems::onStartHolding(playerState currentGameState, nearestObject& nearest) {

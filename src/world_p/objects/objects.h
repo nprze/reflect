@@ -1,5 +1,6 @@
 #pragma once
 
+#include <entt/entt.hpp>
 #include "core/cigarettes.h"
 #include "opposition/enemy.h"
 #include "opposition/spikes.h"
@@ -16,11 +17,11 @@ namespace rfct{
 		void init();
 		void cleanupBuffer();
 		void loadSceneData(sceneSerializedData* serializeData, scene* parentScene);
-		void systemsFixedUpdate(RfctFrameContext* fc);
-		void updateVisuals(RfctFrameContext* fc);
-		void customDrawObjects(vk::CommandBuffer& cmd, RfctFrameContext* ctx);
-		void respawn(RfctFrameContext* fc);
-		void onPlayerDash(RfctFrameContext* fc, const entity entityPlayer, const bool facingRight); // to be called before physics update
+		void systemsFixedUpdate(RfctFrameContext& fc);
+		void updateVisuals(RfctFrameContext& fc);
+		void customDrawObjects(vk::CommandBuffer& cmd, RfctFrameContext& ctx);
+		void respawn(RfctFrameContext& fc);
+		void onPlayerDash(RfctFrameContext& fc, const entt::entity entityPlayer, const bool facingRight); // to be called before physics update
 		void onStartHolding(playerState currentGameState, nearestObject& nearest);
 		void onEndHolding();
 	public:
