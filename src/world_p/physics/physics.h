@@ -30,7 +30,7 @@ namespace rfct{
 	void buildStaticBVH(std::vector<BVHnode>* BVHnodes);
 	void buildDynamicBVH(std::vector<BVHnode>* BVHnodes);
 	// update
-	void physicsStep(const frameContext* ctx);
+	void physicsStep(const RfctFrameContext* ctx);
 
 	extern std::vector<BVHnode> StaticObjsBVHnodes;
 	extern std::vector<BVHnode> DynamicObjsBVHnodes;

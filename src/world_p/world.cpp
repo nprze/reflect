@@ -34,10 +34,10 @@ void rfct::world::cleanWorld() {
 	delete m_RenderData;
 }
 
-void rfct::world::worldFixedUpdate(frameContext& context, uint64_t timesToUpdate) {
+void rfct::world::worldFixedUpdate(RfctFrameContext& context, uint64_t timesToUpdate) {
 	RFCT_PROFILE_FUNCTION();
 	while (timesToUpdate-- > 0) {
-		if (context.state == gameState::gameplay || context.state == gameState::stateDialogue) {
+		if (context.currentGameState == gameState::gameplay || context.currentGameState == gameState::stateDialogue) {
 			m_currentScene->FixedUpdate(&context);
 		}
 	}
@@ -48,12 +48,12 @@ void rfct::world::worldFixedUpdate(frameContext& context, uint64_t timesToUpdate
 	}
 }
 
-void rfct::world::startSwitchScene(frameContext& ctx) {
+void rfct::world::startSwitchScene(RfctFrameContext& ctx) {
 	RFCT_INFO("pending switch scene");
 }
 
-void rfct::world::worldVisualUpdate(frameContext& context) {
-	if (context.state == gameState::menu) return;
+void rfct::world::worldVisualUpdate(RfctFrameContext& context) {
+	if (context.currentGameState == gameState::menu) return;
 	m_currentScene->onUpdate(&context);
 }
 
@@ -61,7 +61,7 @@ void rfct::world::addScreenTransform(float degree) {
 	screenViewTransformDegrees = degree;
 }
 
-void rfct::world::switchScenes(frameContext& ctx) {
+void rfct::world::switchScenes(RfctFrameContext& ctx) {
 	RFCT_PROFILE_FUNCTION();
 	glm::vec2 coords = m_currentScene->getPlayerCoordsSceneNormalized();
 	coords.y = 1 - coords.y;

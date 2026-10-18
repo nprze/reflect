@@ -14,7 +14,7 @@ namespace rfct {
 		vulkanBufferLocation requestVulkanBuffer(uint32_t triangleCount);
 		void loadAnimations();
 		void unloadAnimations();
-		void update(const glm::vec2& playerVel, const glm::vec2& playerPos, frameContext& ctx, entity player);
+		void update(const glm::vec2& playerVel, const glm::vec2& playerPos, RfctFrameContext& ctx, entity player);
 		void changeAnimation(frameAnimation* newAnim);
 		void drawPlayer(vk::CommandBuffer& cmdBffr);
 	private:

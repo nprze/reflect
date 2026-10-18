@@ -1,16 +1,15 @@
 #pragma once
 
 namespace rfct {
-    class windowAbstact {
+    class RfctWindowAbstact {
     public:
-        virtual void create(const char* title, bool maximized = true, int width = 0, int height = 0) = 0;
-        virtual void destroy() = 0;
-        virtual void show() = 0;
-        virtual void hide() = 0;
-		virtual vk::Extent2D getExtent() = 0;
-        virtual void setExtent(vk::Extent2D ext) = 0;
-		virtual vk::SurfaceKHR createSurface(vk::Instance instance) = 0;
-        virtual bool pollAndParseEvents() = 0;
-
+        virtual vk::Extent2D GetExtent() = 0;
+        virtual void SetExtent(vk::Extent2D ext) = 0;
+        virtual void Create(const char* title, bool maximized = true, int width = 0, int height = 0) = 0;
+        virtual void Destroy() = 0;
+        virtual void Show() = 0;
+        virtual void Hide() = 0;
+		virtual vk::SurfaceKHR CreateSurface(vk::Instance instance) = 0;
+        virtual bool PollAndParseEvents() = 0;
     };
 }

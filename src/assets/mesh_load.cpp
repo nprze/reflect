@@ -32,7 +32,7 @@ void rfct::uploadVertices(const std::vector<Vertex>& vertices, VulkanBuffer* buf
     VmaAllocation stagingBufferAllocation;
 
     if (vmaCreateBuffer(
-        renderer::getRen().getAllocator(),
+        GetRen().GetAllocator(),
         &stagingBufferInfo,
         &stagingAllocInfo,
         &stagingBuffer,
@@ -43,22 +43,22 @@ void rfct::uploadVertices(const std::vector<Vertex>& vertices, VulkanBuffer* buf
     }
 
     void* data;
-    vmaMapMemory(renderer::getRen().getAllocator(), stagingBufferAllocation, &data);
+    vmaMapMemory(GetRen().GetAllocator(), stagingBufferAllocation, &data);
     memcpy(data, vertices.data(), (size_t)bufferSize);
-    vmaUnmapMemory(renderer::getRen().getAllocator(), stagingBufferAllocation);
+    vmaUnmapMemory(GetRen().GetAllocator(), stagingBufferAllocation);
 
     vk::CommandBufferAllocateInfo allocInfo;
-    allocInfo.commandPool = getAssetsCommandPool();
+    allocInfo.commandPool = GetAssetsCommandPool(GetRen().GetDeviceWrapper());
     allocInfo.level = vk::CommandBufferLevel::ePrimary;
     allocInfo.commandBufferCount = 1;
 
     vk::CommandBuffer commandBuffer;
-    RFCT_VULKAN_CHECK(renderer::getRen().getDevice().allocateCommandBuffers(&allocInfo, &commandBuffer));
+    RFCT_VULKAN_CHECK(GetRen().GetDevice().allocateCommandBuffers(&allocInfo, &commandBuffer));
 
     vk::CommandBufferBeginInfo beginInfo;
     beginInfo.flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit;
 
-    commandBuffer.begin(beginInfo);
+    RFCT_VULKAN_CHECK(commandBuffer.begin(beginInfo));
 
     vk::BufferCopy copyRegion;
     copyRegion.srcOffset = 0;
@@ -70,23 +70,23 @@ void rfct::uploadVertices(const std::vector<Vertex>& vertices, VulkanBuffer* buf
         buffer->buffer,
         copyRegion);
 
-    commandBuffer.end();
+    RFCT_VULKAN_CHECK(commandBuffer.end());
 
     vk::SubmitInfo submitInfo;
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &commandBuffer;
 
-    renderer::getRen().getDeviceWrapper().getQueueManager().getPresentQueue().submit(submitInfo);
-    renderer::getRen().getDeviceWrapper().getQueueManager().getPresentQueue().waitIdle();
+    RFCT_VULKAN_CHECK(GetRen().GetQueue().GetPresentQueue().submit(submitInfo));
+    RFCT_VULKAN_CHECK(GetRen().GetQueue().GetPresentQueue().waitIdle());
 
-    vmaDestroyBuffer(renderer::getRen().getAllocator(), stagingBuffer, stagingBufferAllocation);
-    renderer::getRen().getDevice().freeCommandBuffers(getAssetsCommandPool(), commandBuffer);
+    vmaDestroyBuffer(GetRen().GetAllocator(), stagingBuffer, stagingBufferAllocation);
+    GetRen().GetDevice().freeCommandBuffers(GetAssetsCommandPool(GetRen().GetDeviceWrapper()), commandBuffer);
 }
 
 void rfct::loadBuildingBlockMesh(const std::string& path, std::vector<Vertex>* meshOut, const glm::vec3& color, const glm::vec2& size) {
     RFCT_PROFILE_FUNCTION();
     std::ifstream file;
-    if (!openAssetFile(path, &file))
+    if (!OpenAssetFile(path, &file))
         RFCT_CRITICAL("Failed to open mesh file: {}", path);
 
     std::vector<glm::vec2> coords;
@@ -148,7 +148,7 @@ void rfct::loadBuildingBlockMesh(const std::string& path, std::vector<Vertex>* m
 void rfct::loadBackgroundMesh(const std::string& path, std::vector<Vertex>* vertxBufferOut, const glm::vec3& color, const float zMin, const float zMax) {
     RFCT_PROFILE_FUNCTION();
     std::ifstream file;
-    if (!openAssetFile(path, &file)) 
+    if (!OpenAssetFile(path, &file)) 
     {
         RFCT_CRITICAL("Failed to open mesh file: {}", path);
     }
@@ -190,7 +190,7 @@ void rfct::loadBackgroundMesh(const std::string& path, std::vector<Vertex>* vert
 void rfct::loadCharacterMesh(const std::string& path, std::vector<Vertex>* meshOut, uint32_t matrixIndexInSSBO) {
     RFCT_PROFILE_FUNCTION();
     std::ifstream file;
-    if (!openAssetFile(path, &file)) {
+    if (!OpenAssetFile(path, &file)) {
         RFCT_CRITICAL("Failed to open mesh file: {}", path);
     }
 
@@ -237,7 +237,7 @@ void rfct::loadAnimation(const std::string& path, frameAnimation* animOut, anima
     RFCT_PROFILE_FUNCTION();
     std::ifstream file;
 
-    if (!openAssetFile(path, &file)) {
+    if (!OpenAssetFile(path, &file)) {
         RFCT_CRITICAL("Failed to open frameAnimation file: {}", path);
     }
     std::string line = "";
@@ -281,7 +281,7 @@ void rfct::loadAnimation(const std::string& path, frameAnimation* animOut, anima
     std::vector<Vertex> vertices;
     vertices.reserve(allTrianglesCount * 3);
 
-    std::string finalPath = getAssetsPath() + "/" + path;
+    std::string finalPath = GetAssetsPath() + "/" + path;
     size_t slashPos = finalPath.find_last_of("/\\");
     std::string folderPath;
 

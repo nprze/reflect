@@ -1,12 +1,13 @@
 #pragma once
 
 namespace rfct {
+	class RfctDevice;
 	// assets dir path (varies by platform)
-	void setAssetsPath(const std::string& path);
-	std::string& getAssetsPath();
+	std::string& GetAssetsPath();
+	void SetAssetsPath(const std::string& path);
 	// general uses
-	bool openAssetFile(const std::string& path, std::ifstream* streamOut, std::ios_base::openmode openMode = std::ios::in); // returns true if file is open.
+	bool OpenAssetFile(const std::string& path, std::ifstream* streamOut, std::ios_base::openmode openMode = std::ios::in); // returns true if file is open.
 	// command pool uses
-	vk::CommandPool& getAssetsCommandPool();
-	void cleanupAssetsCommandPool();
+	vk::CommandPool& GetAssetsCommandPool(RfctDevice& deviceWrapper);
+	void CleanupAssetsCommandPool(vk::Device device);
 }

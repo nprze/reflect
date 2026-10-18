@@ -29,12 +29,12 @@ namespace rfct {
 
 	void input::init() {
 		RFCT_PROFILE_FUNCTION();
-		windowExtent = &(renderer::getRen().getWindow().extent);
-		window = renderer::getRen().getWindow().GetHandle();
+		windowExtent = &(GetRen().GetWindow().m_extent);
+		window = GetRen().GetWindow().GetHandle();
 		glfwSetKeyCallback(window, key_callback);
 	}
 
-	void input::pollAndParseEvents(frameContext* context) {
+	void input::pollAndParseEvents(RfctFrameContext* context) {
 		RFCT_PROFILE_FUNCTION();
 		// reset
 		hold = false;
@@ -66,7 +66,7 @@ namespace rfct {
 		if (glfwGetKey(window, keyBindings::menu)) {
 			openClosePauseMenu = true;
 		}
-		switch (context->state)
+		switch (context->currentGameState)
 		{
 		case gameState::gameplay:
 		{

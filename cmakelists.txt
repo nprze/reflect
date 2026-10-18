@@ -102,6 +102,7 @@ target_include_directories(reflect PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/deps
         ${CMAKE_CURRENT_SOURCE_DIR}/platform
 )
+target_compile_definitions(reflect PRIVATE VULKAN_HPP_NO_EXCEPTIONS)
 
 # Settings specific configurations
 
@@ -128,17 +129,15 @@ endif()
 
 # Dependencies setup
 
-if(PLATFORM_WINDOWS)
-    # Vulkan
-    find_package(Vulkan REQUIRED)
-    include_directories(${Vulkan_INCLUDE_DIRS})
-    link_directories(${Vulkan_LIBRARY_DIRS})
-    target_link_libraries(reflect PUBLIC Vulkan::Vulkan)
-    # glfw
-    add_subdirectory(deps/glfw)
-    target_include_directories(reflect PUBLIC deps/glfw/include)
-    target_link_libraries(reflect PUBLIC glfw)
-endif()
+# Vulkan
+find_package(Vulkan REQUIRED)
+include_directories(${Vulkan_INCLUDE_DIRS})
+link_directories(${Vulkan_LIBRARY_DIRS})
+target_link_libraries(reflect PUBLIC Vulkan::Vulkan)
+# glfw
+add_subdirectory(deps/glfw)
+target_include_directories(reflect PUBLIC deps/glfw/include)
+target_link_libraries(reflect PUBLIC glfw)
 
 if(PLATFORM_ANDROID)
     target_include_directories(reflect PRIVATE deps/Vulkan-Headers/include)

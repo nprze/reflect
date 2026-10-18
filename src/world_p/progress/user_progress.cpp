@@ -22,7 +22,7 @@ rfct::userSettings& rfct::userSettings::get() { return instance; }
 
 void rfct::userSettings::loadUserSettings() {
     RFCT_PROFILE_FUNCTION();
-    std::string finalPath = getAssetsPath() + "/player_progress/settings.txt";
+    std::string finalPath = GetAssetsPath() + "/player_progress/settings.txt";
     std::ifstream file(finalPath);
 
     if (!file.is_open()) {
@@ -46,7 +46,7 @@ void rfct::userSettings::loadUserSettings() {
 
 void rfct::userSettings::dumpUserSettings() {
     RFCT_PROFILE_FUNCTION();
-    std::string finalPath = getAssetsPath() + "/player_progress/settings.txt";
+    std::string finalPath = GetAssetsPath() + "/player_progress/settings.txt";
     std::ofstream file(finalPath, std::ios::out | std::ios::trunc);
     if (!file) {
 		RFCT_CRITICAL("Failed to open user settings file for writing: {}", finalPath);

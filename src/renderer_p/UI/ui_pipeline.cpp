@@ -1,33 +1,35 @@
 #include "ui_pipeline.h"
 #include "renderer_p/renderer.h"
+#include "renderer_p/components/renderer_components.h"
+#include "assets/asset_manager.h"
+#include "renderer_p/frame_graph/fg_resources.h"
 
-
-rfct::UIPipelines::UIPipelines(vk::RenderPass renderPass)
-    : m_vertexMostShader("shaders/UI/UIeverything_vert.spv"), 
-    m_fragMostShader("shaders/UI/UIeverything_frag.spv"), 
-    m_vertexImageShader("shaders/UI/UIimage_vert.spv"),
-    m_fragImageShader("shaders/UI/UIimage_frag.spv"),
+rfct::UIPipelines::UIPipelines(vk::RenderPass renderPass, vk::Device device)
+    : m_vertexMostShader(GetAssetManager().GetOrLoadShader(device, "shaders/UI/UIeverything_vert.spv")), 
+    m_fragMostShader(GetAssetManager().GetOrLoadShader(device, "shaders/UI/UIeverything_frag.spv")), 
+    m_vertexImageShader(GetAssetManager().GetOrLoadShader(device, "shaders/UI/UIimage_vert.spv")),
+    m_fragImageShader(GetAssetManager().GetOrLoadShader(device, "shaders/UI/UIimage_frag.spv")),
     m_imageVertexBuffer(6 * RFCT_MAX_BUTTON_COUNT * sizeof(GlyphVertex)),
     m_UIVertexBuffer(RFCT_MAX_UI_CHARS * 6 * sizeof(GlyphVertex)),
     m_debugDrawUIVertexBuffer(RFCT_DEBUG_DRAW_VERTEX_BUFFER_MAX_SIZE),
     m_defaultFont("fonts/3MTrislan.txt"),
     m_dummyImage(""),
 	m_emptyImage("UI/empty.png") {
-    createPipeline(renderPass);
-    createDescriptorSet();
+    createPipeline(renderPass, device);
+    createDescriptorSet(device);
 }
 
-void rfct::UIPipelines::createPipeline(vk::RenderPass renderPass)  {
+void rfct::UIPipelines::createPipeline(vk::RenderPass renderPass, vk::Device device)  {
 	RFCT_PROFILE_FUNCTION();
     // Shaders
     vk::PipelineShaderStageCreateInfo vertShaderStageInfo = {};
     vertShaderStageInfo.stage = vk::ShaderStageFlagBits::eVertex;
-    vertShaderStageInfo.module = m_vertexMostShader.getShaderModule();
+    vertShaderStageInfo.module = m_vertexMostShader->getShaderModule();
     vertShaderStageInfo.pName = "main";
 
     vk::PipelineShaderStageCreateInfo fragShaderStageInfo = {};
     fragShaderStageInfo.stage = vk::ShaderStageFlagBits::eFragment;
-    fragShaderStageInfo.module = m_fragMostShader.getShaderModule();
+    fragShaderStageInfo.module = m_fragMostShader->getShaderModule();
     fragShaderStageInfo.pName = "main";
 
     std::vector<vk::PipelineShaderStageCreateInfo> shaderStages = { vertShaderStageInfo, fragShaderStageInfo };
@@ -94,9 +96,9 @@ void rfct::UIPipelines::createPipeline(vk::RenderPass renderPass)  {
     // Pipeline layout
     vk::PipelineLayoutCreateInfo pipelineLayoutInfo = {};
     pipelineLayoutInfo.setLayoutCount = 2;
-    vk::DescriptorSetLayout dscSetLayouts[] = { ubo::getDescriptorSetLayout(), getDescriptorSetLayout() };
+    vk::DescriptorSetLayout dscSetLayouts[] = { RfctUniformBuffer::GetUniformDescriptorSetLayout(device), getDescriptorSetLayout() };
     pipelineLayoutInfo.pSetLayouts = dscSetLayouts;
-    m_PipelineLayout = renderer::getRen().getDevice().createPipelineLayoutUnique(pipelineLayoutInfo);
+    m_PipelineLayout = device.createPipelineLayoutUnique(pipelineLayoutInfo).value;
 
 
     vk::PipelineViewportStateCreateInfo viewportState = {};
@@ -119,28 +121,28 @@ void rfct::UIPipelines::createPipeline(vk::RenderPass renderPass)  {
     pipelineInfo.renderPass = renderPass;
     pipelineInfo.subpass = 0;
 
-    m_pipeline = renderer::getRen().getDevice().createGraphicsPipelineUnique({}, pipelineInfo).value;
+    m_pipeline = device.createGraphicsPipelineUnique({}, pipelineInfo).value;
 
     // Image Pipeline (for dialogues)
     vk::PipelineShaderStageCreateInfo newvertShaderStageInfo = {};
     newvertShaderStageInfo.stage = vk::ShaderStageFlagBits::eVertex;
-    newvertShaderStageInfo.module = m_vertexImageShader.getShaderModule();
+    newvertShaderStageInfo.module = m_vertexImageShader->getShaderModule();
     newvertShaderStageInfo.pName = "main";
 
 
     vk::PipelineShaderStageCreateInfo newfragShaderStageInfo = {};
     newfragShaderStageInfo.stage = vk::ShaderStageFlagBits::eFragment;
-    newfragShaderStageInfo.module = m_fragImageShader.getShaderModule();
+    newfragShaderStageInfo.module = m_fragImageShader->getShaderModule();
     newfragShaderStageInfo.pName = "main";
 
     std::vector<vk::PipelineShaderStageCreateInfo> newshaderStages = { newvertShaderStageInfo, newfragShaderStageInfo };
 
     pipelineInfo.pStages = newshaderStages.data();
 
-    m_imagePipeline = renderer::getRen().getDevice().createGraphicsPipelineUnique({}, pipelineInfo).value;
+    m_imagePipeline = device.createGraphicsPipelineUnique({}, pipelineInfo).value;
 }
 
-void rfct::UIPipelines::createDescriptorSet() {
+void rfct::UIPipelines::createDescriptorSet(vk::Device device) {
     RFCT_PROFILE_FUNCTION();
     vk::DescriptorPoolSize poolSize(
         vk::DescriptorType::eCombinedImageSampler,
@@ -154,7 +156,7 @@ void rfct::UIPipelines::createDescriptorSet() {
         &poolSize
     );
 
-    m_DescriptorPool = renderer::getRen().getDevice().createDescriptorPoolUnique(poolCreateInfo);
+    m_DescriptorPool = device.createDescriptorPoolUnique(poolCreateInfo).value;
 
     vk::DescriptorSetLayout dsLayout = getDescriptorSetLayout();
 
@@ -164,25 +166,26 @@ void rfct::UIPipelines::createDescriptorSet() {
         &dsLayout
     );
 
-    m_DescriptorSet = std::move(renderer::getRen().getDevice().allocateDescriptorSetsUnique(allocInfo)[0]);
+    m_DescriptorSet = std::move(device.allocateDescriptorSetsUnique(allocInfo).value[0]);
 	m_textureIndexMap.reserve(RFCT_UI_TEXTURE_BINDINGS);
 }
 
-void rfct::UIPipelines::draw(frameData& fd, vk::Framebuffer framebuffer, vk::RenderPass renderPass) {
+void rfct::UIPipelines::draw(const RfctFrameContext& ctx, RfctSwapChain& swapChain, frameSyncDataTemp& fd, vk::Framebuffer framebuffer, vk::RenderPass renderPass) {
     RFCT_PROFILE_FUNCTION();
     if (m_UIVertexBuffer.vertexCount == 0 && m_debugDrawUIVertexBuffer.vertexCount == 0) return;
+    RfctFrameGraphPerFrameResources& currentFrameFGOwnedResources = ctx.frameGraph->GetResources().GetFrameResources(ctx.frameInFlightIndex);
 
     vk::CommandBuffer commandBuffer = fd.m_uiCommandBuffer.get();
 
     commandBuffer.reset({});
     vk::CommandBufferBeginInfo beginInfo = {};
-    commandBuffer.begin(beginInfo);
+    RFCT_VULKAN_CHECK(commandBuffer.begin(beginInfo));
 
     vk::RenderPassBeginInfo renderPassInfo = {};
     renderPassInfo.renderPass = renderPass;
     renderPassInfo.framebuffer = framebuffer;
     renderPassInfo.renderArea.offset = vk::Offset2D{ 0, 0 };
-    renderPassInfo.renderArea.extent = rfct::renderer::getRen().getRenderImagesManager().getSwapChain().getExtent();
+    renderPassInfo.renderArea.extent = swapChain.GetExtent();
     renderPassInfo.clearValueCount = 0;
     renderPassInfo.pClearValues = VK_NULL_HANDLE;
 
@@ -191,20 +194,20 @@ void rfct::UIPipelines::draw(frameData& fd, vk::Framebuffer framebuffer, vk::Ren
     vk::Viewport viewport = {};
     viewport.x = 0.0f;
     viewport.y = 0.0f;
-    viewport.width = static_cast<float>(rfct::renderer::getRen().getRenderImagesManager().getSwapChain().getExtent().width);
-    viewport.height = static_cast<float>(rfct::renderer::getRen().getRenderImagesManager().getSwapChain().getExtent().height);
+    viewport.width = static_cast<float>(swapChain.GetExtent().width);
+    viewport.height = static_cast<float>(swapChain.GetExtent().height);
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
     commandBuffer.setViewport(0, viewport);
 
     vk::Rect2D scissor = {};
     scissor.offset = vk::Offset2D{ 0, 0 };
-    scissor.extent = rfct::renderer::getRen().getRenderImagesManager().getSwapChain().getExtent();
+    scissor.extent = swapChain.GetExtent();
     commandBuffer.setScissor(0, scissor);
 
 
     // Descriptors
-    vk::DescriptorSet descSets[] = { fd.getUICameraUboDescSet(), m_DescriptorSet.get() };
+    vk::DescriptorSet descSets[] = { currentFrameFGOwnedResources.GetUIUniformBuffer().GetCameraDescSet(), m_DescriptorSet.get()};
     commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_PipelineLayout.get(), 0, descSets, {});
     
     if (m_imageVertexBuffer.vertexCount != 0) {
@@ -235,7 +238,7 @@ void rfct::UIPipelines::draw(frameData& fd, vk::Framebuffer framebuffer, vk::Ren
 
     commandBuffer.endRenderPass();
 
-    commandBuffer.end();
+    RFCT_VULKAN_CHECK(commandBuffer.end());
     m_imageVertexBuffer.postFrame();
     m_UIVertexBuffer.postFrame();
     m_debugDrawUIVertexBuffer.postFrame();
@@ -245,11 +248,11 @@ float rfct::UIPipelines::debugText(const std::string& text, glm::vec2 startPosit
     return addTextVertices(&m_debugDrawUIVertexBuffer, text, startPosition, scale);
 }
 
-void rfct::UIPipelines::beginAddingTriangles() {
+void rfct::UIPipelines::beginAddingTriangles(RfctSwapChain& swapChain) {
     m_BufferMappedMemory = (char*)m_UIVertexBuffer.buffer.Map();
 
-    widthFactor = static_cast<float>(rfct::renderer::getRen().getRenderImagesManager().getSwapChain().getExtent().width);
-    heightFactor = static_cast<float>(rfct::renderer::getRen().getRenderImagesManager().getSwapChain().getExtent().height);
+    widthFactor = static_cast<float>(swapChain.GetExtent().width);
+    heightFactor = static_cast<float>(swapChain.GetExtent().height);
 }
 
 void rfct::UIPipelines::addTriangleNormalized(const glm::vec2& vec0, const glm::vec2& vec1, const glm::vec2& vec2, const glm::vec3& color, opacity op) {
@@ -356,7 +359,7 @@ int rfct::UIPipelines::getTextureIndex(bindableImage* image, imageUsage usage) {
     writeDescriptorSet.descriptorCount = RFCT_UI_TEXTURE_BINDINGS;
     writeDescriptorSet.pImageInfo = imageInfo;
     
-    renderer::getRen().getDevice().updateDescriptorSets({ writeDescriptorSet }, nullptr);
+   GetRen().GetDevice().updateDescriptorSets({writeDescriptorSet}, nullptr);
 
     return indexInShader;
 }
@@ -425,10 +428,10 @@ void rfct::UIPipelines::removeImage(bindableImage* image) {
     }
 }
 
-float rfct::UIPipelines::addTextVertices(UIVertexBuffer* rd, const std::string& text, glm::vec2 position, float scale, const glm::vec3& color, font* f) {
+float rfct::UIPipelines::addTextVertices(UIVertexBuffer* rd, const std::string& text, glm::vec2 position, float scale, const glm::vec3& color, RfctFont* f) {
     RFCT_PROFILE_FUNCTION();
     if (!f) f = &m_defaultFont;
-    vk::Extent2D windowExtent = renderer::getRen().getWindow().getExtent();
+    vk::Extent2D windowExtent = GetRen().GetWindow().GetExtent();
     
 	int textureIndexInShader = getTextureIndex(&f->m_TextureAtlas, imageUsage::fontAtlas);
 
@@ -437,7 +440,7 @@ float rfct::UIPipelines::addTextVertices(UIVertexBuffer* rd, const std::string& 
     std::vector<GlyphVertex> vertices;
 
     for (char c : text) {
-        const glyph* g = f->getGlyph(c);
+        const RfctFontGlyph* g = f->getGlyph(c);
 
         float y0 = cursorY + g->yoffset * scale;
         float y1 = y0 + g->height * scale;
@@ -474,7 +477,7 @@ float rfct::UIPipelines::addTextVertices(UIVertexBuffer* rd, const std::string& 
     return cursorX;
 }
 
-float rfct::UIPipelines::addTextVerticesHeight(const std::string& text, glm::vec2 position, float height, const glm::vec3& color, font* f) {
+float rfct::UIPipelines::addTextVerticesHeight(const std::string& text, glm::vec2 position, float height, const glm::vec3& color, RfctFont* f) {
     RFCT_PROFILE_FUNCTION();
     if (!f) f = &m_defaultFont;
     float scale = f->fontScale * height ;
@@ -495,7 +498,7 @@ vk::DescriptorSetLayout rfct::UIPipelines::getDescriptorSetLayout() {
     layoutCreateInfo.bindingCount = 1;
     layoutCreateInfo.pBindings = &layoutBinding;
 
-    m_descriptorSetLayout = renderer::getRen().getDevice().createDescriptorSetLayoutUnique(layoutCreateInfo);
+    m_descriptorSetLayout = GetRen().GetDevice().createDescriptorSetLayoutUnique(layoutCreateInfo).value;
 
     return m_descriptorSetLayout.get();
 

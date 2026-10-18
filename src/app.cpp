@@ -12,7 +12,7 @@
 bool rfct::reflectApplication::isAppMinimised;
 
 rfct::reflectApplication::reflectApplication(RFCT_APP_ARGS)
-    : m_Renderer(RFCT_RENDERER_ARGUMENTS_VAR) {
+    : m_renderer(RFCT_RENDERER_ARGUMENTS_VAR) {
     {
         RFCT_PROFILE_SCOPE("app init");
 	    input::getInput().init();
@@ -24,19 +24,19 @@ rfct::reflectApplication::reflectApplication(RFCT_APP_ARGS)
     }
 #ifdef WINDOWS_BUILD
     update();
-	renderer::getRen().getWindow().show();
-	while (renderer::getRen().getWindow().pollAndParseEvents())
+	GetRen().GetWindow().Show();
+	while (GetRen().GetWindow().PollAndParseEvents())
         update();
 #endif
 }
 
 rfct::reflectApplication::~reflectApplication() {
-    renderer::getRen().getDevice().waitIdle();
+    RFCT_VULKAN_CHECK(GetRen().GetDevice().waitIdle());
     cleanGameSystems();
 }
 
 void rfct::reflectApplication::updateWindow(RFCT_APP_ARGS) {
-    m_Renderer.updateWindow(RFCT_NATIVE_WINDOW_ANDROID_VAR);
+    m_renderer.UpdateWindow(RFCT_NATIVE_WINDOW_ANDROID_VAR);
 };
 
 void rfct::reflectApplication::update() {
@@ -53,12 +53,15 @@ void rfct::reflectApplication::update() {
 	globalTime += deltaTime.count();
 
     currentFrame = (currentFrame + 1) % RFCT_FRAMES_IN_FLIGHT;
-    frameContext context = {
+    RfctFrameContext context = {
         .dt = deltaTime.count(),
-		.globalTime = globalTime,
-        .frame = currentFrame,
+        .globalTime = globalTime,
         .scene = &world::getWorld().getCurrentScene(),
-        .state = getState()
+        .currentGameState = getState(),
+        .frameInFlightIndex = currentFrame,
+        .frameGraph = &m_renderer.GetFrameGraph(),
+		.fgResources = m_renderer.GetFrameGraph().GetResources(),
+        .currentFrameResources = m_renderer.GetFrameGraph().GetFrameResources(currentFrame)
     };
 
     static float accumulator = 0.f;
@@ -73,7 +76,7 @@ void rfct::reflectApplication::update() {
 
         jobSystem::get().KickJob([&]() {
                 RFCT_PROFILE_SCOPE("ui draw");
-                drawUI(&context);
+                drawUI(context, GetRen().GetSwapChain());
 			}, context.wholeUpdateTracker);
 #ifdef ANDROID_BUILD
         jobSystem::get().KickJob([&]() {
@@ -87,7 +90,7 @@ void rfct::reflectApplication::update() {
             }, context.wholeUpdateTracker);
         context.wholeUpdateTracker.waitAll();
 
-        renderer::getRen().render(context);
+        GetRen().Render(context);
 
 		// check scene switch
         if (world::getWorld().switchingScenes) {
@@ -96,10 +99,10 @@ void rfct::reflectApplication::update() {
 		}
     }
 
-    updateLastState(context.state);
+    updateLastState(context.currentGameState);
 }
 
-void rfct::reflectApplication::fixedUpdate(frameContext& ctx, uint64_t times) {
+void rfct::reflectApplication::fixedUpdate(RfctFrameContext& ctx, uint64_t times) {
     RFCT_PROFILE_FUNCTION();
     world::getWorld().worldFixedUpdate(ctx, times);
 }

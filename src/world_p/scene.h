@@ -11,9 +11,9 @@ namespace rfct {
 	class scene {
 	public:
 		scene(world* worldArg);
-		void onUpdate(frameContext* context);
-		void FixedUpdate(frameContext* context);
-		void postFixedUpdate(frameContext* context);
+		void onUpdate(RfctFrameContext* context);
+		void FixedUpdate(RfctFrameContext* context);
+		void postFixedUpdate(RfctFrameContext* context);
 		void initScene(const std::string& path);
 		renderData& getRenderData();
 		// all static entities can only be created during loadScene() and their render data should not change (that includes position, color, size etc.)
@@ -26,11 +26,11 @@ namespace rfct {
 		entity createDynamicRect(dynamicBoxColliderComponent* bounds, glm::vec3 color = glm::vec3(1.f, 1.f, 1.f));
 		entity createDynamicMesh(dynamicBoxColliderComponent* bounds, const std::string& path);
 		entity createDynamicRenderingEntity(std::vector<Vertex>* vertices, glm::mat4* model, uint32_t numVertices = 0);
-		void updateTransformData(const frameContext* ctx, entity entityToUpdate); // entity must contain positionComponent, rotationComponent and scaleComponent
+		void updateTransformData(const RfctFrameContext* ctx, entity entityToUpdate); // entity must contain positionComponent, rotationComponent and scaleComponent
 		void updateDirection(bool facingRight);
 		bool isPlayerOutsideScene();
 		glm::vec2 getPlayerCoordsSceneNormalized(); // get the coordinates of where the current player is. at the left top edge (0,0) at the bottom right (1,1)
-		void resetScene(frameContext* ctx);
+		void resetScene(RfctFrameContext* ctx);
 
 		entity getPlayer() { return playerEntity; }
 		objectSystems& getObjectHolder() { return objectSystems::get(); }

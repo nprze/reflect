@@ -30,14 +30,14 @@ void rfct::dialogue::fullLoad() {
 	displayPart.reserve(10);
 }
 
-void rfct::dialogue::visualUpdate(const frameContext* ctx) {
+void rfct::dialogue::visualUpdate(const RfctFrameContext* ctx) {
 	RFCT_PROFILE_FUNCTION();
 	updateBackground(ctx);
 	updateText(ctx);
 	updateImage(ctx);
 }
 
-bool rfct::dialogue::update(const frameContext* ctx) {
+bool rfct::dialogue::update(const RfctFrameContext* ctx) {
 	RFCT_PROFILE_FUNCTION();
  	if (!loaded) return false;
 	timeTillChangeOfIndexIsPossible -= ctx->dt;
@@ -111,12 +111,12 @@ void rfct::dialogue::getDialogueData() {
 	}
 }
 
-void rfct::dialogue::updateText(const frameContext* ctx) {
+void rfct::dialogue::updateText(const RfctFrameContext* ctx) {
 	RFCT_PROFILE_FUNCTION();
 	if (displayPart.size() == 0) getDialogueData();
 
 	float endX = textLeftOffsetInPixel;
-	float fontHeightInPixel = renderer::getRen().getUIPipeline().getDefaultFont()->getFontHeight(defaultFontScale);
+	float fontHeightInPixel = GetRen().GetUIPipeline().getDefaultFont()->getFontHeight(defaultFontScale);
 	float textOffsetTop = bgOffsetInPixel.y + (bgSizeInPixel.y * 0.5f) - (fontHeightInPixel);
 
 	for (uint32_t i = 0; i < dialoguePartNodeIndex; i++) {
@@ -141,7 +141,7 @@ void rfct::dialogue::updateText(const frameContext* ctx) {
 	}
 }
 
-void rfct::dialogue::updateImage(const frameContext* ctx) {
+void rfct::dialogue::updateImage(const RfctFrameContext* ctx) {
 	RFCT_PROFILE_FUNCTION();
 	if (currentSpritesheet == nullptr) changeSpritesheet();
 	spritesheetCycle currentCycle = currentSpritesheet->cycles[currentCycleName];
@@ -173,11 +173,11 @@ void rfct::dialogue::updateImage(const frameContext* ctx) {
 	glm::vec2 texMin = { spriteSheetTextureCoords.y * oneOverColumnCount, spriteSheetTextureCoords.x * oneOverRowCount };
 	glm::vec2 texMax = { (spriteSheetTextureCoords.y+1) * oneOverColumnCount, (spriteSheetTextureCoords.x+1) * oneOverRowCount };
 
-	renderer::getRen().getUIPipeline().addImage(bgOffsetInPixel + glm::vec2{ portraitOffsetInPixel, portraitOffsetInPixel }, 
+	GetRen().GetUIPipeline().addImage(bgOffsetInPixel + glm::vec2{ portraitOffsetInPixel, portraitOffsetInPixel },
 		bgOffsetInPixel + glm::vec2{ portraitOffsetInPixel + portraitSizeInPixel, portraitOffsetInPixel + portraitSizeInPixel }, & (currentSpritesheet->spriteSheetImage), texMin, texMax);
 }
 
-void rfct::dialogue::updateBackground(const frameContext* ctx) {
+void rfct::dialogue::updateBackground(const RfctFrameContext* ctx) {
 	RFCT_PROFILE_FUNCTION();
 	if (currentSpritesheet == nullptr) changeSpritesheet();
 	glm::vec2 backgroundBegin = currentSpritesheet->backgroundBegin;
@@ -185,7 +185,7 @@ void rfct::dialogue::updateBackground(const frameContext* ctx) {
 
 	float backgroundAspectRatio = (backgroundEnd.y + 1 - backgroundBegin.y) / (backgroundEnd.x + 1 - backgroundBegin.x); // width / height
 
-	vk::Extent2D winExt = renderer::getRen().getExtent();
+	vk::Extent2D winExt = GetRen().GetExtent();
 
 	bgSizeInPixel = { winExt.width * 0.7f, winExt.width * 0.7f / backgroundAspectRatio };
 	bgOffsetInPixel = { winExt.width * 0.15f, winExt.height * 0.15f };
@@ -201,7 +201,7 @@ void rfct::dialogue::updateBackground(const frameContext* ctx) {
 	glm::vec2 texMin = { backgroundBegin.y * oneOverColumnCount, backgroundBegin.x * oneOverRowCount };
 	glm::vec2 texMax = { (backgroundEnd.y + 1) * oneOverColumnCount, (backgroundEnd.x + 1) * oneOverRowCount };
 
-	renderer::getRen().getUIPipeline().addImage(bgOffsetInPixel, { bgOffsetInPixel.x + bgSizeInPixel.x, bgOffsetInPixel.y + bgSizeInPixel.y }, &(currentSpritesheet->spriteSheetImage), texMin, texMax);
+	GetRen().GetUIPipeline().addImage(bgOffsetInPixel, { bgOffsetInPixel.x + bgSizeInPixel.x, bgOffsetInPixel.y + bgSizeInPixel.y }, &(currentSpritesheet->spriteSheetImage), texMin, texMax);
 }
 
 void rfct::dialogue::changeSpritesheet() {
@@ -252,5 +252,5 @@ rfct::characterSpritesheet::characterSpritesheet(const std::string& characterNam
 }
 
 rfct::characterSpritesheet::~characterSpritesheet() {
-	if (drawn) renderer::getRen().getUIPipeline().removeImage(&spriteSheetImage);
+	if (drawn) GetRen().GetUIPipeline().removeImage(&spriteSheetImage);
 }

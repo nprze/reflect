@@ -6,11 +6,11 @@
 void rfct::loadDialogue(const std::string& path, dialogueSerializeData* dialogueSerializedDataOut) {
     RFCT_PROFILE_FUNCTION();
     std::ifstream file;
-    if (!openAssetFile(path, &file)) {
+    if (!OpenAssetFile(path, &file)) {
         RFCT_CRITICAL("Could not open file:  {}", path);
     }
     enum class ParseState { None, Participants, DialogueText };
-    ParseState state = ParseState::None;
+    ParseState currentGameState = ParseState::None;
 
     std::string line;
     dialogueParticipantSerializeData currentParticipant;
@@ -36,7 +36,7 @@ void rfct::loadDialogue(const std::string& path, dialogueSerializeData* dialogue
         }
 
         if (line == "Participants:") {
-            state = ParseState::Participants;
+            currentGameState = ParseState::Participants;
             continue;
         }
         if (line == "DialogueText:") {
@@ -44,11 +44,11 @@ void rfct::loadDialogue(const std::string& path, dialogueSerializeData* dialogue
                 dialogueSerializedDataOut->participants.push_back(currentParticipant);
                 currentParticipant = {};
             }
-            state = ParseState::DialogueText;
+            currentGameState = ParseState::DialogueText;
             continue;
         }
 
-        if (state == ParseState::Participants) {
+        if (currentGameState == ParseState::Participants) {
             if (line.back() == ':') {
                 // New participant
                 if (!currentParticipant.name.empty()) {
@@ -63,7 +63,7 @@ void rfct::loadDialogue(const std::string& path, dialogueSerializeData* dialogue
                 currentParticipant.spritesFilenames.push_back(line);
             }
         }
-        else if (state == ParseState::DialogueText) {
+        else if (currentGameState == ParseState::DialogueText) {
             // Format: {participant data}dialogue text
             auto openBrace = line.find('{');
             auto closeBrace = line.find('}');
@@ -91,7 +91,7 @@ void rfct::loadDialogue(const std::string& path, dialogueSerializeData* dialogue
 void rfct::loadDialogueSpriteSheet(const std::string& path, dialogueSpritesheetSerializeData* dialogueSpritesheetSerializedDataOut) {
     RFCT_PROFILE_FUNCTION();
     std::ifstream file;
-    if (!openAssetFile(path, &file)) {
+    if (!OpenAssetFile(path, &file)) {
         RFCT_CRITICAL("Could not open file:  {}", path);
     }
 

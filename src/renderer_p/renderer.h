@@ -1,68 +1,47 @@
 #pragma once
 #include "platform_window.h"
-#include "device/vulkan_instance.h"
-#include "device/vulkan_device.h"
-#include "renderer_p/frame/frame_resource_manager.h"
-#include "renderer_p/frame/render_target_manager.h"
+#include "components/renderer_components.h"
 #include "renderer_p/debug/debug_draw.h"
-#include "renderer_p/rasterizer_pipeline/vulkan_rasterizer_pipeline.h"
 #include "renderer_p/UI/ui_pipeline.h"
-#include "renderer_p/post_process/bloom.h"
+#include "renderer_p/components/graphics_pass.h"
+#include "renderer_p/frame_graph/frame_graph.h"
 
 namespace rfct {
-	constexpr vk::SampleCountFlagBits msaaSamples = vk::SampleCountFlagBits::e4;
-	// surface works a little differently on android
-	struct SurfaceWrapper { 
-		vk::SurfaceKHR surface;
-        SurfaceWrapper(vk::SurfaceKHR surfaceArg);
-        void newSurface(vk::SurfaceKHR surfaceArg);
-		~SurfaceWrapper();
-	};
-	// vma is static on windows, dynamic on android (requires different setups).
-	struct allocator {
-		VmaAllocator m_allocator;
-		allocator();
-		~allocator();
-	};
-	class renderer {
+	class RfctRenderer {
 	public:
-		static renderer& getRen();
+		vk::Device& GetDevice() { return m_device.GetDevice(); }
+		RfctDevice& GetDeviceWrapper() { return m_device; }
+		vk::Instance& GetInstance() { return m_instance.GetInstance(); }
+		RFCT_PLATFORM_WINDOW& GetWindow() { return m_window; }
+		RfctVulkanInstance& GetInstanceWrapper() { return m_instance; }
+		VmaAllocator& GetAllocator() { return m_allocator.GetAllocator(); }
+		RfctSwapChain& GetSwapChain() { return m_swapChain; }
+		RfctQueue& GetQueue() { return m_queue; }
+		vk::SurfaceKHR GetSurface() { return m_surface.GetSurface(); }
+		float GetAspectRatio() { return m_window.GetAspectRatio(); }
+		vk::Extent2D GetExtent() { return m_window.GetExtent(); }
+		UIPipelines& GetUIPipeline() { return m_UIPipeline; };
+		RfctFrameGraph& GetFrameGraph() { return m_frameGraph; }
 	public:
-        renderer(RFCT_RENDERER_ARGUMENTS);
-		~renderer();
-        void updateWindow(RFCT_NATIVE_WINDOW_ANDROID RFCT_NATIVE_WINDOW_ANDROID_VAR);
-		void render(frameContext& frameContext);
-		void setObjectName(void* objectHandle, const std::string& name, vk::ObjectType objectType);
-
-		inline vk::Device& getDevice() { return m_device.getDevice(); }
-		inline vulkanDevice& getDeviceWrapper() { return m_device; }
-		inline vk::Instance& getInstance() { return m_instance.getInstance(); }
-		inline RFCT_PLATFORM_WINDOW& getWindow() { return m_window; }
-		inline vulkanInstance& getInstanceWrapper() { return m_instance; }
-		inline renderImagesManager& getRenderImagesManager() { return m_renderImages; }
-		inline vulkanRasterizerPipeline& getRasterizerPipeline() { return m_rasterizerPipeline; }
-		inline bloomResurcesHolder& getBloomRes() { return m_bloomRes; }
-		inline VmaAllocator& getAllocator() { return m_allocator.m_allocator; }
-		inline vk::SurfaceKHR& getSurface() { return m_surface.surface; }
-		inline float getAspectRatio() { return m_window.getAspectRatio(); }
-		inline vk::Extent2D getExtent() { return m_window.getExtent(); }
-		inline UIPipelines& getUIPipeline() { return m_UIPipeline; };
+        RfctRenderer(RFCT_RENDERER_ARGUMENTS);
+		void DestroyRenderer();
+        void UpdateWindow(RFCT_NATIVE_WINDOW_ANDROID RFCT_NATIVE_WINDOW_ANDROID_VAR);
+		void Render(RfctFrameContext& frameCtx);
 	private:
-		bool m_uselessBool;
+		bool m_legacyBool = false;
         RFCT_PLATFORM_WINDOW m_window;
-		vulkanInstance m_instance;
-		SurfaceWrapper m_surface; // here for simpler access when surface holder changes (android)
-		vulkanDevice m_device;
-		allocator m_allocator;
-		renderImagesManager m_renderImages;
-		framesInFlight m_framesInFlight;
-		vulkanRasterizerPipeline m_rasterizerPipeline;
-		bloomResurcesHolder m_bloomRes;
+		RfctVulkanInstance m_instance;
+		RfctSurfaceWrapper m_surface;
+		RfctDevice m_device;
+		RfctQueue m_queue;
+		RfctVulkanMemAllocator m_allocator;
+		RfctSwapChain m_swapChain;
+		RfctFrameGraph m_frameGraph;
+		RfctPipelineManager m_pipelineManager;
+		RfctSceneGraphicsPass m_scenePass;
+		RfctBloomGraphicsPass m_bloomPass;
 		debugDraw m_debugDraw;
 		UIPipelines m_UIPipeline;
-    private:
-        friend class vulkanSwapChain;
-        friend class reflectApplication;
-		friend bool setStaticRenderer(renderer* rendererArg);
 	};
+	RfctRenderer& GetRen();
 }

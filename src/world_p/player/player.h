@@ -10,15 +10,15 @@ namespace rfct {
 		static playerController& get();
 		playerController();
 		entity createPlayer(scene* sc, const glm::vec2& spawnPoint);
-		void update(frameContext* ctx);
-		void fixedUpdate(frameContext* ctx);
-		void postFixedUpdate(frameContext* ctx);
+		void update(RfctFrameContext* ctx);
+		void fixedUpdate(RfctFrameContext* ctx);
+		void postFixedUpdate(RfctFrameContext* ctx);
 		nearestObject findObjectToHold();
 		void normalWalkUpdate();
 		void normalJumpUpdate();
 		bool checkHold(scene* scen); // returns if holding
 		void endHold(scene* sc);
-		void startDash(frameContext* ctx);
+		void startDash(RfctFrameContext* ctx);
 	public:
 		// input
 		float walkHorizontalInput;

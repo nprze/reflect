@@ -68,7 +68,7 @@ void rfct::spawnTallGrass(scene* parentScene, sceneSerializedData* sd) {
 	}
 }
 
-void rfct::updateGrass(frameContext* ctx)
+void rfct::updateGrass(RfctFrameContext* ctx)
 {
 	auto tallGrassQuery = ecs::get().view<grassComponent, positionComponent, scaleComponent, rotationComponent>();
 

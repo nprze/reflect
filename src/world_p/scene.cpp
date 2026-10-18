@@ -22,7 +22,7 @@ rfct::scene::scene(world* worldArg)
 	: m_World(worldArg) {
 }
 
-void rfct::scene::onUpdate(frameContext* context) {
+void rfct::scene::onUpdate(RfctFrameContext* context) {
 	RFCT_PROFILE_SCOPE("scene update");
 	entt::registry& reg = ecs::get();
 
@@ -56,9 +56,9 @@ void rfct::scene::onUpdate(frameContext* context) {
 	cameraComponentOnUpdate(context->dt, playerEntity, m_InitialData.width, m_InitialData.height);
 }
 
-void rfct::scene::FixedUpdate(frameContext* context) {
+void rfct::scene::FixedUpdate(RfctFrameContext* context) {
 	RFCT_PROFILE_FUNCTION();
-	if (!(context->state == gameState::gameplay || context->state == gameState::stateDialogue)) return;
+	if (!(context->currentGameState == gameState::gameplay || context->currentGameState == gameState::stateDialogue)) return;
 	if (!ecs::get().get<playerLifeComponent>(playerEntity).alive) {
 		resetScene(context);
 	}
@@ -69,7 +69,7 @@ void rfct::scene::FixedUpdate(frameContext* context) {
 	physicsStep(context);
 }
 
-void rfct::scene::postFixedUpdate(frameContext* context) {
+void rfct::scene::postFixedUpdate(RfctFrameContext* context) {
 	playerController::get().postFixedUpdate(context);
 }
 
@@ -244,7 +244,7 @@ entity rfct::scene::createDynamicRenderingEntity(std::vector<Vertex>* vertices, 
 	return e;
 }
 
-void rfct::scene::updateTransformData(const frameContext* ctx, entity e) {
+void rfct::scene::updateTransformData(const RfctFrameContext* ctx, entity e) {
 	glm::mat4 model = getModelMatrixFromEntity(e);
 	m_World->getRenderData().updateMat(ctx, ecs::get().get<dynamicSSBOIndexComponent>(e).indexInSSBO, &model);
 }
@@ -269,12 +269,12 @@ glm::vec2 rfct::scene::getPlayerCoordsSceneNormalized() {
 	return {std::clamp(pos.x, 0.f, 1.f), std::clamp(pos.y, 0.f, 1.f) };
 }
 
-void rfct::scene::resetScene(frameContext* ctx) {
+void rfct::scene::resetScene(RfctFrameContext* ctx) {
 	RFCT_PROFILE_FUNCTION();
 	ecs::get().get<playerLifeComponent>(playerEntity).alive = true;
 	playerController::get().endHold(this);
 	ecs::get().get<positionComponent>(playerEntity).position = m_InitialData.spawnPoints[0].position;
 	ecs::get().get<velocityComponent>(playerEntity).velocity = {0,0};
-	ecs::get().get<playerStateComponent>(playerEntity).state = playerState::normal;
+	ecs::get().get<playerStateComponent>(playerEntity).currentGameState = playerState::normal;
 	objectSystems::get().respawn(ctx);
 }

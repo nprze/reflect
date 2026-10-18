@@ -75,7 +75,7 @@ void rfct::initSmokeVars(scene* parentScene) {
     }
 }
 
-void rfct::spawnSmoke(frameContext* fc, const glm::vec2& position, const glm::vec2& direction, uint32_t particleCount, float lifetimeSec)
+void rfct::spawnSmoke(RfctFrameContext* fc, const glm::vec2& position, const glm::vec2& direction, uint32_t particleCount, float lifetimeSec)
 {
     for (uint32_t i = 0; i < particleCount; ++i) {
         glm::vec2 randomOffset = glm::linearRand(0.001f * direction,  0.3f * direction);
@@ -128,7 +128,7 @@ void rfct::setColors(float* is) {
     s += 3;
 }
 
-void rfct::updateSmokes(frameContext* ctx) {
+void rfct::updateSmokes(RfctFrameContext* ctx) {
 	// fixed update
     auto smokeParticlesComponentsQuery = ecs::get().view<smokeParticleComponent, smokeDisperseComponent, sinusoidFloatComponent, angularVelocityComponent, positionComponent, rotationComponent, scaleComponent, dynamicSSBOIndexComponent>();
     for (auto [smokeParticle, particleDir, disperse, smokeFloat, angVel, pos, rot, sc, ssbo] : smokeParticlesComponentsQuery.each()) {
@@ -159,7 +159,7 @@ void rfct::updateSmokes(frameContext* ctx) {
     };
 }
 
-void rfct::updateSmokeMatrices(frameContext* ctx) {
+void rfct::updateSmokeMatrices(RfctFrameContext* ctx) {
     renderData& rd = ctx->scene->getRenderData();
     auto smokeParticlesQuery = ecs::get().view<smokeDisperseComponent, dynamicSSBOIndexComponent, positionComponent, rotationComponent, scaleComponent, dynamicSSBOIndexComponent>();
     for (auto [smokeParticle, dis, ssboData, pos, rot, sc,ssbo] : smokeParticlesQuery.each()) {

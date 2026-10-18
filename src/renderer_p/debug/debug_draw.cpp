@@ -1,5 +1,7 @@
 #include "debug_draw.h"
 #include "renderer_p/renderer.h"
+#include "renderer_p/components/renderer_components.h"
+#include "assets/asset_manager.h"
 
 rfct::debugDraw* instance;
 
@@ -12,20 +14,20 @@ rfct::debugLine* rfct::debugDraw::requestLines(uint32_t count)  {
 }
 
 float rfct::debugDraw::drawText(const std::string& text, glm::vec2 startPosition, float scale)  {
-    return instance->text(text, startPosition, scale);
+    return instance->text(GetRen().GetUIPipeline(), text, startPosition, scale);
 }
 
-void rfct::debugDraw::flush(frameContext* ctx, frameData& fd, vk::Framebuffer framebuffer, vk::RenderPass renderPass) {
-    instance->draw(ctx, fd, framebuffer, renderPass);
+void rfct::debugDraw::flush(RfctFrameContext* ctx, frameSyncDataTemp& fd, vk::Framebuffer framebuffer, vk::RenderPass renderPass) {
+    instance->draw(ctx, GetRen().GetSwapChain(), fd, framebuffer, renderPass);
 }
 
-rfct::debugDraw::debugDraw(vk::RenderPass renderPass)
+rfct::debugDraw::debugDraw(vk::RenderPass renderPass, vk::Device device)
     : m_triangleBuffer(RFCT_DEBUG_DRAW_VERTEX_BUFFER_MAX_SIZE), 
     m_lineBuffer(RFCT_DEBUG_DRAW_VERTEX_BUFFER_MAX_SIZE), 
-    m_vertexShader("shaders/debug_draw/dbg_draw_vert.spv"), 
-    m_fragShader("shaders/debug_draw/dbg_draw_frag.spv") {
+    m_vertexShader(GetAssetManager().GetOrLoadShader(device, "shaders/debug_draw/dbg_draw_vert.spv")), 
+    m_fragShader(GetAssetManager().GetOrLoadShader(device, "shaders/debug_draw/dbg_draw_frag.spv")) {
 	RFCT_PROFILE_FUNCTION();
-    createDebugPipelines(renderPass);
+    createDebugPipelines(renderPass, device);
 	instance = this;
 }
 
@@ -37,17 +39,17 @@ rfct::debugDrawVertexBuffer::~debugDrawVertexBuffer() {
     buffer.Unmap();
 }
 
-void rfct::debugDraw::createDebugPipelines(vk::RenderPass renderPass) {
+void rfct::debugDraw::createDebugPipelines(vk::RenderPass renderPass, vk::Device device) {
     RFCT_PROFILE_FUNCTION();
     // Shaders
     vk::PipelineShaderStageCreateInfo vertShaderStageInfo = {};
     vertShaderStageInfo.stage = vk::ShaderStageFlagBits::eVertex;
-    vertShaderStageInfo.module = m_vertexShader.getShaderModule();
+    vertShaderStageInfo.module = m_vertexShader->getShaderModule();
     vertShaderStageInfo.pName = "main";
 
     vk::PipelineShaderStageCreateInfo fragShaderStageInfo = {};
     fragShaderStageInfo.stage = vk::ShaderStageFlagBits::eFragment;
-    fragShaderStageInfo.module = m_fragShader.getShaderModule();
+    fragShaderStageInfo.module = m_fragShader->getShaderModule();
     fragShaderStageInfo.pName = "main";
 
     std::vector<vk::PipelineShaderStageCreateInfo> shaderStages = { vertShaderStageInfo, fragShaderStageInfo };
@@ -117,9 +119,9 @@ void rfct::debugDraw::createDebugPipelines(vk::RenderPass renderPass) {
     // Pipeline layout
     vk::PipelineLayoutCreateInfo pipelineLayoutInfo = {};
     pipelineLayoutInfo.setLayoutCount = 1;
-    vk::DescriptorSetLayout dscSetLayout = ubo::getDescriptorSetLayout();
+    vk::DescriptorSetLayout dscSetLayout = RfctUniformBuffer::GetUniformDescriptorSetLayout(device);
     pipelineLayoutInfo.pSetLayouts = &dscSetLayout;
-    m_PipelineLayout = renderer::getRen().getDevice().createPipelineLayoutUnique(pipelineLayoutInfo);
+    m_PipelineLayout = device.createPipelineLayoutUnique(pipelineLayoutInfo).value;
 
 
     vk::PipelineViewportStateCreateInfo viewportState = {};
@@ -142,7 +144,7 @@ void rfct::debugDraw::createDebugPipelines(vk::RenderPass renderPass) {
     pipelineInfo.renderPass = renderPass;
     pipelineInfo.subpass = 0;
 
-    m_trianglePipeline = renderer::getRen().getDevice().createGraphicsPipelineUnique({}, pipelineInfo).value;
+    m_trianglePipeline = device.createGraphicsPipelineUnique({}, pipelineInfo).value;
 
     // Line 
     vk::PipelineInputAssemblyStateCreateInfo lineinputAssembly = {};
@@ -164,26 +166,27 @@ void rfct::debugDraw::createDebugPipelines(vk::RenderPass renderPass) {
     linePipelineInfo.renderPass = renderPass;
     linePipelineInfo.subpass = 0;
 
-    m_linePipeline = renderer::getRen().getDevice().createGraphicsPipelineUnique({}, linePipelineInfo).value;
+    m_linePipeline = device.createGraphicsPipelineUnique({}, linePipelineInfo).value;
 }
 
-void rfct::debugDraw::draw(frameContext* ctx, frameData& fd, vk::Framebuffer framebuffer, vk::RenderPass renderPass) {
+void rfct::debugDraw::draw(RfctFrameContext* ctx, RfctSwapChain& swapChain, frameSyncDataTemp& fd, vk::Framebuffer framebuffer, vk::RenderPass renderPass) {
     RFCT_PROFILE_FUNCTION();
 	if (m_triangleBuffer.vertexCount == 0 && m_lineBuffer.vertexCount == 0) {
         ctx->renderDebugDraw = false;
 		return;
 	}
+    RfctFrameGraphPerFrameResources& frameGraphOwnedCurrentFrameResources = ctx->frameGraph->GetFrameResources(ctx->frameInFlightIndex);
     ctx->renderDebugDraw = true;
     vk::CommandBuffer commandBuffer = fd.m_debugDrawCommandBuffer.get();
     commandBuffer.reset({});
     vk::CommandBufferBeginInfo beginInfo = {};
-    commandBuffer.begin(beginInfo);
+    RFCT_VULKAN_CHECK(commandBuffer.begin(beginInfo));
 
     vk::RenderPassBeginInfo renderPassInfo = {};
     renderPassInfo.renderPass = renderPass;
     renderPassInfo.framebuffer = framebuffer;
     renderPassInfo.renderArea.offset = vk::Offset2D{ 0, 0 };
-    renderPassInfo.renderArea.extent = rfct::renderer::getRen().getRenderImagesManager().getSwapChain().getExtent();
+    renderPassInfo.renderArea.extent = swapChain.GetExtent();
     renderPassInfo.clearValueCount = 0;
     renderPassInfo.pClearValues = VK_NULL_HANDLE;
 
@@ -192,21 +195,21 @@ void rfct::debugDraw::draw(frameContext* ctx, frameData& fd, vk::Framebuffer fra
     vk::Viewport viewport = {};
     viewport.x = 0.0f;
     viewport.y = 0.0f;
-    viewport.width = static_cast<float>(rfct::renderer::getRen().getRenderImagesManager().getSwapChain().getExtent().width);
-    viewport.height = static_cast<float>(rfct::renderer::getRen().getRenderImagesManager().getSwapChain().getExtent().height);
+    viewport.width = static_cast<float>(swapChain.GetExtent().width);
+    viewport.height = static_cast<float>(swapChain.GetExtent().height);
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
     commandBuffer.setViewport(0, viewport);
 
     vk::Rect2D scissor = {};
     scissor.offset = vk::Offset2D{ 0, 0 };
-    scissor.extent = rfct::renderer::getRen().getRenderImagesManager().getSwapChain().getExtent();
+    scissor.extent = swapChain.GetExtent();
     commandBuffer.setScissor(0, scissor);
 
     commandBuffer.setLineWidth(1.f);
 
     // Camera Descriptor
-    commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_PipelineLayout.get(), 0, fd.getCameraUboDescSet((uint32_t)(ctx->frame)), {});
+    commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_PipelineLayout.get(), 0, frameGraphOwnedCurrentFrameResources.GetSceneUniformBuffer().GetCameraDescSet(), {});
 
     // Debug trigs
     if(m_triangleBuffer.vertexCount!=0){
@@ -225,7 +228,7 @@ void rfct::debugDraw::draw(frameContext* ctx, frameData& fd, vk::Framebuffer fra
         commandBuffer.draw(m_lineBuffer.vertexCount, 1, 0, 0);
     }
     commandBuffer.endRenderPass();
-    commandBuffer.end();
+    RFCT_VULKAN_CHECK(commandBuffer.end());
 	m_triangleBuffer.postFrame();
 	m_lineBuffer.postFrame();
 }
@@ -248,6 +251,6 @@ rfct::debugLine* rfct::debugDraw::requestNLines(uint32_t count) {
     return (debugLine*)ret;
 }
 
-float rfct::debugDraw::text(const std::string& text, glm::vec2 startPosition, float scale) {
-    return renderer::getRen().getUIPipeline().debugText(text, startPosition, scale);
+float rfct::debugDraw::text(UIPipelines& uiPipeline, const std::string& text, glm::vec2 startPosition, float scale) {
+    return uiPipeline.debugText(text, startPosition, scale);
 }

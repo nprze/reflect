@@ -42,7 +42,7 @@ namespace rfct {
             return attributeDescriptions;
         }
     };
-	struct glyph {
+	struct RfctFontGlyph {
 		float x;
 		float y;
 		float width;
@@ -52,15 +52,15 @@ namespace rfct {
 		float xadvance;
 	};
     // font is just a texture atlas to hold the font and info on glyphs
-	class font {
+	class RfctFont {
 	public:
-        const glyph* getGlyph(char character) const;
-		font(const std::string& path); // path should point to a .txt
+        const RfctFontGlyph* getGlyph(char character) const;
+		RfctFont(const std::string& path); // path should point to a .txt
         float getTextWidth(const std::string& text, float scale);
         float getFontHeight(float scale);
     public:
 		bindableImage m_TextureAtlas;
-		std::unordered_map<char, glyph> glyphMap;
+		std::unordered_map<char, RfctFontGlyph> glyphMap;
         float fontScale;
 	};
 }

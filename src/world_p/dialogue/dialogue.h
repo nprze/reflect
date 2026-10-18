@@ -3,7 +3,7 @@
 #include "renderer_p/image/bindable_image.h"
 
 namespace rfct {
-	struct frameContext;
+	struct RfctFrameContext;
 	enum dialoguePartEffect {
 		Normal,
 		Floating
@@ -34,12 +34,12 @@ namespace rfct {
 	public:
 		dialogue(const std::string& dialoguePath);
 		void fullLoad();
-		void visualUpdate(const frameContext* ctx);
-		bool update(const frameContext* ctx); // returns true if ended
+		void visualUpdate(const RfctFrameContext* ctx);
+		bool update(const RfctFrameContext* ctx); // returns true if ended
 		void getDialogueData();
-		void updateText(const frameContext* ctx);
-		void updateImage(const frameContext* ctx);
-		void updateBackground(const frameContext* ctx);
+		void updateText(const RfctFrameContext* ctx);
+		void updateImage(const RfctFrameContext* ctx);
+		void updateBackground(const RfctFrameContext* ctx);
 		void changeSpritesheet();
 		void onChangeFrame();
 		void onChangeCycle();

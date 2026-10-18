@@ -607,19 +607,19 @@ GLFWbool _glfwPollJoystickWin32(_GLFWjoystick* js, int mode)
     {
         int i, ai = 0, bi = 0, pi = 0;
         HRESULT result;
-        DIJOYSTATE state = {0};
+        DIJOYSTATE currentGameState = {0};
 
         IDirectInputDevice8_Poll(js->win32.device);
         result = IDirectInputDevice8_GetDeviceState(js->win32.device,
-                                                    sizeof(state),
-                                                    &state);
+                                                    sizeof(currentGameState),
+                                                    &currentGameState);
         if (result == DIERR_NOTACQUIRED || result == DIERR_INPUTLOST)
         {
             IDirectInputDevice8_Acquire(js->win32.device);
             IDirectInputDevice8_Poll(js->win32.device);
             result = IDirectInputDevice8_GetDeviceState(js->win32.device,
-                                                        sizeof(state),
-                                                        &state);
+                                                        sizeof(currentGameState),
+                                                        &currentGameState);
         }
 
         if (FAILED(result))
@@ -633,7 +633,7 @@ GLFWbool _glfwPollJoystickWin32(_GLFWjoystick* js, int mode)
 
         for (i = 0;  i < js->win32.objectCount;  i++)
         {
-            const void* data = (char*) &state + js->win32.objects[i].offset;
+            const void* data = (char*) &currentGameState + js->win32.objects[i].offset;
 
             switch (js->win32.objects[i].type)
             {

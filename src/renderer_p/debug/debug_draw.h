@@ -2,9 +2,10 @@
 #include <glm/glm.hpp>
 #include "renderer_p/buffer/vulkan_buffer.h"
 #include "renderer_p/frame/frame_data.h"
-#include "renderer_p/shader/vulkan_shader.h"
 
 namespace rfct {
+	class RfctSwapChain;
+	class RfctShader;
 	struct SmallVertex {
 		glm::vec3 pos;
 		glm::vec3 color;
@@ -50,26 +51,26 @@ namespace rfct {
 		static debugTriangle* requestTriangles(uint32_t count);
 		static debugLine* requestLines(uint32_t count);
 		static float drawText(const std::string& text, glm::vec2 startPosition, float scale);
-		static void flush(frameContext* ctx, frameData& fd, vk::Framebuffer framebuffer, vk::RenderPass renderPass);
+		static void flush(RfctFrameContext* ctx, frameSyncDataTemp& fd, vk::Framebuffer framebuffer, vk::RenderPass renderPass);
 	private:
-		debugDraw(vk::RenderPass renderPass);
-		void draw(frameContext* ctx, frameData& fd, vk::Framebuffer framebuffer, vk::RenderPass renderPass);
+		debugDraw(vk::RenderPass renderPass, vk::Device device);
+		void draw(RfctFrameContext* ctx, RfctSwapChain& swapChain, frameSyncDataTemp& fd, vk::Framebuffer framebuffer, vk::RenderPass renderPass);
 		debugTriangle* requestNTriangles(uint32_t count);
 		debugLine* requestNLines(uint32_t count);
-		float text(const std::string& text, glm::vec2 startPosition, float scale);
+		float text(UIPipelines& uiPipeline, const std::string& text, glm::vec2 startPosition, float scale);
 	private:
-		void createDebugPipelines(vk::RenderPass renderPass);
+		void createDebugPipelines(vk::RenderPass renderPass, vk::Device device);
 	private:
 		debugDrawVertexBuffer m_triangleBuffer;
 		debugDrawVertexBuffer m_lineBuffer;
-		vulkanShader m_vertexShader;
-		vulkanShader m_fragShader;
+		RfctShader* m_vertexShader;
+		RfctShader* m_fragShader;
 		vk::UniquePipelineLayout m_PipelineLayout;
 		// Triangle pipeline
 		vk::UniquePipeline m_trianglePipeline;
 		// Lines pipeline
 		vk::UniquePipeline m_linePipeline;
 
-		friend class renderer;
+		friend class RfctRenderer;
 	};
 }

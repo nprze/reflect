@@ -49,8 +49,8 @@ void rfct::soundPlayer::applyVolumeSettings() {
 
 void rfct::soundManager::loadSounds() {
     RFCT_PROFILE_FUNCTION();
-    background = soundPlayer::get().loadSound(getAssetsPath() + "/sound/sample-background.wav");
-    swoosh = soundPlayer::get().loadSound(getAssetsPath() + "/sound/swoosh.mp3");
+    background = soundPlayer::get().loadSound(GetAssetsPath() + "/sound/sample-background.wav");
+    swoosh = soundPlayer::get().loadSound(GetAssetsPath() + "/sound/swoosh.mp3");
 }
 
 void rfct::soundManager::unloadSounds() {

@@ -43,7 +43,7 @@ std::getline(file, line);                                                       
 void rfct::loadScene(const std::string& path, sceneSerializedData* out) {
     RFCT_PROFILE_FUNCTION();
     std::ifstream file;
-    if (!openAssetFile(path, &file)) {
+    if (!OpenAssetFile(path, &file)) {
         RFCT_CRITICAL("Could not open scene file:  {}", path);
     }
 

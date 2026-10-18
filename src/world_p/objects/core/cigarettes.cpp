@@ -90,7 +90,7 @@ namespace rfct {
 
     }
 
-    void cigarettes::resetLevel(const frameContext* ctx) {
+    void cigarettes::resetLevel(const RfctFrameContext* ctx) {
         RFCT_PROFILE_FUNCTION();
         for (entity& e : cigarettesVec) {
             if(ecs::get().valid(e))
@@ -98,7 +98,7 @@ namespace rfct {
         }
     }
 
-    void cigarettes::updateVisuals(const frameContext* ctx) {
+    void cigarettes::updateVisuals(const RfctFrameContext* ctx) {
         RFCT_PROFILE_FUNCTION();
         renderData& rd = ctx->scene->getRenderData();
         auto gravityVelocityPositionBoxQuery = ecs::get().view<cigaretteUpdateComponent, dynamicSSBOIndexComponent, positionComponent, rotationComponent, scaleComponent>();
@@ -108,7 +108,7 @@ namespace rfct {
         };
     }
 
-    void cigarettes::updateSystem(frameContext* ctx) {
+    void cigarettes::updateSystem(RfctFrameContext* ctx) {
         RFCT_PROFILE_FUNCTION();
         renderData& rd = ctx->scene->getRenderData();
         auto cigaretteComponentsQuery = ecs::get().view<cigaretteUpdateComponent, positionComponent, velocityComponent, angularVelocityComponent, rotationComponent>();
@@ -137,7 +137,7 @@ namespace rfct {
             }
             };
     }
-    void cigarettes::onDash(frameContext* fc, const entity entityPlayer, const bool facingRight) {
+    void cigarettes::onDash(RfctFrameContext* fc, const entity entityPlayer, const bool facingRight) {
         RFCT_PROFILE_FUNCTION();
         if (ecs::get().valid(cigarettesVec[lastCigaretteIndex])) {
             fc->scene->deleteDynamicEntity(cigarettesVec[lastCigaretteIndex]);
@@ -148,7 +148,7 @@ namespace rfct {
     }
 }
 
-entity rfct::cigarettes::constructCigarette(const frameContext* fc, const entity entityPlayer, const bool facingRight) {
+entity rfct::cigarettes::constructCigarette(const RfctFrameContext* fc, const entity entityPlayer, const bool facingRight) {
     RFCT_PROFILE_FUNCTION();
     constexpr float min_val = std::min(betweenVer, betweenHor);
     entt::registry& reg = ecs::get();

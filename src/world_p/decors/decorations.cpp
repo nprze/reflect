@@ -13,16 +13,16 @@ void rfct::decorationHolder::init(sceneSerializedData* serializeData, scene* par
 	spawnTallGrass(parentScene, serializeData);
 }
 
-void rfct::decorationHolder::onPlayerDashDecorations(frameContext* fc, const entity entityPlayer, const bool facingRight) {}
+void rfct::decorationHolder::onPlayerDashDecorations(RfctFrameContext* fc, const entity entityPlayer, const bool facingRight) {}
 
-void rfct::decorationHolder::decorsFixedUpdate(frameContext* ctx) {
+void rfct::decorationHolder::decorsFixedUpdate(RfctFrameContext* ctx) {
 	RFCT_PROFILE_FUNCTION();
 	updateSmokes(ctx);
 	updateKindlings(ctx);
 	updateGrass(ctx);
 }
 
-void rfct::decorationHolder::decorsUpdate(frameContext* ctx) {
+void rfct::decorationHolder::decorsUpdate(RfctFrameContext* ctx) {
 	RFCT_PROFILE_FUNCTION();
 	updateSmokeMatrices(ctx);
 	updateKindlingMatrices(ctx);

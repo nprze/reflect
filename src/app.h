@@ -11,11 +11,11 @@ namespace rfct {
 
         void updateWindow(RFCT_APP_ARGS);
 		void update();
-		void fixedUpdate(frameContext& ctx, uint64_t times);
+		void fixedUpdate(RfctFrameContext& ctx, uint64_t times);
 		void loadGameSystems();
 		void cleanGameSystems();
     private:
 		size_t currentFrame = -1; // the frame in flight which resources to use this frame
-        renderer m_Renderer;
+        RfctRenderer m_renderer;
 	};
 }

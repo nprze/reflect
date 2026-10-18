@@ -45,7 +45,7 @@ namespace rfct {
 		input();
 		void init();
         void drawButtons();
-        void pollAndParseEvents(frameContext* context);
+        void pollAndParseEvents(RfctFrameContext* context);
         button* addClickableButton(glm::vec2 pos, glm::vec2 size);
 
         // helper

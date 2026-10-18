@@ -156,7 +156,7 @@ namespace rfct {
 		}
 	}
 
-	glm::vec2 simulateVinePlayerIsHolding(entity player,entity vineEntity, int vineEdgeIndex, const frameContext* fc) {
+	glm::vec2 simulateVinePlayerIsHolding(entity player,entity vineEntity, int vineEdgeIndex, const RfctFrameContext* fc) {
 		RFCT_PROFILE_FUNCTION();
 		entt::registry& reg = ecs::get();
 		auto& vinePosCom = reg.get<vinePositionsComponent>(vineEntity);
@@ -287,7 +287,7 @@ namespace rfct {
  		nearestVineEdgeToPlayerIndex = -1;
 	};
 
-	void vines::resetLevel(const frameContext* ctx) {
+	void vines::resetLevel(const RfctFrameContext* ctx) {
 		RFCT_PROFILE_FUNCTION();
 		auto vineQuery = ecs::get().view<vineStateComponent, vinePositionsComponent, vineLenghtComponent, dynamicBoxColliderComponent, positionComponent>();
 		for (auto [ent, sc, positions, en, boc, pos] : vineQuery.each()) {
@@ -302,7 +302,7 @@ namespace rfct {
 			};
 	}
 
-	void vines::updateVisuals(const frameContext* ctx) {
+	void vines::updateVisuals(const RfctFrameContext* ctx) {
 		RFCT_PROFILE_FUNCTION();
 		auto vineQuery = ecs::get().view<vinePositionsComponent, vineVerticesComponent, positionComponent, vertexRenderInfoComponent>();
 		for (auto [ent, pos, verts, posComp, renInfo] : vineQuery.each()) {
@@ -369,7 +369,7 @@ namespace rfct {
 		};
 	};
 
-	void vines::updateSystem(frameContext* ctx) {
+	void vines::updateSystem(RfctFrameContext* ctx) {
 		RFCT_PROFILE_FUNCTION();
 		if (nearestVineEdgeToPlayerIndex != -1) {
 			if (ecs::get().get<vineStateComponent>(vineClosestToPlayer).holdingToThis) {

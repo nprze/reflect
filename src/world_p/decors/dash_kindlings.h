@@ -3,7 +3,7 @@
 
 namespace rfct {
 	void initKindlingsVars(scene* parentScene);
-	void spawnKindling(frameContext* fc, const glm::vec2& position, const glm::vec2& playerVel, uint32_t var);
-	void updateKindlings(frameContext* ctx);
-	void updateKindlingMatrices(frameContext* ctx);
+	void spawnKindling(RfctFrameContext* fc, const glm::vec2& position, const glm::vec2& playerVel, uint32_t var);
+	void updateKindlings(RfctFrameContext* ctx);
+	void updateKindlingMatrices(RfctFrameContext* ctx);
 }

@@ -7,7 +7,7 @@
 #include "sound_p/sound.h"
 
 namespace rfct {
-	using ActionFunction = void(*)(rfct::frameContext*);
+	using ActionFunction = void(*)(rfct::RfctFrameContext&);
 	// FAT STRUCT
 	struct UINode {
 		std::string label;
@@ -91,11 +91,11 @@ namespace rfct {
 			triangleDecorations.push_back(decor);
 		}
 	}
-	void updateDecors(frameContext* ctx) {
+	void updateDecors(RfctFrameContext& ctx) {
 		RFCT_PROFILE_FUNCTION();
 		float aspectRatio = imageExtent.x / imageExtent.y;
 		for (triangleDecoration& decor : triangleDecorations) {
-			decor.angle += ctx->dt * 20.f;
+			decor.angle += ctx.dt * 20.f;
 			glm::mat2 rotationMatrix = glm::mat2(
 				glm::vec2(glm::cos(glm::radians(decor.angle)), -glm::sin(glm::radians(decor.angle))),
 				glm::vec2(glm::sin(glm::radians(decor.angle)), glm::cos(glm::radians(decor.angle)))
@@ -107,10 +107,10 @@ namespace rfct {
 			}
 			decor.pos.y += additionalBoost;
 
-			decor.pos += decor.dir * ctx->dt * .05f;
+			decor.pos += decor.dir * ctx.dt * .05f;
 			decor.dir = glm::normalize(decor.dir + glm::vec2(
-				(static_cast<float>(rand() % 2000) / 1000.f - 1.f) * ctx->dt * 4.f,
-				(static_cast<float>(rand() % 2000) / 1000.f - 1.f) * ctx->dt * 4.f
+				(static_cast<float>(rand() % 2000) / 1000.f - 1.f) * ctx.dt * 4.f,
+				(static_cast<float>(rand() % 2000) / 1000.f - 1.f) * ctx.dt * 4.f
 			));
 			if (decor.pos.x < -0.1f) decor.pos.x = 1.1f;
 			if (decor.pos.x > 1.1f) decor.pos.x = -0.1f;
@@ -121,7 +121,7 @@ namespace rfct {
 			glm::vec2 p1 = (rotationMatrix * decor.pos1 + decor.pos) * glm::vec2{ 1, aspectRatio };
 			glm::vec2 p2 = (rotationMatrix * decor.pos2 + decor.pos) * glm::vec2{ 1, aspectRatio };
 
-			rfct::renderer::getRen().getUIPipeline().addTriangleNormalized(p0, p1, p2, decor.color, opacity::opacity100percent);
+			GetRen().GetUIPipeline().addTriangleNormalized(p0, p1, p2, decor.color, opacity::opacity100percent);
 		}
 	}
 	void cleanupDecors() {
@@ -130,18 +130,18 @@ namespace rfct {
 }
 
 // actions
-void actionResume(rfct::frameContext* ctx) {
+void actionResume(rfct::RfctFrameContext& ctx) {
 	timeSinceStateChange = 0.f;
-	ctx->state = beforePauseMenuState;
+	ctx.currentGameState = beforePauseMenuState;
 	currentNodeIndex = -1;
 	while (!previousNodeIndices.empty()) previousNodeIndices.pop();
 	rfct::cleanupDecors();
 }
-void actionQuit(rfct::frameContext* ctx) {
+void actionQuit(rfct::RfctFrameContext& ctx) {
 	rfct::userSettings::get().dumpUserSettings();
-	glfwSetWindowShouldClose(rfct::renderer::getRen().getWindow().GetHandle(), true);
+	glfwSetWindowShouldClose(rfct::GetRen().GetWindow().GetHandle(), true);
 }
-void actionProgressDeveloper(rfct::frameContext* ctx) {
+void actionProgressDeveloper(rfct::RfctFrameContext& ctx) {
 	static uint32_t progress = 0;
 	progress += 1;
 	if (progress >= 7) {
@@ -160,7 +160,7 @@ void actionProgressDeveloper(rfct::frameContext* ctx) {
 		UINodes[3].childrenCount = 2;
 	}
 }
-void actionTellStory(rfct::frameContext* ctx) {
+void actionTellStory(rfct::RfctFrameContext& ctx) {
 	static uint32_t storyProgress = 0;
 	storyProgress += 1;
 	if (storyProgress == 1)UINodes[11].label = "thank you for playing smokes.";
@@ -168,7 +168,7 @@ void actionTellStory(rfct::frameContext* ctx) {
 	else if (storyProgress == 5) UINodes[11].label = ">:3";
 	else if (storyProgress == 7) UINodes[11].label = "Please enjoy the game.";
 }
-void actionEmpty(rfct::frameContext* ctx) {}
+void actionEmpty(rfct::RfctFrameContext& ctx) {}
 
 rfct::gameState rfct::getState() {
 	if (input::getInput().openClosePauseMenu && timeSinceStateChange > 1.f) {
@@ -194,18 +194,18 @@ void rfct::updateLastState(gameState newState) {
 	lastState = newState;
 }
 
-void rfct::drawUI(frameContext* ctx) {
+void rfct::drawUI(RfctFrameContext& ctx, RfctSwapChain& swapChain) {
 	// general updates
-	timeSinceStateChange += ctx->dt;
-	globalTime += ctx->dt;
-	changeSelectionCooldown = std::clamp(changeSelectionCooldown - ctx->dt, 0.f, 0.25f);
+	timeSinceStateChange += ctx.dt;
+	globalTime += ctx.dt;
+	changeSelectionCooldown = std::clamp(changeSelectionCooldown - ctx.dt, 0.f, 0.25f);
 
-	int fps = static_cast<int>(std::floor(1.0 / ctx->dt));
+	int fps = static_cast<int>(std::floor(1.0 / ctx.dt));
 	debugDraw::drawText("fps: " + std::to_string(fps), glm::vec2(0, 0), 0.07f);
-	if (ctx->state != gameState::menu || currentNodeIndex == -1) return;
+	if (ctx.currentGameState != gameState::menu || currentNodeIndex == -1) return;
 
 	// helper
-	imageExtent = { static_cast<float>(rfct::renderer::getRen().getRenderImagesManager().getSwapChain().getExtent().width), static_cast<float>(rfct::renderer::getRen().getRenderImagesManager().getSwapChain().getExtent().height) };
+	imageExtent = { static_cast<float>(GetRen().GetSwapChain().GetExtent().width), static_cast<float>(GetRen().GetSwapChain().GetExtent().height)};
 	bool hasBackButton = currentNodeIndex != 0;
 
 	// input updates
@@ -217,11 +217,11 @@ void rfct::drawUI(frameContext* ctx) {
 	}
 
 	// background draw
-	rfct::renderer::getRen().getUIPipeline().beginAddingTriangles();
-	rfct::renderer::getRen().getUIPipeline().addTriangleNormalized({ 0,0 }, { 2, 0 }, { 0, 2 }, { 0,0,0 }, rfct::opacity::opacity75percent);
-	rfct::renderer::getRen().getUIPipeline().addTriangleNormalized({ 2,2 }, { 2, 0 }, { 0, 2 }, { 0,0,0 }, rfct::opacity::opacity75percent);
+	GetRen().GetUIPipeline().beginAddingTriangles(swapChain);
+	GetRen().GetUIPipeline().addTriangleNormalized({ 0,0 }, { 2, 0 }, { 0, 2 }, { 0,0,0 }, rfct::opacity::opacity75percent);
+	GetRen().GetUIPipeline().addTriangleNormalized({ 2,2 }, { 2, 0 }, { 0, 2 }, { 0,0,0 }, rfct::opacity::opacity75percent);
 	updateDecors(ctx);
-	rfct::renderer::getRen().getUIPipeline().endAddingTriangles();
+	GetRen().GetUIPipeline().endAddingTriangles();
 
 	if (changeSelectionCooldown != 0) {
 		animationOffsetNorm = glm::pow(-4 * changeSelectionCooldown, 2);
@@ -237,7 +237,7 @@ void rfct::drawUI(frameContext* ctx) {
 	uint32_t elementCount = UINodes[currentNodeIndex].childrenCount + (hasBackButton ? 1 : 0);
 	float totalHeight = UINodes[currentNodeIndex].childrenCount * oneLineHeight + (UINodes[currentNodeIndex].childrenCount - 1) * interline * imageExtent.y;
 	float startY = 0.5f * imageExtent.y - (0.5f * totalHeight);
-	font* defaultFont = renderer::getRen().getUIPipeline().getDefaultFont();
+	RfctFont* defaultFont = GetRen().GetUIPipeline().getDefaultFont();
 
 	for (uint32_t i = 0; i < UINodes[currentNodeIndex].childrenCount; i++) {
 		uint32_t childIndex = UINodes[currentNodeIndex].childrenIndices[i];
@@ -250,7 +250,7 @@ void rfct::drawUI(frameContext* ctx) {
 			float xPos = (0.5f) * imageExtent.x - 0.5f * width;
 			float yPos = startY + i * (oneLineHeight + interline * imageExtent.y);
 			// draw text
-			renderer::getRen().getUIPipeline().addTextVerticesHeight(
+			GetRen().GetUIPipeline().addTextVerticesHeight(
 				UINodes[childIndex].label,
 				glm::vec2(
 					xPos,
@@ -261,7 +261,7 @@ void rfct::drawUI(frameContext* ctx) {
 		}
 		case UINode::UINodeType::UINodeType_IntPercentage: {
 			// label
-			renderer::getRen().getUIPipeline().addTextVerticesHeight(
+			GetRen().GetUIPipeline().addTextVerticesHeight(
 				UINodes[childIndex].label,
 				glm::vec2(
 					(0.15f) * imageExtent.x,
@@ -272,7 +272,7 @@ void rfct::drawUI(frameContext* ctx) {
 			// value
 			std::string valueText = ((*UINodes[childIndex].valuePtr == UINodes[childIndex].minValue)?"":"< ") + std::to_string(*UINodes[childIndex].valuePtr) + ((*UINodes[childIndex].valuePtr == UINodes[childIndex].maxValue) ? "%" : "% >");
 			float valueWidth = defaultFont->getTextWidth(valueText, textScale * imageExtent.y);
-			renderer::getRen().getUIPipeline().addTextVerticesHeight(
+			GetRen().GetUIPipeline().addTextVerticesHeight(
 				valueText,
 				glm::vec2(
 					(0.85f) * imageExtent.x - valueWidth,
@@ -290,7 +290,7 @@ void rfct::drawUI(frameContext* ctx) {
 		float width = defaultFont->getTextWidth("BACK", textScale * imageExtent.y);
 		float xPos = (0.5f) * imageExtent.x - 0.5f * width;
 		float yPos = startY + UINodes[currentNodeIndex].childrenCount * (oneLineHeight + interline * imageExtent.y);
-		renderer::getRen().getUIPipeline().addTextVerticesHeight(
+		GetRen().GetUIPipeline().addTextVerticesHeight(
 			std::string("BACK"),
 			glm::vec2(
 				xPos,
